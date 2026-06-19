@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "features": {
+    "global-instructions": {
+      "version": "1.0.0",
+      "description": "Global Codex operating instructions.",
+      "links": [
+        {
+          "source": "AGENTS.md",
+          "target": "AGENTS.md"
+        }
+      ]
+    },
+    "batch-runway": {
+      "version": "1.0.0",
+      "description": "Coordinator workflow for multi-slice runway execution.",
+      "links": [
+        {
+          "source": "skills/batch-runway",
+          "target": "skills/batch-runway"
+        }
+      ]
+    },
+    "custom-agents": {
+      "version": "1.0.0",
+      "description": "Reusable custom Codex agents.",
+      "links": [
+        {
+          "source": "agents/fast_explorer.toml",
+          "target": "agents/fast_explorer.toml"
+        },
+        {
+          "source": "agents/runway_reviewer.toml",
+          "target": "agents/runway_reviewer.toml"
+        },
+        {
+          "source": "agents/runway_worker.toml",
+          "target": "agents/runway_worker.toml"
+        },
+        {
+          "source": "agents/spark.toml",
+          "target": "agents/spark.toml"
+        }
+      ]
+    },
+    "approval-rules": {
+      "version": "1.0.0",
+      "description": "Reusable approval rules.",
+      "links": [
+        {
+          "source": "rules/default.rules",
+          "target": "rules/default.rules"
+        }
+      ]
+    }
+  }
+}

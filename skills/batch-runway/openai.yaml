@@ -1,0 +1,4 @@
+interface:
+  display_name: "Batch Runway"
+  short_description: "Plan and execute slice batches"
+  default_prompt: "Use $batch-runway to create or execute a multi-slice runway spec."
