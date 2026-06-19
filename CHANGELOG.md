@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Lean batch-runway contracts
+
+Problem: `batch-runway` specs repeated the full execution contract, validation
+commands, and subagent briefs in every runway, increasing token use while still
+needing strict coordinator-only, sandbox, and commit discipline.
+
+Decision: add lean/full runway density modes, versioned standard contract and
+ledger references, reusable validation profiles, compact subagent brief formats
+with absolute spec paths, and explicit fresh install-sandbox output guidance.
+
+Expected effect: future runway specs can stay smaller for mechanical work while
+preserving the agent behavior that matters: coordinator-only execution,
+separate coding/review agents, per-slice commits, guarded sandbox validation,
+and stable interpretation of older contract references.
+
 ### Declared vs installed Codex ownership
 
 Problem: `scripts/codex_owner.py` treated any path matching a feature manifest
