@@ -10,12 +10,15 @@ needing strict coordinator-only, sandbox, and commit discipline.
 
 Decision: add lean/full runway density modes, versioned standard contract and
 ledger references, reusable validation profiles, compact subagent brief formats
-with absolute spec paths, and explicit fresh install-sandbox output guidance.
+with absolute spec paths, explicit fresh install-sandbox output guidance, and
+move the skill UI metadata from the legacy root `openai.yaml` path to
+`agents/openai.yaml`.
 
 Expected effect: future runway specs can stay smaller for mechanical work while
 preserving the agent behavior that matters: coordinator-only execution,
 separate coding/review agents, per-slice commits, guarded sandbox validation,
-and stable interpretation of older contract references.
+stable interpretation of older contract references, and current skill metadata
+layout.
 
 ### Declared vs installed Codex ownership
 
