@@ -111,6 +111,20 @@ To check ownership for a `~/.codex` path:
 scripts/codex_owner.py ~/.codex/AGENTS.md
 ```
 
+The ownership check distinguishes manifest declaration from active
+installation. A path can have `manifest_owner: codex-config` because it matches
+`codex-features.json`, while `installed_owner: none` and a non-`linked` status
+mean the runtime path is not currently backed by the repository symlink.
+
+Install statuses include:
+
+* `linked`
+* `missing`
+* `unlinked_copy`
+* `wrong_symlink`
+* `conflict_file`
+* `conflict_directory`
+
 ### AGENTS.md
 
 Global operating instructions used across projects.

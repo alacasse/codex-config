@@ -62,6 +62,50 @@ def contains_path(parent: Path, child: Path) -> bool:
     return True
 
 
+def installed_status(target: Path, source: Path) -> tuple[str, str]:
+    if target.is_symlink():
+        link_target = Path(os.readlink(target))
+        if not link_target.is_absolute():
+            link_target = target.parent / link_target
+        try:
+            resolved_link = link_target.resolve(strict=True)
+            resolved_source = source.resolve(strict=True)
+        except FileNotFoundError:
+            return (
+                "wrong_symlink",
+                "Target is a symlink, but it does not resolve to the declared source.",
+            )
+        if resolved_link == resolved_source:
+            return "linked", "Target is linked to the declared source."
+        return (
+            "wrong_symlink",
+            "Target is a symlink, but it resolves somewhere other than the declared source.",
+        )
+
+    if not target.exists():
+        return "missing", "Target does not exist."
+
+    if target.is_file() and source.is_dir():
+        return (
+            "conflict_file",
+            "Target exists as a file, but the declared source is a directory.",
+        )
+    if target.is_dir() and source.is_file():
+        return (
+            "conflict_directory",
+            "Target exists as a directory, but the declared source is a file.",
+        )
+    if target.is_file() or target.is_dir():
+        return (
+            "unlinked_copy",
+            "Target exists and matches a managed feature path, but is not linked to the declared source.",
+        )
+    return (
+        "unlinked_copy",
+        "Target exists and matches a managed feature path, but is not linked to the declared source.",
+    )
+
+
 def build_owned_links(
     repo_root: Path, codex_home: Path, manifest: dict[str, Any]
 ) -> list[dict[str, Any]]:
@@ -89,19 +133,31 @@ def inspect_path(path: Path, links: list[dict[str, Any]], repo_root: Path) -> di
     for link in links:
         source = link["source"]
         target = link["target"]
-        if contains_path(source, resolved) or contains_path(target, original_absolute):
+        path_in_source = contains_path(source, original_absolute) or contains_path(
+            source, resolved
+        )
+        path_in_target = contains_path(target, original_absolute)
+        if path_in_source or path_in_target:
+            status, reason = installed_status(target, source)
+            installed_owner = "codex-config" if status == "linked" else None
+            owner = "codex-config" if path_in_source or installed_owner else None
+            owned = owner == "codex-config"
             return {
                 "path": str(original),
                 "resolved_path": str(resolved),
-                "owned": True,
-                "owner": "codex-config",
+                "owned": owned,
+                "owner": owner,
+                "manifest_owner": "codex-config",
+                "installed_owner": installed_owner,
+                "status": status,
+                "reason": reason,
                 "repo_root": str(repo_root),
                 "feature": link["feature"],
                 "version": link["version"],
                 "source": str(source),
                 "target": str(target),
-                "changelog_required": True,
-                "git_status_required": True,
+                "changelog_required": owned,
+                "git_status_required": owned,
             }
 
     return {
@@ -109,6 +165,10 @@ def inspect_path(path: Path, links: list[dict[str, Any]], repo_root: Path) -> di
         "resolved_path": str(resolved),
         "owned": False,
         "owner": None,
+        "manifest_owner": None,
+        "installed_owner": None,
+        "status": "unmanaged",
+        "reason": "Path does not match a codex-config manifest link.",
         "repo_root": None,
         "feature": None,
         "version": None,
@@ -123,16 +183,22 @@ def print_text(results: list[dict[str, Any]]) -> None:
     for result in results:
         print(f"path: {result['path']}")
         print(f"resolved_path: {result['resolved_path']}")
-        if result["owned"]:
-            print("owner: codex-config")
+        if result["manifest_owner"]:
+            print(f"manifest_owner: {result['manifest_owner']}")
+            print(f"installed_owner: {result['installed_owner'] or 'none'}")
+            print(f"status: {result['status']}")
+            print(f"reason: {result['reason']}")
+            print(f"owner: {result['owner'] or 'external-or-unmanaged'}")
             print(f"repo_root: {result['repo_root']}")
             print(f"feature: {result['feature']} {result['version']}")
             print(f"source: {result['source']}")
             print(f"target: {result['target']}")
-            print("changelog_required: true")
-            print("git_status_required: true")
+            print(f"changelog_required: {str(result['changelog_required']).lower()}")
+            print(f"git_status_required: {str(result['git_status_required']).lower()}")
         else:
             print("owner: external-or-unmanaged")
+            print(f"status: {result['status']}")
+            print(f"reason: {result['reason']}")
         print()
 
 

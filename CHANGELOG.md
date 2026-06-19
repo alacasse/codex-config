@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Declared vs installed Codex ownership
+
+Problem: `scripts/codex_owner.py` treated any path matching a feature manifest
+entry as owned by this repository, even when the runtime `~/.codex` path was a
+standalone copy instead of the expected symlink.
+
+Decision: split manifest declaration from active installation state. The owner
+report now includes `manifest_owner`, `installed_owner`, `status`, and `reason`,
+with non-linked targets classified as `missing`, `unlinked_copy`,
+`wrong_symlink`, `conflict_file`, or `conflict_directory`.
+
+Expected effect: agents no longer get a false signal that editing a copied
+runtime path will update codex-config. They can see when a feature is declared
+by this repository but not currently linked from `~/.codex`.
+
 ### Linked config ownership detection
 
 Problem: repo-owned files can be edited through their installed `~/.codex`
