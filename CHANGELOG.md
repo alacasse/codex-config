@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Batch-runway progressive disclosure
+
+Problem: `batch-runway` had become a single large skill file containing the
+dispatcher, execution contract, reporting contract, ledger policy, validation
+profiles, mode procedures, and subagent prompt templates. That made every skill
+invocation pay for details that only some modes needed.
+
+Decision: shrink `SKILL.md` into a mode dispatcher and context-discipline guide,
+then move detailed standard contracts, reporting rules, ledger retention,
+validation profiles, create/execute procedures, subagent briefs, and
+test-quality integration into one-level `references/` files. Lean specs now
+carry reference paths or compact contract capsules when subagents need them.
+
+Expected effect: future Batch Runway invocations should load less context by
+default while preserving the same coordinator-only execution contract,
+per-slice validation, separate review, compact reporting, and resume behavior.
+
 ### Generic batch-runway project values
 
 Problem: `batch-runway` carried Graphify-specific defaults for plan storage,
