@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Batch-runway convergence reporting
+
+Problem: `batch-runway` reports showed slice progress, validation, review, and
+commits, but did not force agents to separate progress from actual convergence.
+During long refactors this made work feel close to done even when slices were
+still discovering new coupling, compatibility paths, and forecast blockers.
+
+Decision: add a mandatory Standard Convergence Assessment to runway status
+reports, slice summaries, commit receipts, final reports, and ledger notes where
+appropriate. The assessment records phase, scope trend, closed work, newly
+discovered scope, deferred work, remaining unknowns, temporary compatibility
+paths, blockers, forecastability, evidence, and the next proof required.
+
+Expected effect: future runway executions should make convergence visible, avoid
+unsupported "almost done" language, and only forecast completion when remaining
+work is bounded into explicit slices.
+
 ### Lean batch-runway contracts
 
 Problem: `batch-runway` specs repeated the full execution contract, validation

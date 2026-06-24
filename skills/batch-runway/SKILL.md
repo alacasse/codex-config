@@ -64,6 +64,82 @@ Use this ledger shape unless the spec explicitly overrides it.
 | 3 | pending | | | | | |
 ```
 
+## Standard Convergence Assessment v1
+
+Use this assessment in runway status reports, slice summaries, commit receipts, final reports, and ledger notes where the information belongs. The section is mandatory for runway progress reporting even when validation passes; passing tests, completing slices, and producing commits are evidence of progress, not sufficient evidence of closure.
+
+Progress is not the same as convergence. A runway is close to done only when remaining work is bounded, known, and explicitly enumerated.
+
+Required output format:
+
+```md
+## Convergence Assessment
+
+### Phase
+`discovery | convergence | closure`
+
+### Scope trend
+`shrinking | stable | expanding`
+
+### Closed this slice
+- ...
+
+### Newly discovered
+- ...
+
+### Deferred out of scope
+- ...
+
+### Remaining unknowns
+- ...
+
+### Temporary compatibility paths
+- ...
+
+### Blockers
+- ...
+
+### Completion forecastable
+`yes | no`
+
+### Forecast
+- ...
+
+### Evidence
+- ...
+
+### Next proof required
+- ...
+```
+
+Phase definitions:
+
+- `discovery`: the runway is still revealing new scope, hidden coupling, unclear behavior, missing test coverage, or architectural uncertainty. Do not forecast completion.
+- `convergence`: the direction is stable, new discoveries are decreasing, uncertainty is localized, and slices are reducing the unknown space.
+- `closure`: remaining work is explicitly bounded, mostly known, and expected to close known items rather than reveal major new ones.
+
+Scope trend definitions:
+
+- `shrinking`: the slice closed more uncertainty than it introduced.
+- `stable`: the slice made progress, but open uncertainty stayed roughly the same.
+- `expanding`: the slice discovered more unknowns, blockers, or required follow-ups than it closed.
+
+Forecastability rules:
+
+- Use `completion forecastable: no` if the runway is in `discovery`.
+- Use `completion forecastable: no` if remaining work is not bounded.
+- Use `completion forecastable: no` if new unknowns are appearing faster than they are being closed.
+- Use `completion forecastable: yes` only when remaining work can be enumerated as bounded slices.
+- Forecast remaining work in bounded slices, not calendar time.
+- Do not say or imply that work is almost done unless remaining work is explicitly enumerated, no major new unknowns were introduced in the latest slice, temporary compatibility logic is removed or intentionally documented, follow-up work is separated from blocking work, and the next slice is expected to close known items rather than discover new ones.
+
+Evidence rules:
+
+- List concrete evidence for the assessment: closed coupling, removed compatibility paths, focused tests added, sandbox behavior verified, bounded remaining files, or explicit follow-up separation.
+- List newly discovered issues, coupling, unclear assumptions, missing tests, compatibility paths, and architectural questions separately from closed work.
+- List temporary compatibility shims, transitional branches, duplicated logic, migration paths, or old/new behavior bridges that still exist.
+- `Next proof required` must state what the next slice must prove to increase confidence.
+
 ## Validation Profiles
 
 Specs should reference validation profiles instead of repeating long command blocks when practical. Slice-specific commands and overrides still belong in the spec when the profile is not precise enough.
@@ -150,6 +226,7 @@ The spec must include:
 - current baseline and assumptions
 - non-goals for the whole batch
 - execution contract reference
+- convergence assessment reference
 - validation profile
 - execution ledger
 - 3-5 slice sections
@@ -162,6 +239,7 @@ For lean specs, do not paste the full standard execution contract. Reference it:
 ## Execution Contract
 
 Use Batch Runway Standard Execution Contract v1.
+Use Batch Runway Standard Convergence Assessment v1 for status reports, slice summaries, commit receipts, final reports, and ledger notes where appropriate.
 
 Overrides:
 - <only list deviations from the standard contract>
@@ -231,6 +309,7 @@ Coordinator preflight:
    - stop conditions
    - commit strategy
    - whether this is `lean-runway` or `full-runway`
+   - current convergence phase, scope trend, temporary compatibility paths, and forecast blockers
 4. Confirm subagent tooling is available.
 5. Prefer `runway_worker` for coding and `runway_reviewer` for review.
 6. If required custom agents are unavailable because Codex has not reloaded configuration yet, stop and ask for a restart or new thread rather than falling back to main-agent implementation.
@@ -253,8 +332,8 @@ For each slice:
 14. In lean mode, pass the absolute spec path, repo cwd, slice number, slice anchor, task-scoped diff context, and review focus. Do not paste the full slice unless needed.
 15. If review finds issues, delegate follow-up fixes to a coding subagent unless the fix is only a ledger or commit-message adjustment.
 16. Commit only the files intentionally changed for that slice once validation and review are clean.
-17. Immediately report a commit receipt with hash, subject, files changed, validation result, sandbox result when applicable, review result, and inspection commands.
-18. Update the ledger with status, commit hash, focused validation result, review result, review commands, and notes.
+17. Immediately report a commit receipt with hash, subject, files changed, validation result, sandbox result when applicable, review result, inspection commands, and `Convergence Assessment`.
+18. Update the ledger with status, commit hash, focused validation result, review result, review commands, notes, and convergence-relevant facts.
 19. Close completed subagents before continuing to avoid thread-limit failures.
 20. Continue directly to the next pending ledger row.
 
@@ -262,7 +341,7 @@ After the last completed slice:
 
 1. Run the spec's final validation.
 2. Run any project-required graph or index refresh after code changes.
-3. Report completed commits, validation results, skipped slices, and remaining risks.
+3. Report completed commits, validation results, skipped slices, remaining risks, and final `Convergence Assessment`.
 4. If final validation uses the Docker-backed sandbox, read `agent-summary.md` before reporting the final sandbox result.
 
 ## Hard Rules
@@ -279,6 +358,10 @@ After the last completed slice:
 - Prefer focused tests after each slice and broad validation once at the end.
 - Use lean specs and lean subagent briefs when they preserve safety.
 - Use full explicit specs when risk, ambiguity, or missing subagent file access makes compact references unsafe.
+- Report convergence separately from progress; passing tests, clean review, and committed slices are not enough to claim closure.
+- Do not mark a runway as `closure` while major unknowns remain.
+- Do not mark completion forecastable while scope is still expanding.
+- Do not say or imply that work is almost done unless remaining work is bounded, known, explicitly enumerated, and supported by the latest convergence evidence.
 
 ## Subagent Brief Rules
 
