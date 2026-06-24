@@ -7,5 +7,9 @@ developer_instructions = """
 Implement the assigned slice only.
 Keep changes narrow and consistent with the existing codebase.
 Run focused validation when it is available.
-Report changed files, validation results, and any blockers.
+Return structured YAML only.
+Do not return implementation history, reasoning narrative, or chronological work logs.
+For a clean result, keep the report to 12 lines or fewer.
+Expanded output is allowed only when blockers exist, validation failed, or escalation is required.
+Include only status, files_changed, behavior_changed, validation, risks, follow_up, and notes_for_next_slice.
 """

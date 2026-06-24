@@ -50,9 +50,16 @@ Use this contract unless the spec explicitly overrides it. Treat named standard 
 - Do not revert or commit files outside the slice scope.
 - Stop on scope drift, unresolved ambiguity, repeatedly unresolved validation failure, dirty-file conflict, missing subagent support, or a stop condition from the spec.
 
+New specs should pair this execution contract with:
+
+- `Compact Report Contract v1`
+- `Compact Convergence Assessment v1`
+- `Standard Ledger Retention v1`
+
 ## Standard Ledger v1
 
-Use this ledger shape unless the spec explicitly overrides it.
+Use this legacy ledger shape only for specs that already reference it directly.
+For new specs, use `Standard Ledger Retention v1`.
 
 ```md
 ## Execution Ledger
@@ -64,13 +71,75 @@ Use this ledger shape unless the spec explicitly overrides it.
 | 3 | pending | | | | | |
 ```
 
-## Standard Convergence Assessment v1
+## Standard Ledger Retention v1
 
-Use this assessment in runway status reports, slice summaries, commit receipts, final reports, and ledger notes where the information belongs. The section is mandatory for runway progress reporting even when validation passes; passing tests, completing slices, and producing commits are evidence of progress, not sufficient evidence of closure.
+Use this ledger strategy for new specs unless the spec explicitly overrides it.
+Keep the active orchestration state small; preserve detailed audit data through
+commits, validation artifacts, review artifacts, ADRs, or task files on disk.
 
-Progress is not the same as convergence. A runway is close to done only when remaining work is bounded, known, and explicitly enumerated.
+Recommended shape:
 
-Required output format:
+```md
+## Active Ledger
+
+| Slice | Status | Commit | Validation | Review | Next proof | Notes |
+|---|---|---|---|---|---|---|
+| 1 | pending | | | | | |
+| 2 | pending | | | | | |
+| 3 | pending | | | | | |
+
+## Completed Slice Archive
+
+| Slice | Commit | Outcome | Audit references |
+|---|---|---|---|
+| 1 | `abc1234` | success | `git show --stat abc1234`; sandbox output `<path>` |
+```
+
+Rules:
+
+- The active ledger keeps only facts needed to choose and execute remaining work.
+- Completed rows move to the archive after commit.
+- Completed archive rows should fit on one line where practical.
+- Store commit hash, outcome, and audit references; do not store implementation chronology.
+- Summarize validation as `pytest 75 passed; ruff passed; sandbox PASS` instead of pasting full commands repeatedly.
+- Store detailed commands, transcripts, logs, and generated reports in commits or artifacts.
+- Keep unresolved risks, blockers, compatibility paths, and next-proof requirements in the active ledger until resolved.
+- Do not repeatedly paste completed slice details into future subagent prompts.
+
+## Compact Convergence Assessment v1
+
+Use compact convergence for routine slice reports, commit receipts, ledger
+updates, and status reporting. Progress is not the same as convergence, but the
+routine convergence signal should be small enough to carry forward across many
+slices.
+
+Routine output format:
+
+```yaml
+convergence:
+  phase: convergence
+  scope_trend: shrinking
+  new_unknowns: []
+  blockers: []
+  next_proof: "Validate ownership resolution in sandbox"
+```
+
+Fields:
+
+- `phase`: `discovery | convergence | closure`
+- `scope_trend`: `shrinking | stable | expanding`
+- `new_unknowns`: compact list of newly discovered unknowns, or `[]`
+- `blockers`: compact list of blockers, or `[]`
+- `next_proof`: the next concrete proof needed to increase confidence
+
+Use the expanded convergence template only when:
+
+- scope is expanding
+- significant uncertainty exists
+- blockers are present
+- final batch reporting is being produced
+
+Expanded output format:
 
 ```md
 ## Convergence Assessment
@@ -112,14 +181,11 @@ Required output format:
 - ...
 ```
 
-Phase definitions:
+Definitions:
 
 - `discovery`: the runway is still revealing new scope, hidden coupling, unclear behavior, missing test coverage, or architectural uncertainty. Do not forecast completion.
 - `convergence`: the direction is stable, new discoveries are decreasing, uncertainty is localized, and slices are reducing the unknown space.
 - `closure`: remaining work is explicitly bounded, mostly known, and expected to close known items rather than reveal major new ones.
-
-Scope trend definitions:
-
 - `shrinking`: the slice closed more uncertainty than it introduced.
 - `stable`: the slice made progress, but open uncertainty stayed roughly the same.
 - `expanding`: the slice discovered more unknowns, blockers, or required follow-ups than it closed.
@@ -133,12 +199,105 @@ Forecastability rules:
 - Forecast remaining work in bounded slices, not calendar time.
 - Do not say or imply that work is almost done unless remaining work is explicitly enumerated, no major new unknowns were introduced in the latest slice, temporary compatibility logic is removed or intentionally documented, follow-up work is separated from blocking work, and the next slice is expected to close known items rather than discover new ones.
 
-Evidence rules:
+## Compact Report Contract v1
 
-- List concrete evidence for the assessment: closed coupling, removed compatibility paths, focused tests added, sandbox behavior verified, bounded remaining files, or explicit follow-up separation.
-- List newly discovered issues, coupling, unclear assumptions, missing tests, compatibility paths, and architectural questions separately from closed work.
-- List temporary compatibility shims, transitional branches, duplicated logic, migration paths, or old/new behavior bridges that still exist.
-- `Next proof required` must state what the next slice must prove to increase confidence.
+Use this shared contract for `runway_worker`, `runway_reviewer`, and coordinator
+commit receipts. Optimize reports for machine consumption, future recovery, and
+long-term retention. Prefer YAML whenever possible.
+
+Global rules:
+
+- Return structured results only.
+- Do not return implementation history.
+- Do not narrate reasoning.
+- Do not explain chronological work performed.
+- Do not paste command transcripts or long logs.
+- Clean worker reports should be 12 lines or fewer.
+- Clean reviewer reports should be 10 lines or fewer.
+- Expanded output is allowed only when findings exist, blockers exist, validation failed, or escalation is required.
+
+Worker report:
+
+```yaml
+status: success
+files_changed:
+  - path/to/file.py
+behavior_changed: false
+validation:
+  passed:
+    - pytest: "75 passed"
+risks: []
+follow_up: []
+notes_for_next_slice: []
+```
+
+Reviewer report:
+
+```yaml
+status: clean
+findings: []
+residual_risks: []
+required_fixes: []
+```
+
+Commit receipt:
+
+```yaml
+slice: 2
+commit: abc1234
+subject: Extract file effect oracle
+status: committed
+files_changed:
+  - tools/install_sandbox/file_effect_oracle.py
+validation: "pytest 75 passed; ruff passed; sandbox PASS 48 passed"
+review: clean
+convergence:
+  phase: convergence
+  scope_trend: shrinking
+  new_unknowns: []
+  blockers: []
+  next_proof: "Move sandbox runner off facade imports"
+inspect:
+  - git show --stat abc1234
+  - git show abc1234
+```
+
+## Information Lifetime Rules
+
+Classify information before carrying it forward.
+
+Permanent:
+
+- commits
+- durable architecture decisions
+- unresolved risks
+- ADR-worthy decisions
+- compatibility paths that remain after the batch
+
+Batch-scoped:
+
+- remaining slices
+- stop conditions
+- active validation strategy
+- active dirty-file constraints
+- unresolved review or validation findings
+- current convergence phase and next proof
+
+Slice-scoped:
+
+- implementation notes
+- review findings
+- validation details
+- failure/recovery loops
+- sandbox output paths for the current slice
+
+Disposable after task completion:
+
+- implementation chronology
+- repeated clean-review prose
+- command transcripts
+- repetitive validation details
+- repeated explanations of already-closed slices
 
 ## Validation Profiles
 
@@ -226,7 +385,9 @@ The spec must include:
 - current baseline and assumptions
 - non-goals for the whole batch
 - execution contract reference
-- convergence assessment reference
+- compact report contract reference
+- compact convergence assessment reference
+- ledger retention strategy reference
 - validation profile
 - execution ledger
 - 3-5 slice sections
@@ -239,7 +400,10 @@ For lean specs, do not paste the full standard execution contract. Reference it:
 ## Execution Contract
 
 Use Batch Runway Standard Execution Contract v1.
-Use Batch Runway Standard Convergence Assessment v1 for status reports, slice summaries, commit receipts, final reports, and ledger notes where appropriate.
+Use Batch Runway Compact Report Contract v1.
+Use Batch Runway Compact Convergence Assessment v1 for routine status reports, slice summaries, commit receipts, and ledger notes.
+Use the expanded convergence template only when scope is expanding, significant uncertainty exists, blockers are present, or final batch reporting is being produced.
+Use Batch Runway Standard Ledger Retention v1.
 
 Overrides:
 - <only list deviations from the standard contract>
@@ -270,10 +434,10 @@ Implement slice <N> from <absolute spec path>.
 Repo cwd: <absolute repository path>.
 Slice anchor: <heading text or line number>.
 Read the full slice and applicable execution contract in the spec.
-Use the standard runway_worker return format.
+Use Compact Report Contract v1.
 Allowed files/areas: <repeat exact allowed files if needed for safety>.
 Dirty-file constraints: preserve unrelated dirty files; do not touch generated output except allowed validation output.
-Return only: files changed, behavior changed, tests run, risks, follow-up needed.
+Return YAML only. No implementation history, reasoning narrative, or chronological work log.
 ```
 
 Only paste the full slice content into the subagent brief when the subagent cannot reliably read the spec path or when the slice is unusually risky.
@@ -290,7 +454,7 @@ Repo cwd: <absolute repository path>.
 Slice anchor: <heading text or line number>.
 Inspect only the task-scoped diff and relevant files.
 Check scope, acceptance criteria, validation evidence, dirty-file leakage, and behavior preservation.
-Return findings first, then residual risks. Do not modify files.
+Use Compact Report Contract v1 reviewer format. Return YAML only. Do not modify files.
 ```
 
 Only paste full acceptance criteria when the reviewer cannot reliably read the spec path or when the review boundary is subtle.
@@ -309,7 +473,8 @@ Coordinator preflight:
    - stop conditions
    - commit strategy
    - whether this is `lean-runway` or `full-runway`
-   - current convergence phase, scope trend, temporary compatibility paths, and forecast blockers
+   - current compact convergence fields
+   - active ledger rows versus completed slice archive
 4. Confirm subagent tooling is available.
 5. Prefer `runway_worker` for coding and `runway_reviewer` for review.
 6. If required custom agents are unavailable because Codex has not reloaded configuration yet, stop and ask for a restart or new thread rather than falling back to main-agent implementation.
@@ -318,7 +483,7 @@ For each slice:
 
 1. Spawn a coding subagent with `agent_type="runway_worker"`.
 2. In lean mode, pass the absolute spec path, repo cwd, slice number, slice anchor, allowed files, dirty-file constraints, and slice-specific overrides. Do not paste the full slice unless needed.
-3. Require the coding result to include: files changed, behavior changed, tests run, risks, and follow-up needed.
+3. Require the coding result to follow `Compact Report Contract v1`.
 4. Run or verify focused validation from the coordinator session when practical.
 5. Apply the active validation profile.
 6. If the slice is test-only and uses `test-only-topology`, do not run the Docker-backed sandbox per slice unless the slice changes sandbox execution behavior, direct-runner coverage, runtime import/path assumptions, or the spec requires it.
@@ -332,16 +497,17 @@ For each slice:
 14. In lean mode, pass the absolute spec path, repo cwd, slice number, slice anchor, task-scoped diff context, and review focus. Do not paste the full slice unless needed.
 15. If review finds issues, delegate follow-up fixes to a coding subagent unless the fix is only a ledger or commit-message adjustment.
 16. Commit only the files intentionally changed for that slice once validation and review are clean.
-17. Immediately report a commit receipt with hash, subject, files changed, validation result, sandbox result when applicable, review result, inspection commands, and `Convergence Assessment`.
-18. Update the ledger with status, commit hash, focused validation result, review result, review commands, notes, and convergence-relevant facts.
-19. Close completed subagents before continuing to avoid thread-limit failures.
-20. Continue directly to the next pending ledger row.
+17. Immediately report a YAML commit receipt using `Compact Report Contract v1`.
+18. Include compact convergence in routine commit receipts. Use the expanded convergence template only when scope is expanding, significant uncertainty exists, blockers are present, or final batch reporting is being produced.
+19. Update the active ledger with only the state needed for remaining work. Move completed slice audit references to the completed slice archive.
+20. Close completed subagents before continuing to avoid thread-limit failures.
+21. Continue directly to the next pending ledger row.
 
 After the last completed slice:
 
 1. Run the spec's final validation.
 2. Run any project-required graph or index refresh after code changes.
-3. Report completed commits, validation results, skipped slices, remaining risks, and final `Convergence Assessment`.
+3. Report completed commits, validation results, skipped slices, remaining risks, and expanded final `Convergence Assessment`.
 4. If final validation uses the Docker-backed sandbox, read `agent-summary.md` before reporting the final sandbox result.
 
 ## Hard Rules
@@ -359,6 +525,8 @@ After the last completed slice:
 - Use lean specs and lean subagent briefs when they preserve safety.
 - Use full explicit specs when risk, ambiguity, or missing subagent file access makes compact references unsafe.
 - Report convergence separately from progress; passing tests, clean review, and committed slices are not enough to claim closure.
+- Use compact YAML reports for routine worker results, reviewer results, commit receipts, and ledger updates.
+- Do not retain implementation chronology, command transcripts, repeated clean-review prose, or repetitive validation detail in live orchestration context.
 - Do not mark a runway as `closure` while major unknowns remain.
 - Do not mark completion forecastable while scope is still expanding.
 - Do not say or imply that work is almost done unless remaining work is bounded, known, explicitly enumerated, and supported by the latest convergence evidence.
@@ -378,7 +546,8 @@ Slice anchor: <heading text or line number>.
 Read the full slice and applicable execution contract in the spec.
 Allowed files/areas: ...
 Dirty-file constraints: ...
-Return only: files changed, behavior changed, tests run, risks, follow-up needed.
+Use Compact Report Contract v1 worker format.
+Return YAML only. No implementation history, reasoning narrative, or chronological work log.
 ```
 
 Use full briefs only when:
@@ -399,7 +568,7 @@ Repo cwd: <absolute repository path>.
 Slice anchor: <heading text or line number>.
 Inspect only the task-scoped diff and relevant files.
 Check: scope, acceptance criteria, validation evidence, behavior changes, dirty-file leakage.
-Return findings first, then residual risks. Do not modify files.
+Use Compact Report Contract v1 reviewer format. Return YAML only. Do not modify files.
 ```
 
 ## Support-Only Custom Agents

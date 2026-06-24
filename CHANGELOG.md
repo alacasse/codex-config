@@ -2,22 +2,35 @@
 
 ## Unreleased
 
-### Batch-runway convergence reporting
+### Batch-runway compact reporting and retention
 
-Problem: `batch-runway` reports showed slice progress, validation, review, and
-commits, but did not force agents to separate progress from actual convergence.
-During long refactors this made work feel close to done even when slices were
-still discovering new coupling, compatibility paths, and forecast blockers.
+Problem: `batch-runway` needed convergence discipline, but routine slice
+reports, commit receipts, ledger rows, and subagent responses could accumulate
+too much narrative context across long multi-batch refactors.
 
-Decision: add a mandatory Standard Convergence Assessment to runway status
-reports, slice summaries, commit receipts, final reports, and ledger notes where
-appropriate. The assessment records phase, scope trend, closed work, newly
-discovered scope, deferred work, remaining unknowns, temporary compatibility
-paths, blockers, forecastability, evidence, and the next proof required.
+Decision: replace routine full convergence reporting with a compact YAML
+convergence block, add `Compact Report Contract v1` for workers, reviewers, and
+commit receipts, add `Standard Ledger Retention v1`, and document explicit
+information lifetime rules. The full convergence template is retained only for
+expanding scope, significant uncertainty, blockers, or final batch reports.
 
-Expected effect: future runway executions should make convergence visible, avoid
-unsupported "almost done" language, and only forecast completion when remaining
-work is bounded into explicit slices.
+Expected effect: future runway executions should preserve coordination quality,
+audit references, and recovery points while carrying much less historical
+implementation detail in orchestrator context.
+
+### Batch-runway agent output limits
+
+Problem: the `runway_worker` and `runway_reviewer` roles could satisfy their
+tasks with human-readable prose, which made clean subagent reports larger than
+the coordinator needed.
+
+Decision: update both agent prompts to return structured YAML, forbid
+implementation history and reasoning narrative, and cap clean worker/reviewer
+reports at 12 and 10 lines respectively. Expanded output is reserved for
+findings, blockers, failed validation, or escalation.
+
+Expected effect: coding and review subagents remain bounded to their role while
+the coordinator receives predictable, compact state for long-term retention.
 
 ### Lean batch-runway contracts
 
