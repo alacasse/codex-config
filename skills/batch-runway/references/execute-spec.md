@@ -28,7 +28,9 @@ for compatibility questions, non-routine execution, recovery, and finalization.
 7. Prefer `runway_worker` for coding and `runway_reviewer` for review.
 8. Use `fast_explorer` for optional read-only side investigations when broad
    source, test, memory, prior-spec, or architecture exploration would otherwise
-   enter coordinator context.
+   enter coordinator context. Prefer one batch-scoped investigation for related
+   adjacent slices, then pass only compact findings, selected per-slice notes, or
+   artifact paths to workers and reviewers.
 9. If required custom agents are unavailable because Codex has not reloaded
    configuration yet, stop and ask for a restart or new thread rather than
    falling back to main-agent implementation.
@@ -60,9 +62,12 @@ Use `execute-slice-core-v1.md` for the normal version of this loop.
 9. Use an explicit fresh harness output path whenever the project-specific
    harness writes artifacts.
 10. Before doing broad coordinator exploration, delegate read-only discovery to
-    `fast_explorer` and retain only compact findings, unless this is recovery,
-    blocker analysis, finalization, stale-spec analysis, subagent-report
-    verification, or uncertainty that prevents safe delegation.
+    one batch-scoped `fast_explorer` and retain only compact findings, unless
+    this is recovery, blocker analysis, finalization, stale-spec analysis,
+    subagent-report verification, or uncertainty that prevents safe delegation.
+    Use multiple explorers only for independent questions where parallel speedup
+    is worth duplicated read context. Do not pass live support-agent handles to
+    workers or reviewers.
 11. If focused validation fails, read `execute-recovery-v1.md`.
 12. Re-run validation after in-scope fixes.
 13. Stop only when the failure is ambiguous, out of scope, repeatedly

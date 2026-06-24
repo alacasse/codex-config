@@ -63,6 +63,12 @@ If any condition is false, read `execute-recovery-v1.md`,
 - Keep coordinator reads limited to orchestration state for routine slices.
 - Delegate broad read-only investigation to `fast_explorer` and carry forward
   only its compact findings.
+- Prefer one batch-scoped `fast_explorer` investigation for related adjacent
+  slices; use multiple explorers only for independent questions where parallel
+  speedup is worth duplicated read context.
+- Do not pass live support-agent handles to workers or reviewers. The
+  coordinator owns support-agent lifecycle and passes only compact findings,
+  selected per-slice notes, or artifact paths.
 - Preserve unrelated dirty files.
 - Do not revert or commit files outside the slice scope.
 - Commit after the slice is clean, validated, and reviewed.
@@ -73,8 +79,9 @@ If any condition is false, read `execute-recovery-v1.md`,
    allowed files, stop conditions, commit strategy, and selected validation
    profile.
 2. If broad source, test, memory, prior-spec, or architecture exploration would
-   otherwise be needed in coordinator context, spawn `fast_explorer` with the
-   compact support handoff below.
+   otherwise be needed in coordinator context, spawn one batch-scoped
+   `fast_explorer` with the compact support handoff below. Reuse its compact
+   findings across related adjacent slices.
 3. Spawn `runway_worker` with the compact coding handoff below.
 4. Require compact YAML from the worker.
 5. Run or verify focused validation and selected-profile validation.
@@ -150,17 +157,19 @@ required_fixes: []
 
 Use `fast_explorer` only for optional read-only exploration that would otherwise
 inflate coordinator context. It does not replace required coding or review
-subagents.
+subagents. Prefer one batch-scoped support investigation for related adjacent
+slices.
 
 ```text
 Use agent_type="fast_explorer".
 
-Investigate this read-only question for slice <N>: <question>.
+Investigate this read-only question for the active batch or slice <N>: <question>.
 Repo cwd: <absolute repository path>.
 Spec path: <absolute spec path>.
-Slice anchor: <heading text or line number>.
+Slice anchors: <heading text or line numbers>.
 Do not edit files. Return YAML only.
-No raw logs, long excerpts, implementation plan, or chronological work log.
+No raw logs, long excerpts, implementation plan, chronological work log, or
+live-agent handoff instructions.
 ```
 
 Support YAML:
@@ -172,6 +181,9 @@ files_checked:
   - path/to/file.py
 findings:
   - "Relevant behavior is owned by path/to/file.py:42"
+per_slice_notes:
+  1:
+    - "Use this only if it affects orchestration or the worker handoff."
 risks: []
 suggested_next_read: []
 ```

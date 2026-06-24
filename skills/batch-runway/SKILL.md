@@ -128,7 +128,15 @@ Keep live orchestration context small enough for long batches.
   selected validation profile, compact validation outputs, compact subagent
   reports, commit receipts, and required summary artifacts.
 - Delegate broad read-only exploration to `fast_explorer` instead of loading it
-  into coordinator context. Require compact, file-referenced YAML findings.
+  into coordinator context. Prefer one batch-scoped investigation for related
+  adjacent slices; use multiple explorers only when questions are independent
+  and the parallel speedup is worth duplicated read context.
+- The coordinator owns support-agent lifecycle. Do not pass live support-agent
+  handles to workers or reviewers; pass only compact findings, selected
+  per-slice notes, or artifact paths.
+- `fast_explorer` output should reduce coordinator and worker search cost, not
+  become retained raw investigation context. Require compact, file-referenced
+  YAML findings.
 - Prefer lean specs and compact subagent briefs when they preserve safety.
 - Do not paste full slice text into subagent prompts unless the subagent cannot
   reliably read the spec, the boundary is subtle, or the work is high risk.

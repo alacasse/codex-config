@@ -20,6 +20,11 @@ orchestration while preserving a safe escape hatch for read-only discovery,
 reducing avoidable coordinator context growth without reloading the full
 subagent-brief reference for routine slices.
 
+Follow-up: refine `fast_explorer` as a batch-scoped read amortization tool.
+Prefer one support investigation for related adjacent slices, pass workers and
+reviewers only compact findings or artifact paths, and keep live support-agent
+handles under coordinator ownership.
+
 ### Batch-runway execution hot path
 
 Problem: normal `batch-runway` slice execution still loaded the full execution

@@ -52,8 +52,14 @@ spec path or when the review boundary is subtle.
   required coding or review subagents.
 - Use `fast_explorer` when broad source, test, memory, prior-spec, or
   architecture exploration would otherwise enter coordinator context.
+- Prefer one batch-scoped `fast_explorer` investigation for related adjacent
+  slices. Use multiple explorers only for independent questions where parallel
+  speedup is worth duplicated read context.
+- The coordinator owns support-agent lifecycle. Do not pass live support-agent
+  handles to workers or reviewers; pass only compact findings, selected
+  per-slice notes, or artifact paths.
 - Require compact YAML with `status`, `question_answered`, `files_checked`,
-  `findings`, `risks`, and `suggested_next_read`.
+  `findings`, optional `per_slice_notes`, `risks`, and `suggested_next_read`.
 - Do not allow raw logs, long excerpts, implementation plans, or chronological
   work logs in support-agent output.
 - Use `spark` only for lightweight, low-risk iteration.
