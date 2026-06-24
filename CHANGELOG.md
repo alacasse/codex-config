@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Minimal test-quality review integration
+
+Problem: `test-quality-review` should be usable inside `batch-runway` without
+turning every slice review into a broader audit or adding automatic blocking,
+issue creation, ledger state, ADR generation, or remediation planning.
+
+Decision: add an optional per-slice `Test quality review: none | delta-only |
+focused | full-audit` setting to `batch-runway`. Omitted settings default to
+`none`; explicit requests invoke `$test-quality-review` in the requested mode
+and include compact YAML findings in reviewer output. Add compact YAML output
+guidance to `test-quality-review` for automation/reviewer use.
+
+Expected effect: runway specs can opt into qualitative test review where useful
+while preserving current execution behavior and keeping future disposition,
+issue-tracking, full-audit, and ADR workflows out of the minimal integration.
+
 ### Test-quality-review skill
 
 Problem: agents reviewing tests needed a reusable way to judge confidence from

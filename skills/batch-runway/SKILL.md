@@ -240,6 +240,9 @@ residual_risks: []
 required_fixes: []
 ```
 
+If a slice requests test quality review, include the compact YAML findings from
+`$test-quality-review` in the reviewer report.
+
 Commit receipt:
 
 ```yaml
@@ -298,6 +301,26 @@ Disposable after task completion:
 - command transcripts
 - repetitive validation details
 - repeated explanations of already-closed slices
+
+## Test Quality Review Integration
+
+A slice may explicitly request:
+
+```md
+Test quality review: none | delta-only | focused | full-audit
+```
+
+Default to `none` when the field is omitted. Existing behavior must remain
+unchanged for specs that do not request test quality review.
+
+If a slice requests `delta-only`, `focused`, or `full-audit`, invoke
+`$test-quality-review` using the requested mode and include its compact YAML
+findings in the review output.
+
+Treat test-quality-review findings as review information only. Do not
+automatically modify execution flow, create issues, update the ledger, block
+execution, run full-audit orchestration, generate ADRs, or create remediation
+plans unless the existing review rules or the spec already require that action.
 
 ## Validation Profiles
 
@@ -418,6 +441,7 @@ Each slice must include:
 - non-goals
 - acceptance criteria
 - validation profile or focused validation overrides
+- test quality review setting, when explicitly requested
 - commit message
 - coding subagent brief reference or compact brief
 - review subagent brief reference or compact brief
@@ -454,6 +478,7 @@ Repo cwd: <absolute repository path>.
 Slice anchor: <heading text or line number>.
 Inspect only the task-scoped diff and relevant files.
 Check scope, acceptance criteria, validation evidence, dirty-file leakage, and behavior preservation.
+If the slice requests test quality review, invoke $test-quality-review in the requested mode and include compact YAML findings.
 Use Compact Report Contract v1 reviewer format. Return YAML only. Do not modify files.
 ```
 
@@ -494,7 +519,7 @@ For each slice:
 11. Re-run validation after in-scope fixes.
 12. Stop only when the failure is ambiguous, out of scope, repeatedly unresolved, or indicates a dirty-file conflict.
 13. Spawn a separate review subagent with `agent_type="runway_reviewer"`.
-14. In lean mode, pass the absolute spec path, repo cwd, slice number, slice anchor, task-scoped diff context, and review focus. Do not paste the full slice unless needed.
+14. In lean mode, pass the absolute spec path, repo cwd, slice number, slice anchor, task-scoped diff context, review focus, and any explicit test quality review setting. Do not paste the full slice unless needed.
 15. If review finds issues, delegate follow-up fixes to a coding subagent unless the fix is only a ledger or commit-message adjustment.
 16. Commit only the files intentionally changed for that slice once validation and review are clean.
 17. Immediately report a YAML commit receipt using `Compact Report Contract v1`.
@@ -568,6 +593,7 @@ Repo cwd: <absolute repository path>.
 Slice anchor: <heading text or line number>.
 Inspect only the task-scoped diff and relevant files.
 Check: scope, acceptance criteria, validation evidence, behavior changes, dirty-file leakage.
+If the slice requests test quality review, invoke $test-quality-review in the requested mode and include compact YAML findings.
 Use Compact Report Contract v1 reviewer format. Return YAML only. Do not modify files.
 ```
 

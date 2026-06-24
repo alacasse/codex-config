@@ -119,7 +119,20 @@ or both.
 
 ## Output Format
 
-Use this structure:
+For automation or reviewer workflows that request compact output, return YAML:
+
+```yaml
+test_quality:
+  mode: delta-only
+  status: clean
+  findings: []
+```
+
+Use `status: findings` and populate `findings` only when actionable test-quality
+issues exist. Keep findings compact but include file path, test name when
+applicable, risk level, why it matters, and suggested action.
+
+For standalone reviews, use this structure:
 
 ```markdown
 # Test Quality Review
