@@ -1,5 +1,16 @@
 # Validation Profiles
 
+Use this catalog when selecting a profile during planning or when an existing
+spec names a profile but not its profile file. During routine execution, load
+only the selected profile file under `validation-profiles/`.
+
+Profile files:
+
+- `validation-profiles/docs-only.md`
+- `validation-profiles/test-only-topology.md`
+- `validation-profiles/mechanical-production-refactor.md`
+- `validation-profiles/project-harness-production.md`
+
 Specs should reference validation profiles instead of repeating long command
 blocks when practical. Slice-specific commands and overrides still belong in the
 spec when the profile is not precise enough.

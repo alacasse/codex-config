@@ -38,8 +38,10 @@ Use Batch Runway Compact Report Contract v1.
 Use Batch Runway Compact Convergence Assessment v1 for routine status reports, slice summaries, commit receipts, and ledger notes.
 Use the expanded convergence template only when scope is expanding, significant uncertainty exists, blockers are present, or final batch reporting is being produced.
 Use Batch Runway Standard Ledger Retention v1.
+Use Batch Runway Execute Slice Core v1 for routine slice execution.
 
 Reference files:
+- `<absolute path to batch-runway>/references/execute-slice-core-v1.md`
 - `<absolute path to batch-runway>/references/execution-contract-v1.md`
 - `<absolute path to batch-runway>/references/reporting-contracts-v1.md`
 - `<absolute path to batch-runway>/references/ledger-retention-v1.md`
@@ -49,8 +51,9 @@ Overrides:
 ```
 
 For lean specs, do not repeat full command blocks in every slice if a validation
-profile covers them. Reference the profile and list only slice-specific commands
-or overrides.
+profile covers them. Reference the selected profile file under
+`references/validation-profiles/` and list only slice-specific commands or
+overrides.
 
 Each slice must include:
 

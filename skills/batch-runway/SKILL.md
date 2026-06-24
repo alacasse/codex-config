@@ -45,18 +45,31 @@ Read only the reference files needed for the current mode. Do not load every
 reference file by default.
 
 - `references/project-values.md`: read before creating or executing a spec.
+- `references/execute-slice-core-v1.md`: read for routine `execute-spec` slice
+  execution. This is the hot-path projection of the full canonical contracts.
 - `references/execution-contract-v1.md`: read when creating a new spec, executing
-  a spec that references v1, or preparing a subagent contract capsule.
+  full-runway specs, auditing compatibility, or changing contract semantics.
 - `references/reporting-contracts-v1.md`: read before requesting worker,
-  reviewer, commit-receipt, convergence, or ledger-update output.
+  reviewer, commit-receipt, convergence, or ledger-update output outside the
+  routine core path, or when changing canonical reporting semantics.
 - `references/ledger-retention-v1.md`: read before creating a new ledger or
-  updating ledger/archive state.
-- `references/validation-profiles.md`: read when selecting or applying a
-  validation profile.
+  changing canonical ledger semantics. Routine ledger updates are covered by the
+  execution core.
+- `references/validation-profiles.md`: read when selecting a profile during
+  planning or when the selected profile is unknown. During routine execution,
+  read only the selected file under `references/validation-profiles/`.
 - `references/create-spec.md`: read only in `create-spec` mode.
-- `references/execute-spec.md`: read only in `execute-spec` mode.
-- `references/subagent-briefs.md`: read before spawning coding or review
-  subagents.
+- `references/execute-spec.md`: read for execution routing, compatibility
+  questions, or non-routine execution. Routine slices can use the execution core
+  directly.
+- `references/execute-recovery-v1.md`: read only when validation fails, review
+  finds issues, blockers appear, escalation is required, or execution deviates
+  from the normal path.
+- `references/finalize-batch-v1.md`: read only when closing a batch or producing
+  a final report.
+- `references/subagent-briefs.md`: read only when full brief variants,
+  support-agent guidance, or non-routine subagent prompting is needed. Routine
+  handoffs are covered by the execution core.
 - `references/test-quality-review.md`: read only when a slice explicitly asks for
   test quality review.
 
@@ -137,16 +150,22 @@ In `create-spec` mode:
 
 In `execute-spec` mode:
 
-1. Read `references/execute-spec.md`.
-2. Read the full active spec and required reference files named by the spec.
-3. Identify the active validation profile, pending ledger rows, stop conditions,
+1. Read the full active spec.
+2. Read `references/project-values.md`.
+3. For routine slice execution, read `references/execute-slice-core-v1.md` and
+   only the selected validation profile file under
+   `references/validation-profiles/`.
+4. Identify the active validation profile, pending ledger rows, stop conditions,
    commit strategy, density mode, convergence state, active ledger rows, and
    completed slice archive.
-4. Execute from the next incomplete ledger row.
-5. For each slice: spawn coding subagent, validate, spawn separate review
-   subagent, fix in-scope issues through subagents, commit, report receipt,
-   update ledger/archive, close subagents, continue.
-6. After the last slice, run final validation and project-required index refresh,
+5. Execute from the next incomplete ledger row.
+6. For each routine slice: spawn coding subagent, validate, spawn separate review
+   subagent, commit if clean, report receipt, update ledger/archive, close
+   subagents, continue.
+7. If validation fails, review finds issues, blockers appear, or escalation is
+   needed, read `references/execute-recovery-v1.md`.
+8. After the last slice, read `references/finalize-batch-v1.md`, run final
+   validation and project-required index refresh,
    then report commits, validation, skipped slices, remaining risks, and expanded
    convergence.
 

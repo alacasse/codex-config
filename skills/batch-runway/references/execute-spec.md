@@ -3,12 +3,20 @@
 Enforce the spec. Do not create a new plan unless the spec is ambiguous, stale,
 or missing required execution details.
 
+For routine slice execution, prefer `execute-slice-core-v1.md` plus the selected
+profile file under `validation-profiles/`. Use this file as the routing surface
+for compatibility questions, non-routine execution, recovery, and finalization.
+
 ## Coordinator Preflight
 
 1. Read project instructions, local overlays, and the full spec.
-2. Read the Batch Runway reference files named by the spec.
-3. Check the worktree and identify dirty-file risks.
-4. Identify:
+2. For routine slices, read `execute-slice-core-v1.md` and only the selected
+   validation profile file.
+3. Read the full Batch Runway reference files named by the spec only when the
+   spec is full-runway, the slice is non-routine, compatibility needs auditing,
+   or canonical contract semantics are being changed.
+4. Check the worktree and identify dirty-file risks.
+5. Identify:
    - active validation profile
    - pending ledger rows
    - stop conditions
@@ -16,13 +24,15 @@ or missing required execution details.
    - whether this is `lean-runway` or `full-runway`
    - current compact convergence fields
    - active ledger rows versus completed slice archive
-5. Confirm subagent tooling is available.
-6. Prefer `runway_worker` for coding and `runway_reviewer` for review.
-7. If required custom agents are unavailable because Codex has not reloaded
+6. Confirm subagent tooling is available.
+7. Prefer `runway_worker` for coding and `runway_reviewer` for review.
+8. If required custom agents are unavailable because Codex has not reloaded
    configuration yet, stop and ask for a restart or new thread rather than
    falling back to main-agent implementation.
 
 ## Per-Slice Loop
+
+Use `execute-slice-core-v1.md` for the normal version of this loop.
 
 1. Spawn a coding subagent with `agent_type="runway_worker"`.
 2. In lean mode, pass the absolute spec path, repo cwd, slice number, slice
@@ -46,9 +56,7 @@ or missing required execution details.
    harness-affecting when the active project profile says so.
 9. Use an explicit fresh harness output path whenever the project-specific
    harness writes artifacts.
-10. If focused validation fails, inspect the failure and delegate a follow-up fix
-    to a coding subagent when the fix is within slice scope and does not require
-    a human decision.
+10. If focused validation fails, read `execute-recovery-v1.md`.
 11. Re-run validation after in-scope fixes.
 12. Stop only when the failure is ambiguous, out of scope, repeatedly
     unresolved, or indicates a dirty-file conflict.
@@ -57,8 +65,7 @@ or missing required execution details.
     anchor, task-scoped diff context, review focus, any explicit test quality
     review setting, and a short contract capsule or relevant Batch Runway
     reference path. Do not paste the full slice unless needed.
-15. If review finds issues, delegate follow-up fixes to a coding subagent unless
-    the fix is only a ledger or commit-message adjustment.
+15. If review finds issues, read `execute-recovery-v1.md`.
 16. Commit only the files intentionally changed for that slice once validation
     and review are clean.
 17. Immediately report a YAML commit receipt using `Compact Report Contract v1`.
@@ -71,6 +78,8 @@ or missing required execution details.
 21. Continue directly to the next pending ledger row.
 
 ## Finalization
+
+Read `finalize-batch-v1.md` before closing the batch.
 
 After the last completed slice:
 

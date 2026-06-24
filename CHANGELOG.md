@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Batch-runway execution hot path
+
+Problem: normal `batch-runway` slice execution still loaded the full execution
+contract, reporting contract, ledger policy, validation catalog, and subagent
+brief references even when the slice was routine and clean.
+
+Decision: add `execute-slice-core-v1.md` as a hot-path projection of the
+canonical contracts, split recovery and finalization into separate references,
+and split validation profiles into per-profile files. Keep the full references
+canonical for contract changes, compatibility audits, planning, and non-routine
+execution.
+
+Expected effect: routine execution can load the project values reference, the
+execution core, and only the selected validation profile while preserving
+coordinator-only execution, compact reporting, commit receipts, ledger recovery,
+and compatibility with existing specs.
+
 ### Batch-runway progressive disclosure
 
 Problem: `batch-runway` had become a single large skill file containing the
