@@ -1,6 +1,6 @@
 ---
 name: batch-runway
-description: Create and execute multi-slice runway specs with per-slice scope, validation, ledger updates, commits, and mandatory coding/review subagent delegation. Use when the user asks to create a batch runway spec, execute a runway spec, streamline sequential slices, work from my-docs/plans, commit after each slice, or keep the main agent as coordinator only while subagents implement and review.
+description: Create and execute multi-slice runway specs with per-slice scope, validation, ledger updates, commits, and mandatory coding/review subagent delegation. Use when the user asks to create a batch runway spec, execute a runway spec, streamline sequential slices, work from project-local plans, commit after each slice, or keep the main agent as coordinator only while subagents implement and review.
 ---
 
 # Batch Runway
@@ -22,6 +22,41 @@ Default to `lean-runway` for mechanical refactors, test topology splits, import 
 Default to `full-runway` for production behavior changes, installer lifecycle changes, YAML schema changes, sandbox execution behavior, public CLI behavior, risky migrations, or ambiguous ownership boundaries.
 
 If the user does not name a mode, infer it from the request. "Create", "spec", "plan", "next runway", or "upcoming work" means `create-spec`. "Execute", "run", "implement", "work through", or a specific spec path means `execute-spec`.
+
+## Project Values Required
+
+This skill is generic. Before creating or executing a spec, resolve the
+project-specific values from repository instructions, local overlays, the active
+spec, or explicit user direction.
+
+Required values:
+
+- `planning_location`: where local runway specs belong.
+- `validation_profiles`: named validation profiles available in this repo.
+- `focused_validation_commands`: how to run focused tests, linters, or checks.
+- `integration_harness`: any project-specific sandbox, integration harness, or
+  end-to-end validation command.
+- `harness_output`: where generated validation artifacts should be written.
+- `summary_artifact`: any command or file that must be read before reporting a
+  harness result.
+- `index_refresh`: any graph, search index, generated docs, or metadata refresh
+  required after edits.
+- `commit_requirements`: trailers, signing, branch rules, or commit-message
+  conventions.
+- `dirty_file_constraints`: files or directories that are expected dirty,
+  generated, ignored, or forbidden to touch.
+
+Stop instead of guessing when:
+
+- no planning location is discoverable in `create-spec` mode
+- a spec references a validation profile not defined by the spec, repository
+  instructions, or local overlay
+- a required harness command, output path, or summary artifact is named but not
+  concretely specified
+- focused validation targets cannot be identified safely from the slice scope
+- project instructions conflict and the priority order is not clear
+
+When stopping, report the missing project value and the exact source checked.
 
 ## Standard Execution Contract v1
 
@@ -248,18 +283,18 @@ Commit receipt:
 ```yaml
 slice: 2
 commit: abc1234
-subject: Extract file effect oracle
+subject: Extract module owner
 status: committed
 files_changed:
-  - tools/install_sandbox/file_effect_oracle.py
-validation: "pytest 75 passed; ruff passed; sandbox PASS 48 passed"
+  - src/module_owner.py
+validation: "pytest 75 passed; ruff passed; harness PASS 48 passed"
 review: clean
 convergence:
   phase: convergence
   scope_trend: shrinking
   new_unknowns: []
   blockers: []
-  next_proof: "Move sandbox runner off facade imports"
+  next_proof: "Move runtime entrypoint off compatibility facade imports"
 inspect:
   - git show --stat abc1234
   - git show abc1234
@@ -335,7 +370,8 @@ Per-slice validation:
 - `git diff --check`
 - project-specific doc checks only when the touched docs require them
 
-Do not run pytest, ruff, Docker sandbox, or `graphify update .` unless the spec explicitly requires them.
+Do not run test suites, linters, integration harnesses, or index refresh
+commands unless the spec or project instructions explicitly require them.
 
 ### `test-only-topology`
 
@@ -351,8 +387,11 @@ Final validation:
 
 - full relevant test subset
 - broader pytest if the spec requires it
-- Docker-backed sandbox only at final validation unless the slice changes sandbox execution behavior, direct-runner coverage, runtime import/path assumptions, or the spec requires earlier sandbox validation
-- `graphify update .` only if project instructions require it after test topology changes
+- project-specific integration harness only at final validation unless the slice
+  changes harness execution behavior, direct-runner coverage, runtime
+  import/path assumptions, or the spec requires earlier harness validation
+- project-specific index refresh only if project instructions require it after
+  test topology changes
 
 ### `mechanical-production-refactor`
 
@@ -363,33 +402,43 @@ Per-slice validation:
 - focused pytest covering touched behavior
 - ruff on touched production and test files
 - `git diff --check`
-- `graphify update .` when project instructions require it
+- project-specific index refresh when project instructions require it
 
-Sandbox policy:
+Integration harness policy:
 
-- Run Docker-backed install sandbox per slice if the touched code can affect installer sandbox execution.
-- Treat module moves, runtime import cleanup, compatibility facade changes, report or summary generation changes, runtime path handling, artifact-shape handling, and changes to code imported by `tools/install_sandbox/run.py`, `sandbox_runner`, or `agent_summary` as sandbox-affecting even when the intended behavior is preserving.
-- Otherwise run Docker-backed sandbox at final validation.
+- Run the project-specific integration harness per slice if the touched code can
+  affect harness execution.
+- Treat module moves, runtime import cleanup, compatibility facade changes,
+  report or summary generation changes, runtime path handling, artifact-shape
+  handling, and changes to code imported by the harness entrypoints as
+  harness-affecting even when the intended behavior is preserving.
+- Otherwise run the project-specific integration harness at final validation
+  when the project or spec requires it.
 
-### `install-sandbox-production`
+### `project-harness-production`
 
-Use for installer sandbox production behavior, lifecycle, target selection, harness policy, YAML normalization, report/summary output, public CLI behavior, or sandbox artifact behavior.
+Use for production behavior that directly affects a project-specific integration
+harness, lifecycle, target selection, harness policy, schema normalization,
+report/summary output, public CLI behavior, or generated harness artifacts.
 
 Per-slice validation:
 
 - focused pytest
 - ruff
-- Docker-backed `tools/install_sandbox/run.py` with an explicit fresh `--output tools/install_sandbox/out/<fresh-dir>`
-- `python -m tools.install_sandbox.agent_summary tools/install_sandbox/out/<fresh-dir> --write`
-- `graphify update .` when required
+- project-specific integration harness command with an explicit fresh output
+  path when the harness writes artifacts
+- project-specific summary artifact command or summary file read, when required
+- project-specific index refresh, when required
 - `git diff --check`
 
 Final validation:
 
-- full install-sandbox test subset
+- full relevant harness test subset
 - broader project tests when practical
-- Docker-backed sandbox with an explicit fresh `--output tools/install_sandbox/out/<fresh-dir>`
-- read generated `agent-summary.md` before reporting the final sandbox result
+- project-specific integration harness with an explicit fresh output path when
+  the harness writes artifacts
+- read the project-specific summary artifact before reporting the final harness
+  result, when required
 
 ## Create-Spec Mode
 
@@ -399,7 +448,7 @@ Write one local plan file. Do not implement code.
 2. Inspect the current goal, existing local plans, recent commits, current ledger state, and the last completed task enough to identify the next related work.
 3. Pick 3-5 tightly related slices that can execute sequentially.
 4. Keep each slice independently testable and committable.
-5. Store the spec in the project's local planning location. For Graphify, use `my-docs/plans/`.
+5. Store the spec in the project's local planning location.
 6. Prefer `lean-runway` unless the work touches high-risk production behavior.
 
 The spec must include:
@@ -511,10 +560,10 @@ For each slice:
 3. Require the coding result to follow `Compact Report Contract v1`.
 4. Run or verify focused validation from the coordinator session when practical.
 5. Apply the active validation profile.
-6. If the slice is test-only and uses `test-only-topology`, do not run the Docker-backed sandbox per slice unless the slice changes sandbox execution behavior, direct-runner coverage, runtime import/path assumptions, or the spec requires it.
-7. If the slice touches installer-sandbox production code or behavior, run the installer sandbox for that slice before review and before commit unless the validation profile explicitly defers it.
-8. Treat module moves, runtime import cleanup, compatibility facade changes, report or summary generation changes, runtime path handling, artifact-shape handling, and changes to code imported by `tools/install_sandbox/run.py`, `sandbox_runner`, or `agent_summary` as sandbox-affecting.
-9. Use an explicit fresh sandbox output directory: `--output tools/install_sandbox/out/<fresh-dir>`.
+6. If the slice is test-only and uses `test-only-topology`, do not run the project-specific integration harness per slice unless the slice changes harness execution behavior, direct-runner coverage, runtime import/path assumptions, or the spec requires it.
+7. If the slice touches production code or behavior that the active project profile marks as harness-affecting, run the project-specific integration harness for that slice before review and before commit unless the validation profile explicitly defers it.
+8. Treat module moves, runtime import cleanup, compatibility facade changes, report or summary generation changes, runtime path handling, artifact-shape handling, and changes to code imported by project harness entrypoints as harness-affecting when the active project profile says so.
+9. Use an explicit fresh harness output path whenever the project-specific harness writes artifacts.
 10. If focused validation fails, inspect the failure and delegate a follow-up fix to a coding subagent when the fix is within slice scope and does not require a human decision.
 11. Re-run validation after in-scope fixes.
 12. Stop only when the failure is ambiguous, out of scope, repeatedly unresolved, or indicates a dirty-file conflict.
@@ -533,7 +582,7 @@ After the last completed slice:
 1. Run the spec's final validation.
 2. Run any project-required graph or index refresh after code changes.
 3. Report completed commits, validation results, skipped slices, remaining risks, and expanded final `Convergence Assessment`.
-4. If final validation uses the Docker-backed sandbox, read `agent-summary.md` before reporting the final sandbox result.
+4. If final validation uses a project-specific integration harness, read the required summary artifact before reporting the final harness result.
 
 ## Hard Rules
 
@@ -601,20 +650,4 @@ Use Compact Report Contract v1 reviewer format. Return YAML only. Do not modify 
 
 - Use `fast_explorer` only for read-only side investigations that do not replace required coding or review subagents.
 - Use `spark` only for lightweight, low-risk iteration.
-- Do not use `spark` for required Batch Runway review, security review, broad refactors, or ambiguous installer-sandbox failure recovery.
-
-## Graphify Defaults
-
-When used in `/home/alacasse/projects/graphify`:
-
-- Read committed `AGENTS.md`, then `my-docs/AGENTS.md`.
-- Put local runway specs under `my-docs/plans/`.
-- Use `uv run --frozen pytest ...` for validation unless dependencies or packaging metadata are intentionally changed.
-- For installer-sandbox changes, follow local installer validation guidance in `my-docs/AGENTS.md`.
-- When executing install-sandbox production slices, run the Docker-backed `tools/install_sandbox/run.py` validation after each slice before committing unless the slice is documentation-only, test-only, or explicitly cannot affect sandbox execution.
-- Treat production module moves, runtime import cleanup, facade changes, summary/report changes, path handling, artifact-shape handling, and code imported by `tools/install_sandbox/run.py`, `sandbox_runner`, or `agent_summary` as sandbox-affecting.
-- For test-only topology slices, prefer focused pytest and ruff per slice, then run Docker-backed sandbox at final validation unless the spec requires earlier sandbox validation.
-- Always pass an explicit fresh `--output tools/install_sandbox/out/<fresh-dir>` to `tools/install_sandbox/run.py`.
-- If the Docker-backed sandbox fails with `permission denied` for `/var/run/docker.sock`, request escalation and rerun the same sandbox command. Treat this as a host Docker permission issue, not a code failure.
-- After code edits, run `graphify update .` if project instructions require it.
-- If graph queries are too broad for runway planning, prefer the completed ledger, recent commits, current module shape, and local plans.
+- Do not use `spark` for required Batch Runway review, security review, broad refactors, or ambiguous validation failure recovery.

@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Generic batch-runway project values
+
+Problem: `batch-runway` carried Graphify-specific defaults for plan storage,
+installer sandbox validation, summary artifacts, and graph refresh even though
+the skill should be reusable across repositories.
+
+Decision: replace those hard-coded defaults with a generic project-values gate.
+Agents must resolve planning location, validation profiles, harness commands,
+artifact paths, summary reads, index refreshes, commit rules, and dirty-file
+constraints from the current repo's instructions, local overlays, the spec, or
+explicit user direction. Missing required values now stop execution instead of
+being guessed.
+
+Expected effect: `batch-runway` remains portable while still preserving strict
+per-project behavior when a repo defines the concrete values locally.
+
 ### Minimal test-quality review integration
 
 Problem: `test-quality-review` should be usable inside `batch-runway` without
