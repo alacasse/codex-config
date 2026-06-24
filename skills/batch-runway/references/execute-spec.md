@@ -26,7 +26,10 @@ for compatibility questions, non-routine execution, recovery, and finalization.
    - active ledger rows versus completed slice archive
 6. Confirm subagent tooling is available.
 7. Prefer `runway_worker` for coding and `runway_reviewer` for review.
-8. If required custom agents are unavailable because Codex has not reloaded
+8. Use `fast_explorer` for optional read-only side investigations when broad
+   source, test, memory, prior-spec, or architecture exploration would otherwise
+   enter coordinator context.
+9. If required custom agents are unavailable because Codex has not reloaded
    configuration yet, stop and ask for a restart or new thread rather than
    falling back to main-agent implementation.
 
@@ -56,26 +59,30 @@ Use `execute-slice-core-v1.md` for the normal version of this loop.
    harness-affecting when the active project profile says so.
 9. Use an explicit fresh harness output path whenever the project-specific
    harness writes artifacts.
-10. If focused validation fails, read `execute-recovery-v1.md`.
-11. Re-run validation after in-scope fixes.
-12. Stop only when the failure is ambiguous, out of scope, repeatedly
+10. Before doing broad coordinator exploration, delegate read-only discovery to
+    `fast_explorer` and retain only compact findings, unless this is recovery,
+    blocker analysis, finalization, stale-spec analysis, subagent-report
+    verification, or uncertainty that prevents safe delegation.
+11. If focused validation fails, read `execute-recovery-v1.md`.
+12. Re-run validation after in-scope fixes.
+13. Stop only when the failure is ambiguous, out of scope, repeatedly
     unresolved, or indicates a dirty-file conflict.
-13. Spawn a separate review subagent with `agent_type="runway_reviewer"`.
-14. In lean mode, pass the absolute spec path, repo cwd, slice number, slice
+14. Spawn a separate review subagent with `agent_type="runway_reviewer"`.
+15. In lean mode, pass the absolute spec path, repo cwd, slice number, slice
     anchor, task-scoped diff context, review focus, any explicit test quality
     review setting, and a short contract capsule or relevant Batch Runway
     reference path. Do not paste the full slice unless needed.
-15. If review finds issues, read `execute-recovery-v1.md`.
-16. Commit only the files intentionally changed for that slice once validation
+16. If review finds issues, read `execute-recovery-v1.md`.
+17. Commit only the files intentionally changed for that slice once validation
     and review are clean.
-17. Immediately report a YAML commit receipt using `Compact Report Contract v1`.
-18. Include compact convergence in routine commit receipts. Use the expanded
+18. Immediately report a YAML commit receipt using `Compact Report Contract v1`.
+19. Include compact convergence in routine commit receipts. Use the expanded
     convergence template only when scope is expanding, significant uncertainty
     exists, blockers are present, or final batch reporting is being produced.
-19. Update the active ledger with only the state needed for remaining work. Move
+20. Update the active ledger with only the state needed for remaining work. Move
     completed slice audit references to the completed slice archive.
-20. Close completed subagents before continuing to avoid thread-limit failures.
-21. Continue directly to the next pending ledger row.
+21. Close completed subagents before continuing to avoid thread-limit failures.
+22. Continue directly to the next pending ledger row.
 
 ## Finalization
 

@@ -50,6 +50,12 @@ spec path or when the review boundary is subtle.
 
 - Use `fast_explorer` only for read-only side investigations that do not replace
   required coding or review subagents.
+- Use `fast_explorer` when broad source, test, memory, prior-spec, or
+  architecture exploration would otherwise enter coordinator context.
+- Require compact YAML with `status`, `question_answered`, `files_checked`,
+  `findings`, `risks`, and `suggested_next_read`.
+- Do not allow raw logs, long excerpts, implementation plans, or chronological
+  work logs in support-agent output.
 - Use `spark` only for lightweight, low-risk iteration.
 - Do not use `spark` for required Batch Runway review, security review, broad
   refactors, or ambiguous validation failure recovery.

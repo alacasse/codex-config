@@ -11,6 +11,7 @@ projection of the canonical Batch Runway contracts, not an independent contract.
 - Normal Slice Loop
 - Worker Handoff
 - Reviewer Handoff
+- Support Investigation Handoff
 - Commit Receipt
 - Ledger Update
 - Compact Convergence Fields
@@ -59,6 +60,9 @@ If any condition is false, read `execute-recovery-v1.md`,
 - Do not implement code directly except ledger updates and commits.
 - Delegate implementation to `runway_worker`.
 - Delegate review to a separate `runway_reviewer`.
+- Keep coordinator reads limited to orchestration state for routine slices.
+- Delegate broad read-only investigation to `fast_explorer` and carry forward
+  only its compact findings.
 - Preserve unrelated dirty files.
 - Do not revert or commit files outside the slice scope.
 - Commit after the slice is clean, validated, and reviewed.
@@ -68,17 +72,20 @@ If any condition is false, read `execute-recovery-v1.md`,
 1. Read the active spec, current ledger, selected slice, dirty-file constraints,
    allowed files, stop conditions, commit strategy, and selected validation
    profile.
-2. Spawn `runway_worker` with the compact coding handoff below.
-3. Require compact YAML from the worker.
-4. Run or verify focused validation and selected-profile validation.
-5. Spawn `runway_reviewer` with the compact review handoff below.
-6. Require compact YAML from the reviewer.
-7. Commit only the intended slice files once validation and review are clean.
-8. Report the compact commit receipt.
-9. Update the active ledger with only remaining-work state.
-10. Move completed-slice audit references to the completed archive.
-11. Close completed subagents.
-12. Continue to the next pending slice unless a stop condition remains active or
+2. If broad source, test, memory, prior-spec, or architecture exploration would
+   otherwise be needed in coordinator context, spawn `fast_explorer` with the
+   compact support handoff below.
+3. Spawn `runway_worker` with the compact coding handoff below.
+4. Require compact YAML from the worker.
+5. Run or verify focused validation and selected-profile validation.
+6. Spawn `runway_reviewer` with the compact review handoff below.
+7. Require compact YAML from the reviewer.
+8. Commit only the intended slice files once validation and review are clean.
+9. Report the compact commit receipt.
+10. Update the active ledger with only remaining-work state.
+11. Move completed-slice audit references to the completed archive.
+12. Close completed subagents.
+13. Continue to the next pending slice unless a stop condition remains active or
     the user explicitly asks to stop.
 
 ## Worker Handoff
@@ -137,6 +144,36 @@ status: clean
 findings: []
 residual_risks: []
 required_fixes: []
+```
+
+## Support Investigation Handoff
+
+Use `fast_explorer` only for optional read-only exploration that would otherwise
+inflate coordinator context. It does not replace required coding or review
+subagents.
+
+```text
+Use agent_type="fast_explorer".
+
+Investigate this read-only question for slice <N>: <question>.
+Repo cwd: <absolute repository path>.
+Spec path: <absolute spec path>.
+Slice anchor: <heading text or line number>.
+Do not edit files. Return YAML only.
+No raw logs, long excerpts, implementation plan, or chronological work log.
+```
+
+Support YAML:
+
+```yaml
+status: success
+question_answered: true
+files_checked:
+  - path/to/file.py
+findings:
+  - "Relevant behavior is owned by path/to/file.py:42"
+risks: []
+suggested_next_read: []
 ```
 
 ## Commit Receipt

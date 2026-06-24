@@ -121,9 +121,20 @@ Non-negotiable execution rules:
 
 Keep live orchestration context small enough for long batches.
 
+- The coordinator should orchestrate. Workers, reviewers, and support agents
+  should investigate.
+- In routine `execute-spec` mode, coordinator reads should stay limited to
+  orchestration state: active spec/slice, active ledger state, dirty-file state,
+  selected validation profile, compact validation outputs, compact subagent
+  reports, commit receipts, and required summary artifacts.
+- Delegate broad read-only exploration to `fast_explorer` instead of loading it
+  into coordinator context. Require compact, file-referenced YAML findings.
 - Prefer lean specs and compact subagent briefs when they preserve safety.
 - Do not paste full slice text into subagent prompts unless the subagent cannot
   reliably read the spec, the boundary is subtle, or the work is high risk.
+- Broad coordinator exploration is allowed for `create-spec`, recovery, blocker
+  analysis, finalization, stale or ambiguous specs, subagent-report
+  verification, or uncertainty that prevents safe delegation.
 - Do not retain implementation chronology, command transcripts, repeated
   clean-review prose, repetitive validation detail, or repeated explanations of
   already-closed slices.

@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Batch-runway coordinator read discipline
+
+Problem: after reference-loading and compact-reporting optimizations, routine
+Batch Runway executions could still grow orchestrator context through broad
+coordinator-side memory, source, test, prior-spec, and architecture exploration.
+
+Decision: make execute-mode coordinator read limits explicit and restore
+`fast_explorer` to the routine hot path as the optional read-only investigation
+agent. The coordinator should carry active orchestration state, compact
+validation outputs, compact subagent reports, and commit receipts; broad
+exploration should normally be delegated and retained only as compact,
+file-referenced YAML findings.
+
+Expected effect: long-running executions keep the main agent focused on
+orchestration while preserving a safe escape hatch for read-only discovery,
+reducing avoidable coordinator context growth without reloading the full
+subagent-brief reference for routine slices.
+
 ### Batch-runway execution hot path
 
 Problem: normal `batch-runway` slice execution still loaded the full execution
