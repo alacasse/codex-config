@@ -21,6 +21,16 @@
         }
       ]
     },
+    "test-quality-review": {
+      "version": "1.0.0",
+      "description": "Review tests for behavioral confidence, regression protection, and design friction.",
+      "links": [
+        {
+          "source": "skills/test-quality-review",
+          "target": "skills/test-quality-review"
+        }
+      ]
+    },
     "custom-agents": {
       "version": "1.0.0",
       "description": "Reusable custom Codex agents.",

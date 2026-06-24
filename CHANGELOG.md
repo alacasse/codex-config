@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Test-quality-review skill
+
+Problem: agents reviewing tests needed a reusable way to judge confidence from
+behavioral protection, regression coverage, assertion strength, mocking quality,
+fixture complexity, and test friction without reducing quality to coverage
+percentages or tying the workflow to `batch-runway`.
+
+Decision: add a standalone `test-quality-review` skill with delta-only,
+focused, and full-audit modes, explicit finding criteria, design-signal
+analysis, scope limits, and a fixed report format. Declare it as its own
+repo-owned feature in `codex-features.json`.
+
+Expected effect: future reviewers, architects, implementation agents, and
+automation can evaluate test quality consistently while keeping findings
+actionable and independent from multi-slice runway execution.
+
 ### Batch-runway compact reporting and retention
 
 Problem: `batch-runway` needed convergence discipline, but routine slice

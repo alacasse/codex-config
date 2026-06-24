@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test Quality Review"
+  short_description: "Review tests for confidence and design signals"
+  default_prompt: "Use $test-quality-review to review changed tests for behavioral confidence, regression protection, and design friction."
