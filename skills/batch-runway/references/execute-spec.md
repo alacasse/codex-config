@@ -31,7 +31,11 @@ for compatibility questions, non-routine execution, recovery, and finalization.
    enter coordinator context. Prefer one batch-scoped investigation for related
    adjacent slices, then pass only compact findings, selected per-slice notes, or
    artifact paths to workers and reviewers.
-9. If required custom agents are unavailable because Codex has not reloaded
+9. Identify or create the spec's compact `orchestration_anomalies` location for
+   suspicious coordinator or subagent-lifecycle behavior. Do not use it for
+   routine command output, normal validation logs, clean reviews, or
+   implementation chronology.
+10. If required custom agents are unavailable because Codex has not reloaded
    configuration yet, stop and ask for a restart or new thread rather than
    falling back to main-agent implementation.
 
@@ -83,14 +87,15 @@ Use `execute-slice-core-v1.md` for the normal version of this loop.
 16. If review finds issues, read `execute-recovery-v1.md`.
 17. Commit only the files intentionally changed for that slice once validation
     and review are clean.
-18. Immediately report a YAML commit receipt using `Compact Report Contract v1`.
-19. Include compact convergence in routine commit receipts. Use the expanded
+18. Record any orchestration anomalies using `Orchestration Anomaly Log v1`.
+19. Immediately report a YAML commit receipt using `Compact Report Contract v1`.
+20. Include compact convergence in routine commit receipts. Use the expanded
     convergence template only when scope is expanding, significant uncertainty
     exists, blockers are present, or final batch reporting is being produced.
-20. Update the active ledger with only the state needed for remaining work. Move
+21. Update the active ledger with only the state needed for remaining work. Move
     completed slice audit references to the completed slice archive.
-21. Close completed subagents before continuing to avoid thread-limit failures.
-22. Continue directly to the next pending ledger row.
+22. Close completed subagents before continuing to avoid thread-limit failures.
+23. Continue directly to the next pending ledger row.
 
 ## Finalization
 
@@ -101,6 +106,6 @@ After the last completed slice:
 1. Run the spec's final validation.
 2. Run any project-required graph or index refresh after code changes.
 3. Report completed commits, validation results, skipped slices, remaining risks,
-   and expanded final `Convergence Assessment`.
+   `orchestration_anomalies`, and expanded final `Convergence Assessment`.
 4. If final validation uses a project-specific integration harness, read the
    required summary artifact before reporting the final harness result.

@@ -4,6 +4,7 @@
 
 - Compact Convergence Assessment v1
 - Compact Report Contract v1
+- Orchestration Anomaly Log v1
 - Information Lifetime Rules
 
 ## Compact Convergence Assessment v1
@@ -175,6 +176,46 @@ inspect:
   - git show abc1234
 ```
 
+## Orchestration Anomaly Log v1
+
+Use `orchestration_anomalies` for suspicious coordinator or subagent-lifecycle
+behavior that may need later workflow fixes. The log is telemetry for improving
+Batch Runway execution, not part of the normal slice evidence.
+
+Record anomalies when they could indicate bad behavior, confusing controls, or a
+near miss:
+
+- accidental extra agent spawn
+- wrong agent role
+- ignored or unusable support-agent output
+- malformed worker or reviewer report
+- confusing wait, resume, approval, or close controls
+- ambiguous, flaky, or escalation-prone validation command
+- near violation of the coordinator-only, worker-only, or reviewer-only contract
+
+Do not record routine command output, normal validation logs, clean reviews,
+implementation chronology, or repeated explanations of already-closed slices.
+
+Compact output:
+
+```yaml
+orchestration_anomalies:
+  - slice: 1
+    severity: low
+    category: accidental_agent_spawn
+    observed: "Extra read-only no-op explorer spawned while looking for wait control."
+    impact: "No write scope, no artifact used, no lifecycle effect."
+    action_taken: "Ignored; continued waiting on actual worker and support explorer."
+    follow_up: "Consider UI or process note if repeated."
+```
+
+Use severity values `low`, `medium`, or `high`. Keep unresolved anomalies in the
+active ledger only while they may affect remaining execution. Move resolved or
+historical anomalies to the completed archive or final batch report.
+
+Final batch reports must always print an `Orchestration Anomalies` section. Use
+`orchestration_anomalies: []` when no anomalies were recorded.
+
 ## Information Lifetime Rules
 
 Classify information before carrying it forward.
@@ -195,6 +236,7 @@ Batch-scoped:
 - active dirty-file constraints
 - unresolved review or validation findings
 - current convergence phase and next proof
+- unresolved orchestration anomalies that may affect remaining execution
 
 Slice-scoped:
 
@@ -203,6 +245,7 @@ Slice-scoped:
 - validation details
 - failure/recovery loops
 - sandbox output paths for the current slice
+- resolved or no-impact orchestration anomalies
 
 Disposable after task completion:
 

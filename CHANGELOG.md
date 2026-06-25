@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Batch-runway orchestration anomalies
+
+Problem: during Batch Runway execution, suspicious coordinator or
+subagent-lifecycle behavior could be noticed only by rereading execution
+details, making workflow friction easy to miss after the slice moved on.
+
+Decision: add a compact `orchestration_anomalies` log to the Batch Runway
+execution, reporting, finalization, and ledger contracts. The log captures
+accidental extra agent spawns, wrong roles, unusable support output, malformed
+subagent reports, confusing controls, ambiguous or flaky validation, escalation
+friction, and near contract violations, while excluding routine logs, clean
+reviews, and implementation chronology. Final batch reports always print an
+`Orchestration Anomalies` section, using `orchestration_anomalies: []` when none
+were recorded.
+
+Expected effect: future executions should preserve easy telemetry for improving
+the workflow without expanding the routine slice record into a transcript.
+
 ### Batch-runway cross-slice seam handoffs
 
 Problem: create-spec output could name adjacent architectural slices but leave

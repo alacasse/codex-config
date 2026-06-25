@@ -32,6 +32,10 @@ Recommended shape:
 | 2 | pending | | | | | |
 | 3 | pending | | | | | |
 
+## Orchestration Anomalies
+
+orchestration_anomalies: []
+
 ## Completed Slice Archive
 
 | Slice | Commit | Outcome | Audit references |
@@ -52,4 +56,11 @@ Rules:
   or artifacts.
 - Keep unresolved risks, blockers, compatibility paths, and next-proof
   requirements in the active ledger until resolved.
+- Keep `orchestration_anomalies` compact and limited to suspicious coordinator
+  or subagent-lifecycle behavior that may need later workflow fixes. Do not use
+  it for routine command output, normal validation logs, clean reviews, or
+  implementation chronology.
+- Keep unresolved anomalies in the active ledger only while they may affect
+  remaining execution; move resolved or historical anomalies to the completed
+  archive or final batch report.
 - Do not repeatedly paste completed slice details into future subagent prompts.

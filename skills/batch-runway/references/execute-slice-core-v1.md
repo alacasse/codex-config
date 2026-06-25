@@ -14,6 +14,7 @@ projection of the canonical Batch Runway contracts, not an independent contract.
 - Support Investigation Handoff
 - Commit Receipt
 - Ledger Update
+- Orchestration Anomalies
 - Compact Convergence Fields
 - Escalation Pointers
 
@@ -88,11 +89,12 @@ If any condition is false, read `execute-recovery-v1.md`,
 6. Spawn `runway_reviewer` with the compact review handoff below.
 7. Require compact YAML from the reviewer.
 8. Commit only the intended slice files once validation and review are clean.
-9. Report the compact commit receipt.
-10. Update the active ledger with only remaining-work state.
-11. Move completed-slice audit references to the completed archive.
-12. Close completed subagents.
-13. Continue to the next pending slice unless a stop condition remains active or
+9. Record any orchestration anomalies using the compact log below.
+10. Report the compact commit receipt.
+11. Update the active ledger with only remaining-work state.
+12. Move completed-slice audit references to the completed archive.
+13. Close completed subagents.
+14. Continue to the next pending slice unless a stop condition remains active or
     the user explicitly asks to stop.
 
 ## Worker Handoff
@@ -217,10 +219,41 @@ inspect:
 
 - Keep active ledger state limited to remaining-work facts.
 - Summarize validation; do not paste logs or transcripts.
+- Keep unresolved orchestration anomalies in the active ledger only while they
+  may affect remaining execution.
 - Move completed rows to the completed slice archive after commit.
 - Archive only commit hash, outcome, and audit references.
 - Keep unresolved risks, blockers, compatibility paths, and next proof in the
   active ledger until resolved.
+
+## Orchestration Anomalies
+
+Use `orchestration_anomalies` for suspicious coordinator or subagent-lifecycle
+behavior that may need later workflow fixes. Do not record routine command
+output, normal validation logs, clean reviews, or implementation chronology.
+
+Examples:
+
+- accidental extra agent spawn
+- wrong agent role
+- ignored or unusable support-agent output
+- malformed worker or reviewer report
+- confusing wait, resume, approval, or close controls
+- ambiguous, flaky, or escalation-prone validation command
+- near violation of the coordinator-only, worker-only, or reviewer-only contract
+
+Compact YAML:
+
+```yaml
+orchestration_anomalies:
+  - slice: 1
+    severity: low
+    category: accidental_agent_spawn
+    observed: "Extra read-only no-op explorer spawned while looking for wait control."
+    impact: "No write scope, no artifact used, no lifecycle effect."
+    action_taken: "Ignored; continued waiting on actual worker and support explorer."
+    follow_up: "Consider UI or process note if repeated."
+```
 
 ## Compact Convergence Fields
 

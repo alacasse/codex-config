@@ -28,6 +28,7 @@ The spec must include:
 - execution contract reference
 - compact report contract reference
 - compact convergence assessment reference
+- orchestration anomaly log reference
 - ledger retention strategy reference
 - validation profile
 - execution ledger
@@ -43,6 +44,7 @@ For lean specs, do not paste the full standard execution contract. Reference it:
 Use Batch Runway Standard Execution Contract v1.
 Use Batch Runway Compact Report Contract v1.
 Use Batch Runway Compact Convergence Assessment v1 for routine status reports, slice summaries, commit receipts, and ledger notes.
+Use Batch Runway Orchestration Anomaly Log v1 for compact telemetry about suspicious coordinator or subagent-lifecycle behavior.
 Use the expanded convergence template only when scope is expanding, significant uncertainty exists, blockers are present, or final batch reporting is being produced.
 Use Batch Runway Standard Ledger Retention v1.
 Use Batch Runway Execute Slice Core v1 for routine slice execution.

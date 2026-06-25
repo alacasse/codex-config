@@ -152,6 +152,13 @@ Keep live orchestration context small enough for long batches.
 - Do not retain implementation chronology, command transcripts, repeated
   clean-review prose, repetitive validation detail, or repeated explanations of
   already-closed slices.
+- Keep a compact `orchestration_anomalies` log for suspicious coordinator or
+  subagent-lifecycle behavior that may need later workflow fixes, such as
+  accidental extra agent spawns, wrong agent roles, unusable support output,
+  malformed subagent reports, confusing controls, ambiguous validation, flaky
+  commands, escalation friction, or near contract violations. Do not use it for
+  routine command output, normal validation logs, clean reviews, or
+  implementation chronology.
 - Use compact YAML for routine worker results, reviewer results, commit
   receipts, convergence, and ledger updates.
 - Move completed slice details out of the active ledger and into the completed
@@ -185,14 +192,14 @@ In `execute-spec` mode:
    completed slice archive.
 5. Execute from the next incomplete ledger row.
 6. For each routine slice: spawn coding subagent, validate, spawn separate review
-   subagent, commit if clean, report receipt, update ledger/archive, close
-   subagents, continue.
+   subagent, commit if clean, record any orchestration anomalies, report
+   receipt, update ledger/archive, close subagents, continue.
 7. If validation fails, review finds issues, blockers appear, or escalation is
    needed, read `references/execute-recovery-v1.md`.
 8. After the last slice, read `references/finalize-batch-v1.md`, run final
    validation and project-required index refresh,
-   then report commits, validation, skipped slices, remaining risks, and expanded
-   convergence.
+   then report commits, validation, skipped slices, remaining risks,
+   `orchestration_anomalies`, and expanded convergence.
 
 ## Stop Conditions
 

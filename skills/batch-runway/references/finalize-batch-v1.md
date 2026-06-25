@@ -23,8 +23,15 @@ Report:
 - remaining risks
 - compatibility paths that remain
 - audit artifacts or summary paths
+- `orchestration_anomalies`
 - final inspection commands
 - expanded final convergence assessment
+
+Always print an `Orchestration Anomalies` section in the final report. Use a
+compact YAML block and print `orchestration_anomalies: []` when no anomalies
+were recorded. Include resolved/no-impact anomalies when they suggest future
+workflow fixes, but do not include routine command output, normal validation
+logs, clean reviews, or implementation chronology.
 
 ## Expanded Convergence
 
