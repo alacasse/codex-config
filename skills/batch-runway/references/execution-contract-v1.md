@@ -9,6 +9,12 @@ semantics. If this contract needs incompatible changes, create
 
 Rules:
 
+- These delegation rules bind the coordinator, not spawned workers or reviewers.
+  A spawned `runway_worker` is already the required coding subagent for its
+  assigned slice; it must implement that slice directly and must not spawn,
+  delegate to, or wait on additional coding or review agents.
+- The coordinator owns validation, review delegation, ledger updates, commits,
+  and subagent lifecycle unless a spec explicitly says otherwise.
 - The main agent is coordinator only.
 - The main agent must not implement code changes directly except for updating
   the ledger and making commits.

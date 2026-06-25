@@ -42,8 +42,11 @@ Use `execute-slice-core-v1.md` for the normal version of this loop.
 1. Spawn a coding subagent with `agent_type="runway_worker"`.
 2. In lean mode, pass the absolute spec path, repo cwd, slice number, slice
    anchor, allowed files, dirty-file constraints, slice-specific overrides, and
-   a short contract capsule or the relevant Batch Runway reference path. Do not
-   paste the full slice unless needed.
+   a role-scoped contract capsule or the relevant Batch Runway reference path.
+   The capsule must say the spawned worker is already the required coding
+   subagent, must implement only its assigned slice, and must not spawn,
+   delegate to, or wait on additional subagents. Do not paste the full slice
+   unless needed.
 3. Require the coding result to follow `Compact Report Contract v1`.
 4. Run or verify focused validation from the coordinator session when practical.
 5. Apply the active validation profile.

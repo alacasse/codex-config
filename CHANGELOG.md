@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Batch-runway worker role boundary
+
+Problem: spawned `runway_worker` agents could read coordinator-facing Batch
+Runway delegation rules and conclude they needed to spawn another coding
+subagent before implementing their assigned slice.
+
+Decision: make the execution contract and compact worker briefs explicitly
+role-scoped. A spawned `runway_worker` is already the required coding subagent,
+must implement only its assigned slice, and must not spawn, delegate to, or wait
+on additional subagents. Validation, review delegation, ledger updates, commits,
+and subagent lifecycle remain coordinator-owned.
+
+Expected effect: routine slice workers should stop blocking on recursive
+delegation while the coordinator-only workflow and separate reviewer requirement
+remain intact.
+
 ### Batch-runway coordinator read discipline
 
 Problem: after reference-loading and compact-reporting optimizations, routine

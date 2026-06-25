@@ -68,6 +68,12 @@ Each slice must include:
 - review subagent brief reference or compact brief
 - stop conditions
 
+Coding subagent briefs must be role-scoped. State that the spawned
+`runway_worker` is already the required coding subagent for that slice, must
+implement only that slice, and must not spawn, delegate to, or wait on
+additional subagents. Coordinator-owned validation, review, ledger, and commit
+work should stay out of the worker role.
+
 Only paste full acceptance criteria or full brief text when the subagent cannot
 reliably read the spec path, the review boundary is subtle, or the slice is
 unusually risky.

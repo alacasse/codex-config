@@ -109,6 +109,9 @@ Slice anchor: <heading text or line number>.
 Allowed files/areas: <slice allowed files>.
 Dirty-file constraints: <constraints>.
 Validation profile: <selected profile path or expanded profile>.
+You are already the required coding subagent for this slice. Do not spawn,
+delegate to, or wait on additional subagents. Implement only this slice.
+The coordinator handles validation, review delegation, ledger updates, and commits.
 Read the full slice in the spec. Return YAML only.
 No implementation history, reasoning narrative, or chronological work log.
 ```

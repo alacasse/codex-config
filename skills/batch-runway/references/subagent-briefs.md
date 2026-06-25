@@ -14,6 +14,9 @@ Implement slice <N> from <absolute spec path>.
 Repo cwd: <absolute repository path>.
 Slice anchor: <heading text or line number>.
 Read the full slice and applicable execution contract in the spec.
+You are already the required coding subagent for this slice. Do not spawn,
+delegate to, or wait on additional subagents. Implement only this slice.
+The coordinator handles validation, review delegation, ledger updates, and commits.
 Batch Runway reference, if needed: <absolute path to relevant reference file>.
 Use Compact Report Contract v1.
 Allowed files/areas: <repeat exact allowed files if needed for safety>.
