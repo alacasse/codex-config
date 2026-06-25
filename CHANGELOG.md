@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Batch-runway cross-slice seam handoffs
+
+Problem: create-spec output could name adjacent architectural slices but leave
+their dependency implicit, allowing a later slice to create a parallel seam or
+duplicated implementation instead of consuming the boundary introduced by an
+earlier slice.
+
+Decision: require specs to make producer/consumer handoffs explicit when
+adjacent slices introduce and then consume a shared seam, owner module,
+projection API, or compatibility facade. The producing slice should name the
+single owner/API, downstream slices should consume it, and acceptance or stop
+conditions should fail bypasses or duplicate implementations.
+
+Expected effect: future runway specs should preserve independent slice
+testability while making cross-slice architectural invariants executable.
+
 ### Batch-runway worker role boundary
 
 Problem: spawned `runway_worker` agents could read coordinator-facing Batch

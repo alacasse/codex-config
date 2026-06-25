@@ -13,6 +13,13 @@ Steps:
 6. Prefer `lean-runway` unless the work touches high-risk production behavior or
    subagent file access is unreliable.
 
+When adjacent slices create and then consume a new seam, owner module, projection
+API, compatibility facade, or other shared boundary, make that handoff explicit
+in the spec. Name the single owner/API in the producing slice, require later
+slices to consume that same owner/API, and add acceptance criteria or stop
+conditions that fail the plan if a downstream slice bypasses, duplicates, or
+reimplements the boundary.
+
 The spec must include:
 
 - title and purpose
