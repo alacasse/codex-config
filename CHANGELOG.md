@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### Architecture-program-runway skill
+
+Problem: broad architecture findings documents can contain multiple unrelated
+or partially related workstreams, but `batch-runway` is intentionally scoped to
+one concrete 3-5 slice execution batch. Agents needed a reusable layer for
+maintaining the overarching ledger, grouping findings, selecting the next batch,
+and reconciling findings after a runway closes.
+
+Decision: add an `architecture-program-runway` skill with program-level modes
+for findings intake, batch grouping, next-batch selection, concrete runway
+creation, runway closeout, and reprioritization. The skill keeps execution
+contracts in `batch-runway` and adds a compact program-ledger template for
+batch queues and finding statuses. The selected batch now has an explicit
+brief/dispatch packet so a fresh `batch-runway create-spec` session can consume
+bounded context instead of re-reading the raw findings document or re-deriving
+the whole program. Multi-batch programs should store that dispatch packet in a
+separate linked file, and ledgers should retain only compact closeout evidence.
+
+Expected effect: future architecture review documents should stay durable
+across multiple batches without encouraging one oversized runway or losing
+deferred findings, while each batch can start from a compact handoff artifact
+without overloading a fresh spec-creation agent.
+
 ### Batch-runway orchestration anomalies
 
 Problem: during Batch Runway execution, suspicious coordinator or

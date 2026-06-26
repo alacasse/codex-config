@@ -21,6 +21,16 @@
         }
       ]
     },
+    "architecture-program-runway": {
+      "version": "1.0.2",
+      "description": "Program-level workflow for turning broad architecture findings into sequenced Batch Runway specs.",
+      "links": [
+        {
+          "source": "skills/architecture-program-runway",
+          "target": "skills/architecture-program-runway"
+        }
+      ]
+    },
     "test-quality-review": {
       "version": "1.0.0",
       "description": "Review tests for behavioral confidence, regression protection, and design friction.",
