@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -12,6 +14,7 @@ from typing import Any
 SCRIPT = (
     Path(__file__).resolve().parents[1] / "scripts" / "architecture_program_runner.py"
 )
+REPO_ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("architecture_program_runner", SCRIPT)
 assert spec is not None
 runner = importlib.util.module_from_spec(spec)
@@ -70,6 +73,11 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(result), encoding="utf-8")
 
+    def touch_project_path(self, value: str, content: str = "artifact\n") -> None:
+        path = runner.resolve_project_path(self.config.project, value)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
     def test_cli_defaults_and_state_path(self) -> None:
         args = runner.parse_args(
             [
@@ -91,6 +99,50 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             / "plans"
             / "architecture-program-run-state.json",
         )
+
+    def test_all_batches_cli_sets_unbounded_mode(self) -> None:
+        args = runner.parse_args(
+            [
+                "--project",
+                str(self.project),
+                "--program-ledger",
+                "my-docs/plans/program.md",
+                "--all-batches",
+            ]
+        )
+        config = runner.config_from_args(args)
+
+        self.assertIsNone(config.max_batches)
+
+    def test_all_batches_conflicts_with_numeric_max(self) -> None:
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                runner.parse_args(
+                    [
+                        "--project",
+                        str(self.project),
+                        "--program-ledger",
+                        "my-docs/plans/program.md",
+                        "--all-batches",
+                        "--max-batches",
+                        "1",
+                    ]
+                )
+
+    def test_numeric_batch_count_sets_max_batches(self) -> None:
+        args = runner.parse_args(
+            [
+                "--project",
+                str(self.project),
+                "--program-ledger",
+                "my-docs/plans/program.md",
+                "--max-batches",
+                "3",
+            ]
+        )
+        config = runner.config_from_args(args)
+
+        self.assertEqual(config.max_batches, 3)
 
     def test_state_round_trip_uses_json(self) -> None:
         state = runner.initial_state(self.config)
@@ -114,6 +166,38 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         for prompt in prompts.values():
             self.assertIn("Return schema-valid JSON", prompt)
             self.assertIn("receipt_path", prompt)
+
+    def test_prompt_generation_names_all_batches_limit(self) -> None:
+        config = runner.RunnerConfig(**{**self.config.__dict__, "max_batches": None})
+        state = runner.initial_state(config)
+
+        prompt = runner.build_prompt(config, state, "select-dispatch")
+
+        self.assertIn("Batch limit: all executable batches", prompt)
+
+    def test_local_runner_invocation_rule_lives_in_protocol(self) -> None:
+        text = (
+            REPO_ROOT
+            / "skills"
+            / "architecture-program-runway"
+            / "references"
+            / "local-runner-v1.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("## Local Runner Invocation Rule", text)
+        self.assertIn("Invoke the local", text)
+        self.assertIn("runner CLI instead", text)
+        self.assertIn("--all-batches", text)
+        self.assertIn("Final Summary Contract", text)
+
+    def test_skill_points_local_runner_usage_to_protocol(self) -> None:
+        text = (
+            REPO_ROOT / "skills" / "architecture-program-runway" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("If the user asks to run the local architecture program runner", text)
+        self.assertIn("references/local-runner-v1.md", text)
+        self.assertIn("Do not manually", text)
 
     def test_nullable_early_stopped_result_is_valid(self) -> None:
         result = self.make_result(
@@ -225,6 +309,168 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
 
         runner.apply_phase_result(state, closeout_result)
         self.assertEqual(state["batches_completed"], 1)
+
+    def test_final_summary_uses_state_and_last_receipt(self) -> None:
+        result = self.make_result(
+            "execute",
+            "closeout",
+            commit_range="abc123..def456",
+            validation_summary="tests passed",
+            review_summary={"status": "clean"},
+        )
+        self.write_receipt(result)
+        state = runner.initial_state(self.config)
+        state["last_receipt_path"] = result["receipt_path"]
+        state["stop_reason"] = "done"
+        state["batches_completed"] = 1
+        state["active_batch_id"] = result["batch_id"]
+        state["dispatch_path"] = result["dispatch_path"]
+        state["spec_path"] = result["spec_path"]
+
+        summary = runner.build_final_summary(state, self.config)
+
+        self.assertEqual(summary["state_path"], str(self.config.state_path))
+        self.assertEqual(summary["last_receipt_path"], result["receipt_path"])
+        self.assertEqual(summary["commit_range"], "abc123..def456")
+        self.assertEqual(summary["validation_summary"], "tests passed")
+        self.assertEqual(summary["review_summary"], {"status": "clean"})
+
+    def test_unbounded_mode_stops_when_closeout_reports_no_next_batch(self) -> None:
+        config = runner.RunnerConfig(**{**self.config.__dict__, "max_batches": None})
+        results = [
+            self.make_result("select-dispatch", "create-spec"),
+            self.make_result("create-spec", "execute"),
+            self.make_result("execute", "closeout"),
+            self.make_result("closeout", "done"),
+        ]
+        for result in results:
+            self.write_receipt(result)
+
+        def fake_executor(config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
+            result = results.pop(0)
+            if result["dispatch_path"]:
+                self.touch_project_path(result["dispatch_path"])
+            if result["spec_path"]:
+                self.touch_project_path(result["spec_path"])
+            return result
+
+        final_state = runner.run(config, phase_executor=fake_executor, status_reader=lambda project: [])
+
+        self.assertEqual(final_state["batches_completed"], 1)
+        self.assertEqual(final_state["stop_reason"], "done")
+
+    def test_unbounded_mode_continues_after_closeout_when_next_batch_ready(self) -> None:
+        config = runner.RunnerConfig(**{**self.config.__dict__, "max_batches": None})
+        first = self.make_result("select-dispatch", "create-spec", batch_id="batch-1")
+        closeout = self.make_result("closeout", "select-dispatch", batch_id="batch-1")
+        second = self.make_result(
+            "select-dispatch",
+            "stopped",
+            status="stopped",
+            stop_reason="no safe executable batch remains",
+            batch_id=None,
+            dispatch_path=None,
+            spec_path=None,
+            receipt_path="my-docs/plans/receipts/select-dispatch-2.json",
+        )
+        sequence = [
+            first,
+            self.make_result("create-spec", "execute", batch_id="batch-1"),
+            self.make_result("execute", "closeout", batch_id="batch-1"),
+            closeout,
+            second,
+        ]
+        for result in sequence:
+            self.write_receipt(result)
+
+        def fake_executor(config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
+            result = sequence.pop(0)
+            if result["dispatch_path"]:
+                self.touch_project_path(result["dispatch_path"])
+            if result["spec_path"]:
+                self.touch_project_path(result["spec_path"])
+            return result
+
+        final_state = runner.run(config, phase_executor=fake_executor, status_reader=lambda project: [])
+
+        self.assertEqual(final_state["batches_completed"], 1)
+        self.assertEqual(final_state["active_phase"], "select-dispatch")
+        self.assertEqual(final_state["stop_reason"], "no safe executable batch remains")
+
+    def test_unbounded_mode_stops_on_phase_failure(self) -> None:
+        config = runner.RunnerConfig(**{**self.config.__dict__, "max_batches": None})
+        result = self.make_result(
+            "select-dispatch",
+            "stopped",
+            status="failed",
+            stop_reason="malformed ledger state",
+            batch_id=None,
+            dispatch_path=None,
+            spec_path=None,
+        )
+        self.write_receipt(result)
+
+        def fake_executor(config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
+            return result
+
+        final_state = runner.run(config, phase_executor=fake_executor, status_reader=lambda project: [])
+
+        self.assertEqual(final_state["stop_reason"], "malformed ledger state")
+        self.assertEqual(final_state["last_phase_status"], "failed")
+
+    def test_unbounded_mode_stops_on_validation_blocker(self) -> None:
+        config = runner.RunnerConfig(**{**self.config.__dict__, "max_batches": None})
+        state = runner.initial_state(config)
+        state["active_phase"] = "execute"
+        state["active_batch_id"] = "batch-1"
+        state["dispatch_path"] = "my-docs/plans/dispatch/batch-1.md"
+        state["spec_path"] = "my-docs/plans/batch-1-spec.md"
+        self.touch_project_path(state["dispatch_path"])
+        self.touch_project_path(state["spec_path"])
+        runner.write_state(config.state_path, state)
+        result = self.make_result(
+            "execute",
+            "stopped",
+            status="stopped",
+            stop_reason="validation failed",
+            validation_summary="unit tests failed",
+        )
+        self.write_receipt(result)
+
+        def fake_executor(config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
+            return result
+
+        final_state = runner.run(
+            runner.RunnerConfig(**{**config.__dict__, "resume": True}),
+            phase_executor=fake_executor,
+            status_reader=lambda project: [],
+        )
+
+        self.assertEqual(final_state["stop_reason"], "validation failed")
+        self.assertEqual(final_state["last_phase_status"], "stopped")
+
+    def test_resume_terminal_done_state_does_not_rewrite_stop_reason(self) -> None:
+        state = runner.initial_state(self.config)
+        state["batches_completed"] = 1
+        state["active_phase"] = "closeout"
+        state["last_phase_status"] = "completed"
+        state["stop_reason"] = "done"
+        runner.write_state(self.config.state_path, state)
+
+        def fail_if_called(config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
+            self.fail("terminal state should not launch another phase")
+
+        final_state = runner.run(
+            runner.RunnerConfig(**{**self.config.__dict__, "resume": True}),
+            phase_executor=fail_if_called,
+            status_reader=lambda project: [],
+        )
+
+        self.assertEqual(final_state["stop_reason"], "done")
+        self.assertEqual(
+            runner.load_state(self.config.state_path)["stop_reason"],
+            "done",
+        )
 
     def test_preflight_dirty_worktree_rejects_unexpected_path(self) -> None:
         state = runner.initial_state(self.config)

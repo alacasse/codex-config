@@ -60,7 +60,7 @@ class RunnerError(RuntimeError):
 class RunnerConfig:
     project: Path
     program_ledger: str
-    max_batches: int
+    max_batches: int | None
     execute_batches: bool
     state_path: Path
     sandbox: str
@@ -83,8 +83,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--max-batches",
         type=positive_int,
-        default=1,
-        help="Maximum closeouts to complete. Default: 1.",
+        default=None,
+        help="Maximum closeouts to complete. Default: 1 unless --all-batches is set.",
+    )
+    parser.add_argument(
+        "--all-batches",
+        action="store_true",
+        help=(
+            "Run until no safe executable batch remains or a stop condition is hit. "
+            "Cannot be combined with --max-batches."
+        ),
     )
     parser.add_argument(
         "--execute-batches",
@@ -121,7 +129,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "then stop before launching the next phase."
         ),
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.all_batches and args.max_batches is not None:
+        parser.error("--all-batches cannot be combined with --max-batches")
+    return args
 
 
 def positive_int(value: str) -> int:
@@ -137,10 +148,11 @@ def positive_int(value: str) -> int:
 def config_from_args(args: argparse.Namespace) -> RunnerConfig:
     project = Path(args.project).expanduser().resolve()
     state_path = resolve_state_path(project, args.program_ledger, args.state)
+    max_batches = None if args.all_batches else args.max_batches or 1
     return RunnerConfig(
         project=project,
         program_ledger=args.program_ledger,
-        max_batches=args.max_batches,
+        max_batches=max_batches,
         execute_batches=args.execute_batches,
         state_path=state_path,
         sandbox=args.sandbox,
@@ -209,6 +221,10 @@ def validate_state(state: dict[str, Any]) -> None:
         raise RunnerError(f"state runner_version must be {RUNNER_VERSION}")
     if state.get("active_phase") not in PHASES:
         raise RunnerError("state active_phase is invalid")
+    max_batches = state.get("max_batches")
+    if max_batches is not None:
+        if not isinstance(max_batches, int) or max_batches < 1:
+            raise RunnerError("state max_batches must be a positive integer or null")
     if not isinstance(state.get("batches_completed"), int):
         raise RunnerError("state batches_completed must be an integer")
     if state["batches_completed"] < 0:
@@ -350,8 +366,9 @@ def expected_next_phases(phase: str, state: dict[str, Any]) -> set[str]:
     if phase == "execute":
         return {"closeout"}
     if phase == "closeout":
+        max_batches = state.get("max_batches")
         completed = int(state.get("batches_completed", 0)) + 1
-        if completed >= int(state.get("max_batches", 1)):
+        if max_batches is not None and completed >= int(max_batches):
             return {"done"}
         return {"select-dispatch", "done"}
     raise RunnerError(f"unknown phase: {phase}")
@@ -386,6 +403,7 @@ def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str
         f"Project path: {config.project}",
         f"Program ledger: {config.program_ledger}",
         f"State path: {config.state_path}",
+        f"Batch limit: {batch_limit_label(config.max_batches)}",
         f"Current phase: {phase}",
         f"Output schema path: {SCHEMA_PATH}",
         "",
@@ -445,7 +463,8 @@ def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str
                 "- Do not paste execution logs into the ledger.",
                 "- Update runner telemetry receipt.",
                 "- Use next_phase=select-dispatch only when another batch is allowed and ready.",
-                "- Use next_phase=done when max_batches is reached or no next batch is ready.",
+                "- Use next_phase=select-dispatch when another safe executable batch is ready and the batch limit permits it.",
+                "- Use next_phase=done when the batch limit is reached or no next batch is ready.",
             ]
         )
 
@@ -517,6 +536,14 @@ def print_dry_run(config: RunnerConfig, state: dict[str, Any]) -> None:
     print()
     print("Prompt:")
     print(prompt)
+
+
+def batch_limit_label(max_batches: int | None) -> str:
+    if max_batches is None:
+        return "all executable batches until stop condition"
+    if max_batches == 1:
+        return "1 batch"
+    return f"{max_batches} batches"
 
 
 def shell_join(command: Iterable[str]) -> str:
@@ -687,6 +714,12 @@ def apply_phase_result(state: dict[str, Any], result: dict[str, Any]) -> None:
         state["stop_reason"] = result["next_phase"]
 
 
+def is_terminal_completed_state(state: dict[str, Any]) -> bool:
+    return state.get("last_phase_status") == "completed" and state.get(
+        "stop_reason"
+    ) in {"done", "max_batches_reached"}
+
+
 def run(
     config: RunnerConfig,
     *,
@@ -701,7 +734,12 @@ def run(
         return state
 
     while True:
-        if state["batches_completed"] >= config.max_batches:
+        if is_terminal_completed_state(state):
+            return state
+        if (
+            config.max_batches is not None
+            and state["batches_completed"] >= config.max_batches
+        ):
             state["stop_reason"] = "max_batches_reached"
             write_state(config.state_path, state)
             return state
@@ -747,14 +785,50 @@ def validate_state_matches_config(state: dict[str, Any], config: RunnerConfig) -
         raise RunnerError("state execute_batches contradicts CLI execute-batches")
 
 
+def build_final_summary(state: dict[str, Any], config: RunnerConfig) -> dict[str, Any]:
+    receipt: dict[str, Any] = {}
+    receipt_path = state.get("last_receipt_path")
+    if isinstance(receipt_path, str) and receipt_path:
+        try:
+            receipt = read_json_object(resolve_project_path(config.project, receipt_path))
+        except RunnerError:
+            receipt = {}
+
+    return {
+        "state_path": str(config.state_path),
+        "last_receipt_path": receipt_path,
+        "stop_reason": state.get("stop_reason"),
+        "batches_completed": state.get("batches_completed"),
+        "active_batch": state.get("active_batch_id"),
+        "dispatch_path": state.get("dispatch_path"),
+        "spec_path": state.get("spec_path"),
+        "commit_range": receipt.get("commit_range"),
+        "validation_summary": receipt.get("validation_summary"),
+        "review_summary": receipt.get("review_summary"),
+    }
+
+
+def print_final_summary(state: dict[str, Any], config: RunnerConfig) -> None:
+    print("Final summary:")
+    print(json.dumps(build_final_summary(state, config), indent=2, sort_keys=True))
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     config = config_from_args(args)
     try:
-        run(config)
+        state = run(config)
     except RunnerError as exc:
         print(f"runner error: {exc}", file=sys.stderr)
+        try:
+            state = load_state(config.state_path)
+        except RunnerError:
+            state = initial_state(config)
+            state["stop_reason"] = str(exc)
+        print_final_summary(state, config)
         return 1
+    if not config.dry_run:
+        print_final_summary(state, config)
     return 0
 
 

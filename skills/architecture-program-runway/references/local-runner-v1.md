@@ -15,15 +15,32 @@ history. It advances only from CLI arguments, JSON state, schema-valid phase
 results, receipt paths, known artifact paths, process exit status, direct path
 existence checks, and conservative `git status --porcelain` checks.
 
+## Local Runner Invocation Rule
+
+When the user asks to run the local architecture program runner, do not
+manually perform runner phases in the current conversation. Invoke the local
+runner CLI instead.
+
+The runner is responsible for launching fresh `codex exec` processes for each
+phase:
+
+```text
+select-dispatch -> create-spec -> execute -> closeout
+```
+
+The current conversation should only launch the runner and report the runner's
+final summary after it stops.
+
 ## How To Use It
 
-Skills are instruction bundles. They do not launch this runner by themselves.
-The runner is the executable interface:
+Skills are instruction bundles. They do not launch this runner by themselves,
+but `$architecture-program-runway` defines the agent behavior for local runner
+requests. The runner is the executable interface:
 
 ```bash
 ~/.codex/scripts/architecture_program_runner.py \
-  --project /home/alacasse/projects/graphify \
-  --program-ledger my-docs/plans/install-sandbox-architecture-findings.md \
+  --project <project-path> \
+  --program-ledger <project-relative-ledger-path> \
   --max-batches 1
 ```
 
@@ -32,17 +49,33 @@ Run a dry preview first:
 ```bash
 ~/.codex/scripts/architecture_program_runner.py \
   --dry-run \
-  --project /home/alacasse/projects/graphify \
-  --program-ledger my-docs/plans/install-sandbox-architecture-findings.md \
-  --max-batches 1
+  --project <project-path> \
+  --program-ledger <project-relative-ledger-path> \
+  --all-batches
 ```
 
-Create the next spec but do not execute code:
+Through the skill, minimal user prompts default to all executable batches unless
+the user gives a count:
+
+```text
+Use $architecture-program-runway. Run the local runner on <program-ledger-path>.
+```
+
+```text
+Use $architecture-program-runway and run the local architecture program runner
+on this ledger: <program-ledger-path>
+```
+
+Direct CLI usage remains conservative: without `--all-batches` or an explicit
+`--max-batches`, it runs at most one completed closeout. This is the only
+default difference between direct CLI use and skill-mediated use.
+
+Create the next spec for one batch but do not execute code:
 
 ```bash
 ~/.codex/scripts/architecture_program_runner.py \
-  --project /home/alacasse/projects/graphify \
-  --program-ledger my-docs/plans/install-sandbox-architecture-findings.md \
+  --project <project-path> \
+  --program-ledger <project-relative-ledger-path> \
   --max-batches 1
 ```
 
@@ -50,9 +83,20 @@ Create, execute, and close out one batch:
 
 ```bash
 ~/.codex/scripts/architecture_program_runner.py \
-  --project /home/alacasse/projects/graphify \
-  --program-ledger my-docs/plans/install-sandbox-architecture-findings.md \
+  --project <project-path> \
+  --program-ledger <project-relative-ledger-path> \
   --max-batches 1 \
+  --execute-batches
+```
+
+Create, execute, and close out every currently executable batch until no safe
+next batch remains or a stop condition is hit:
+
+```bash
+~/.codex/scripts/architecture_program_runner.py \
+  --project <project-path> \
+  --program-ledger <project-relative-ledger-path> \
+  --all-batches \
   --execute-batches
 ```
 
@@ -61,32 +105,50 @@ Resume with the same control arguments used for the original run:
 ```bash
 ~/.codex/scripts/architecture_program_runner.py \
   --resume \
-  --project /home/alacasse/projects/graphify \
-  --program-ledger my-docs/plans/install-sandbox-architecture-findings.md \
-  --max-batches 1 \
+  --project <project-path> \
+  --program-ledger <project-relative-ledger-path> \
+  --all-batches \
   --execute-batches
 ```
 
-Ask an agent to run it only when you want that agent to launch the CLI. A good
-prompt is:
+## Batch Count Intent
 
-```text
-Use $architecture-program-runway to understand the local runner contract, then
-run ~/.codex/scripts/architecture_program_runner.py with:
-- --project <project path>
-- --program-ledger <project-relative ledger path>
-- --max-batches <n>
-- --execute-batches if implementation is allowed
+When a user asks through `$architecture-program-runway`, infer the batch bound
+before invoking the CLI:
 
-Do not manually perform the phases in this conversation. Let the runner launch
-fresh codex exec phases. After it stops, summarize the state file, last receipt
-path, stop reason, and validation result.
-```
+- `run one batch` or `run 1 batch`: pass `--max-batches 1`.
+- `run two batches`, `run 2 batches`, or `run max 2 batches`: pass
+  `--max-batches 2`.
+- `run 3 batches` or `run max 3 batches`: pass `--max-batches 3`.
+- `run all batches`, `run the whole executable program`, or no explicit count:
+  pass `--all-batches`.
+
+`--all-batches` means continue while the ledger can produce a safe executable
+next batch and the runner has not hit a stop condition. It does not mean force
+all findings to `Closed`.
 
 Use the skill manually instead of the runner when you want to stay in the
 current conversation, inspect the ledger, select one batch, create one spec, or
 close out one already-finished runway without launching nested `codex exec`
 processes.
+
+## Final Summary Contract
+
+When the runner stops, it prints a final JSON summary. The invoking agent should
+report that summary instead of reconstructing fields from conversation memory.
+
+The summary contains:
+
+- `state_path`
+- `last_receipt_path`
+- `stop_reason`
+- `batches_completed`
+- `active_batch`
+- `dispatch_path`
+- `spec_path`
+- `commit_range`
+- `validation_summary`
+- `review_summary`
 
 ## Phase Contract
 

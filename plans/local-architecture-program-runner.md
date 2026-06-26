@@ -55,6 +55,8 @@ Arguments:
 - `--project`: required path passed to `codex exec --cd`.
 - `--program-ledger`: required project-relative ledger path.
 - `--max-batches`: optional positive integer, default `1`.
+- `--all-batches`: optional flag. Continue until no safe executable batch
+  remains or a stop condition is hit. Cannot be combined with `--max-batches`.
 - `--execute-batches`: optional flag, default false.
 - `--state`: optional project-relative or absolute JSON state path. If omitted,
   default to `<program-ledger-dir>/architecture-program-run-state.json`.
@@ -70,6 +72,10 @@ Arguments:
 
 Use fresh `codex exec` processes. Do not use `/goal`. Do not use
 `codex exec resume` by default.
+
+Direct CLI default remains conservative: if neither `--max-batches` nor
+`--all-batches` is passed, run at most one completed closeout. Skill-mediated
+minimal invocation defaults to `--all-batches` unless the user gives a count.
 
 ### JSON State
 
@@ -99,6 +105,8 @@ Use JSON state for v1. No PyYAML dependency.
 Rules:
 
 - `active_phase` enum: `select-dispatch`, `create-spec`, `execute`, `closeout`.
+- `max_batches` is a positive integer or `null`; `null` means all executable
+  batches until no safe next batch remains or a stop condition is hit.
 - `batches_completed` increments only after a successful `closeout`.
 - `execute succeeded != batch completed`.
 - `closeout succeeded = batch completed`.
@@ -194,6 +202,32 @@ The runner validates that `receipt_path` exists. It may store, copy, or
 reference the receipt path in runner state, but it must not invent domain
 receipt content itself. The runner only validates paths, schemas, exit status,
 and state transitions.
+
+### Local Runner Invocation Rule
+
+When the user asks to run the local architecture program runner through
+`$architecture-program-runway`, the current agent should invoke the runner CLI
+instead of manually performing runner phases in the current conversation.
+
+The runner launches fresh `codex exec` processes for:
+
+```text
+select-dispatch -> create-spec -> execute -> closeout
+```
+
+The invoking conversation should launch the runner and report the runner's
+final summary after it stops.
+
+Batch-count intent:
+
+- `run one batch` or `run 1 batch`: pass `--max-batches 1`.
+- `run N batches` or `run max N batches`: pass `--max-batches N`.
+- no count, `run all batches`, or `run the whole executable program`: pass
+  `--all-batches`.
+
+`--all-batches` does not force all findings to `Closed`; it only continues
+while the ledger can produce a safe executable next batch and no stop condition
+has been hit.
 
 ## Phase Behavior
 
@@ -378,6 +412,24 @@ Use `codex exec --output-schema <schema> --output-last-message <tmp-result>`.
 Prefer `--json` only for diagnostics; the runner should use the final
 schema-valid result as the phase contract.
 
+## Final Summary
+
+When the runner stops, print a final JSON summary containing:
+
+- `state_path`
+- `last_receipt_path`
+- `stop_reason`
+- `batches_completed`
+- `active_batch`
+- `dispatch_path`
+- `spec_path`
+- `commit_range`
+- `validation_summary`
+- `review_summary`
+
+The invoking agent should report this summary instead of reconstructing fields
+from conversation memory.
+
 ## Tests
 
 Add tests for:
@@ -389,6 +441,14 @@ Add tests for:
 - `status` / `next_phase` consistency.
 - `--stop-after-phase`.
 - `--max-batches`.
+- `--all-batches`.
+- Direct CLI default is one batch.
+- Skill-mediated no-count/default intent maps to `--all-batches`.
+- Numeric batch-count intent maps to `--max-batches N`.
+- Final runner summary contract.
+- Unbounded mode still stops on no ready batch, phase failure, validation
+  blockers, review blockers, dirty worktree conflicts, malformed output, and
+  missing receipts.
 - Invalid `status`.
 - Invalid `phase`.
 - Invalid `next_phase`.

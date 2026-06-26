@@ -17,6 +17,10 @@ JSON state; applies conservative dirty-worktree checks; and increments
 `architecture-program-runway` feature now also installs the runner script.
 The skill documentation now separates skill invocation from CLI execution and
 shows how to run the installed runner directly or ask an agent to run it.
+Local runner invocation is now a protocol rule instead of prompt boilerplate:
+skill-mediated requests default to `--all-batches` unless the user gives a
+count, direct CLI defaults remain one batch, and the runner prints a final JSON
+summary for agents to report.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing
