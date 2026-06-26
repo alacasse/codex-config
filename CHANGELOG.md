@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Architecture-program-runway goal-run telemetry
+
+Problem: `/goal` and future local runner experiments need evidence for tuning
+the program-level loop, but ordinary finding closeout only records batch
+outcomes and not whether the runner respected dispatch packets, bounded
+execution, context discipline, and skill responsibility boundaries.
+
+Decision: add a compact goal-run evaluation receipt to
+`architecture-program-runway` and its program-ledger template. Runner-driven
+passes now record the run ID, bounds, selected/started/completed batches, stop
+reason, source-of-truth checks, responsibility checks, context observations,
+orchestration anomalies, and tuning notes without pasting transcripts or logs
+into the program ledger.
+
+Expected effect: bounded `/goal`, automation, or local-runner experiments
+produce enough telemetry to tune the orchestration workflow after real runs
+while keeping the durable program ledger compact.
+
 ### Architecture-program-runway skill
 
 Problem: broad architecture findings documents can contain multiple unrelated

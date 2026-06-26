@@ -62,7 +62,8 @@ creating a speculative plan.
   in create-spec mode.
 - `closeout-runway`: after execution, update the program ledger. Mark findings
   `Closed`, `Prepared`, `Open`, `Split`, or `Superseded` based on evidence from
-  commits, validation, review, and the completed runway archive.
+  commits, validation, review, and the completed runway archive. For `/goal` or
+  other runner-driven work, also record a compact goal-run evaluation receipt.
 - `reprioritize`: reassess remaining findings after the codebase or constraints
   changed. Update ordering without hiding deferred work.
 
@@ -122,6 +123,8 @@ Every program ledger should make these things visible:
 - Selected dispatch packet path, or inline single-batch dispatch, for the next
   fresh `batch-runway create-spec` pass.
 - Closeout rules for updating findings after a concrete runway completes.
+- Goal-run evaluation receipts when `/goal`, an automation, or a local runner
+  drives one or more program batches.
 
 ## Selected Batch Brief
 
@@ -167,6 +170,35 @@ new evidence, stale, or explicitly insufficient for a specific stated question.
   completed-slice archive.
 - If raw findings are needed later, state the specific missing question before
   reopening the raw source.
+
+## Goal-Run Evaluation
+
+Use this only when a `/goal`, automation, local runner, or similar orchestration
+loop drives program progress. Do not require it for ordinary one-shot manual
+planning unless the user asks for telemetry.
+
+After a bounded runner pass stops, append or update one compact evaluation
+receipt near the program ledger closeout evidence. The receipt is for tuning the
+orchestration workflow, not for replacing finding-level closeout.
+
+Include:
+
+- Run ID, runner type, goal prompt or prompt path, start/end timestamps if known.
+- Configured bounds such as `max_batches`, allowed modes, and stop policy.
+- Batches selected, specs created, batches started, and batches completed.
+- Final stop reason: completed bound, blocked, validation failed, review failed,
+  stale dispatch, dirty-file conflict, missing project value, context pressure,
+  permission issue, user stop, or other.
+- Whether the runner used the selected dispatch packet instead of reloading broad
+  raw findings unnecessarily.
+- Whether it preserved `architecture-program-runway` versus `batch-runway`
+  responsibilities.
+- Whether the program ledger, dispatch packet, spec ledger, validation evidence,
+  review result, and commit receipts were updated consistently.
+- Context-management observations, orchestration anomalies, and tuning notes.
+
+Keep this as structured bullets or YAML. Do not paste transcripts, long command
+logs, full review text, or implementation chronology into the program ledger.
 
 ## Relationship To Batch Runway
 

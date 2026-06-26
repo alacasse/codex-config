@@ -94,6 +94,47 @@ expected_spec_path: <local plan path or naming convention>
 2. <Next candidate and dependency>
 3. <Later cleanup or opportunistic work>
 
+## Goal Run Evaluations
+
+Use this section only when `/goal`, an automation, a local runner, or another
+orchestration loop drives one or more program batches. Keep each receipt compact
+so the program ledger stays readable.
+
+```yaml
+- run_id: <stable-id>
+  runner: </goal | automation | local-runner | manual>
+  goal_prompt: <inline summary or prompt file>
+  bounds:
+    max_batches: <number>
+    allowed_modes:
+      - <select-next-batch | create-next-runway | closeout-runway | reprioritize>
+  batches:
+    selected:
+      - <batch-id>
+    specs_created:
+      - <path>
+    started: <number>
+    completed: <number>
+  stop_reason: <completed-bound | blocked | validation-failed | review-failed | stale-dispatch | dirty-file-conflict | missing-project-value | context-pressure | permission-issue | user-stop | other>
+  source_of_truth_check:
+    used_dispatch_packet: <yes | no | partial>
+    avoided_unbounded_raw_findings_reload: <yes | no | partial>
+    ledger_updated: <yes | no | partial>
+    validation_evidence_linked: <yes | no | partial>
+    review_result_linked: <yes | no | partial>
+    commit_receipts_linked: <yes | no | partial>
+  responsibility_check:
+    program_state_owned_by_architecture_program_runway: <yes | no | partial>
+    concrete_batch_owned_by_batch_runway: <yes | no | partial>
+    implementation_review_delegation_unchanged: <yes | no | partial>
+  context_observations:
+    - <short note or None>
+  orchestration_anomalies:
+    - <short note or None>
+  tuning_notes:
+    - <what to adjust before the next runner pass>
+```
+
 ## Planning Rules
 
 - Create one concrete Batch Runway spec at a time unless explicitly asked for
@@ -135,3 +176,4 @@ After a concrete runway finishes:
 3. Update `Covered by` with spec path and commit evidence.
 4. Update the batch queue row to `Completed` or explain remaining work.
 5. Select or refresh the next `Ready` batch only if evidence supports it.
+6. If a runner drove the work, add a compact goal-run evaluation receipt.
