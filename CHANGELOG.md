@@ -24,7 +24,11 @@ summary for agents to report. The phase-result schema now stays within the Codex
 structured-output subset, including text-only compact validation/review
 summaries; status/next-phase and state-dependent semantics remain enforced by
 the Python runner so `codex exec --output-schema` accepts the schema before each
-phase.
+phase. The runner now accepts repeated `--env KEY=VALUE` arguments and passes
+those overrides into every nested `codex exec` phase while preserving the base
+environment; dry-run and phase prompts expose only override keys so projects can
+provide validation-environment settings without making the runner
+project-specific or bypassing canonical validation.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing

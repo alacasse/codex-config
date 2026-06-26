@@ -15,6 +15,11 @@ history. It advances only from CLI arguments, JSON state, schema-valid phase
 results, receipt paths, known artifact paths, process exit status, direct path
 existence checks, and conservative `git status --porcelain` checks.
 
+The runner is project-neutral. It does not know project-specific validation
+tools, package managers, caches, network expectations, or fallback commands.
+Projects that need environment variables for nested validation may pass them
+explicitly with repeated `--env KEY=VALUE` arguments.
+
 ## Local Runner Invocation Rule
 
 When the user asks to run the local architecture program runner, do not
@@ -111,6 +116,27 @@ Resume with the same control arguments used for the original run:
   --execute-batches
 ```
 
+Pass project-supplied environment variables to every nested `codex exec` phase
+when the validation environment requires them:
+
+```bash
+~/.codex/scripts/architecture_program_runner.py \
+  --resume \
+  --project <project-path> \
+  --program-ledger <project-relative-ledger-path> \
+  --max-batches 1 \
+  --execute-batches \
+  --env TOOL_CACHE_DIR=/tmp/project-tool-cache
+```
+
+Use one `--env KEY=VALUE` per variable. The runner preserves the current
+process environment and applies these overrides only to the launched phase
+processes. Dry-run diagnostics show override keys, not values.
+
+Environment pass-through is not a validation bypass. Canonical project
+validation must still pass inside the `execute` phase before Batch Runway can
+commit and before the architecture runner can proceed to `closeout`.
+
 ## Batch Count Intent
 
 When a user asks through `$architecture-program-runway`, infer the batch bound
@@ -205,6 +231,11 @@ execute code.
 `execute` uses `$batch-runway execute-spec` on exactly the generated spec. It
 preserves normal `runway_worker` and `runway_reviewer` delegation. Execution
 success does not increment `batches_completed`.
+
+When `execute` stops on validation, receipts should summarize the canonical
+commands attempted, whether fallback validation was attempted and passed, the
+likely failure class such as DNS/cache/permission/lockfile/test failure, relevant
+environment override keys without values, and any dirty files remaining.
 
 `closeout` uses `$architecture-program-runway closeout-runway` to reconcile
 compact execution evidence into the program ledger. It does not paste logs into

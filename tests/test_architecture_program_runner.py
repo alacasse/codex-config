@@ -7,6 +7,7 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 from typing import Any
 
@@ -88,6 +89,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             state_path=self.project / "my-docs" / "plans" / "run-state.json",
             sandbox="workspace-write",
             model=None,
+            env_overrides=(),
             dry_run=False,
             resume=False,
             stop_after_phase=None,
@@ -139,6 +141,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.assertEqual(config.max_batches, 1)
         self.assertFalse(config.execute_batches)
         self.assertEqual(config.sandbox, "workspace-write")
+        self.assertEqual(config.env_overrides, ())
         self.assertEqual(
             config.state_path,
             self.project.resolve()
@@ -190,6 +193,125 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         config = runner.config_from_args(args)
 
         self.assertEqual(config.max_batches, 3)
+
+    def test_cli_parses_one_env_override(self) -> None:
+        args = runner.parse_args(
+            [
+                "--project",
+                str(self.project),
+                "--program-ledger",
+                "my-docs/plans/program.md",
+                "--env",
+                "CACHE_DIR=/tmp/project-cache",
+            ]
+        )
+        config = runner.config_from_args(args)
+
+        self.assertEqual(config.env_overrides, (("CACHE_DIR", "/tmp/project-cache"),))
+
+    def test_cli_parses_multiple_env_overrides(self) -> None:
+        args = runner.parse_args(
+            [
+                "--project",
+                str(self.project),
+                "--program-ledger",
+                "my-docs/plans/program.md",
+                "--env",
+                "CACHE_DIR=/tmp/project-cache",
+                "--env",
+                "EMPTY_VALUE=",
+            ]
+        )
+        config = runner.config_from_args(args)
+
+        self.assertEqual(
+            config.env_overrides,
+            (("CACHE_DIR", "/tmp/project-cache"), ("EMPTY_VALUE", "")),
+        )
+
+    def test_cli_rejects_env_override_without_separator(self) -> None:
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                runner.parse_args(
+                    [
+                        "--project",
+                        str(self.project),
+                        "--program-ledger",
+                        "my-docs/plans/program.md",
+                        "--env",
+                        "CACHE_DIR",
+                    ]
+                )
+
+    def test_cli_rejects_env_override_with_empty_key(self) -> None:
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                runner.parse_args(
+                    [
+                        "--project",
+                        str(self.project),
+                        "--program-ledger",
+                        "my-docs/plans/program.md",
+                        "--env",
+                        "=/tmp/project-cache",
+                    ]
+                )
+
+    def test_env_overrides_preserve_base_environment(self) -> None:
+        env = runner.build_subprocess_env(
+            (("OVERRIDE_ME", "new"), ("ADDED", "value")),
+            base_env={"KEEP_ME": "yes", "OVERRIDE_ME": "old"},
+        )
+
+        self.assertEqual(env["KEEP_ME"], "yes")
+        self.assertEqual(env["OVERRIDE_ME"], "new")
+        self.assertEqual(env["ADDED"], "value")
+
+    def test_execute_codex_phase_passes_env_overrides_to_subprocess(self) -> None:
+        config = runner.RunnerConfig(
+            **{
+                **self.config.__dict__,
+                "env_overrides": (("OVERRIDE_ME", "new"), ("ADDED", "value")),
+            }
+        )
+        state = runner.initial_state(config)
+        result = self.make_result("select-dispatch", "create-spec")
+        captured: dict[str, Any] = {}
+
+        def fake_run(command: list[str], **kwargs: Any) -> Any:
+            captured["env"] = kwargs["env"]
+            output_path = Path(command[command.index("--output-last-message") + 1])
+            output_path.write_text(json.dumps(result), encoding="utf-8")
+            return runner.subprocess.CompletedProcess(command, 0, "", "")
+
+        with mock.patch.dict(
+            runner.os.environ,
+            {"KEEP_ME": "yes", "OVERRIDE_ME": "old"},
+            clear=True,
+        ):
+            with mock.patch.object(runner.subprocess, "run", side_effect=fake_run):
+                returned = runner.execute_codex_phase(config, state, "select-dispatch")
+
+        self.assertEqual(returned, result)
+        self.assertEqual(captured["env"]["KEEP_ME"], "yes")
+        self.assertEqual(captured["env"]["OVERRIDE_ME"], "new")
+        self.assertEqual(captured["env"]["ADDED"], "value")
+
+    def test_dry_run_mentions_env_keys_without_values(self) -> None:
+        config = runner.RunnerConfig(
+            **{
+                **self.config.__dict__,
+                "env_overrides": (("CACHE_TOKEN", "secret-value"),),
+            }
+        )
+        output = io.StringIO()
+
+        with contextlib.redirect_stdout(output):
+            runner.print_dry_run(config, runner.initial_state(config))
+
+        text = output.getvalue()
+        self.assertIn("CACHE_TOKEN", text)
+        self.assertNotIn("secret-value", text)
 
     def test_state_round_trip_uses_json(self) -> None:
         state = runner.initial_state(self.config)

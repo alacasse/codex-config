@@ -12,7 +12,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Mapping
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -65,6 +65,7 @@ class RunnerConfig:
     state_path: Path
     sandbox: str
     model: str | None
+    env_overrides: tuple[tuple[str, str], ...]
     dry_run: bool
     resume: bool
     stop_after_phase: str | None
@@ -111,6 +112,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--model", default=None, help="Optional codex exec model.")
     parser.add_argument(
+        "--env",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        type=env_override,
+        help=(
+            "Environment variable override passed to every nested codex exec phase. "
+            "Repeat for multiple values."
+        ),
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print planned phase command and prompt without writing state.",
@@ -145,6 +157,15 @@ def positive_int(value: str) -> int:
     return parsed
 
 
+def env_override(value: str) -> tuple[str, str]:
+    if "=" not in value:
+        raise argparse.ArgumentTypeError("must use KEY=VALUE")
+    key, env_value = value.split("=", 1)
+    if not key:
+        raise argparse.ArgumentTypeError("environment key must be non-empty")
+    return key, env_value
+
+
 def config_from_args(args: argparse.Namespace) -> RunnerConfig:
     project = Path(args.project).expanduser().resolve()
     state_path = resolve_state_path(project, args.program_ledger, args.state)
@@ -157,6 +178,7 @@ def config_from_args(args: argparse.Namespace) -> RunnerConfig:
         state_path=state_path,
         sandbox=args.sandbox,
         model=args.model,
+        env_overrides=tuple(args.env),
         dry_run=args.dry_run,
         resume=args.resume,
         stop_after_phase=args.stop_after_phase,
@@ -406,19 +428,26 @@ def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str
         f"Batch limit: {batch_limit_label(config.max_batches)}",
         f"Current phase: {phase}",
         f"Output schema path: {SCHEMA_PATH}",
-        "",
-        "Expected artifact paths from current state:",
-        f"- active_batch_id: {state.get('active_batch_id')}",
-        f"- dispatch_path: {state.get('dispatch_path')}",
-        f"- spec_path: {state.get('spec_path')}",
-        f"- last_receipt_path: {state.get('last_receipt_path')}",
-        "",
-        "Return schema-valid JSON as the final response.",
-        "Write the same JSON object to a compact phase receipt file.",
-        "Return the receipt path in receipt_path.",
-        "Use compact strings or null for validation_summary and review_summary.",
-        "Do not parse or edit runner state directly.",
     ]
+    if config.env_overrides:
+        lines.append(f"Runner env override keys: {env_override_key_label(config)}")
+        lines.append("Do not disclose runner env override values.")
+    lines.extend(
+        [
+            "",
+            "Expected artifact paths from current state:",
+            f"- active_batch_id: {state.get('active_batch_id')}",
+            f"- dispatch_path: {state.get('dispatch_path')}",
+            f"- spec_path: {state.get('spec_path')}",
+            f"- last_receipt_path: {state.get('last_receipt_path')}",
+            "",
+            "Return schema-valid JSON as the final response.",
+            "Write the same JSON object to a compact phase receipt file.",
+            "Return the receipt path in receipt_path.",
+            "Use compact strings or null for validation_summary and review_summary.",
+            "Do not parse or edit runner state directly.",
+        ]
+    )
 
     if phase == "select-dispatch":
         lines.extend(
@@ -452,6 +481,7 @@ def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str
                 "- Read and execute exactly the generated Batch Runway spec.",
                 "- Preserve normal runway_worker and runway_reviewer delegation.",
                 "- Stop on validation, review, dirty-file conflict, or active spec stop conditions.",
+                "- If validation stops, summarize canonical commands attempted, fallback validation attempted/passed, likely failure class, env override keys present without values, and dirty files remaining.",
                 "- Use next_phase=closeout when completed.",
             ]
         )
@@ -505,6 +535,22 @@ def build_codex_command(
     return command
 
 
+def build_subprocess_env(
+    overrides: Iterable[tuple[str, str]],
+    *,
+    base_env: Mapping[str, str] | None = None,
+) -> dict[str, str]:
+    env = dict(os.environ if base_env is None else base_env)
+    for key, value in overrides:
+        env[key] = value
+    return env
+
+
+def env_override_key_label(config: RunnerConfig) -> str:
+    keys = [key for key, _value in config.env_overrides]
+    return ", ".join(dict.fromkeys(keys))
+
+
 def execute_codex_phase(config: RunnerConfig, state: dict[str, Any], phase: str) -> dict[str, Any]:
     prompt = build_prompt(config, state, phase)
     with tempfile.NamedTemporaryFile(
@@ -519,6 +565,7 @@ def execute_codex_phase(config: RunnerConfig, state: dict[str, Any], phase: str)
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
+            env=build_subprocess_env(config.env_overrides),
         )
         if completed.returncode != 0:
             raise RunnerError(
@@ -534,6 +581,8 @@ def print_dry_run(config: RunnerConfig, state: dict[str, Any]) -> None:
     command = build_codex_command(config, prompt, Path("<tmp-result>"))
     print("Command:")
     print(shell_join(command))
+    if config.env_overrides:
+        print(f"Env override keys: {env_override_key_label(config)}")
     print()
     print("Prompt:")
     print(prompt)
