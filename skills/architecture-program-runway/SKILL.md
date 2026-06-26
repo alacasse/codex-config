@@ -67,8 +67,9 @@ creating a speculative plan.
 - `reprioritize`: reassess remaining findings after the codebase or constraints
   changed. Update ordering without hiding deferred work.
 
-For `/goal`, automation, local-runner, or other bounded runner use, read
-`references/goal-runner-v1.md` before starting the loop.
+For `/goal` or prompt-driven bounded runner use, read
+`references/goal-runner-v1.md` before starting the loop. For the split-phase
+local CLI runner, read `references/local-runner-v1.md`.
 
 Infer the narrowest useful mode from the user request. If the user asks to
 "create the batch/spec", use `select-next-batch` briefly, then

@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Architecture-program-runway local runner
+
+Problem: the accepted split-phase local runner design needed an implementation
+that could drive architecture-program batches without keeping one long-lived
+Codex thread or teaching the runner to parse program ledgers.
+
+Decision: add a stdlib-only `architecture_program_runner.py` CLI, a local
+runner protocol reference, and a phase-result JSON schema. The runner launches
+fresh `codex exec` phases for `select-dispatch`, `create-spec`, `execute`, and
+`closeout`; validates the final result and receipt with the same schema; keeps
+JSON state; applies conservative dirty-worktree checks; and increments
+`batches_completed` only after successful closeout. The
+`architecture-program-runway` feature now also installs the runner script.
+
+Expected effect: future architecture-program passes can be resumed from disk
+artifacts and bounded by phase/state transitions while preserving the existing
+`architecture-program-runway` versus `batch-runway` responsibility boundary.
+
 ### Architecture-program-runway goal runner prompt
 
 Problem: the bounded `/goal` orchestration prompt was useful but lived only in
