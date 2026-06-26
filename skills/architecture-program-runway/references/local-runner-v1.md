@@ -156,6 +156,12 @@ Every phase runs in a fresh `codex exec` process with
 `--output-schema local-runner-phase-result.schema.json` and
 `--output-last-message <tmp-result>`.
 
+The phase-result JSON schema is intentionally limited to the Codex structured
+output subset: object shape, required fields, primitive types, enums, arrays,
+nullable fields, and `additionalProperties: false`. Cross-field and
+state-dependent semantics live in the Python runner validation, not in schema
+composition or conditional keywords.
+
 Every phase must:
 
 - write a phase receipt file;

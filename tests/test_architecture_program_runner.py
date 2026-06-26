@@ -15,12 +15,42 @@ SCRIPT = (
     Path(__file__).resolve().parents[1] / "scripts" / "architecture_program_runner.py"
 )
 REPO_ROOT = Path(__file__).resolve().parents[1]
+PHASE_RESULT_SCHEMA = (
+    REPO_ROOT
+    / "skills"
+    / "architecture-program-runway"
+    / "references"
+    / "local-runner-phase-result.schema.json"
+)
+UNSUPPORTED_CODEX_OUTPUT_SCHEMA_KEYS = {
+    "allOf",
+    "anyOf",
+    "oneOf",
+    "not",
+    "if",
+    "then",
+    "else",
+}
 spec = importlib.util.spec_from_file_location("architecture_program_runner", SCRIPT)
 assert spec is not None
 runner = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
 sys.modules["architecture_program_runner"] = runner
 spec.loader.exec_module(runner)
+
+
+def schema_keyword_paths(value: Any, path: str = "$") -> list[str]:
+    paths: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_path = f"{path}.{key}"
+            if key in UNSUPPORTED_CODEX_OUTPUT_SCHEMA_KEYS:
+                paths.append(child_path)
+            paths.extend(schema_keyword_paths(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            paths.extend(schema_keyword_paths(child, f"{path}[{index}]"))
+    return paths
 
 
 class ArchitectureProgramRunnerTests(unittest.TestCase):
@@ -174,6 +204,19 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         prompt = runner.build_prompt(config, state, "select-dispatch")
 
         self.assertIn("Batch limit: all executable batches", prompt)
+
+    def test_phase_result_schema_uses_codex_output_subset(self) -> None:
+        schema = json.loads(PHASE_RESULT_SCHEMA.read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            schema["required"],
+            list(runner.REQUIRED_RESULT_FIELDS),
+        )
+        self.assertEqual(schema["additionalProperties"], False)
+        self.assertEqual(
+            schema_keyword_paths(schema),
+            [],
+        )
 
     def test_local_runner_invocation_rule_lives_in_protocol(self) -> None:
         text = (
