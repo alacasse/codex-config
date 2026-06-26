@@ -119,7 +119,8 @@ Every program ledger should make these things visible:
 - Batch queue with grouping rationale, dependencies, validation class, dispatch
   path, and spec path.
 - Recommended next batch and explicit deferred candidates.
-- Selected dispatch packet for the next fresh `batch-runway create-spec` pass.
+- Selected dispatch packet path, or inline single-batch dispatch, for the next
+  fresh `batch-runway create-spec` pass.
 - Closeout rules for updating findings after a concrete runway completes.
 
 ## Selected Batch Brief

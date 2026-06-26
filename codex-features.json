@@ -22,7 +22,7 @@
       ]
     },
     "architecture-program-runway": {
-      "version": "1.0.2",
+      "version": "1.0.3",
       "description": "Program-level workflow for turning broad architecture findings into sequenced Batch Runway specs.",
       "links": [
         {

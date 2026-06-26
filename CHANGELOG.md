@@ -19,6 +19,8 @@ brief/dispatch packet so a fresh `batch-runway create-spec` session can consume
 bounded context instead of re-reading the raw findings document or re-deriving
 the whole program. Multi-batch programs should store that dispatch packet in a
 separate linked file, and ledgers should retain only compact closeout evidence.
+The ledger template keeps the selected-dispatch section as a pointer by default
+and moves the full YAML shape into a dispatch-packet template.
 
 Expected effect: future architecture review documents should stay durable
 across multiple batches without encouraging one oversized runway or losing

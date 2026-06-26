@@ -3,7 +3,7 @@
 Use this template when creating or restructuring a broad architecture findings
 ledger that feeds future Batch Runway specs.
 
-```markdown
+````markdown
 # <Area> Architecture Findings
 
 ## Purpose
@@ -20,7 +20,7 @@ the program ledger above individual Batch Runway specs.
 ## Source Context
 
 - Review source: `<path or summary>`
-- Completed runway: `<path>` or `None`
+- Completed runways: `<paths>` or `None`
 - Current baseline: `<commit or date>`
 - Related ADRs/docs: `<paths>`
 
@@ -36,17 +36,32 @@ the program ledger above individual Batch Runway specs.
 |---|---|---|---|---|---|---|---|
 | <name> | <ids> | Ready | <shared seam/profile> | <dependency or None> | <profile> | <path or TBD> | TBD |
 
-## Selected Batch Brief
+## Selected Batch Brief / Dispatch Packet
 
-Use this section as the dispatch packet for the next fresh
-`batch-runway create-spec` session. Keep it compact enough that the next agent
-does not need to reload the raw review or re-solve batch grouping.
+Use this section to point to the dispatch packet for the next fresh
+`batch-runway create-spec` session.
 
-For single-batch programs, this section may live in the ledger. For multi-batch
-programs, write the dispatch packet to a nearby file such as
-`dispatch/<batch-id>-selected-brief.md` or
-`dispatch/<batch-id>-dispatch.md`, and put that path in the Batch Queue
-`Dispatch` column instead of duplicating the full packet here.
+For single-batch programs, the dispatch packet may live here.
+
+For multi-batch programs, write the dispatch packet to a nearby file such as:
+
+- `dispatch/<batch-id>-selected-brief.md`
+- `dispatch/<batch-id>-dispatch.md`
+
+Then put that path in the Batch Queue `Dispatch` column instead of duplicating
+the full packet here.
+
+Current dispatch:
+
+- Batch: `<batch-id or None>`
+- Dispatch: `<path or None>`
+- Status: `<Ready | In runway | Completed | Blocked>`
+- Notes: `<one-line note>`
+
+## Dispatch Packet Template
+
+Use this shape inside the separate dispatch file when a multi-batch program
+needs a bounded handoff artifact.
 
 ```yaml
 batch_id: <stable-name>
@@ -98,7 +113,7 @@ expected_spec_path: <local plan path or naming convention>
 - Keep unrelated deferred findings visible.
 - Keep only compact closeout evidence in this ledger: dispatch path, spec path,
   commit range, validation result, review result, and unresolved follow-ups.
-```
+````
 
 ## Batch Queue Statuses
 
