@@ -53,6 +53,23 @@ def schema_keyword_paths(value: Any, path: str = "$") -> list[str]:
     return paths
 
 
+def schema_subset_violations(value: Any, path: str = "$") -> list[str]:
+    violations: list[str] = []
+    if isinstance(value, dict):
+        schema_type = value.get("type")
+        schema_types = schema_type if isinstance(schema_type, list) else [schema_type]
+        if "object" in schema_types and value.get("additionalProperties") is not False:
+            violations.append(f"{path}: object schemas must set additionalProperties=false")
+        if "array" in schema_types and "items" not in value:
+            violations.append(f"{path}: array schemas must define items")
+        for key, child in value.items():
+            violations.extend(schema_subset_violations(child, f"{path}.{key}"))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            violations.extend(schema_subset_violations(child, f"{path}[{index}]"))
+    return violations
+
+
 class ArchitectureProgramRunnerTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -217,6 +234,10 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             schema_keyword_paths(schema),
             [],
         )
+        self.assertEqual(
+            schema_subset_violations(schema),
+            [],
+        )
 
     def test_local_runner_invocation_rule_lives_in_protocol(self) -> None:
         text = (
@@ -283,6 +304,12 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         result = self.make_result("execute", "closeout", validation_summary=7)
 
         with self.assertRaisesRegex(runner.RunnerError, "validation_summary"):
+            runner.validate_phase_result(result)
+
+    def test_structured_summary_type_fails(self) -> None:
+        result = self.make_result("execute", "closeout", review_summary={"status": "clean"})
+
+        with self.assertRaisesRegex(runner.RunnerError, "review_summary"):
             runner.validate_phase_result(result)
 
     def test_receipt_must_match_final_phase_result(self) -> None:
@@ -359,7 +386,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             "closeout",
             commit_range="abc123..def456",
             validation_summary="tests passed",
-            review_summary={"status": "clean"},
+            review_summary="review clean",
         )
         self.write_receipt(result)
         state = runner.initial_state(self.config)
@@ -376,7 +403,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.assertEqual(summary["last_receipt_path"], result["receipt_path"])
         self.assertEqual(summary["commit_range"], "abc123..def456")
         self.assertEqual(summary["validation_summary"], "tests passed")
-        self.assertEqual(summary["review_summary"], {"status": "clean"})
+        self.assertEqual(summary["review_summary"], "review clean")
 
     def test_unbounded_mode_stops_when_closeout_reports_no_next_batch(self) -> None:
         config = runner.RunnerConfig(**{**self.config.__dict__, "max_batches": None})

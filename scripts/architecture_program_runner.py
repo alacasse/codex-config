@@ -327,8 +327,8 @@ def validate_nullable_string(result: dict[str, Any], field: str) -> None:
 
 def validate_summary(result: dict[str, Any], field: str) -> None:
     value = result[field]
-    if value is not None and not isinstance(value, (str, dict, list)):
-        raise RunnerError(f"{field} must be a string, object, array, or null")
+    if value is not None and not isinstance(value, str):
+        raise RunnerError(f"{field} must be a string or null")
 
 
 def validate_result_against_state(result: dict[str, Any], state: dict[str, Any]) -> None:
@@ -416,6 +416,7 @@ def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str
         "Return schema-valid JSON as the final response.",
         "Write the same JSON object to a compact phase receipt file.",
         "Return the receipt path in receipt_path.",
+        "Use compact strings or null for validation_summary and review_summary.",
         "Do not parse or edit runner state directly.",
     ]
 

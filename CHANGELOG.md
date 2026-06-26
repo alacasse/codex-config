@@ -21,9 +21,10 @@ Local runner invocation is now a protocol rule instead of prompt boilerplate:
 skill-mediated requests default to `--all-batches` unless the user gives a
 count, direct CLI defaults remain one batch, and the runner prints a final JSON
 summary for agents to report. The phase-result schema now stays within the Codex
-structured-output subset; status/next-phase and state-dependent semantics remain
-enforced by the Python runner so `codex exec --output-schema` accepts the schema
-before each phase.
+structured-output subset, including text-only compact validation/review
+summaries; status/next-phase and state-dependent semantics remain enforced by
+the Python runner so `codex exec --output-schema` accepts the schema before each
+phase.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing

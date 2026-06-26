@@ -162,6 +162,10 @@ nullable fields, and `additionalProperties: false`. Cross-field and
 state-dependent semantics live in the Python runner validation, not in schema
 composition or conditional keywords.
 
+`validation_summary` and `review_summary` are compact strings or `null`. Put
+detailed structured evidence in referenced files and list those paths in
+`evidence_paths`.
+
 Every phase must:
 
 - write a phase receipt file;

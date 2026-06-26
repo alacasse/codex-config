@@ -62,10 +62,10 @@
       "type": ["string", "null"]
     },
     "validation_summary": {
-      "type": ["string", "object", "array", "null"]
+      "type": ["string", "null"]
     },
     "review_summary": {
-      "type": ["string", "object", "array", "null"]
+      "type": ["string", "null"]
     },
     "evidence_paths": {
       "type": "array",
