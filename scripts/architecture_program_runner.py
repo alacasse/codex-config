@@ -652,6 +652,23 @@ def expected_dirty_paths(
             expected.add(
                 project_relative(config.project, resolve_project_path(config.project, state[field]))
             )
+    if state.get("last_receipt_path"):
+        try:
+            receipt = read_json_object(
+                resolve_project_path(config.project, state["last_receipt_path"])
+            )
+        except RunnerError:
+            receipt = {}
+        if (
+            receipt.get("status") == "stopped"
+            and receipt.get("phase") == phase
+            and isinstance(receipt.get("evidence_paths"), list)
+        ):
+            for value in receipt["evidence_paths"]:
+                if isinstance(value, str):
+                    expected.add(
+                        project_relative(config.project, resolve_project_path(config.project, value))
+                    )
 
     if phase == "select-dispatch":
         for field in ("dispatch_path",):

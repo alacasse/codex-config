@@ -685,6 +685,66 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             status_reader=lambda project: ["?? my-docs/"],
         )
 
+    def test_preflight_dirty_worktree_allows_stopped_phase_evidence_paths(self) -> None:
+        state = runner.initial_state(self.config)
+        state["active_phase"] = "execute"
+        state["active_batch_id"] = "batch-1"
+        state["dispatch_path"] = "my-docs/plans/dispatch/batch-1.md"
+        state["spec_path"] = "my-docs/plans/batch-1-spec.md"
+        state["last_phase_status"] = "stopped"
+        state["last_receipt_path"] = "my-docs/plans/receipts/execute.json"
+        receipt = self.make_result(
+            "execute",
+            "stopped",
+            status="stopped",
+            stop_reason="validation blocked",
+            receipt_path=state["last_receipt_path"],
+            evidence_paths=[
+                "tests/install_sandbox/test_install_target_selection.py",
+                "tests/install_sandbox/test_install_target_harness_policy.py",
+            ],
+        )
+        self.write_receipt(receipt)
+
+        runner.check_worktree(
+            self.config,
+            state,
+            "execute",
+            status_reader=lambda project: [
+                " M tests/install_sandbox/test_install_target_selection.py",
+                " M tests/install_sandbox/test_install_target_harness_policy.py",
+            ],
+        )
+
+    def test_preflight_dirty_worktree_allows_stopped_receipt_after_preflight_failure(
+        self,
+    ) -> None:
+        state = runner.initial_state(self.config)
+        state["active_phase"] = "execute"
+        state["active_batch_id"] = "batch-1"
+        state["dispatch_path"] = "my-docs/plans/dispatch/batch-1.md"
+        state["spec_path"] = "my-docs/plans/batch-1-spec.md"
+        state["last_phase_status"] = "failed"
+        state["last_receipt_path"] = "my-docs/plans/receipts/execute.json"
+        receipt = self.make_result(
+            "execute",
+            "stopped",
+            status="stopped",
+            stop_reason="validation blocked",
+            receipt_path=state["last_receipt_path"],
+            evidence_paths=["tests/install_sandbox/test_install_target_selection.py"],
+        )
+        self.write_receipt(receipt)
+
+        runner.check_worktree(
+            self.config,
+            state,
+            "execute",
+            status_reader=lambda project: [
+                " M tests/install_sandbox/test_install_target_selection.py",
+            ],
+        )
+
     def test_post_execute_unexpected_dirty_project_file_stops_before_closeout(self) -> None:
         result = self.make_result("execute", "closeout")
         self.write_receipt(result)

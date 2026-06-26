@@ -29,6 +29,10 @@ those overrides into every nested `codex exec` phase while preserving the base
 environment; dry-run and phase prompts expose only override keys so projects can
 provide validation-environment settings without making the runner
 project-specific or bypassing canonical validation.
+Stopped-phase resume now also recognizes evidence paths recorded in the last
+stopped receipt for the same active phase, so a validation-blocked execute can
+resume with its own in-progress code/test changes instead of being rejected by
+the conservative worktree gate.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing
