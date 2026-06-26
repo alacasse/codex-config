@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Architecture-program-runway goal runner prompt
+
+Problem: the bounded `/goal` orchestration prompt was useful but lived only in
+chat, making it hard to reuse, version, review, or tune as part of the
+`architecture-program-runway` workflow.
+
+Decision: add `references/goal-runner-v1.md` as the versioned reusable runner
+protocol for `/goal`, automation, or local-runner experiments. The skill now
+loads that reference for bounded runner use, keeping the actual `/goal` prompt
+short while the loop, stop conditions, source-of-truth model, and telemetry
+requirements live in the repo-backed skill.
+
+Expected effect: future `/goal` trials can use a stable prompt file with
+`program_ledger`, `max_batches`, and `execute_batches` inputs, then produce
+comparable goal-run evaluation telemetry for tuning.
+
 ### Architecture-program-runway goal-run telemetry
 
 Problem: `/goal` and future local runner experiments need evidence for tuning
