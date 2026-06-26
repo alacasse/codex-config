@@ -15,6 +15,8 @@ fresh `codex exec` phases for `select-dispatch`, `create-spec`, `execute`, and
 JSON state; applies conservative dirty-worktree checks; and increments
 `batches_completed` only after successful closeout. The
 `architecture-program-runway` feature now also installs the runner script.
+The skill documentation now separates skill invocation from CLI execution and
+shows how to run the installed runner directly or ask an agent to run it.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing

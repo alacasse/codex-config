@@ -71,6 +71,30 @@ For `/goal` or prompt-driven bounded runner use, read
 `references/goal-runner-v1.md` before starting the loop. For the split-phase
 local CLI runner, read `references/local-runner-v1.md`.
 
+## Local Runner Usage
+
+The split-phase local runner is a CLI script, not a skill mode that launches
+itself. A skill gives the agent instructions; it does not automatically start
+subprocesses. To run the local runner, either run
+`~/.codex/scripts/architecture_program_runner.py` directly from a terminal or
+explicitly ask an agent to run that command.
+
+Use the local runner when the program ledger and planning location are already
+known and you want fresh `codex exec` processes for each phase. Use this skill
+manually when you want an agent to inspect, plan, select, create, or close out
+one step inside the current conversation.
+
+Example prompt for an agent:
+
+```text
+Use $architecture-program-runway only to understand the local runner contract.
+Run ~/.codex/scripts/architecture_program_runner.py with the project, program
+ledger, max-batches, and execute-batches values below. Do not manually perform
+the phases in this conversation; let the runner launch fresh codex exec phases.
+After it stops, summarize the runner state, receipt path, stop reason, and
+validation status.
+```
+
 Infer the narrowest useful mode from the user request. If the user asks to
 "create the batch/spec", use `select-next-batch` briefly, then
 `create-next-runway`.

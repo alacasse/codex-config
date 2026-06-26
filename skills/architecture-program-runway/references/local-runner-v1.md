@@ -15,6 +15,79 @@ history. It advances only from CLI arguments, JSON state, schema-valid phase
 results, receipt paths, known artifact paths, process exit status, direct path
 existence checks, and conservative `git status --porcelain` checks.
 
+## How To Use It
+
+Skills are instruction bundles. They do not launch this runner by themselves.
+The runner is the executable interface:
+
+```bash
+~/.codex/scripts/architecture_program_runner.py \
+  --project /home/alacasse/projects/graphify \
+  --program-ledger my-docs/plans/install-sandbox-architecture-findings.md \
+  --max-batches 1
+```
+
+Run a dry preview first:
+
+```bash
+~/.codex/scripts/architecture_program_runner.py \
+  --dry-run \
+  --project /home/alacasse/projects/graphify \
+  --program-ledger my-docs/plans/install-sandbox-architecture-findings.md \
+  --max-batches 1
+```
+
+Create the next spec but do not execute code:
+
+```bash
+~/.codex/scripts/architecture_program_runner.py \
+  --project /home/alacasse/projects/graphify \
+  --program-ledger my-docs/plans/install-sandbox-architecture-findings.md \
+  --max-batches 1
+```
+
+Create, execute, and close out one batch:
+
+```bash
+~/.codex/scripts/architecture_program_runner.py \
+  --project /home/alacasse/projects/graphify \
+  --program-ledger my-docs/plans/install-sandbox-architecture-findings.md \
+  --max-batches 1 \
+  --execute-batches
+```
+
+Resume with the same control arguments used for the original run:
+
+```bash
+~/.codex/scripts/architecture_program_runner.py \
+  --resume \
+  --project /home/alacasse/projects/graphify \
+  --program-ledger my-docs/plans/install-sandbox-architecture-findings.md \
+  --max-batches 1 \
+  --execute-batches
+```
+
+Ask an agent to run it only when you want that agent to launch the CLI. A good
+prompt is:
+
+```text
+Use $architecture-program-runway to understand the local runner contract, then
+run ~/.codex/scripts/architecture_program_runner.py with:
+- --project <project path>
+- --program-ledger <project-relative ledger path>
+- --max-batches <n>
+- --execute-batches if implementation is allowed
+
+Do not manually perform the phases in this conversation. Let the runner launch
+fresh codex exec phases. After it stops, summarize the state file, last receipt
+path, stop reason, and validation result.
+```
+
+Use the skill manually instead of the runner when you want to stay in the
+current conversation, inspect the ledger, select one batch, create one spec, or
+close out one already-finished runway without launching nested `codex exec`
+processes.
+
 ## Phase Contract
 
 Every phase runs in a fresh `codex exec` process with
