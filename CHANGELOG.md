@@ -90,6 +90,8 @@ skill instructions, single-level boundary rules, shared receipt/result duties,
 env-override validation duties, and per-phase next-phase requirements while
 leaving launch facts, artifact paths, sandbox choices, and env-key labels with
 Phase Environment.
+Contract-owner tests now assert exact phase obligation catalogs, while command
+tests focus on prompt integration between Phase Contract and Phase Environment.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing

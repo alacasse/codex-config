@@ -9,6 +9,7 @@ from unittest import mock
 
 from scripts import architecture_program_runner_command as command_owner
 from scripts import architecture_program_runner_environment as environment_owner
+from scripts import architecture_program_runner_phase_contract as phase_contract_owner
 from tests.architecture_program_runner_test_support import runner
 
 
@@ -72,25 +73,20 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
             str(environment.schema_path),
         )
 
-    def test_prompt_guardrails_and_phase_contracts_are_rendered_by_command_owner(
+    def test_prompt_renders_phase_contract_with_phase_environment_facts(
         self,
     ) -> None:
         state = runner.initial_state(self.config)
+        contract = phase_contract_owner.build_phase_contract("execute")
 
-        prompts = {
-            phase: command_owner.build_prompt(self.config, state, phase)
-            for phase in runner.PHASES
-        }
+        prompt = command_owner.build_prompt(self.config, state, "execute")
 
-        self.assertIn("select-next-batch", prompts["select-dispatch"])
-        self.assertIn("create-next-runway", prompts["create-spec"])
-        self.assertIn("$batch-runway execute-spec", prompts["execute"])
-        self.assertIn("closeout-runway", prompts["closeout"])
-        for prompt in prompts.values():
-            self.assertIn("Do not run codex exec", prompt)
-            self.assertIn("Do not launch the local architecture program runner", prompt)
-            self.assertIn("Return schema-valid JSON", prompt)
-            self.assertIn("receipt_path", prompt)
+        self.assertIn(f"Use {contract.skill_instruction}.", prompt)
+        self.assertIn(contract.single_level_boundary_obligations[0], prompt)
+        self.assertIn(contract.shared_result_obligations[0], prompt)
+        self.assertIn(contract.phase_requirements[-1], prompt)
+        self.assertIn("Batch limit: 1 batch", prompt)
+        self.assertIn(f"Project path: {self.config.project}", prompt)
 
     def test_structured_prompt_names_expected_receipt_and_inventory_paths(self) -> None:
         artifact_root = (

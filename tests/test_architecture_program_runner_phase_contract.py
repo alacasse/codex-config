@@ -74,6 +74,18 @@ class ArchitectureProgramRunnerPhaseContractTests(ArchitectureProgramRunnerTestC
                 "- Read and execute exactly the generated Batch Runway spec.",
                 "- Preserve normal runway_worker and runway_reviewer delegation.",
                 "- Stop on validation, review, dirty-file conflict, or active spec stop conditions.",
+                (
+                    "- Run canonical validation from the execute coordinator shell; do not "
+                    "treat subagent-only validation output as canonical when runner env "
+                    "overrides are involved."
+                ),
+                (
+                    "- If validation stops, summarize exact canonical command lines "
+                    "attempted, whether runner env override keys were present in the "
+                    "command environment, whether path-like override values were readable "
+                    "without disclosing values, fallback validation attempted/passed, "
+                    "likely failure class, and dirty files remaining."
+                ),
                 "- Use next_phase=closeout when completed.",
             ),
             "closeout": (
@@ -83,15 +95,33 @@ class ArchitectureProgramRunnerPhaseContractTests(ArchitectureProgramRunnerTestC
                 "- Use existing state, receipt, ledger, and evidence files only.",
                 "- Update telemetry without launching another Codex process.",
                 "- Use next_phase=select-dispatch only when another batch is allowed and ready.",
+                (
+                    "- Use next_phase=select-dispatch when another safe executable batch is "
+                    "ready and the batch limit permits it."
+                ),
                 "- Use next_phase=done when the batch limit is reached or no next batch is ready.",
             ),
         }
 
-        for phase, required_lines in phase_requirements.items():
+        for phase, expected_requirements in phase_requirements.items():
             with self.subTest(phase=phase):
                 contract = phase_contract_owner.build_phase_contract(phase)
-                for line in required_lines:
-                    self.assertIn(line, contract.phase_requirements)
+                self.assertEqual(contract.phase_requirements, expected_requirements)
+
+    def test_phase_contract_catalogs_env_override_validation_obligations(self) -> None:
+        contract = phase_contract_owner.build_phase_contract("execute")
+
+        self.assertEqual(
+            contract.env_override_validation_obligations,
+            (
+                "Do not disclose runner env override values.",
+                (
+                    "Before validation that depends on these keys, run a "
+                    "coordinator-shell environment probe and record only "
+                    "key-present/readable-path booleans."
+                ),
+            ),
+        )
 
     def test_phase_contract_allows_create_spec_to_finish_when_execution_is_disabled(
         self,
