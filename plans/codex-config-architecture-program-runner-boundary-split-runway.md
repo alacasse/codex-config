@@ -117,11 +117,11 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Focused validation | Review | Notes |
 |---|---|---|---|---|---|
-| 1. Path and state owner seam | Completed | See commit receipt | `70 passed`; dry-run smoke passed; `git diff --check` passed; ruff unavailable: `/usr/bin/python: No module named ruff` | Process-blocked review accepted after ledger recording; no code findings | Creates the first reusable owner API for path/state helpers. |
-| 2. Phase result and receipt validation seam | Completed | See commit receipt | `71 passed`; dry-run smoke passed; `git diff --check` passed; ruff unavailable: `/usr/bin/python: No module named ruff` | Process-blocked review accepted after ledger recording; no code findings | Consumes Slice 1 path/state APIs where applicable. |
-| 3. Prompt, command, and env construction seam | Completed | See commit receipt | `71 passed`; dry-run smoke passed; ruff via `uvx` passed; `git diff --check` passed | Clean | Preserved exact prompt guardrails and command flags. |
-| 4. Artifact manifest and telemetry owner seams | Completed | See commit receipt | `89 passed`; dry-run smoke passed; ruff via `uvx` passed; `git diff --check` passed | Clean after fix loop | APR-13 closed: structured failure paths refresh manifests and telemetry through active batch state. |
-| 5. Test topology split and thin CLI integration suite | Completed | See commit receipt | `71 passed`; dry-run smoke passed; ruff via `uvx` passed; `git diff --check` passed | Clean after coverage fix loops | Mirrored new owner seams and preserved broad regression coverage. |
+| 1. Path and state owner seam | Completed | `df92bda` | `70 passed`; dry-run smoke passed; `git diff --check` passed; ruff unavailable: `/usr/bin/python: No module named ruff` | Process-blocked review accepted after ledger recording; no code findings | Creates the first reusable owner API for path/state helpers. |
+| 2. Phase result and receipt validation seam | Completed | `7cf3873` | `71 passed`; dry-run smoke passed; `git diff --check` passed; ruff unavailable: `/usr/bin/python: No module named ruff` | Process-blocked review accepted after ledger recording; no code findings | Consumes Slice 1 path/state APIs where applicable. |
+| 3. Prompt, command, and env construction seam | Completed | `025d5a1` | `71 passed`; dry-run smoke passed; ruff via `uvx` passed; `git diff --check` passed | Clean | Preserved exact prompt guardrails and command flags. |
+| 4. Artifact manifest and telemetry owner seams | Completed | `e96c71e` | `89 passed`; dry-run smoke passed; ruff via `uvx` passed; `git diff --check` passed | Clean after fix loop | APR-13 closed: structured failure paths refresh manifests and telemetry through active batch state. |
+| 5. Test topology split and thin CLI integration suite | Completed | `63c1be7` | `71 passed`; dry-run smoke passed; ruff via `uvx` passed; `git diff --check` passed | Clean after coverage fix loops | Mirrored new owner seams and preserved broad regression coverage. |
 
 ## Completed Slice Archive
 
@@ -129,7 +129,7 @@ Dirty-file constraints:
   - Outcome: extracted path/state helpers to
     `scripts/architecture_program_runner_state.py` while keeping compatibility
     re-exports in `scripts/architecture_program_runner.py`.
-  - Commit: see coordinator commit receipt for the final hash.
+  - Commit: `df92bda`.
   - Validation: `python -m pytest tests/test_architecture_program_runner_state.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`
     passed with 70 tests; dry-run runner smoke passed; `git diff --check`
     passed; ruff blocked because `/usr/bin/python` has no `ruff` module.
@@ -141,7 +141,7 @@ Dirty-file constraints:
   - Outcome: extracted phase-result, receipt, and schema-subset validation to
     `scripts/architecture_program_runner_validation.py` while keeping
     compatibility re-exports in `scripts/architecture_program_runner.py`.
-  - Commit: see coordinator commit receipt for the final hash.
+  - Commit: `7cf3873`.
   - Validation: `python -m pytest tests/test_architecture_program_runner_validation.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`
     passed with 71 tests; dry-run runner smoke passed; `git diff --check`
     passed; ruff blocked because `/usr/bin/python` has no `ruff` module.
@@ -154,7 +154,7 @@ Dirty-file constraints:
     and command quoting helpers to `scripts/architecture_program_runner_command.py`
     while keeping compatibility re-exports in
     `scripts/architecture_program_runner.py`.
-  - Commit: see coordinator commit receipt for the final hash.
+  - Commit: `025d5a1`.
   - Validation: `python -m pytest tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`
     passed with 71 tests; dry-run runner smoke passed; `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check ...`
     passed with a non-fatal Python symlink warning; `git diff --check` passed.
@@ -168,7 +168,7 @@ Dirty-file constraints:
     when active batch state exists, and by adding malformed-result regression
     coverage that preserves the validation error, writes state, and attributes
     phase telemetry/manifests through `active_batch_id`.
-  - Commit: see coordinator commit receipt for the final hash.
+  - Commit: `e96c71e`.
   - Validation: `python -m pytest tests/test_architecture_program_runner_state.py tests/test_architecture_program_runner_validation.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_artifacts.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`
     passed with 89 tests; dry-run runner smoke passed; `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check ...`
     passed with a non-fatal Python symlink warning; `git diff --check` passed.
@@ -179,7 +179,7 @@ Dirty-file constraints:
   - Outcome: split the remaining broad runner tests into shared support,
     run-loop, worktree, protocol, and thin CLI/integration modules while keeping
     the owner-module focused tests from Slices 1-4.
-  - Commit: see coordinator commit receipt for the final hash.
+  - Commit: `63c1be7`.
   - Validation: `python -m pytest tests/test_architecture_program_runner.py tests/test_architecture_program_runner_state.py tests/test_architecture_program_runner_validation.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_artifacts.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner_worktree.py tests/test_architecture_program_runner_protocol.py tests/test_codex_owner.py -q`
     passed with 71 tests; dry-run runner smoke passed; `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check ...`
     passed with a non-fatal Python symlink warning; `git diff --check` passed.
