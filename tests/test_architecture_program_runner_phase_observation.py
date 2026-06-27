@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 from scripts import architecture_program_runner_artifacts as artifacts
 from scripts import architecture_program_runner_phase_observation as observation_owner
@@ -144,6 +145,21 @@ class ArchitectureProgramRunnerPhaseObservationTests(ArchitectureProgramRunnerTe
             )
         )
 
+    def test_phase_observation_path_discovery_returns_none_on_filesystem_errors(
+        self,
+    ) -> None:
+        session_id = "019f0679-3875-7601-a4f8-a2a22303f3cd"
+        codex_home = self.root / "codex-home"
+        (codex_home / "sessions").mkdir(parents=True)
+
+        with mock.patch.object(Path, "rglob", side_effect=PermissionError("blocked")):
+            self.assertIsNone(
+                observation_owner.discover_codex_session_path(
+                    session_id,
+                    {"CODEX_HOME": str(codex_home)},
+                )
+            )
+
     def test_runner_facade_reexports_phase_observation_owner_for_compatibility(self) -> None:
         self.assertIs(
             runner.PhaseExecutionObservation,
@@ -223,6 +239,146 @@ class ArchitectureProgramRunnerPhaseObservationTests(ArchitectureProgramRunnerTe
         self.assertEqual(telemetry["token_summary"]["max_context_used_percent"], 84.0)
         self.assertEqual(telemetry["token_summary"]["context_pressure"], "context_pressure")
         self.assertEqual(telemetry["context_budget"]["max_input_tokens"], 8400)
+
+    def test_runner_routes_execution_metadata_through_phase_observation_owner(self) -> None:
+        session_id = "019f0679-3875-7601-a4f8-a2a22303f3cc"
+        config = self.structured_config()
+        codex_home = self.root / "codex-home"
+        session_path = self.write_codex_session_file(
+            codex_home,
+            f"sessions/2026/06/27/rollout-2026-06-27T12-00-00-{session_id}.jsonl",
+        )
+        config = runner.RunnerConfig(**{**config.__dict__, "stop_after_phase": "select-dispatch"})
+        initial_state = runner.initial_state(config)
+        result = self.make_result(
+            "select-dispatch",
+            "create-spec",
+            receipt_path=runner.phase_receipt_path(initial_state, "select-dispatch"),
+        )
+        self.touch_project_path(result["receipt_path"], json.dumps(result))
+
+        def fake_run(command: list[str], **kwargs: Any) -> Any:
+            output_path = Path(command[command.index("--output-last-message") + 1])
+            output_path.write_text(json.dumps(result), encoding="utf-8")
+            return runner.subprocess.CompletedProcess(
+                command,
+                0,
+                f"started codex session {session_id}\n",
+                "warning avoided\n",
+            )
+
+        with mock.patch.dict(runner.os.environ, {"CODEX_HOME": str(codex_home)}, clear=True):
+            with mock.patch.object(runner.subprocess, "run", side_effect=fake_run):
+                final_state = runner.run(config, status_reader=lambda project: [])
+
+        telemetry = runner.read_json_object(
+            config.artifact_root / "telemetry" / "phases" / "01-select-dispatch.telemetry.json"
+        )
+        telemetry_text = json.dumps(telemetry)
+
+        self.assertEqual(final_state["last_codex_session"], session_id)
+        self.assertEqual(telemetry["exit_code"], 0)
+        self.assertEqual(
+            telemetry["stdout_bytes"],
+            len(f"started codex session {session_id}\n".encode("utf-8")),
+        )
+        self.assertEqual(telemetry["stderr_bytes"], len("warning avoided\n".encode("utf-8")))
+        self.assertEqual(telemetry["codex_session_id"], session_id)
+        self.assertEqual(telemetry["codex_session_path"], session_path)
+        self.assertNotIn("CODEX_HOME", telemetry_text)
+
+    def test_runner_does_not_persist_env_override_values_in_execution_telemetry(
+        self,
+    ) -> None:
+        session_id = "019f0679-3875-7601-a4f8-a2a22303f3ce"
+        config = self.structured_config()
+        override_codex_home = self.root / "codex-home-override-secret"
+        self.write_codex_session_file(
+            override_codex_home,
+            f"sessions/2026/06/27/rollout-2026-06-27T12-00-00-{session_id}.jsonl",
+        )
+        config = runner.RunnerConfig(
+            **{
+                **config.__dict__,
+                "env_overrides": (
+                    ("CODEX_HOME", str(override_codex_home)),
+                    ("SECRET_TOKEN", "hidden-secret-value"),
+                ),
+                "stop_after_phase": "select-dispatch",
+            }
+        )
+        initial_state = runner.initial_state(config)
+        result = self.make_result(
+            "select-dispatch",
+            "create-spec",
+            receipt_path=runner.phase_receipt_path(initial_state, "select-dispatch"),
+        )
+        self.touch_project_path(result["receipt_path"], json.dumps(result))
+
+        def fake_run(command: list[str], **kwargs: Any) -> Any:
+            output_path = Path(command[command.index("--output-last-message") + 1])
+            output_path.write_text(json.dumps(result), encoding="utf-8")
+            return runner.subprocess.CompletedProcess(
+                command,
+                0,
+                f"started codex session {session_id}\n",
+                "warning avoided\n",
+            )
+
+        with mock.patch.object(runner.subprocess, "run", side_effect=fake_run):
+            final_state = runner.run(config, status_reader=lambda project: [])
+
+        telemetry = runner.read_json_object(
+            config.artifact_root / "telemetry" / "phases" / "01-select-dispatch.telemetry.json"
+        )
+        telemetry_text = json.dumps(telemetry)
+
+        self.assertEqual(final_state["last_codex_session"], session_id)
+        self.assertEqual(telemetry["codex_session_id"], session_id)
+        self.assertIsNone(telemetry["codex_session_path"])
+        self.assertEqual(telemetry["token_summary"]["status"], "missing")
+        self.assertNotIn(str(override_codex_home), telemetry_text)
+        self.assertNotIn("hidden-secret-value", telemetry_text)
+
+    def test_runner_writes_missing_token_telemetry_when_session_path_access_fails(
+        self,
+    ) -> None:
+        session_id = "019f0679-3875-7601-a4f8-a2a22303f3cf"
+        config = self.structured_config()
+        codex_home = self.root / "codex-home"
+        (codex_home / "sessions").mkdir(parents=True)
+        config = runner.RunnerConfig(**{**config.__dict__, "stop_after_phase": "select-dispatch"})
+        initial_state = runner.initial_state(config)
+        result = self.make_result(
+            "select-dispatch",
+            "create-spec",
+            receipt_path=runner.phase_receipt_path(initial_state, "select-dispatch"),
+        )
+        self.touch_project_path(result["receipt_path"], json.dumps(result))
+
+        def fake_run(command: list[str], **kwargs: Any) -> Any:
+            output_path = Path(command[command.index("--output-last-message") + 1])
+            output_path.write_text(json.dumps(result), encoding="utf-8")
+            return runner.subprocess.CompletedProcess(
+                command,
+                0,
+                f"started codex session {session_id}\n",
+                "",
+            )
+
+        with mock.patch.dict(runner.os.environ, {"CODEX_HOME": str(codex_home)}, clear=True):
+            with mock.patch.object(Path, "rglob", side_effect=PermissionError("blocked")):
+                with mock.patch.object(runner.subprocess, "run", side_effect=fake_run):
+                    runner.run(config, status_reader=lambda project: [])
+
+        telemetry = runner.read_json_object(
+            config.artifact_root / "telemetry" / "phases" / "01-select-dispatch.telemetry.json"
+        )
+
+        self.assertEqual(telemetry["codex_session_id"], session_id)
+        self.assertIsNone(telemetry["codex_session_path"])
+        self.assertEqual(telemetry["token_summary"]["status"], "missing")
+        self.assertEqual(telemetry["context_budget"]["status"], "missing")
 
     def test_phase_observation_is_launch_session_metadata_not_environment_or_contract(self) -> None:
         telemetry = self.build_telemetry(

@@ -300,6 +300,8 @@ def execute_codex_phase(config: RunnerConfig, state: dict[str, Any], phase: str)
             output_last_message,
             environment=environment,
         )
+        codex_home_env = environment.subprocess_env(())
+        subprocess_env = environment.subprocess_env(config.env_overrides)
         completed = subprocess.run(
             command,
             cwd=config.project,
@@ -307,17 +309,15 @@ def execute_codex_phase(config: RunnerConfig, state: dict[str, Any], phase: str)
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
-            env=environment.subprocess_env(config.env_overrides),
+            env=subprocess_env,
         )
-        state["_phase_execution_meta"] = {
-            "exit_code": completed.returncode,
-            "stdout_bytes": len(completed.stdout.encode("utf-8")),
-            "stderr_bytes": len(completed.stderr.encode("utf-8")),
-            "codex_session_id": extract_codex_session_id(
-                f"{completed.stdout}\n{completed.stderr}"
-            ),
-            "codex_session_path": None,
-        }
+        state["_phase_execution_meta"] = build_phase_execution_observation(
+            exit_code=completed.returncode,
+            stdout=completed.stdout,
+            stderr=completed.stderr,
+            subprocess_env=subprocess_env,
+            codex_home_env=codex_home_env,
+        ).as_execution_meta()
         if completed.returncode != 0:
             raise RunnerError(
                 "codex exec failed for "

@@ -38,6 +38,7 @@ def build_phase_execution_observation(
     stdout: str,
     stderr: str,
     subprocess_env: Mapping[str, str] | None = None,
+    codex_home_env: Mapping[str, str] | None = None,
 ) -> PhaseExecutionObservation:
     session_id = extract_codex_session_id(f"{stdout}\n{stderr}")
     return PhaseExecutionObservation(
@@ -45,7 +46,10 @@ def build_phase_execution_observation(
         stdout_bytes=len(stdout.encode("utf-8")),
         stderr_bytes=len(stderr.encode("utf-8")),
         codex_session_id=session_id,
-        codex_session_path=discover_codex_session_path(session_id, subprocess_env),
+        codex_session_path=discover_codex_session_path(
+            session_id,
+            codex_home_env if codex_home_env is not None else subprocess_env,
+        ),
     )
 
 
@@ -61,13 +65,16 @@ def discover_codex_session_path(
         return None
     codex_home = effective_codex_home(subprocess_env)
     sessions_root = codex_home / "sessions"
-    if not sessions_root.exists():
+    try:
+        if not sessions_root.exists():
+            return None
+        matches = [
+            path
+            for path in sessions_root.rglob("*.jsonl")
+            if path.is_file() and session_id.lower() in path.name.lower()
+        ]
+    except (OSError, RuntimeError):
         return None
-    matches = [
-        path
-        for path in sessions_root.rglob("*.jsonl")
-        if path.is_file() and session_id.lower() in path.name.lower()
-    ]
     if len(matches) != 1:
         return None
     return str(matches[0])
