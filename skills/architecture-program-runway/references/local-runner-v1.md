@@ -133,6 +133,15 @@ Use one `--env KEY=VALUE` per variable. The runner preserves the current
 process environment and applies these overrides only to the launched phase
 processes. Dry-run diagnostics show override keys, not values.
 
+When env overrides are present, phases that depend on them must verify the
+keys from the phase coordinator shell before running validation. The probe
+should record only whether each key is present and, for path-like values,
+whether the path exists and is readable; it must not print or store override
+values. Canonical validation commands that depend on these overrides must run
+from the execute coordinator shell. Subagent-only validation output is useful
+evidence, but it is not canonical proof for the local runner when env overrides
+are involved.
+
 Environment pass-through is not a validation bypass. Canonical project
 validation must still pass inside the `execute` phase before Batch Runway can
 commit and before the architecture runner can proceed to `closeout`.
@@ -233,9 +242,11 @@ preserves normal `runway_worker` and `runway_reviewer` delegation. Execution
 success does not increment `batches_completed`.
 
 When `execute` stops on validation, receipts should summarize the canonical
-commands attempted, whether fallback validation was attempted and passed, the
-likely failure class such as DNS/cache/permission/lockfile/test failure, relevant
-environment override keys without values, and any dirty files remaining.
+command lines attempted, whether runner env override keys were present in the
+command environment, whether path-like override values existed and were readable
+without disclosing values, whether fallback validation was attempted and passed,
+the likely failure class such as DNS/cache/permission/lockfile/test failure,
+and any dirty files remaining.
 
 `closeout` uses `$architecture-program-runway closeout-runway` to reconcile
 compact execution evidence into the program ledger. It does not paste logs into

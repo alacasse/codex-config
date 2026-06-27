@@ -432,6 +432,10 @@ def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str
     if config.env_overrides:
         lines.append(f"Runner env override keys: {env_override_key_label(config)}")
         lines.append("Do not disclose runner env override values.")
+        lines.append(
+            "Before validation that depends on these keys, run a coordinator-shell "
+            "environment probe and record only key-present/readable-path booleans."
+        )
     lines.extend(
         [
             "",
@@ -481,7 +485,8 @@ def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str
                 "- Read and execute exactly the generated Batch Runway spec.",
                 "- Preserve normal runway_worker and runway_reviewer delegation.",
                 "- Stop on validation, review, dirty-file conflict, or active spec stop conditions.",
-                "- If validation stops, summarize canonical commands attempted, fallback validation attempted/passed, likely failure class, env override keys present without values, and dirty files remaining.",
+                "- Run canonical validation from the execute coordinator shell; do not treat subagent-only validation output as canonical when runner env overrides are involved.",
+                "- If validation stops, summarize exact canonical command lines attempted, whether runner env override keys were present in the command environment, whether path-like override values were readable without disclosing values, fallback validation attempted/passed, likely failure class, and dirty files remaining.",
                 "- Use next_phase=closeout when completed.",
             ]
         )

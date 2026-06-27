@@ -33,6 +33,11 @@ Stopped-phase resume now also recognizes evidence paths recorded in the last
 stopped receipt for the same active phase, so a validation-blocked execute can
 resume with its own in-progress code/test changes instead of being rejected by
 the conservative worktree gate.
+Execute-phase prompts and the local-runner protocol now require a
+coordinator-shell probe for runner env override keys, coordinator-shell
+canonical validation when env overrides are involved, and stopped-validation
+receipts that name exact canonical commands plus env/cache visibility booleans
+without disclosing override values.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing

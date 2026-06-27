@@ -313,6 +313,24 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.assertIn("CACHE_TOKEN", text)
         self.assertNotIn("secret-value", text)
 
+    def test_prompt_with_env_overrides_requires_coordinator_shell_probe(self) -> None:
+        config = runner.RunnerConfig(
+            **{
+                **self.config.__dict__,
+                "env_overrides": (("UV_CACHE_DIR", "/tmp/graphify-uv-cache"),),
+            }
+        )
+        prompt = runner.build_prompt(config, runner.initial_state(config), "execute")
+
+        self.assertIn("Runner env override keys: UV_CACHE_DIR", prompt)
+        self.assertNotIn("/tmp/graphify-uv-cache", prompt)
+        self.assertIn("coordinator-shell environment probe", prompt)
+        self.assertIn("key-present/readable-path booleans", prompt)
+        self.assertIn("exact canonical command lines attempted", prompt)
+        self.assertIn("present in the command environment", prompt)
+        self.assertIn("path-like override values were readable", prompt)
+        self.assertIn("do not treat subagent-only validation output as canonical", prompt)
+
     def test_state_round_trip_uses_json(self) -> None:
         state = runner.initial_state(self.config)
 
@@ -375,6 +393,9 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.assertIn("runner CLI instead", text)
         self.assertIn("--all-batches", text)
         self.assertIn("Final Summary Contract", text)
+        self.assertIn("phase coordinator shell", text)
+        self.assertIn("Subagent-only validation output", text)
+        self.assertIn("command environment", text)
 
     def test_skill_points_local_runner_usage_to_protocol(self) -> None:
         text = (
