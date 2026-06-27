@@ -29,6 +29,9 @@ class ArchitectureProgramRunnerProtocolTests(ArchitectureProgramRunnerTestCase):
         self.assertIn("single-level", text)
         self.assertIn("Do not run `codex exec`", text)
         self.assertIn("file-based closeout telemetry", text)
+        self.assertIn("## Input Inventory Contract", text)
+        self.assertIn("evidence_paths", text)
+        self.assertIn("not reconstruct", text)
 
     def test_skill_points_local_runner_usage_to_protocol(self) -> None:
         text = (

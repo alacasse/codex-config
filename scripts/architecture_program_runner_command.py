@@ -96,7 +96,8 @@ def build_prompt(
                 "",
                 "Expected input inventory path for this phase:",
                 environment.expected_input_inventory_path,
-                "If you perform broad source reads, large file reads, or consume subagent reports, write a compact input inventory there and include it in evidence_paths.",
+                "Write a compact input inventory to exactly this path and include that path in evidence_paths.",
+                "Use empty inventory arrays when the phase consumed no broad reads, large files, or subagent reports.",
                 "Prefer compact dispatch, receipt, manifest, and telemetry artifacts before rereading broad source or planning files.",
             ]
         )

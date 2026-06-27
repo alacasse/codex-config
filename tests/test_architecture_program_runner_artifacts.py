@@ -96,6 +96,14 @@ class ArchitectureProgramRunnerArtifactTests(unittest.TestCase):
             manifest["telemetry"]["select-dispatch"],
             expected_telemetry,
         )
+        self.assertEqual(
+            manifest["input_inventories"]["select-dispatch"],
+            (
+                "project-notes/architecture/architecture-program-runs/program/"
+                "run-20260626-204812/telemetry/phases/"
+                "01-select-dispatch.input-inventory.json"
+            ),
+        )
         self.assertEqual(manifest["status"], "completed")
 
     def test_token_summaries_cover_missing_and_context_pressure(self) -> None:
@@ -129,10 +137,31 @@ class ArchitectureProgramRunnerArtifactTests(unittest.TestCase):
         self.assertEqual(summary["context_pressure"], "context_stop_recommended")
         self.assertEqual(artifacts.context_budget_summary("execute", summary)["status"], "ok")
 
-    def test_phase_telemetry_includes_artifact_size_entries(self) -> None:
+    def test_phase_telemetry_includes_artifact_size_entries_without_inventory_content(
+        self,
+    ) -> None:
         state = runner.initial_state(self.config)
         result = self.make_result()
         self.touch_project_path(result["dispatch_path"], "dispatch\n")
+        inventory_path = runner.phase_input_inventory_path(state, "select-dispatch")
+        self.assertIsNotNone(inventory_path)
+        raw_inventory_sentinel = "raw-inventory-content-must-not-be-embedded"
+        inventory_content = json.dumps(
+            {
+                "schema_version": 1,
+                "phase": "select-dispatch",
+                "primary_inputs": [
+                    {
+                        "path": "project-notes/architecture/program.md",
+                        "reason": raw_inventory_sentinel,
+                    }
+                ],
+                "broad_reads": [],
+                "large_file_reads": [],
+                "subagent_reports": [],
+            }
+        )
+        self.touch_project_path(inventory_path, inventory_content)
 
         telemetry = artifacts.build_phase_telemetry(
             self.config,
@@ -151,6 +180,8 @@ class ArchitectureProgramRunnerArtifactTests(unittest.TestCase):
         self.assertTrue(sizes[self.config.program_ledger]["exists"])
         self.assertEqual(sizes[result["dispatch_path"]]["bytes"], len("dispatch\n"))
         self.assertFalse(sizes[result["receipt_path"]]["exists"])
+        self.assertEqual(sizes[inventory_path]["bytes"], len(inventory_content))
+        self.assertNotIn(raw_inventory_sentinel, json.dumps(telemetry))
 
     def test_phase_telemetry_consumes_supplied_observation_metadata(self) -> None:
         state = runner.initial_state(self.config)

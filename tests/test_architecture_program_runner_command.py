@@ -114,6 +114,14 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
         self.assertIn("Expected receipt path for this phase:", prompt)
         self.assertIn("Expected input inventory path for this phase:", prompt)
         self.assertIn(
+            "Write a compact input inventory to exactly this path and include that path in evidence_paths.",
+            prompt,
+        )
+        self.assertIn(
+            "Use empty inventory arrays when the phase consumed no broad reads, large files, or subagent reports.",
+            prompt,
+        )
+        self.assertIn(
             "batches/batch-1/receipts/03-execute.json",
             prompt,
         )

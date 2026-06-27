@@ -34,6 +34,7 @@ SHARED_RESULT_OBLIGATIONS = (
     "Return schema-valid JSON as the final response.",
     "Write the same JSON object to a compact phase receipt file.",
     "Return the receipt path in receipt_path.",
+    "When the prompt names an expected input inventory path, include it in evidence_paths.",
     "Use compact strings or null for validation_summary and review_summary.",
     "Do not parse or edit runner state directly.",
 )

@@ -28,6 +28,27 @@ class ArchitectureProgramRunnerPhaseObservationTests(ArchitectureProgramRunnerTe
         path.write_text("{}\n", encoding="utf-8")
         return str(path)
 
+    def add_select_dispatch_input_inventory(
+        self,
+        config: Any,
+        initial_state: dict[str, Any],
+        result: dict[str, Any],
+    ) -> None:
+        inventory_path = runner.phase_input_inventory_path(initial_state, "select-dispatch")
+        self.assertIsNotNone(inventory_path)
+        runner.write_json_object(
+            runner.resolve_project_path(config.project, inventory_path),
+            {
+                "schema_version": 1,
+                "phase": "select-dispatch",
+                "primary_inputs": [],
+                "broad_reads": [],
+                "large_file_reads": [],
+                "subagent_reports": [],
+            },
+        )
+        result["evidence_paths"].append(inventory_path)
+
     def test_phase_observation_parses_exact_codex_session_id_from_stdout(self) -> None:
         session_id = "019f0679-3875-7601-a4f8-a2a22303f3c4"
 
@@ -149,6 +170,7 @@ class ArchitectureProgramRunnerPhaseObservationTests(ArchitectureProgramRunnerTe
             "create-spec",
             receipt_path=runner.phase_receipt_path(initial_state, "select-dispatch"),
         )
+        self.add_select_dispatch_input_inventory(config, initial_state, result)
         self.touch_project_path(result["receipt_path"], json.dumps(result))
 
         def fake_run(command: list[str], **kwargs: Any) -> Any:
@@ -207,6 +229,7 @@ class ArchitectureProgramRunnerPhaseObservationTests(ArchitectureProgramRunnerTe
             "create-spec",
             receipt_path=runner.phase_receipt_path(initial_state, "select-dispatch"),
         )
+        self.add_select_dispatch_input_inventory(config, initial_state, result)
         self.touch_project_path(result["receipt_path"], json.dumps(result))
 
         def fake_run(command: list[str], **kwargs: Any) -> Any:
@@ -248,6 +271,7 @@ class ArchitectureProgramRunnerPhaseObservationTests(ArchitectureProgramRunnerTe
             "create-spec",
             receipt_path=runner.phase_receipt_path(initial_state, "select-dispatch"),
         )
+        self.add_select_dispatch_input_inventory(config, initial_state, result)
         self.touch_project_path(result["receipt_path"], json.dumps(result))
 
         def fake_run(command: list[str], **kwargs: Any) -> Any:

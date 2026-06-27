@@ -56,6 +56,7 @@ def record_artifact_batch(state: dict[str, Any], result: dict[str, Any]) -> None
             "spec_path": None,
             "last_receipt_path": None,
             "receipts": {},
+            "input_inventories": {},
             "status": None,
         }
         batches.append(entry)
@@ -66,6 +67,10 @@ def record_artifact_batch(state: dict[str, Any], result: dict[str, Any]) -> None
     entry["last_receipt_path"] = result["receipt_path"]
     if isinstance(entry.get("receipts"), dict):
         entry["receipts"][result["phase"]] = result["receipt_path"]
+    phase = result.get("phase")
+    inventory_path = phase_input_inventory_path(state, phase) if isinstance(phase, str) else None
+    if inventory_path and isinstance(entry.get("input_inventories"), dict):
+        entry["input_inventories"][phase] = inventory_path
     entry["status"] = result["status"]
 
 
@@ -124,6 +129,7 @@ def build_batch_manifest(state: dict[str, Any], batch_id: str) -> dict[str, Any]
         "dispatch_path": entry.get("dispatch_path") or state.get("dispatch_path"),
         "spec_path": entry.get("spec_path") or state.get("spec_path"),
         "receipts": entry.get("receipts", {}),
+        "input_inventories": entry.get("input_inventories", {}),
         "telemetry": entry.get("telemetry", {}),
         "commit_range": latest_receipt_field(state, "commit_range"),
         "validation_summary": latest_receipt_field(state, "validation_summary"),
@@ -438,6 +444,19 @@ def write_run_telemetry(config: Any, state: dict[str, Any]) -> None:
         resolve_project_path(config.project, path),
         build_run_telemetry(config, state, phases),
     )
+    if should_refresh_failure_manifests(state):
+        write_artifact_manifests(config, state)
+
+
+def should_refresh_failure_manifests(state: dict[str, Any]) -> bool:
+    if state.get("last_phase_status") != "failed":
+        return False
+    if not isinstance(state.get("active_batch_id"), str):
+        return False
+    stop_reason = state.get("stop_reason")
+    if isinstance(stop_reason, str) and "input inventory" in stop_reason:
+        return False
+    return True
 
 
 def build_run_telemetry(

@@ -171,6 +171,11 @@ session token data is not attributable, token fields use `status=missing`
 instead of reconstructed guesses. `run-telemetry.json` aggregates phase
 telemetry paths, elapsed time, max context pressure, and final stop reason.
 
+Structured phase prompts also provide an expected input inventory path. When
+that path is present, the phase agent must write a compact JSON object there
+and include the same project-relative path in `evidence_paths`. The runner
+validates the file before phase transition and before manifest writes.
+
 For structured runs, the runner provides an exact expected receipt path in each
 phase prompt and rejects phase results that return a different `receipt_path`.
 The first `select-dispatch` receipt is run-scoped because the batch ID is not
@@ -182,6 +187,32 @@ the next run-scoped selection number instead of overwriting earlier selections.
 program ledger, then falls back to the legacy flat
 `architecture-program-run-state.json` if no structured run exists. Use
 `--state <path>` to resume a specific run, including an old flat stopped run.
+
+## Input Inventory Contract
+
+Input Inventory is phase-agent reported context evidence. It records what the
+phase consumed; the runner does not reconstruct it from transcripts, command
+logs, session JSONL, prompt text, or newest files.
+
+The inventory file is a compact JSON object with:
+
+- `schema_version`: integer, currently `1`
+- `phase`: the active phase name
+- `primary_inputs`: array
+- `broad_reads`: array
+- `large_file_reads`: array
+- `subagent_reports`: array
+
+Arrays may be empty. Entries use compact project-relative paths and short
+reasons, with optional command, byte-count, or role fields where relevant. The
+inventory path itself is evidence: the final phase result must list it in
+`evidence_paths` whenever the runner prompt names an expected inventory path.
+
+Input Inventory is separate from receipts, phase observations, and telemetry.
+Receipts remain exactly the phase-result JSON object. Phase observations and
+telemetry record runner-measured process and artifact metadata. Manifests and
+telemetry may link the inventory path and byte size, but must not embed raw
+inventory content.
 
 Pass project-supplied environment variables to every nested `codex exec` phase
 when the validation environment requires them:

@@ -91,7 +91,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | APR-18. **Change Allowance** is still encoded as dirty-path helpers in the Runner Facade | Closed | `c6d7705`, `a69eb40`, `6cb9e20`; `scripts/architecture_program_runner_change_allowance.py`; focused tests and dry-run smoke | None | **Change Allowance** now owns dirty-path classification and worktree checks while preserving conservative rejection behavior. |
 | APR-19. **Phase Contract** facts are embedded in prompt string construction | Closed | `22f2c72`, `81a6b70`, `ba04d7a`, `97a0faf`; `scripts/architecture_program_runner_phase_contract.py`; focused tests and dry-run smoke | None | **Phase Contract** now owns skill instructions, single-level boundary rules, shared result/receipt duties, env-override validation duties, and per-phase requirements while prompt rendering consumes those obligations separately from **Phase Environment** facts. |
 | APR-20. **Phase Observation** attribution is incomplete | Closed | `04efa20`, `cd84b00`, `adad417`, this closeout commit; `plans/dispatch/phase-observation-attribution-dispatch.md`; `plans/codex-config-architecture-program-runner-phase-observation-attribution-runway.md`; `scripts/architecture_program_runner_phase_observation.py`; final validation: focused runner pytest subset 89 passed, dry-run smoke passed, `uvx ruff` passed, `git diff --check` passed | None | **Phase Observation** now records exact runner-launched session ids and uniquely matched session JSONL paths when directly discoverable, keeps missing, ambiguous, or filesystem-error attribution non-fatal, does not persist env override values, and leaves token persistence in artifact telemetry. |
-| APR-21. **Input Inventory** has no enforced contract | In runway | `plans/dispatch/input-inventory-contract-dispatch.md`; `plans/codex-config-architecture-program-runner-input-inventory-contract-runway.md` | Execute the `input-inventory-contract` runway | Runner prompts mention inventories, but existence, shape, and manifest linkage are not validated. |
+| APR-21. **Input Inventory** has no enforced contract | Closed | `4331cd4`, `87e20b4`, `0857612`, this closeout commit; `scripts/architecture_program_runner_input_inventory.py`; `plans/dispatch/input-inventory-contract-dispatch.md`; `plans/codex-config-architecture-program-runner-input-inventory-contract-runway.md`; final validation: focused runner pytest subset 129 passed, dry-run smoke passed, `uvx ruff` passed, `git diff --check` passed | None | **Input Inventory** now has a project-neutral owner, compact JSON shape validation, expected evidence-path enforcement for structured phases, prompt/protocol documentation, and manifest/telemetry path exposure without transcript or session-log reconstruction. |
 | APR-22. **Planning Root** and **Plan Archive** are not implemented | Candidate | `CONTEXT.md` | Create ADR and migration batch when selected | Target active root is `docs/plans/`; target archive is `docs/plans/archive/`; current repo still uses `plans/`. |
 
 ## Batch Queue
@@ -103,7 +103,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | phase-transition-change-allowance | APR-17, APR-18 | Closed | Both reduce run-loop state/path policy knowledge after environment context is clearer | APR-16 satisfied | Run-loop and changed-path tests plus dry-run smoke | `plans/dispatch/phase-transition-change-allowance-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-transition-change-allowance-runway.md` |
 | phase-contract-catalog | APR-19 | Closed | Separates normative **Phase Contract** facts from rendered prompt text | APR-16 satisfied; APR-17/APR-18 satisfied | Contract/command tests plus dry-run smoke | `plans/dispatch/phase-contract-catalog-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-contract-catalog-runway.md` |
 | phase-observation-attribution | APR-20 | Closed | Reframes telemetry attribution as **Phase Observation** work | APR-16, APR-19 satisfied | Artifact and observation tests with synthetic session logs plus dry-run smoke; no live nested Codex required | `plans/dispatch/phase-observation-attribution-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-observation-attribution-runway.md` |
-| input-inventory-contract | APR-21 | In runway | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 satisfied | Unit tests with synthetic inventories and prompt checks plus dry-run smoke | `plans/dispatch/input-inventory-contract-dispatch.md` | `plans/codex-config-architecture-program-runner-input-inventory-contract-runway.md` |
+| input-inventory-contract | APR-21 | Closed | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 satisfied | Unit tests with synthetic inventories and prompt checks plus dry-run smoke | `plans/dispatch/input-inventory-contract-dispatch.md` | `plans/codex-config-architecture-program-runner-input-inventory-contract-runway.md` |
 | planning-root-archive-migration | APR-22 | Candidate | Moves active planning under `docs/plans/` and creates `docs/plans/archive/` with an ADR | None, but do separately from runner behavior work | Markdown/readback plus path-reference audit | TBD | TBD |
 
 ## Selected Batch Brief
@@ -111,7 +111,8 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 - Batch: `input-inventory-contract`
 - Dispatch: `plans/dispatch/input-inventory-contract-dispatch.md`
 - Spec: `plans/codex-config-architecture-program-runner-input-inventory-contract-runway.md`
-- Status: ready for execution; spec created, implementation not started
+- Status: closed; implementation, review, prompt/docs integration, and final
+  validation complete
 - Goal: give **Input Inventory** an enforced runner contract for phase-consumed
   context evidence while preserving the existing phase-result schema and
   **Runner Facade** behavior.
@@ -147,10 +148,11 @@ Completed:
   the run loop after environment context is named.
 - `phase-contract-catalog`: made phase obligations testable independently of
   prompt layout.
+- `input-inventory-contract`: enforced consumed-input evidence without changing
+  the phase-result schema or adding transcript reconstruction.
 
 Remaining:
-1. `input-inventory-contract`: enforce consumed-input evidence.
-2. `planning-root-archive-migration`: move active planning to `docs/plans/`,
+1. `planning-root-archive-migration`: move active planning to `docs/plans/`,
    create `docs/plans/archive/`, and record the ADR.
 
 ## Closeout Rules
@@ -181,4 +183,7 @@ Remaining:
   `git diff --check`.
 - Phase Transition and Change Allowance closeout passed 80 focused runner tests,
   dry-run smoke, `uvx ruff check` with the known non-fatal Python symlink
+  warning, and `git diff --check`.
+- Input Inventory closeout passed 129 focused runner tests, dry-run smoke,
+  `uvx ruff check scripts tests` with the known non-fatal Python symlink
   warning, and `git diff --check`.
