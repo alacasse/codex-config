@@ -87,7 +87,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | APR-16. **Phase Environment** lacks a concept owner | Closed | `950ddf9`, `82e8c8e`, `556b6bd`, `e00f667`; `scripts/architecture_program_runner_environment.py`; focused tests and dry-run smoke | None | **Phase Environment** now owns runner-supplied launch and prompt context while **Phase Contract** rendering remains in command tests. |
 | APR-17. **Phase Transition** is expressed as run-loop state-key mutation | Closed | `c6d7705`, `19d6b8a`, `6cb9e20`; `scripts/architecture_program_runner_transition.py`; focused tests and dry-run smoke | None | **Phase Transition** now consumes a valid **Phase Result** and updates **Run State** without owning validation, execution, or observation writing. |
 | APR-18. **Change Allowance** is still encoded as dirty-path helpers in the Runner Facade | Closed | `c6d7705`, `a69eb40`, `6cb9e20`; `scripts/architecture_program_runner_change_allowance.py`; focused tests and dry-run smoke | None | **Change Allowance** now owns dirty-path classification and worktree checks while preserving conservative rejection behavior. |
-| APR-19. **Phase Contract** facts are embedded in prompt string construction | In runway | `plans/dispatch/phase-contract-catalog-dispatch.md`; `plans/codex-config-architecture-program-runner-phase-contract-catalog-runway.md` | Execute the `phase-contract-catalog` runway | Separate normative phase obligations from rendered prompt text and supplied **Phase Environment** facts. |
+| APR-19. **Phase Contract** facts are embedded in prompt string construction | Closed | `22f2c72`, `81a6b70`, `ba04d7a`, `97a0faf`; `scripts/architecture_program_runner_phase_contract.py`; focused tests and dry-run smoke | None | **Phase Contract** now owns skill instructions, single-level boundary rules, shared result/receipt duties, env-override validation duties, and per-phase requirements while prompt rendering consumes those obligations separately from **Phase Environment** facts. |
 | APR-20. **Phase Observation** attribution is incomplete | Candidate | APR-9 evidence; current artifact tests | Schedule after concept owners settle | Exact Codex session JSONL discovery is still missing unless a path is supplied. |
 | APR-21. **Input Inventory** has no enforced contract | Candidate | APR-10 evidence; prompt guidance | Schedule after APR-20 or after Phase Environment if needed | Runner prompts mention inventories, but existence, shape, and manifest linkage are not validated. |
 | APR-22. **Planning Root** and **Plan Archive** are not implemented | Candidate | `CONTEXT.md` | Create ADR and migration batch when selected | Target active root is `docs/plans/`; target archive is `docs/plans/archive/`; current repo still uses `plans/`. |
@@ -99,21 +99,19 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | runner-boundary-split | APR-11, APR-12, APR-13 | Closed | First split of the monolithic Runner Facade and broad tests | None | Focused unit tests plus dry-run smoke | `plans/dispatch/runner-boundary-split-dispatch.md` | `plans/codex-config-architecture-program-runner-boundary-split-runway.md` |
 | phase-environment-ownership | APR-16 | Closed | Establishes the first new **Concept Owner** from `CONTEXT.md` and clarifies launch/prompt context before contract and observation work | Refreshed ledger and `CONTEXT.md` | Focused command/config/env tests plus dry-run smoke | `plans/dispatch/phase-environment-ownership-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-environment-runway.md` |
 | phase-transition-change-allowance | APR-17, APR-18 | Closed | Both reduce run-loop state/path policy knowledge after environment context is clearer | APR-16 satisfied | Run-loop and changed-path tests plus dry-run smoke | `plans/dispatch/phase-transition-change-allowance-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-transition-change-allowance-runway.md` |
-| phase-contract-catalog | APR-19 | In runway | Separates normative **Phase Contract** facts from rendered prompt text | APR-16 satisfied; APR-17/APR-18 satisfied | Contract/command tests plus dry-run smoke | `plans/dispatch/phase-contract-catalog-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-contract-catalog-runway.md` |
+| phase-contract-catalog | APR-19 | Closed | Separates normative **Phase Contract** facts from rendered prompt text | APR-16 satisfied; APR-17/APR-18 satisfied | Contract/command tests plus dry-run smoke | `plans/dispatch/phase-contract-catalog-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-contract-catalog-runway.md` |
 | phase-observation-attribution | APR-20 | Candidate | Reframes telemetry attribution as **Phase Observation** work | APR-16, APR-19 preferred | Artifact tests with synthetic session logs; optional live runner rehearsal | TBD | TBD |
 | input-inventory-contract | APR-21 | Candidate | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 preferred but not mandatory | Unit tests with synthetic inventories and prompt checks | TBD | TBD |
 | planning-root-archive-migration | APR-22 | Candidate | Moves active planning under `docs/plans/` and creates `docs/plans/archive/` with an ADR | None, but do separately from runner behavior work | Markdown/readback plus path-reference audit | TBD | TBD |
 
 ## Selected Batch Brief
 
-- Batch: `phase-contract-catalog`
-- Dispatch: `plans/dispatch/phase-contract-catalog-dispatch.md`
-- Spec:
-  `plans/codex-config-architecture-program-runner-phase-contract-catalog-runway.md`
-- Status: Spec created; implementation pending
-- Goal: Give **Phase Contract** a clear concept owner so phase obligations are
-  testable independently of prompt layout while preserving Runner Facade
-  behavior.
+- Batch: none selected
+- Dispatch: TBD
+- Spec: TBD
+- Status: no active selected batch after `phase-contract-catalog` closeout
+- Goal: select the next safe batch from the remaining candidates before
+  creating another concrete runway.
 - Guardrails:
   - Preserve current CLI behavior and direct script execution.
   - Preserve prompt obligations, command flags, phase-result schema, expected
@@ -124,12 +122,8 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
   - Do not implement **Phase Observation** attribution, **Input Inventory**
     validation, or **Planning Root** migration in this batch.
 - Suggested slices:
-  1. Characterize current **Phase Contract** obligations in focused tests.
-  2. Introduce a **Phase Contract** owner for shared and per-phase obligations.
-  3. Route prompt rendering through the contract owner while continuing to
-     consume **Phase Environment** facts separately.
-  4. Tighten tests so contract tests own obligations, command tests own
-     rendering, and facade tests preserve compatibility exports.
+  - TBD after selecting `phase-observation-attribution`,
+    `input-inventory-contract`, or `planning-root-archive-migration`.
 
 ## Recommended Work Order
 
@@ -137,9 +131,8 @@ Completed:
 - `phase-environment-ownership`: clarified launch and prompt context first.
 - `phase-transition-change-allowance`: removed state/path policy knowledge from
   the run loop after environment context is named.
-
-Active:
-- `phase-contract-catalog`: spec created; implementation pending.
+- `phase-contract-catalog`: made phase obligations testable independently of
+  prompt layout.
 
 Remaining:
 1. `phase-observation-attribution`: improve exact session/path attribution.

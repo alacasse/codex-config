@@ -148,10 +148,10 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 1. Characterize Phase Contract obligations | completed | slice commit | `pytest` 39 passed; `uvx ruff` passed; `git diff --check` passed | clean | Introduce contract owner from characterized obligations | Characterization coverage added without production behavior changes. |
-| 2. Introduce Phase Contract owner | completed | slice commit | `pytest` 35 passed; dry-run smoke passed; `uvx ruff` passed; `git diff --check` passed | clean | Route prompt rendering through contract owner | Added structured `PhaseContract` owner and compatibility exports without behavior changes. |
-| 3. Route prompt rendering through contract owner | completed | slice commit | `pytest` 44 passed; dry-run smoke passed; `uvx ruff` passed; `git diff --check` passed | clean | Tighten tests and facade compatibility | Prompt rendering contract coverage and changelog now reflect the owner split. |
-| 4. Tighten contract tests and compatibility | completed | slice commit | `pytest` 71 passed; dry-run smoke passed; `uvx ruff` passed; `git diff --check` passed | clean after prompt-preservation fix | Final validation and closeout | Contract tests now own exact obligation catalogs; command tests focus on contract/environment rendering integration. |
+| 1. Characterize Phase Contract obligations | completed | `22f2c72` | `pytest` 39 passed; `uvx ruff` passed; `git diff --check` passed | clean | Introduce contract owner from characterized obligations | Characterization coverage added without production behavior changes. |
+| 2. Introduce Phase Contract owner | completed | `81a6b70` | `pytest` 35 passed; dry-run smoke passed; `uvx ruff` passed; `git diff --check` passed | clean | Route prompt rendering through contract owner | Added structured `PhaseContract` owner and compatibility exports without behavior changes. |
+| 3. Route prompt rendering through contract owner | completed | `ba04d7a` | `pytest` 44 passed; dry-run smoke passed; `uvx ruff` passed; `git diff --check` passed | clean | Tighten tests and facade compatibility | Prompt rendering contract coverage and changelog now reflect the owner split. |
+| 4. Tighten contract tests and compatibility | completed | `97a0faf` | `pytest` 71 passed; dry-run smoke passed; `uvx ruff` passed; `git diff --check` passed | clean after prompt-preservation fix | Final validation and closeout | Contract tests now own exact obligation catalogs; command tests focus on contract/environment rendering integration. |
 
 ## Orchestration Anomalies
 
@@ -168,10 +168,10 @@ orchestration_anomalies:
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
-| 1. Characterize Phase Contract obligations | slice commit | Added focused characterization tests for shared single-level, result, env-override, and per-phase obligations; no production behavior changed. | Worker: success; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check tests/test_architecture_program_runner_phase_contract.py`, `git diff --check` |
-| 2. Introduce Phase Contract owner | slice commit | Added `scripts/architecture_program_runner_phase_contract.py`; command prompt helpers consume owner-produced obligations while environment and validation ownership remain separate. | Worker: success; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, dry-run smoke, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check scripts/architecture_program_runner_phase_contract.py scripts/architecture_program_runner_command.py scripts/architecture_program_runner.py tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner.py`, `git diff --check` |
-| 3. Route prompt rendering through contract owner | slice commit | Added prompt-rendering coverage for all fixed phases and recorded the Phase Contract owner in `CHANGELOG.md`; production routing was already completed by Slice 2. | Worker: success; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_protocol.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, dry-run smoke, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check CHANGELOG.md tests/test_architecture_program_runner_phase_contract.py`, `git diff --check` |
-| 4. Tighten contract tests and compatibility | slice commit | Moved exact obligation-catalog assertions into contract tests and narrowed command tests to contract/environment rendering integration while preserving prompt text. | Worker: success after prompt-preservation fix; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_transition.py tests/test_architecture_program_runner_change_allowance.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner_worktree.py tests/test_architecture_program_runner_protocol.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, dry-run smoke, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check CHANGELOG.md tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py`, `git diff --check` |
+| 1. Characterize Phase Contract obligations | `22f2c72` | Added focused characterization tests for shared single-level, result, env-override, and per-phase obligations; no production behavior changed. | Worker: success; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check tests/test_architecture_program_runner_phase_contract.py`, `git diff --check` |
+| 2. Introduce Phase Contract owner | `81a6b70` | Added `scripts/architecture_program_runner_phase_contract.py`; command prompt helpers consume owner-produced obligations while environment and validation ownership remain separate. | Worker: success; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, dry-run smoke, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check scripts/architecture_program_runner_phase_contract.py scripts/architecture_program_runner_command.py scripts/architecture_program_runner.py tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner.py`, `git diff --check` |
+| 3. Route prompt rendering through contract owner | `ba04d7a` | Added prompt-rendering coverage for all fixed phases and recorded the Phase Contract owner in `CHANGELOG.md`; production routing was already completed by Slice 2. | Worker: success; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_protocol.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, dry-run smoke, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check CHANGELOG.md tests/test_architecture_program_runner_phase_contract.py`, `git diff --check` |
+| 4. Tighten contract tests and compatibility | `97a0faf` | Moved exact obligation-catalog assertions into contract tests and narrowed command tests to contract/environment rendering integration while preserving prompt text. | Worker: success after prompt-preservation fix; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_transition.py tests/test_architecture_program_runner_change_allowance.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner_worktree.py tests/test_architecture_program_runner_protocol.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, dry-run smoke, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check CHANGELOG.md tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py`, `git diff --check` |
 
 ## Slice 1. Characterize Phase Contract Obligations
 
@@ -518,3 +518,95 @@ After successful final validation, update
 - Stop if direct script execution cannot be preserved.
 - Stop if subagent support is unavailable during execution; do not fall back to
   main-agent implementation.
+
+## Final Batch Report
+
+Completed commits:
+- `22f2c72` Characterize architecture runner phase contracts
+- `81a6b70` Add architecture runner phase contract owner
+- `ba04d7a` Route architecture runner prompts through phase contracts
+- `97a0faf` Tighten architecture runner contract tests
+
+Final validation:
+- `python -m pytest tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_transition.py tests/test_architecture_program_runner_change_allowance.py tests/test_architecture_program_runner_state.py tests/test_architecture_program_runner_validation.py tests/test_architecture_program_runner_artifacts.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner_worktree.py tests/test_architecture_program_runner_protocol.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`: 89 passed.
+- `python scripts/architecture_program_runner.py --project . --program-ledger plans/codex-config-architecture-program-runner-findings.md --dry-run --stop-after-phase select-dispatch`: passed.
+- `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check scripts/architecture_program_runner.py scripts/architecture_program_runner_phase_contract.py scripts/architecture_program_runner_command.py tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_protocol.py tests/test_architecture_program_runner.py tests/test_codex_owner.py CHANGELOG.md`: passed with the known non-fatal `/usr/bin/python3.14` symlink warning.
+- `git diff --check`: passed.
+
+Skipped slices:
+- None.
+
+Remaining risks:
+- APR-20, APR-21, and APR-22 remain deferred; this batch intentionally did not
+  implement phase observation attribution, input inventory enforcement, or
+  planning-root/archive migration.
+- `uvx ruff` continues to emit the known non-fatal base-Python symlink warning.
+
+Compatibility paths that remain:
+- The Runner Facade still reexports public command, environment, transition,
+  change-allowance, and phase-contract helpers for direct-script and import
+  compatibility.
+- Command-owner rendering still combines **Phase Contract** obligations with
+  **Phase Environment** facts while preserving current prompt text.
+
+Orchestration anomalies:
+
+```yaml
+orchestration_anomalies:
+  - slice: 4
+    severity: low
+    category: scope_recovery
+    observed: "Initial worker patch removed an overlapping closeout next_phase prompt obligation while tightening catalog tests."
+    impact: "Caught before review/commit; no production behavior committed."
+    action_taken: "Loaded recovery guidance and delegated a fix that restored exact prompt obligations."
+    follow_up: "Keep overlapping prompt obligations when the active spec protects exact prompt text."
+```
+
+Inspection commands:
+- `git show --stat 22f2c72`
+- `git show --stat 81a6b70`
+- `git show --stat ba04d7a`
+- `git show --stat 97a0faf`
+
+## Convergence Assessment
+
+### Phase
+`closure`
+
+### Scope trend
+`shrinking`
+
+### Closed this slice
+- APR-19, **Phase Contract** concept ownership.
+
+### Newly discovered
+- None.
+
+### Deferred out of scope
+- APR-20 **Phase Observation**
+- APR-21 **Input Inventory**
+- APR-22 **Planning Root** and **Plan Archive**
+
+### Remaining unknowns
+- None for the Phase Contract catalog batch.
+
+### Temporary compatibility paths
+- Runner Facade helper reexports remain intentionally supported and tested.
+
+### Blockers
+- None.
+
+### Completion forecastable
+`yes`
+
+### Forecast
+- The selected `phase-contract-catalog` batch is complete. Remaining work is
+  represented by separate candidate batches in the program ledger.
+
+### Evidence
+- Four reviewed slice commits, final focused validation, dry-run smoke, ruff,
+  and whitespace audit.
+
+### Next proof required
+- Select a future batch from the remaining program ledger candidates before
+  opening another concrete runway.
