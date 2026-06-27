@@ -92,6 +92,12 @@ leaving launch facts, artifact paths, sandbox choices, and env-key labels with
 Phase Environment.
 Contract-owner tests now assert exact phase obligation catalogs, while command
 tests focus on prompt integration between Phase Contract and Phase Environment.
+The runner now also names **Phase Observation** as the concept owner for
+observed execution metadata and runner-launched session attribution. It discovers
+exact session JSONL paths only when they are uniquely identifiable; missing,
+ambiguous, or errored attribution stays non-fatal; env override values are never
+persisted; and artifact telemetry remains the owner for persistence and token
+summary reporting.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing

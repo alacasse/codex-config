@@ -53,11 +53,13 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
   - `scripts/architecture_program_runner_validation.py`
   - `scripts/architecture_program_runner_command.py`
   - `scripts/architecture_program_runner_artifacts.py`
+  - `scripts/architecture_program_runner_phase_observation.py`
 - Current focused tests:
   - `tests/test_architecture_program_runner_state.py`
   - `tests/test_architecture_program_runner_validation.py`
   - `tests/test_architecture_program_runner_command.py`
   - `tests/test_architecture_program_runner_artifacts.py`
+  - `tests/test_architecture_program_runner_phase_observation.py`
   - `tests/test_architecture_program_runner_run_loop.py`
   - `tests/test_architecture_program_runner_worktree.py`
   - `tests/test_architecture_program_runner_protocol.py`
@@ -88,7 +90,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | APR-17. **Phase Transition** is expressed as run-loop state-key mutation | Closed | `c6d7705`, `19d6b8a`, `6cb9e20`; `scripts/architecture_program_runner_transition.py`; focused tests and dry-run smoke | None | **Phase Transition** now consumes a valid **Phase Result** and updates **Run State** without owning validation, execution, or observation writing. |
 | APR-18. **Change Allowance** is still encoded as dirty-path helpers in the Runner Facade | Closed | `c6d7705`, `a69eb40`, `6cb9e20`; `scripts/architecture_program_runner_change_allowance.py`; focused tests and dry-run smoke | None | **Change Allowance** now owns dirty-path classification and worktree checks while preserving conservative rejection behavior. |
 | APR-19. **Phase Contract** facts are embedded in prompt string construction | Closed | `22f2c72`, `81a6b70`, `ba04d7a`, `97a0faf`; `scripts/architecture_program_runner_phase_contract.py`; focused tests and dry-run smoke | None | **Phase Contract** now owns skill instructions, single-level boundary rules, shared result/receipt duties, env-override validation duties, and per-phase requirements while prompt rendering consumes those obligations separately from **Phase Environment** facts. |
-| APR-20. **Phase Observation** attribution is incomplete | Candidate | APR-9 evidence; current artifact tests | Schedule after concept owners settle | Exact Codex session JSONL discovery is still missing unless a path is supplied. |
+| APR-20. **Phase Observation** attribution is incomplete | Closed | `04efa20`, `cd84b00`, `adad417`, this closeout commit; `plans/dispatch/phase-observation-attribution-dispatch.md`; `plans/codex-config-architecture-program-runner-phase-observation-attribution-runway.md`; `scripts/architecture_program_runner_phase_observation.py`; final validation: focused runner pytest subset 89 passed, dry-run smoke passed, `uvx ruff` passed, `git diff --check` passed | None | **Phase Observation** now records exact runner-launched session ids and uniquely matched session JSONL paths when directly discoverable, keeps missing, ambiguous, or filesystem-error attribution non-fatal, does not persist env override values, and leaves token persistence in artifact telemetry. |
 | APR-21. **Input Inventory** has no enforced contract | Candidate | APR-10 evidence; prompt guidance | Schedule after APR-20 or after Phase Environment if needed | Runner prompts mention inventories, but existence, shape, and manifest linkage are not validated. |
 | APR-22. **Planning Root** and **Plan Archive** are not implemented | Candidate | `CONTEXT.md` | Create ADR and migration batch when selected | Target active root is `docs/plans/`; target archive is `docs/plans/archive/`; current repo still uses `plans/`. |
 
@@ -100,18 +102,19 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | phase-environment-ownership | APR-16 | Closed | Establishes the first new **Concept Owner** from `CONTEXT.md` and clarifies launch/prompt context before contract and observation work | Refreshed ledger and `CONTEXT.md` | Focused command/config/env tests plus dry-run smoke | `plans/dispatch/phase-environment-ownership-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-environment-runway.md` |
 | phase-transition-change-allowance | APR-17, APR-18 | Closed | Both reduce run-loop state/path policy knowledge after environment context is clearer | APR-16 satisfied | Run-loop and changed-path tests plus dry-run smoke | `plans/dispatch/phase-transition-change-allowance-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-transition-change-allowance-runway.md` |
 | phase-contract-catalog | APR-19 | Closed | Separates normative **Phase Contract** facts from rendered prompt text | APR-16 satisfied; APR-17/APR-18 satisfied | Contract/command tests plus dry-run smoke | `plans/dispatch/phase-contract-catalog-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-contract-catalog-runway.md` |
-| phase-observation-attribution | APR-20 | Candidate | Reframes telemetry attribution as **Phase Observation** work | APR-16, APR-19 preferred | Artifact tests with synthetic session logs; optional live runner rehearsal | TBD | TBD |
+| phase-observation-attribution | APR-20 | Closed | Reframes telemetry attribution as **Phase Observation** work | APR-16, APR-19 satisfied | Artifact and observation tests with synthetic session logs plus dry-run smoke; no live nested Codex required | `plans/dispatch/phase-observation-attribution-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-observation-attribution-runway.md` |
 | input-inventory-contract | APR-21 | Candidate | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 preferred but not mandatory | Unit tests with synthetic inventories and prompt checks | TBD | TBD |
 | planning-root-archive-migration | APR-22 | Candidate | Moves active planning under `docs/plans/` and creates `docs/plans/archive/` with an ADR | None, but do separately from runner behavior work | Markdown/readback plus path-reference audit | TBD | TBD |
 
 ## Selected Batch Brief
 
-- Batch: none selected
-- Dispatch: TBD
-- Spec: TBD
-- Status: no active selected batch after `phase-contract-catalog` closeout
-- Goal: select the next safe batch from the remaining candidates before
-  creating another concrete runway.
+- Batch: `phase-observation-attribution`
+- Dispatch: `plans/dispatch/phase-observation-attribution-dispatch.md`
+- Spec: `plans/codex-config-architecture-program-runner-phase-observation-attribution-runway.md`
+- Status: closed; exact runner-launched session id/path attribution is implemented
+- Goal: give **Phase Observation** exact runner-launched session attribution
+  without broad transcript reconstruction while preserving existing telemetry,
+  manifest, CLI, and receipt behavior.
 - Guardrails:
   - Preserve current CLI behavior and direct script execution.
   - Preserve prompt obligations, command flags, phase-result schema, expected
@@ -119,11 +122,24 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
   - Keep **Phase Environment** facts in the environment concept owner.
   - Keep phase-result schema validation, expected next-phase validation, and
     receipt equality in the validation concept owner.
-  - Do not implement **Phase Observation** attribution, **Input Inventory**
-    validation, or **Planning Root** migration in this batch.
+  - Use only exact session attribution. Do not infer sessions by prompt text
+    search, newest file heuristics, broad session-log reconstruction, or copied
+    prompt matching.
+  - Missing session attribution remains non-fatal and must continue to produce
+    telemetry with `token_summary.status=missing`.
+  - Do not implement **Input Inventory** validation, worker/reviewer
+    attribution, hard context-stop behavior, or **Planning Root** migration in
+    this batch.
 - Suggested slices:
-  - TBD after selecting `phase-observation-attribution`,
-    `input-inventory-contract`, or `planning-root-archive-migration`.
+  - Characterize current **Phase Observation** attribution boundaries with
+    focused tests for exact UUID parsing, missing token data, and synthetic
+    session JSONL summaries.
+  - Introduce a **Phase Observation** concept owner for exact execution metadata
+    and session path discovery.
+  - Route `execute_codex_phase` through the observation owner while preserving
+    subprocess env, output-last-message handling, and existing telemetry writes.
+  - Tighten telemetry and facade compatibility tests so artifacts consume
+    observation metadata without broad session reconstruction.
 
 ## Recommended Work Order
 
@@ -135,9 +151,8 @@ Completed:
   prompt layout.
 
 Remaining:
-1. `phase-observation-attribution`: improve exact session/path attribution.
-2. `input-inventory-contract`: enforce consumed-input evidence.
-3. `planning-root-archive-migration`: move active planning to `docs/plans/`,
+1. `input-inventory-contract`: enforce consumed-input evidence.
+2. `planning-root-archive-migration`: move active planning to `docs/plans/`,
    create `docs/plans/archive/`, and record the ADR.
 
 ## Closeout Rules

@@ -69,6 +69,14 @@ class ArchitectureProgramRunnerArtifactTests(unittest.TestCase):
             "evidence_paths": [],
         }
 
+    def write_session_jsonl(self, name: str, *records: dict[str, Any]) -> str:
+        path = self.root / name
+        path.write_text(
+            "\n".join(json.dumps(record) for record in records),
+            encoding="utf-8",
+        )
+        return str(path)
+
     def test_batch_manifest_records_receipts_and_telemetry(self) -> None:
         state = runner.initial_state(self.config)
         result = self.make_result()
@@ -143,6 +151,184 @@ class ArchitectureProgramRunnerArtifactTests(unittest.TestCase):
         self.assertTrue(sizes[self.config.program_ledger]["exists"])
         self.assertEqual(sizes[result["dispatch_path"]]["bytes"], len("dispatch\n"))
         self.assertFalse(sizes[result["receipt_path"]]["exists"])
+
+    def test_phase_telemetry_consumes_supplied_observation_metadata(self) -> None:
+        state = runner.initial_state(self.config)
+        result = self.make_result("execute")
+        session_path = self.write_session_jsonl(
+            "execute-session.jsonl",
+            {
+                "payload": {
+                    "type": "token_count",
+                    "last_token_usage": {
+                        "input_tokens": 6000,
+                        "cached_input_tokens": 800,
+                    },
+                    "total_token_usage": {
+                        "input_tokens": 6500,
+                        "output_tokens": 250,
+                        "reasoning_output_tokens": 75,
+                    },
+                    "model_context_window": 10000,
+                }
+            },
+            {
+                "payload": {
+                    "type": "token_count",
+                    "last_token_usage": {
+                        "input_tokens": 8400,
+                        "cached_input_tokens": 1200,
+                    },
+                    "total_token_usage": {
+                        "input_tokens": 9000,
+                        "output_tokens": 500,
+                        "reasoning_output_tokens": 100,
+                    },
+                    "model_context_window": 10000,
+                }
+            },
+        )
+
+        telemetry = artifacts.build_phase_telemetry(
+            self.config,
+            state,
+            "execute",
+            started_at="2026-06-27T12:00:00Z",
+            elapsed_seconds=1.25,
+            prompt_bytes=512,
+            result=result,
+            status="completed",
+            error=None,
+            execution_meta={
+                "exit_code": 0,
+                "stdout_bytes": 42,
+                "stderr_bytes": 7,
+                "codex_session_id": "019f0679-3875-7601-a4f8-a2a22303f3c7",
+                "codex_session_path": session_path,
+            },
+        )
+
+        self.assertEqual(telemetry["codex_session_path"], session_path)
+        self.assertEqual(telemetry["token_summary"]["status"], "ok")
+        self.assertEqual(telemetry["token_summary"]["turn_count"], 2)
+        self.assertEqual(telemetry["token_summary"]["max_input_tokens"], 8400)
+        self.assertEqual(telemetry["token_summary"]["max_context_used_percent"], 84.0)
+        self.assertEqual(telemetry["token_summary"]["context_pressure"], "context_pressure")
+        self.assertEqual(telemetry["context_budget"]["max_input_tokens"], 8400)
+
+    def test_phase_telemetry_keeps_missing_session_attribution_non_fatal(self) -> None:
+        state = runner.initial_state(self.config)
+        result = self.make_result("execute")
+
+        telemetry = artifacts.build_phase_telemetry(
+            self.config,
+            state,
+            "execute",
+            started_at="2026-06-27T12:00:00Z",
+            elapsed_seconds=1.25,
+            prompt_bytes=512,
+            result=result,
+            status="completed",
+            error=None,
+            execution_meta={
+                "exit_code": 0,
+                "stdout_bytes": 0,
+                "stderr_bytes": 0,
+                "codex_session_id": None,
+                "codex_session_path": None,
+            },
+        )
+
+        self.assertIsNone(telemetry["codex_session_id"])
+        self.assertIsNone(telemetry["codex_session_path"])
+        self.assertEqual(telemetry["token_summary"]["status"], "missing")
+        self.assertEqual(telemetry["token_summary"]["context_pressure"], "missing")
+        self.assertEqual(telemetry["context_budget"]["status"], "missing")
+
+    def test_run_telemetry_aggregates_session_ids_and_token_summaries(self) -> None:
+        state = runner.initial_state(self.config)
+        select_result = self.make_result("select-dispatch")
+        execute_result = self.make_result("execute")
+        select_session_path = self.write_session_jsonl(
+            "select-session.jsonl",
+            {
+                "payload": {
+                    "type": "token_count",
+                    "last_token_usage": {"input_tokens": 3500},
+                    "total_token_usage": {"input_tokens": 3500, "output_tokens": 20},
+                    "model_context_window": 10000,
+                }
+            },
+        )
+        execute_session_path = self.write_session_jsonl(
+            "execute-session.jsonl",
+            {
+                "payload": {
+                    "type": "token_count",
+                    "last_token_usage": {"input_tokens": 9100},
+                    "total_token_usage": {"input_tokens": 9100, "output_tokens": 80},
+                    "model_context_window": 10000,
+                }
+            },
+        )
+        cases = [
+            (
+                "select-dispatch",
+                select_result,
+                "019f0679-3875-7601-a4f8-a2a22303f3d0",
+                select_session_path,
+            ),
+            (
+                "execute",
+                execute_result,
+                "019f0679-3875-7601-a4f8-a2a22303f3d1",
+                execute_session_path,
+            ),
+        ]
+
+        for phase, result, session_id, session_path in cases:
+            telemetry = artifacts.build_phase_telemetry(
+                self.config,
+                state,
+                phase,
+                started_at="2026-06-27T12:00:00Z",
+                elapsed_seconds=1.0,
+                prompt_bytes=512,
+                result=result,
+                status="completed",
+                error=None,
+                execution_meta={
+                    "exit_code": 0,
+                    "stdout_bytes": 0,
+                    "stderr_bytes": 0,
+                    "codex_session_id": session_id,
+                    "codex_session_path": session_path,
+                },
+            )
+            telemetry_path = runner.next_phase_telemetry_path(state, phase)
+            artifacts.write_phase_telemetry(self.config, telemetry_path, telemetry)
+            artifacts.record_phase_telemetry_path(state, telemetry_path, result)
+
+        artifacts.write_run_telemetry(self.config, state)
+
+        run_telemetry = runner.read_json_object(
+            self.artifact_root / "telemetry" / "run-telemetry.json"
+        )
+        self.assertEqual(run_telemetry["phase_count"], 2)
+        self.assertEqual(run_telemetry["max_input_tokens"], 9100)
+        self.assertEqual(run_telemetry["max_context_used_percent"], 91.0)
+        self.assertEqual(run_telemetry["context_pressure"], "context_stop_recommended")
+        self.assertEqual(
+            [phase["codex_session_id"] for phase in run_telemetry["phases"]],
+            [
+                "019f0679-3875-7601-a4f8-a2a22303f3d0",
+                "019f0679-3875-7601-a4f8-a2a22303f3d1",
+            ],
+        )
+        self.assertEqual(
+            [phase["max_input_tokens"] for phase in run_telemetry["phases"]],
+            [3500, 9100],
+        )
 
     def test_runner_error_refreshes_manifests_when_active_batch_exists(self) -> None:
         state = runner.initial_state(self.config)
