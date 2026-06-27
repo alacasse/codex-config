@@ -91,7 +91,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | APR-18. **Change Allowance** is still encoded as dirty-path helpers in the Runner Facade | Closed | `c6d7705`, `a69eb40`, `6cb9e20`; `scripts/architecture_program_runner_change_allowance.py`; focused tests and dry-run smoke | None | **Change Allowance** now owns dirty-path classification and worktree checks while preserving conservative rejection behavior. |
 | APR-19. **Phase Contract** facts are embedded in prompt string construction | Closed | `22f2c72`, `81a6b70`, `ba04d7a`, `97a0faf`; `scripts/architecture_program_runner_phase_contract.py`; focused tests and dry-run smoke | None | **Phase Contract** now owns skill instructions, single-level boundary rules, shared result/receipt duties, env-override validation duties, and per-phase requirements while prompt rendering consumes those obligations separately from **Phase Environment** facts. |
 | APR-20. **Phase Observation** attribution is incomplete | Closed | `04efa20`, `cd84b00`, `adad417`, this closeout commit; `plans/dispatch/phase-observation-attribution-dispatch.md`; `plans/codex-config-architecture-program-runner-phase-observation-attribution-runway.md`; `scripts/architecture_program_runner_phase_observation.py`; final validation: focused runner pytest subset 89 passed, dry-run smoke passed, `uvx ruff` passed, `git diff --check` passed | None | **Phase Observation** now records exact runner-launched session ids and uniquely matched session JSONL paths when directly discoverable, keeps missing, ambiguous, or filesystem-error attribution non-fatal, does not persist env override values, and leaves token persistence in artifact telemetry. |
-| APR-21. **Input Inventory** has no enforced contract | Candidate | APR-10 evidence; prompt guidance | Schedule after APR-20 or after Phase Environment if needed | Runner prompts mention inventories, but existence, shape, and manifest linkage are not validated. |
+| APR-21. **Input Inventory** has no enforced contract | In runway | `plans/dispatch/input-inventory-contract-dispatch.md`; `plans/codex-config-architecture-program-runner-input-inventory-contract-runway.md` | Execute the `input-inventory-contract` runway | Runner prompts mention inventories, but existence, shape, and manifest linkage are not validated. |
 | APR-22. **Planning Root** and **Plan Archive** are not implemented | Candidate | `CONTEXT.md` | Create ADR and migration batch when selected | Target active root is `docs/plans/`; target archive is `docs/plans/archive/`; current repo still uses `plans/`. |
 
 ## Batch Queue
@@ -103,43 +103,41 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | phase-transition-change-allowance | APR-17, APR-18 | Closed | Both reduce run-loop state/path policy knowledge after environment context is clearer | APR-16 satisfied | Run-loop and changed-path tests plus dry-run smoke | `plans/dispatch/phase-transition-change-allowance-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-transition-change-allowance-runway.md` |
 | phase-contract-catalog | APR-19 | Closed | Separates normative **Phase Contract** facts from rendered prompt text | APR-16 satisfied; APR-17/APR-18 satisfied | Contract/command tests plus dry-run smoke | `plans/dispatch/phase-contract-catalog-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-contract-catalog-runway.md` |
 | phase-observation-attribution | APR-20 | Closed | Reframes telemetry attribution as **Phase Observation** work | APR-16, APR-19 satisfied | Artifact and observation tests with synthetic session logs plus dry-run smoke; no live nested Codex required | `plans/dispatch/phase-observation-attribution-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-observation-attribution-runway.md` |
-| input-inventory-contract | APR-21 | Candidate | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 preferred but not mandatory | Unit tests with synthetic inventories and prompt checks | TBD | TBD |
+| input-inventory-contract | APR-21 | In runway | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 satisfied | Unit tests with synthetic inventories and prompt checks plus dry-run smoke | `plans/dispatch/input-inventory-contract-dispatch.md` | `plans/codex-config-architecture-program-runner-input-inventory-contract-runway.md` |
 | planning-root-archive-migration | APR-22 | Candidate | Moves active planning under `docs/plans/` and creates `docs/plans/archive/` with an ADR | None, but do separately from runner behavior work | Markdown/readback plus path-reference audit | TBD | TBD |
 
 ## Selected Batch Brief
 
-- Batch: `phase-observation-attribution`
-- Dispatch: `plans/dispatch/phase-observation-attribution-dispatch.md`
-- Spec: `plans/codex-config-architecture-program-runner-phase-observation-attribution-runway.md`
-- Status: closed; exact runner-launched session id/path attribution is implemented
-- Goal: give **Phase Observation** exact runner-launched session attribution
-  without broad transcript reconstruction while preserving existing telemetry,
-  manifest, CLI, and receipt behavior.
+- Batch: `input-inventory-contract`
+- Dispatch: `plans/dispatch/input-inventory-contract-dispatch.md`
+- Spec: `plans/codex-config-architecture-program-runner-input-inventory-contract-runway.md`
+- Status: ready for execution; spec created, implementation not started
+- Goal: give **Input Inventory** an enforced runner contract for phase-consumed
+  context evidence while preserving the existing phase-result schema and
+  **Runner Facade** behavior.
 - Guardrails:
-  - Preserve current CLI behavior and direct script execution.
-  - Preserve prompt obligations, command flags, phase-result schema, expected
-    receipt path behavior, and dry-run output semantics.
-  - Keep **Phase Environment** facts in the environment concept owner.
-  - Keep phase-result schema validation, expected next-phase validation, and
-    receipt equality in the validation concept owner.
-  - Use only exact session attribution. Do not infer sessions by prompt text
-    search, newest file heuristics, broad session-log reconstruction, or copied
-    prompt matching.
-  - Missing session attribution remains non-fatal and must continue to produce
-    telemetry with `token_summary.status=missing`.
-  - Do not implement **Input Inventory** validation, worker/reviewer
-    attribution, hard context-stop behavior, or **Planning Root** migration in
-    this batch.
+  - Preserve current CLI arguments, direct script execution, phase order, Run
+    Summary shape, phase-result schema, receipt equality, and structured
+    artifact layout.
+  - Use the existing `evidence_paths` array and runner-provided expected input
+    inventory path; do not add phase-result fields.
+  - Keep **Input Inventory** separate from **Phase Observation**, **Phase
+    Receipt**, and artifact telemetry.
+  - Do not infer broad reads from transcripts, prompt text, newest files, shell
+    logs, or Codex session JSONL.
+  - Do not implement worker/reviewer session attribution, hard context-stop
+    behavior, or **Planning Root** migration in this batch.
 - Suggested slices:
-  - Characterize current **Phase Observation** attribution boundaries with
-    focused tests for exact UUID parsing, missing token data, and synthetic
-    session JSONL summaries.
-  - Introduce a **Phase Observation** concept owner for exact execution metadata
-    and session path discovery.
-  - Route `execute_codex_phase` through the observation owner while preserving
-    subprocess env, output-last-message handling, and existing telemetry writes.
-  - Tighten telemetry and facade compatibility tests so artifacts consume
-    observation metadata without broad session reconstruction.
+  - Characterize the current **Input Inventory** gap with focused tests for
+    prompt guidance, expected path generation, artifact size reporting, and
+    missing validation.
+  - Introduce an **Input Inventory** concept owner with compact JSON shape
+    validation and project-relative path handling.
+  - Enforce expected inventory existence, compact shape, and `evidence_paths`
+    linkage during phase-result or receipt validation without changing the
+    phase-result schema.
+  - Update prompt/reference/manifest/telemetry integration so phase agents know
+    the contract and runner artifacts expose the inventory path consistently.
 
 ## Recommended Work Order
 
