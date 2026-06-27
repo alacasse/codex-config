@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from scripts import architecture_program_runner_change_allowance as change_allowance
 from tests.architecture_program_runner_test_support import (
     ArchitectureProgramRunnerTestCase,
     runner,
@@ -10,6 +11,20 @@ from tests.architecture_program_runner_test_support import (
 
 
 class ArchitectureProgramRunnerChangeAllowanceTests(ArchitectureProgramRunnerTestCase):
+    def test_change_allowance_owner_exposes_named_path_api(self) -> None:
+        state = runner.initial_state(self.config)
+
+        expected = change_allowance.expected_change_allowance_paths(
+            self.config, state, "select-dispatch"
+        )
+
+        self.assertIn("project-notes/architecture/run-state.json", expected)
+        self.assertIs(
+            runner.expected_change_allowance_paths,
+            change_allowance.expected_change_allowance_paths,
+        )
+        self.assertIs(runner.check_change_allowance, change_allowance.check_change_allowance)
+
     def test_dirty_status_parser_includes_both_sides_of_renames(self) -> None:
         dirty = runner.dirty_paths_from_status(
             [

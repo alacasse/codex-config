@@ -13,12 +13,13 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any, Callable
 
 _OS_ENVIRON = os.environ
 
 try:
     from scripts import architecture_program_runner_artifacts as _runner_artifacts
+    from scripts import architecture_program_runner_change_allowance as _runner_change_allowance
     from scripts import architecture_program_runner_command as _runner_command
     from scripts import architecture_program_runner_environment as _runner_environment
     from scripts import architecture_program_runner_state as _runner_state
@@ -26,6 +27,7 @@ try:
     from scripts import architecture_program_runner_validation as _runner_validation
 except ModuleNotFoundError:  # pragma: no cover - direct script execution fallback.
     import architecture_program_runner_artifacts as _runner_artifacts
+    import architecture_program_runner_change_allowance as _runner_change_allowance
     import architecture_program_runner_command as _runner_command
     import architecture_program_runner_environment as _runner_environment
     import architecture_program_runner_state as _runner_state
@@ -118,6 +120,14 @@ apply_phase_result = _runner_transition.apply_phase_transition
 apply_phase_transition = _runner_transition.apply_phase_transition
 is_terminal_completed_state = _runner_transition.is_terminal_phase_transition_state
 is_terminal_phase_transition_state = _runner_transition.is_terminal_phase_transition_state
+check_change_allowance = _runner_change_allowance.check_change_allowance
+check_change_allowance_path = _runner_change_allowance.check_change_allowance_path
+check_worktree = _runner_change_allowance.check_worktree
+dirty_paths_from_status = _runner_change_allowance.dirty_paths_from_status
+expected_change_allowance_paths = _runner_change_allowance.expected_change_allowance_paths
+expected_dirty_paths = _runner_change_allowance.expected_dirty_paths
+git_status_lines = _runner_change_allowance.git_status_lines
+path_is_expected = _runner_change_allowance.path_is_expected
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -313,134 +323,6 @@ def extract_codex_session_id(text: str) -> str | None:
         flags=re.IGNORECASE,
     )
     return match.group(0) if match else None
-
-
-def git_status_lines(project: Path) -> list[str]:
-    completed = subprocess.run(
-        ["git", "status", "--porcelain"],
-        cwd=project,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-    if completed.returncode != 0:
-        raise RunnerError(f"git status failed in {project}: {completed.stderr.strip()}")
-    return [line for line in completed.stdout.splitlines() if line]
-
-
-def dirty_paths_from_status(lines: Iterable[str]) -> list[str]:
-    paths: list[str] = []
-    for line in lines:
-        if len(line) < 4:
-            continue
-        raw = line[3:].strip()
-        if " -> " in raw:
-            before, after = raw.split(" -> ", 1)
-            paths.extend([before.strip('"'), after.strip('"')])
-        else:
-            paths.append(raw.strip('"'))
-    return paths
-
-
-def expected_dirty_paths(
-    config: RunnerConfig,
-    state: dict[str, Any],
-    phase: str,
-    *,
-    extra_paths: Iterable[str] = (),
-) -> set[str]:
-    expected: set[str] = {project_relative(config.project, config.state_path)}
-    if state.get("artifact_root"):
-        expected.add(str(state["artifact_root"]))
-    for field in ("run_manifest_path", "batch_manifest_path", "active_batch_artifact_root"):
-        if state.get(field):
-            expected.add(str(state[field]))
-    for value in extra_paths:
-        expected.add(project_relative(config.project, resolve_project_path(config.project, value)))
-
-    for field in ("last_receipt_path",):
-        if state.get(field):
-            expected.add(
-                project_relative(config.project, resolve_project_path(config.project, state[field]))
-            )
-    if state.get("last_receipt_path"):
-        try:
-            receipt = read_json_object(
-                resolve_project_path(config.project, state["last_receipt_path"])
-            )
-        except RunnerError:
-            receipt = {}
-        if (
-            receipt.get("status") == "stopped"
-            and receipt.get("phase") == phase
-            and isinstance(receipt.get("evidence_paths"), list)
-        ):
-            for value in receipt["evidence_paths"]:
-                if isinstance(value, str):
-                    expected.add(
-                        project_relative(config.project, resolve_project_path(config.project, value))
-                    )
-
-    if phase == "select-dispatch":
-        for field in ("dispatch_path",):
-            if state.get(field):
-                expected.add(
-                    project_relative(config.project, resolve_project_path(config.project, state[field]))
-                )
-    elif phase == "create-spec":
-        for field in ("dispatch_path", "spec_path"):
-            if state.get(field):
-                expected.add(
-                    project_relative(config.project, resolve_project_path(config.project, state[field]))
-                )
-    elif phase == "execute":
-        for field in ("spec_path", "dispatch_path"):
-            if state.get(field):
-                expected.add(
-                    project_relative(config.project, resolve_project_path(config.project, state[field]))
-                )
-    elif phase == "closeout":
-        expected.add(config.program_ledger)
-        for field in ("spec_path", "last_receipt_path"):
-            if state.get(field):
-                expected.add(
-                    project_relative(config.project, resolve_project_path(config.project, state[field]))
-                )
-    return {path for path in expected if path and path != "."}
-
-
-def check_worktree(
-    config: RunnerConfig,
-    state: dict[str, Any],
-    phase: str,
-    *,
-    status_reader: Callable[[Path], list[str]] = git_status_lines,
-    extra_paths: Iterable[str] = (),
-) -> None:
-    dirty = dirty_paths_from_status(status_reader(config.project))
-    if not dirty:
-        return
-    expected = expected_dirty_paths(config, state, phase, extra_paths=extra_paths)
-    unexpected = [path for path in dirty if not path_is_expected(path, expected)]
-    if unexpected:
-        raise RunnerError(
-            "dirty files cannot be classified as expected for "
-            f"{phase}: {', '.join(unexpected)}"
-        )
-
-
-def path_is_expected(path: str, expected: set[str]) -> bool:
-    normalized = path.rstrip("/")
-    for candidate in expected:
-        candidate = candidate.rstrip("/")
-        if normalized == candidate:
-            return True
-        if normalized.startswith(candidate + "/"):
-            return True
-        if candidate.startswith(normalized + "/"):
-            return True
-    return False
 
 
 def check_required_artifacts(config: RunnerConfig, state: dict[str, Any]) -> None:
