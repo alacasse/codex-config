@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any
 from unittest import mock
 
+from scripts import architecture_program_runner_command as command_owner
+from scripts import architecture_program_runner_environment as environment_owner
 from tests.architecture_program_runner_test_support import (
     ArchitectureProgramRunnerTestCase,
     runner,
@@ -14,6 +16,21 @@ from tests.architecture_program_runner_test_support import (
 
 
 class ArchitectureProgramRunnerIntegrationTests(ArchitectureProgramRunnerTestCase):
+    def test_runner_facade_reexports_public_helpers_for_compatibility(self) -> None:
+        self.assertIs(runner.build_prompt, command_owner.build_prompt)
+        self.assertIs(runner.build_codex_command, command_owner.build_codex_command)
+        self.assertIs(runner.print_dry_run, command_owner.print_dry_run)
+        self.assertIs(runner.shell_join, command_owner.shell_join)
+        self.assertIs(runner.quote_for_display, command_owner.quote_for_display)
+        self.assertIs(runner.phase_skill_instruction, command_owner.phase_skill_instruction)
+        self.assertIs(runner.SCHEMA_PATH, environment_owner.SCHEMA_PATH)
+        self.assertIs(runner.RUNNER_REFERENCE_PATH, environment_owner.RUNNER_REFERENCE_PATH)
+        self.assertIs(runner.build_phase_environment, environment_owner.build_phase_environment)
+        self.assertIs(runner.sandbox_for_phase, environment_owner.sandbox_for_phase)
+        self.assertIs(runner.batch_limit_label, environment_owner.batch_limit_label)
+        self.assertIs(runner.build_subprocess_env, environment_owner.build_subprocess_env)
+        self.assertIs(runner.env_override_key_label, environment_owner.env_override_key_label)
+
     def test_cli_defaults_and_state_path(self) -> None:
         args = runner.parse_args(
             [
@@ -100,8 +117,6 @@ class ArchitectureProgramRunnerIntegrationTests(ArchitectureProgramRunnerTestCas
 
         self.assertEqual(config.sandbox, "workspace-write")
         self.assertEqual(config.execute_sandbox, "danger-full-access")
-        self.assertEqual(runner.sandbox_for_phase(config, "select-dispatch"), "workspace-write")
-        self.assertEqual(runner.sandbox_for_phase(config, "execute"), "danger-full-access")
 
     def test_cli_parses_one_env_override(self) -> None:
         args = runner.parse_args(

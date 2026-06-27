@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import unittest
 
-from scripts import architecture_program_runner_command as command_owner
 from scripts import architecture_program_runner_environment as environment_owner
 
 from tests.architecture_program_runner_test_support import (
@@ -48,45 +47,40 @@ class ArchitectureProgramRunnerEnvironmentTests(ArchitectureProgramRunnerTestCas
         state["batch_manifest_path"] = runner.batch_manifest_path(state, "batch-1")
 
         environment = environment_owner.build_phase_environment(config, state, "execute")
-        prompt = command_owner.build_prompt(config, state, "execute")
 
         self.assertEqual(environment.artifact_facts["active_batch_id"], "batch-1")
+        self.assertEqual(
+            environment.artifact_facts["artifact_root"],
+            "project-notes/architecture/architecture-program-runs/program/"
+            "run-20260626-204812",
+        )
+        self.assertEqual(
+            environment.artifact_facts["active_batch_artifact_root"],
+            "project-notes/architecture/architecture-program-runs/program/"
+            "run-20260626-204812/batches/batch-1",
+        )
+        self.assertEqual(
+            environment.artifact_facts["dispatch_path"],
+            "project-notes/architecture/dispatch/batch-1.md",
+        )
+        self.assertEqual(
+            environment.artifact_facts["spec_path"],
+            "project-notes/architecture/batch-1-spec.md",
+        )
+        self.assertEqual(
+            environment.artifact_facts["last_receipt_path"],
+            "project-notes/architecture/architecture-program-runs/program/"
+            "run-20260626-204812/receipts/02-create-spec.json",
+        )
         self.assertEqual(
             environment.artifact_facts["run_manifest_path"],
             "project-notes/architecture/architecture-program-runs/program/"
             "run-20260626-204812/run-manifest.json",
         )
-        self.assertIn("- active_batch_id: batch-1", prompt)
-        self.assertIn(
-            "- artifact_root: project-notes/architecture/architecture-program-runs/"
-            "program/run-20260626-204812",
-            prompt,
-        )
-        self.assertIn(
-            "- active_batch_artifact_root: "
+        self.assertEqual(
+            environment.artifact_facts["batch_manifest_path"],
             "project-notes/architecture/architecture-program-runs/program/"
-            "run-20260626-204812/batches/batch-1",
-            prompt,
-        )
-        self.assertIn(
-            "- dispatch_path: project-notes/architecture/dispatch/batch-1.md",
-            prompt,
-        )
-        self.assertIn("- spec_path: project-notes/architecture/batch-1-spec.md", prompt)
-        self.assertIn(
-            "- last_receipt_path: project-notes/architecture/architecture-program-runs/"
-            "program/run-20260626-204812/receipts/02-create-spec.json",
-            prompt,
-        )
-        self.assertIn(
-            "- run_manifest_path: project-notes/architecture/architecture-program-runs/"
-            "program/run-20260626-204812/run-manifest.json",
-            prompt,
-        )
-        self.assertIn(
-            "- batch_manifest_path: project-notes/architecture/architecture-program-runs/"
-            "program/run-20260626-204812/batches/batch-1/batch-manifest.json",
-            prompt,
+            "run-20260626-204812/batches/batch-1/batch-manifest.json",
         )
 
     def test_environment_owner_supplies_launch_and_label_facts(self) -> None:
@@ -124,6 +118,28 @@ class ArchitectureProgramRunnerEnvironmentTests(ArchitectureProgramRunnerTestCas
         )
         self.assertEqual(environment.env_override_key_label, "UV_CACHE_DIR, TOKEN")
         self.assertEqual(environment.sandbox, "danger-full-access")
+
+    def test_environment_owner_formats_batch_limit_labels(self) -> None:
+        self.assertEqual(
+            environment_owner.batch_limit_label(None),
+            "all executable batches until stop condition",
+        )
+        self.assertEqual(environment_owner.batch_limit_label(1), "1 batch")
+        self.assertEqual(environment_owner.batch_limit_label(3), "3 batches")
+
+    def test_environment_owner_applies_execute_sandbox_to_execute_phase_only(self) -> None:
+        config = runner.RunnerConfig(
+            **{**self.config.__dict__, "execute_sandbox": "danger-full-access"}
+        )
+
+        self.assertEqual(
+            environment_owner.sandbox_for_phase(config, "select-dispatch"),
+            "workspace-write",
+        )
+        self.assertEqual(
+            environment_owner.sandbox_for_phase(config, "execute"),
+            "danger-full-access",
+        )
 
     def test_environment_owner_applies_subprocess_env_without_exposing_values(self) -> None:
         environment = environment_owner.build_phase_environment(

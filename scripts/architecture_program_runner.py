@@ -20,11 +20,13 @@ _OS_ENVIRON = os.environ
 try:
     from scripts import architecture_program_runner_artifacts as _runner_artifacts
     from scripts import architecture_program_runner_command as _runner_command
+    from scripts import architecture_program_runner_environment as _runner_environment
     from scripts import architecture_program_runner_state as _runner_state
     from scripts import architecture_program_runner_validation as _runner_validation
 except ModuleNotFoundError:  # pragma: no cover - direct script execution fallback.
     import architecture_program_runner_artifacts as _runner_artifacts
     import architecture_program_runner_command as _runner_command
+    import architecture_program_runner_environment as _runner_environment
     import architecture_program_runner_state as _runner_state
     import architecture_program_runner_validation as _runner_validation
 
@@ -72,19 +74,19 @@ validate_required_string = _runner_validation.validate_required_string
 validate_result_against_state = _runner_validation.validate_result_against_state
 validate_summary = _runner_validation.validate_summary
 CONTEXT_BUDGETS = _runner_command.CONTEXT_BUDGETS
-SCHEMA_PATH = _runner_command.SCHEMA_PATH
-RUNNER_REFERENCE_PATH = _runner_command.RUNNER_REFERENCE_PATH
-batch_limit_label = _runner_command.batch_limit_label
+SCHEMA_PATH = _runner_environment.SCHEMA_PATH
+RUNNER_REFERENCE_PATH = _runner_environment.RUNNER_REFERENCE_PATH
 build_codex_command = _runner_command.build_codex_command
-build_phase_environment = _runner_command.build_phase_environment
 build_prompt = _runner_command.build_prompt
-build_subprocess_env = _runner_command.build_subprocess_env
-env_override_key_label = _runner_command.env_override_key_label
 phase_skill_instruction = _runner_command.phase_skill_instruction
 print_dry_run = _runner_command.print_dry_run
 quote_for_display = _runner_command.quote_for_display
-sandbox_for_phase = _runner_command.sandbox_for_phase
 shell_join = _runner_command.shell_join
+batch_limit_label = _runner_environment.batch_limit_label
+build_phase_environment = _runner_environment.build_phase_environment
+build_subprocess_env = _runner_environment.build_subprocess_env
+env_override_key_label = _runner_environment.env_override_key_label
+sandbox_for_phase = _runner_environment.sandbox_for_phase
 apply_execution_meta_to_state = _runner_artifacts.apply_execution_meta_to_state
 artifact_batch_entry = _runner_artifacts.artifact_batch_entry
 artifact_size_entries = _runner_artifacts.artifact_size_entries

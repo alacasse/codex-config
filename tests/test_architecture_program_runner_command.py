@@ -7,9 +7,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from scripts import architecture_program_runner as runner
 from scripts import architecture_program_runner_command as command_owner
 from scripts import architecture_program_runner_environment as environment_owner
+from tests.architecture_program_runner_test_support import runner
 
 
 class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
@@ -34,13 +34,6 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
-
-    def test_runner_reexports_command_owner_helpers_for_compatibility(self) -> None:
-        self.assertIs(runner.build_prompt, command_owner.build_prompt)
-        self.assertIs(runner.build_codex_command, command_owner.build_codex_command)
-        self.assertIs(runner.sandbox_for_phase, command_owner.sandbox_for_phase)
-        self.assertIs(runner.print_dry_run, command_owner.print_dry_run)
-        self.assertIs(command_owner.build_phase_environment, environment_owner.build_phase_environment)
 
     def test_prompt_and_command_reuse_owner_produced_environment(self) -> None:
         config = runner.RunnerConfig(
@@ -79,7 +72,9 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
             str(environment.schema_path),
         )
 
-    def test_prompt_guardrails_and_phase_contracts_are_built_by_owner(self) -> None:
+    def test_prompt_guardrails_and_phase_contracts_are_rendered_by_command_owner(
+        self,
+    ) -> None:
         state = runner.initial_state(self.config)
 
         prompts = {
@@ -153,31 +148,6 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
         prompt = command_owner.build_prompt(config, state, "select-dispatch")
 
         self.assertIn("Batch limit: all executable batches", prompt)
-        self.assertEqual(
-            command_owner.batch_limit_label(None),
-            "all executable batches until stop condition",
-        )
-        self.assertEqual(command_owner.batch_limit_label(1), "1 batch")
-        self.assertEqual(command_owner.batch_limit_label(3), "3 batches")
-
-    def test_execute_sandbox_applies_to_execute_phase_only(self) -> None:
-        config = runner.RunnerConfig(
-            **{**self.config.__dict__, "execute_sandbox": "danger-full-access"}
-        )
-
-        self.assertEqual(
-            command_owner.sandbox_for_phase(config, "select-dispatch"),
-            "workspace-write",
-        )
-        self.assertEqual(command_owner.sandbox_for_phase(config, "execute"), "danger-full-access")
-        self.assertEqual(
-            command_owner.sandbox_for_phase(config, "execute"),
-            environment_owner.build_phase_environment(
-                config,
-                runner.initial_state(config),
-                "execute",
-            ).sandbox,
-        )
 
     def test_codex_command_includes_schema_output_model_and_prompt(self) -> None:
         config = runner.RunnerConfig(**{**self.config.__dict__, "model": "gpt-5-codex"})
@@ -233,23 +203,6 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
         self.assertEqual(
             execute_command[execute_command.index("--output-last-message") + 1],
             "/tmp/execute-result.json",
-        )
-
-    def test_subprocess_environment_applies_runner_overrides(self) -> None:
-        env = command_owner.build_subprocess_env(
-            (("OVERRIDE_ME", "new"), ("ADDED", "value")),
-            base_env={"KEEP_ME": "yes", "OVERRIDE_ME": "old"},
-        )
-
-        self.assertEqual(env["KEEP_ME"], "yes")
-        self.assertEqual(env["OVERRIDE_ME"], "new")
-        self.assertEqual(env["ADDED"], "value")
-        self.assertEqual(
-            env,
-            environment_owner.build_subprocess_env(
-                (("OVERRIDE_ME", "new"), ("ADDED", "value")),
-                base_env={"KEEP_ME": "yes", "OVERRIDE_ME": "old"},
-            ),
         )
 
     def test_dry_run_displays_env_keys_without_values(self) -> None:
