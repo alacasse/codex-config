@@ -175,6 +175,23 @@ class ArchitectureProgramRunnerPhaseContractTests(ArchitectureProgramRunnerTestC
         with self.assertRaisesRegex(runner.RunnerError, "unknown phase: unknown"):
             command_owner.phase_skill_instruction("unknown")
 
+    def test_prompts_render_contract_obligations_for_all_fixed_phases(self) -> None:
+        for phase in runner.PHASES:
+            with self.subTest(phase=phase):
+                contract = phase_contract_owner.build_phase_contract(
+                    phase,
+                    execute_batches=self.config.execute_batches,
+                )
+                prompt = self.prompt_for_phase(phase)
+
+                self.assertIn(f"Use {contract.skill_instruction}.", prompt)
+                for line in contract.single_level_boundary_obligations:
+                    self.assertIn(line, prompt)
+                for line in contract.shared_result_obligations:
+                    self.assertIn(line, prompt)
+                for line in contract.phase_requirements:
+                    self.assertIn(line, prompt)
+
 
 if __name__ == "__main__":
     unittest.main()

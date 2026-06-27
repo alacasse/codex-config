@@ -84,6 +84,12 @@ transition owner, while dirty-path parsing, expected-path calculation, prefix
 matching, and worktree checks moved behind the allowance owner. The Runner
 Facade keeps compatibility exports, and focused owner tests now carry the
 concept behavior while broad runner tests retain thin integration coverage.
+The runner now also names **Phase Contract** as the concept owner for
+phase-prompt obligations. Prompt rendering consumes the contract catalog for
+skill instructions, single-level boundary rules, shared receipt/result duties,
+env-override validation duties, and per-phase next-phase requirements while
+leaving launch facts, artifact paths, sandbox choices, and env-key labels with
+Phase Environment.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing
