@@ -64,6 +64,7 @@ class RunnerConfig:
     execute_batches: bool
     state_path: Path
     sandbox: str
+    execute_sandbox: str | None
     model: str | None
     env_overrides: tuple[tuple[str, str], ...]
     dry_run: bool
@@ -109,6 +110,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--sandbox",
         default="workspace-write",
         help="Codex sandbox value. Default: workspace-write.",
+    )
+    parser.add_argument(
+        "--execute-sandbox",
+        default=None,
+        help=(
+            "Optional Codex sandbox value for the execute phase only. "
+            "Use when Batch Runway execution must commit and the default sandbox "
+            "cannot write Git metadata."
+        ),
     )
     parser.add_argument("--model", default=None, help="Optional codex exec model.")
     parser.add_argument(
@@ -177,6 +187,7 @@ def config_from_args(args: argparse.Namespace) -> RunnerConfig:
         execute_batches=args.execute_batches,
         state_path=state_path,
         sandbox=args.sandbox,
+        execute_sandbox=args.execute_sandbox,
         model=args.model,
         env_overrides=tuple(args.env),
         dry_run=args.dry_run,
@@ -520,7 +531,7 @@ def phase_skill_instruction(phase: str) -> str:
 
 
 def build_codex_command(
-    config: RunnerConfig, prompt: str, output_last_message: Path
+    config: RunnerConfig, phase: str, prompt: str, output_last_message: Path
 ) -> list[str]:
     command = [
         "codex",
@@ -528,7 +539,7 @@ def build_codex_command(
         "--cd",
         str(config.project),
         "--sandbox",
-        config.sandbox,
+        sandbox_for_phase(config, phase),
         "--output-schema",
         str(SCHEMA_PATH),
         "--output-last-message",
@@ -538,6 +549,12 @@ def build_codex_command(
         command.extend(["--model", config.model])
     command.append(prompt)
     return command
+
+
+def sandbox_for_phase(config: RunnerConfig, phase: str) -> str:
+    if phase == "execute" and config.execute_sandbox:
+        return config.execute_sandbox
+    return config.sandbox
 
 
 def build_subprocess_env(
@@ -562,7 +579,7 @@ def execute_codex_phase(config: RunnerConfig, state: dict[str, Any], phase: str)
         "w", encoding="utf-8", prefix="architecture-program-runner-", suffix=".json"
     ) as handle:
         output_last_message = Path(handle.name)
-        command = build_codex_command(config, prompt, output_last_message)
+        command = build_codex_command(config, phase, prompt, output_last_message)
         completed = subprocess.run(
             command,
             cwd=config.project,
@@ -583,9 +600,12 @@ def execute_codex_phase(config: RunnerConfig, state: dict[str, Any], phase: str)
 def print_dry_run(config: RunnerConfig, state: dict[str, Any]) -> None:
     phase = state["active_phase"]
     prompt = build_prompt(config, state, phase)
-    command = build_codex_command(config, prompt, Path("<tmp-result>"))
+    command = build_codex_command(config, phase, prompt, Path("<tmp-result>"))
     print("Command:")
     print(shell_join(command))
+    if config.execute_sandbox:
+        print(f"Base sandbox: {config.sandbox}")
+        print(f"Execute sandbox: {config.execute_sandbox}")
     if config.env_overrides:
         print(f"Env override keys: {env_override_key_label(config)}")
     print()

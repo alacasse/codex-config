@@ -38,6 +38,9 @@ coordinator-shell probe for runner env override keys, coordinator-shell
 canonical validation when env overrides are involved, and stopped-validation
 receipts that name exact canonical commands plus env/cache visibility booleans
 without disclosing override values.
+The runner now also accepts `--execute-sandbox` so commit-capable Batch Runway
+execute phases can use a broader nested Codex sandbox without broadening
+select-dispatch, create-spec, or closeout phases.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing

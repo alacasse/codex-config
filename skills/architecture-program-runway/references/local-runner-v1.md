@@ -94,6 +94,25 @@ Create, execute, and close out one batch:
   --execute-batches
 ```
 
+When execute phases must create Batch Runway commits but the default sandbox
+cannot write Git metadata, keep the base sandbox narrow and broaden only the
+execute phase:
+
+```bash
+~/.codex/scripts/architecture_program_runner.py \
+  --resume \
+  --project <project-path> \
+  --program-ledger <project-relative-ledger-path> \
+  --max-batches 1 \
+  --execute-batches \
+  --sandbox workspace-write \
+  --execute-sandbox danger-full-access
+```
+
+Treat `--execute-sandbox danger-full-access` as an explicit local workflow
+escalation for commit-capable Batch Runway execution. Do not use it as a
+general default for planning, spec creation, or closeout phases.
+
 Create, execute, and close out every currently executable batch until no safe
 next batch remains or a stop condition is hit:
 

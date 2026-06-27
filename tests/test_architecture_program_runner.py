@@ -88,6 +88,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             execute_batches=True,
             state_path=self.project / "my-docs" / "plans" / "run-state.json",
             sandbox="workspace-write",
+            execute_sandbox=None,
             model=None,
             env_overrides=(),
             dry_run=False,
@@ -141,6 +142,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.assertEqual(config.max_batches, 1)
         self.assertFalse(config.execute_batches)
         self.assertEqual(config.sandbox, "workspace-write")
+        self.assertIsNone(config.execute_sandbox)
         self.assertEqual(config.env_overrides, ())
         self.assertEqual(
             config.state_path,
@@ -193,6 +195,26 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         config = runner.config_from_args(args)
 
         self.assertEqual(config.max_batches, 3)
+
+    def test_execute_sandbox_overrides_execute_phase_only(self) -> None:
+        args = runner.parse_args(
+            [
+                "--project",
+                str(self.project),
+                "--program-ledger",
+                "my-docs/plans/program.md",
+                "--sandbox",
+                "workspace-write",
+                "--execute-sandbox",
+                "danger-full-access",
+            ]
+        )
+        config = runner.config_from_args(args)
+
+        self.assertEqual(config.sandbox, "workspace-write")
+        self.assertEqual(config.execute_sandbox, "danger-full-access")
+        self.assertEqual(runner.sandbox_for_phase(config, "select-dispatch"), "workspace-write")
+        self.assertEqual(runner.sandbox_for_phase(config, "execute"), "danger-full-access")
 
     def test_cli_parses_one_env_override(self) -> None:
         args = runner.parse_args(
@@ -297,6 +319,30 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.assertEqual(captured["env"]["OVERRIDE_ME"], "new")
         self.assertEqual(captured["env"]["ADDED"], "value")
 
+    def test_execute_codex_phase_uses_execute_sandbox_for_execute_only(self) -> None:
+        config = runner.RunnerConfig(
+            **{
+                **self.config.__dict__,
+                "execute_sandbox": "danger-full-access",
+            }
+        )
+        state = runner.initial_state(config)
+        result = self.make_result("execute", "closeout")
+        captured: list[list[str]] = []
+
+        def fake_run(command: list[str], **kwargs: Any) -> Any:
+            captured.append(command)
+            output_path = Path(command[command.index("--output-last-message") + 1])
+            output_path.write_text(json.dumps(result), encoding="utf-8")
+            return runner.subprocess.CompletedProcess(command, 0, "", "")
+
+        with mock.patch.object(runner.subprocess, "run", side_effect=fake_run):
+            returned = runner.execute_codex_phase(config, state, "execute")
+
+        command = captured[0]
+        self.assertEqual(returned, result)
+        self.assertEqual(command[command.index("--sandbox") + 1], "danger-full-access")
+
     def test_dry_run_mentions_env_keys_without_values(self) -> None:
         config = runner.RunnerConfig(
             **{
@@ -396,6 +442,8 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.assertIn("phase coordinator shell", text)
         self.assertIn("Subagent-only validation output", text)
         self.assertIn("command environment", text)
+        self.assertIn("--execute-sandbox", text)
+        self.assertIn("commit-capable Batch Runway execution", text)
 
     def test_skill_points_local_runner_usage_to_protocol(self) -> None:
         text = (
