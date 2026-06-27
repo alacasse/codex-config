@@ -439,6 +439,12 @@ def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str
         f"Batch limit: {batch_limit_label(config.max_batches)}",
         f"Current phase: {phase}",
         f"Output schema path: {SCHEMA_PATH}",
+        "",
+        "Single-level phase boundary:",
+        "- You are already running inside the runner-launched phase process.",
+        "- Do not run codex exec from inside this phase.",
+        "- Do not launch the local architecture program runner from inside this phase.",
+        "- Do not probe nested Codex availability or create temporary CODEX_HOME workarounds.",
     ]
     if config.env_overrides:
         lines.append(f"Runner env override keys: {env_override_key_label(config)}")
@@ -508,7 +514,9 @@ def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str
                 "Phase requirements:",
                 "- Reconcile compact execution evidence back into the program ledger.",
                 "- Do not paste execution logs into the ledger.",
-                "- Update runner telemetry receipt.",
+                "- Write or update compact closeout telemetry as project file evidence.",
+                "- Use existing state, receipt, ledger, and evidence files only.",
+                "- Update telemetry without launching another Codex process.",
                 "- Use next_phase=select-dispatch only when another batch is allowed and ready.",
                 "- Use next_phase=select-dispatch when another safe executable batch is ready and the batch limit permits it.",
                 "- Use next_phase=done when the batch limit is reached or no next batch is ready.",

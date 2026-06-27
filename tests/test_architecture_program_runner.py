@@ -400,6 +400,24 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             self.assertIn("Return schema-valid JSON", prompt)
             self.assertIn("receipt_path", prompt)
 
+    def test_prompt_generation_forbids_nested_codex_in_all_phases(self) -> None:
+        state = runner.initial_state(self.config)
+
+        for phase in runner.PHASES:
+            with self.subTest(phase=phase):
+                prompt = runner.build_prompt(self.config, state, phase)
+                self.assertIn("Do not run codex exec", prompt)
+                self.assertIn("Do not launch the local architecture program runner", prompt)
+                self.assertIn("Do not probe nested Codex availability", prompt)
+                self.assertIn("already running inside the runner-launched phase process", prompt)
+
+    def test_closeout_prompt_defines_file_based_telemetry(self) -> None:
+        prompt = runner.build_prompt(self.config, runner.initial_state(self.config), "closeout")
+
+        self.assertIn("Write or update compact closeout telemetry as project file evidence", prompt)
+        self.assertIn("Use existing state, receipt, ledger, and evidence files only", prompt)
+        self.assertIn("without launching another Codex process", prompt)
+
     def test_prompt_generation_names_all_batches_limit(self) -> None:
         config = runner.RunnerConfig(**{**self.config.__dict__, "max_batches": None})
         state = runner.initial_state(config)
@@ -444,6 +462,9 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.assertIn("command environment", text)
         self.assertIn("--execute-sandbox", text)
         self.assertIn("commit-capable Batch Runway execution", text)
+        self.assertIn("single-level", text)
+        self.assertIn("Do not run `codex exec`", text)
+        self.assertIn("file-based closeout telemetry", text)
 
     def test_skill_points_local_runner_usage_to_protocol(self) -> None:
         text = (

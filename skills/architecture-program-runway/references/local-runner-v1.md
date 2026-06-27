@@ -210,6 +210,13 @@ Every phase runs in a fresh `codex exec` process with
 `--output-schema local-runner-phase-result.schema.json` and
 `--output-last-message <tmp-result>`.
 
+The local runner uses a single-level phase model. The outer Python runner is
+the only process that launches phase-level `codex exec` commands. Once a phase
+agent is running, it is already inside the runner-launched phase process.
+Do not run `codex exec`, do not launch the local architecture program runner,
+and do not probe nested Codex availability from inside any phase. Use existing
+state, receipt, ledger, and evidence files only.
+
 The phase-result JSON schema is intentionally limited to the Codex structured
 output subset: object shape, required fields, primitive types, enums, arrays,
 nullable fields, and `additionalProperties: false`. Cross-field and
@@ -269,7 +276,10 @@ and any dirty files remaining.
 
 `closeout` uses `$architecture-program-runway closeout-runway` to reconcile
 compact execution evidence into the program ledger. It does not paste logs into
-the ledger. `batches_completed` increments only after successful closeout.
+the ledger. Closeout telemetry is file-based closeout telemetry: write compact
+ledger, receipt, or evidence-file updates directly, without launching another
+Codex process, probing runtime availability, or creating a temporary
+`CODEX_HOME`. `batches_completed` increments only after successful closeout.
 
 ## Worktree Safety
 

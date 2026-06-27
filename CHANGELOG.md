@@ -41,6 +41,11 @@ without disclosing override values.
 The runner now also accepts `--execute-sandbox` so commit-capable Batch Runway
 execute phases can use a broader nested Codex sandbox without broadening
 select-dispatch, create-spec, or closeout phases.
+Phase prompts and the local-runner protocol now enforce a single-level phase
+model: phase agents must not run nested `codex exec`, recursively launch the
+local runner, probe nested Codex availability, or create temporary `CODEX_HOME`
+workarounds. Closeout telemetry is now explicitly file-based ledger, receipt,
+or evidence updates.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing
