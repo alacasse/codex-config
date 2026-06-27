@@ -120,7 +120,7 @@ Dirty-file constraints:
 | 1. Path and state owner seam | Completed | See commit receipt | `70 passed`; dry-run smoke passed; `git diff --check` passed; ruff unavailable: `/usr/bin/python: No module named ruff` | Process-blocked review accepted after ledger recording; no code findings | Creates the first reusable owner API for path/state helpers. |
 | 2. Phase result and receipt validation seam | Completed | See commit receipt | `71 passed`; dry-run smoke passed; `git diff --check` passed; ruff unavailable: `/usr/bin/python: No module named ruff` | Process-blocked review accepted after ledger recording; no code findings | Consumes Slice 1 path/state APIs where applicable. |
 | 3. Prompt, command, and env construction seam | Completed | See commit receipt | `71 passed`; dry-run smoke passed; ruff via `uvx` passed; `git diff --check` passed | Clean | Preserved exact prompt guardrails and command flags. |
-| 4. Artifact manifest and telemetry owner seams | Pending |  |  |  | Includes APR-13 decision or small fix for failure-path manifests. |
+| 4. Artifact manifest and telemetry owner seams | Completed | See commit receipt | `89 passed`; dry-run smoke passed; ruff via `uvx` passed; `git diff --check` passed | Clean after fix loop | APR-13 closed: structured failure paths refresh manifests and telemetry through active batch state. |
 | 5. Test topology split and thin CLI integration suite | Pending |  |  |  | Mirrors new owner seams; keeps broad regression coverage. |
 
 ## Completed Slice Archive
@@ -160,6 +160,21 @@ Dirty-file constraints:
     passed with a non-fatal Python symlink warning; `git diff --check` passed.
   - Review: separate `runway_reviewer` returned clean with no findings or
     residual risks.
+- Slice 4. Artifact manifest and telemetry owner seams:
+  - Outcome: extracted artifact manifests, batch indexes, phase/run telemetry,
+    token summaries, execution metadata, and artifact-size helpers to
+    `scripts/architecture_program_runner_artifacts.py`.
+  - APR-13: closed by refreshing manifests on structured `RunnerError` paths
+    when active batch state exists, and by adding malformed-result regression
+    coverage that preserves the validation error, writes state, and attributes
+    phase telemetry/manifests through `active_batch_id`.
+  - Commit: see coordinator commit receipt for the final hash.
+  - Validation: `python -m pytest tests/test_architecture_program_runner_state.py tests/test_architecture_program_runner_validation.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_artifacts.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`
+    passed with 89 tests; dry-run runner smoke passed; `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check ...`
+    passed with a non-fatal Python symlink warning; `git diff --check` passed.
+  - Review: initial review found malformed-result failure-path attribution
+    gaps; after two worker fix loops, final `runway_reviewer` pass returned
+    clean with no findings.
 
 ## Slice 1. Path and State Owner Seam
 
