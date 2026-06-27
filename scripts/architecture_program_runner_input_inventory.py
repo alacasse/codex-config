@@ -11,6 +11,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution fallba
     import architecture_program_runner_state as _runner_state
 
 RunnerError = _runner_state.RunnerError
+phase_input_inventory_path = _runner_state.phase_input_inventory_path
 read_json_object = _runner_state.read_json_object
 resolve_project_path = _runner_state.resolve_project_path
 
@@ -135,6 +136,27 @@ def validate_input_inventory_file(
     inventory = read_json_object(resolve_project_relative_path(project, inventory_path))
     validate_input_inventory(inventory, active_phase=active_phase)
     return inventory
+
+
+def validate_input_inventory_evidence(
+    project: Path,
+    result: dict[str, Any],
+    state: dict[str, Any],
+) -> None:
+    expected_path = phase_input_inventory_path(state, result["phase"])
+    if expected_path is None:
+        return
+
+    if expected_path not in result["evidence_paths"]:
+        raise RunnerError(
+            "phase result evidence_paths must include runner-provided expected "
+            f"input inventory path: {expected_path}"
+        )
+
+    try:
+        validate_input_inventory_file(project, expected_path, active_phase=result["phase"])
+    except RunnerError as exc:
+        raise RunnerError(f"input inventory validation failed: {exc}") from exc
 
 
 def validate_expected_input_inventory_path(

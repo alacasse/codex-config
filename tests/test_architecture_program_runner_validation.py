@@ -59,10 +59,49 @@ class ArchitectureProgramRunnerValidationTests(unittest.TestCase):
     def initial_state(self) -> dict[str, Any]:
         return runner_state.initial_state(self.config)
 
+    def structured_state_and_config(self) -> tuple[dict[str, Any], SimpleNamespace]:
+        artifact_root = (
+            self.project
+            / "project-notes"
+            / "architecture"
+            / "architecture-program-runs"
+            / "program"
+            / "run-20260626-204812"
+        )
+        config = SimpleNamespace(**{**self.config.__dict__, "artifact_root": artifact_root})
+        state = runner_state.initial_state(config)
+        state["active_batch_id"] = "batch-1"
+        state["active_batch_artifact_root"] = runner_state.batch_artifact_root(
+            state,
+            "batch-1",
+        )
+        state["batch_manifest_path"] = runner_state.batch_manifest_path(state, "batch-1")
+        return state, config
+
     def write_receipt(self, result: dict[str, Any]) -> None:
         path = runner_state.resolve_project_path(self.config.project, result["receipt_path"])
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(result), encoding="utf-8")
+
+    def write_input_inventory(self, state: dict[str, Any], phase: str = "execute") -> str:
+        inventory_path = runner_state.phase_input_inventory_path(state, phase)
+        self.assertIsNotNone(inventory_path)
+        resolved = runner_state.resolve_project_path(self.config.project, inventory_path)
+        resolved.parent.mkdir(parents=True, exist_ok=True)
+        resolved.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "phase": phase,
+                    "primary_inputs": [],
+                    "broad_reads": [],
+                    "large_file_reads": [],
+                    "subagent_reports": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return str(inventory_path)
 
     def test_phase_result_schema_uses_supported_codex_output_subset(self) -> None:
         schema = json.loads(PHASE_RESULT_SCHEMA.read_text(encoding="utf-8"))
@@ -121,6 +160,44 @@ class ArchitectureProgramRunnerValidationTests(unittest.TestCase):
         with self.assertRaisesRegex(runner_state.RunnerError, "does not match"):
             validation.validate_receipt(result, self.config, state)
 
+    def test_structured_receipt_requires_input_inventory_evidence(self) -> None:
+        state, config = self.structured_state_and_config()
+        expected_receipt = runner_state.phase_receipt_path(state, "execute")
+        result = self.make_result("execute", "closeout", receipt_path=expected_receipt)
+        self.write_receipt(result)
+
+        with self.assertRaisesRegex(runner_state.RunnerError, "evidence_paths"):
+            validation.validate_receipt(result, config, state)
+
+    def test_structured_receipt_requires_input_inventory_file(self) -> None:
+        state, config = self.structured_state_and_config()
+        expected_receipt = runner_state.phase_receipt_path(state, "execute")
+        input_inventory_path = runner_state.phase_input_inventory_path(state, "execute")
+        result = self.make_result(
+            "execute",
+            "closeout",
+            receipt_path=expected_receipt,
+            evidence_paths=[input_inventory_path],
+        )
+        self.write_receipt(result)
+
+        with self.assertRaisesRegex(runner_state.RunnerError, "input inventory"):
+            validation.validate_receipt(result, config, state)
+
+    def test_structured_receipt_accepts_valid_input_inventory_evidence(self) -> None:
+        state, config = self.structured_state_and_config()
+        expected_receipt = runner_state.phase_receipt_path(state, "execute")
+        input_inventory_path = self.write_input_inventory(state, "execute")
+        result = self.make_result(
+            "execute",
+            "closeout",
+            receipt_path=expected_receipt,
+            evidence_paths=[input_inventory_path],
+        )
+        self.write_receipt(result)
+
+        validation.validate_receipt(result, config, state)
+
     def test_structured_receipt_path_must_match_runner_expected_path(self) -> None:
         artifact_root = (
             self.project
@@ -146,9 +223,7 @@ class ArchitectureProgramRunnerValidationTests(unittest.TestCase):
         matching = {**result, "receipt_path": expected}
         validation.validate_expected_receipt_path(matching, config, state)
 
-    def test_validation_owner_exposes_input_inventory_helpers_without_enforcement(
-        self,
-    ) -> None:
+    def test_validation_owner_exposes_input_inventory_helpers(self) -> None:
         inventory = {
             "schema_version": 1,
             "phase": "execute",

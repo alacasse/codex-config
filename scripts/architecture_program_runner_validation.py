@@ -21,6 +21,7 @@ validate_expected_input_inventory_path = (
     _input_inventory.validate_expected_input_inventory_path
 )
 validate_input_inventory = _input_inventory.validate_input_inventory
+validate_input_inventory_evidence = _input_inventory.validate_input_inventory_evidence
 validate_input_inventory_file = _input_inventory.validate_input_inventory_file
 
 NEXT_PHASES = (*PHASES, "done", "stopped")
@@ -187,6 +188,7 @@ def validate_receipt(result: dict[str, Any], config: Any, state: dict[str, Any])
     validate_phase_result(receipt, current_phase=result["phase"], state=state)
     if receipt != result:
         raise RunnerError("receipt content does not match final phase result")
+    validate_input_inventory_evidence(config.project, result, state)
 
 
 def schema_keyword_paths(value: Any, path: str = "$") -> list[str]:

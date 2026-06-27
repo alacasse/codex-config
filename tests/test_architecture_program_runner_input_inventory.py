@@ -77,6 +77,25 @@ class ArchitectureProgramRunnerInputInventoryTests(unittest.TestCase):
             ],
         }
 
+    def write_input_inventory(
+        self,
+        state: dict[str, Any],
+        phase: str = "execute",
+        inventory: dict[str, Any] | None = None,
+    ) -> str:
+        input_inventory_path = runner_state.phase_input_inventory_path(state, phase)
+        assert input_inventory_path is not None
+        inventory_file = runner_state.resolve_project_path(
+            self.config.project,
+            input_inventory_path,
+        )
+        inventory_file.parent.mkdir(parents=True, exist_ok=True)
+        inventory_file.write_text(
+            json.dumps(inventory or self.minimal_inventory(phase)),
+            encoding="utf-8",
+        )
+        return input_inventory_path
+
     def test_input_inventory_path_is_phase_environment_fact_and_prompt_guidance(
         self,
     ) -> None:
@@ -131,20 +150,17 @@ class ArchitectureProgramRunnerInputInventoryTests(unittest.TestCase):
         self.assertIn(input_inventory_path, sizes)
         self.assertFalse(sizes[input_inventory_path]["exists"])
 
-    def test_phase_result_validation_does_not_yet_enforce_input_inventory_evidence(
-        self,
-    ) -> None:
+    def test_input_inventory_evidence_requires_expected_path(self) -> None:
         state = self.state_with_active_batch()
         result = self.make_phase_receipt_result()
         input_inventory_path = runner_state.phase_input_inventory_path(state, "execute")
+        self.write_input_inventory(state)
 
         self.assertNotIn(input_inventory_path, result["evidence_paths"])
-        validation.validate_phase_result(result, current_phase="execute", state=state)
-        validation.validate_expected_receipt_path(result, self.config, state)
+        with self.assertRaisesRegex(runner_state.RunnerError, "evidence_paths"):
+            validation.validate_input_inventory_evidence(self.project, result, state)
 
-    def test_phase_result_validation_does_not_yet_enforce_input_inventory_file_exists(
-        self,
-    ) -> None:
+    def test_input_inventory_evidence_requires_expected_file(self) -> None:
         state = self.state_with_active_batch()
         input_inventory_path = runner_state.phase_input_inventory_path(state, "execute")
         result = self.make_phase_receipt_result()
@@ -155,12 +171,10 @@ class ArchitectureProgramRunnerInputInventoryTests(unittest.TestCase):
             input_inventory_path,
         )
         self.assertFalse(inventory_file.exists())
-        validation.validate_phase_result(result, current_phase="execute", state=state)
-        validation.validate_expected_receipt_path(result, self.config, state)
+        with self.assertRaisesRegex(runner_state.RunnerError, "input inventory"):
+            validation.validate_input_inventory_evidence(self.project, result, state)
 
-    def test_phase_result_validation_does_not_yet_enforce_input_inventory_shape(
-        self,
-    ) -> None:
+    def test_input_inventory_evidence_validates_expected_file_shape(self) -> None:
         state = self.state_with_active_batch()
         input_inventory_path = runner_state.phase_input_inventory_path(state, "execute")
         inventory_file = runner_state.resolve_project_path(
@@ -172,8 +186,16 @@ class ArchitectureProgramRunnerInputInventoryTests(unittest.TestCase):
         result = self.make_phase_receipt_result()
         result["evidence_paths"].append(input_inventory_path)
 
-        validation.validate_phase_result(result, current_phase="execute", state=state)
-        validation.validate_expected_receipt_path(result, self.config, state)
+        with self.assertRaisesRegex(runner_state.RunnerError, "input inventory"):
+            validation.validate_input_inventory_evidence(self.project, result, state)
+
+    def test_input_inventory_evidence_accepts_valid_expected_file(self) -> None:
+        state = self.state_with_active_batch()
+        input_inventory_path = self.write_input_inventory(state)
+        result = self.make_phase_receipt_result()
+        result["evidence_paths"].append(input_inventory_path)
+
+        validation.validate_input_inventory_evidence(self.project, result, state)
 
     def minimal_inventory(self, phase: str = "execute") -> dict[str, Any]:
         return {

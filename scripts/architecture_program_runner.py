@@ -376,6 +376,7 @@ def run(
         phase_start_monotonic: float | None = None
         phase_prompt_bytes = 0
         result: dict[str, Any] | None = None
+        inventory_evidence_validated = False
         try:
             check_required_artifacts(config, state)
             check_worktree(config, state, phase, status_reader=status_reader)
@@ -391,6 +392,7 @@ def run(
             apply_execution_meta_to_state(state, execution_meta)
             validate_phase_result(result, current_phase=phase, state=state)
             validate_receipt(result, config, state)
+            inventory_evidence_validated = True
             if phase == "execute":
                 check_worktree(
                     config,
@@ -420,7 +422,8 @@ def run(
                 write_phase_telemetry(config, phase_telemetry_path, telemetry)
                 record_phase_telemetry_path(state, phase_telemetry_path, result)
                 write_run_telemetry(config, state)
-                write_artifact_manifests(config, state, result)
+                if inventory_evidence_validated:
+                    write_artifact_manifests(config, state, result)
             write_state(config.state_path, state)
             raise
 

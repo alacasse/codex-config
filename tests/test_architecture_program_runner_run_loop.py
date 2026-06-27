@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from tests.architecture_program_runner_test_support import (
@@ -9,6 +10,32 @@ from tests.architecture_program_runner_test_support import (
 
 
 class ArchitectureProgramRunnerRunLoopTests(ArchitectureProgramRunnerTestCase):
+    def write_input_inventory(
+        self,
+        state: dict[str, Any],
+        phase: str,
+        inventory: dict[str, Any] | None = None,
+    ) -> str:
+        input_inventory_path = runner.phase_input_inventory_path(state, phase)
+        self.assertIsNotNone(input_inventory_path)
+        path = runner.resolve_project_path(self.project, input_inventory_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                inventory
+                or {
+                    "schema_version": 1,
+                    "phase": phase,
+                    "primary_inputs": [],
+                    "broad_reads": [],
+                    "large_file_reads": [],
+                    "subagent_reports": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return str(input_inventory_path)
+
     def test_create_spec_done_when_execute_batches_false(self) -> None:
         config = runner.RunnerConfig(
             **{**self.config.__dict__, "execute_batches": False}
@@ -186,6 +213,157 @@ class ArchitectureProgramRunnerRunLoopTests(ArchitectureProgramRunnerTestCase):
         state = runner.load_state(self.config.state_path)
         self.assertEqual(state["last_phase_status"], "failed")
         self.assertIn("not found", state["stop_reason"])
+
+    def test_missing_input_inventory_stops_before_phase_transition(self) -> None:
+        config = self.structured_config()
+        state = runner.initial_state(config)
+        state["active_phase"] = "execute"
+        state["active_batch_id"] = "batch-1"
+        state["active_batch_artifact_root"] = runner.batch_artifact_root(state, "batch-1")
+        state["batch_manifest_path"] = runner.batch_manifest_path(state, "batch-1")
+        state["dispatch_path"] = "project-notes/architecture/dispatch/batch-1.md"
+        state["spec_path"] = "project-notes/architecture/batch-1-spec.md"
+        self.touch_project_path(state["dispatch_path"])
+        self.touch_project_path(state["spec_path"])
+        runner.write_state(config.state_path, state)
+        result = self.make_result(
+            "execute",
+            "closeout",
+            receipt_path=runner.phase_receipt_path(state, "execute"),
+            evidence_paths=[runner.phase_input_inventory_path(state, "execute")],
+        )
+        self.write_receipt(result)
+
+        with self.assertRaisesRegex(runner.RunnerError, "input inventory"):
+            runner.run(
+                runner.RunnerConfig(**{**config.__dict__, "resume": True}),
+                phase_executor=lambda config, state, phase: result,
+                status_reader=lambda project: [],
+            )
+
+        stopped = runner.load_state(config.state_path)
+        self.assertEqual(stopped["active_phase"], "execute")
+        self.assertEqual(stopped["last_phase_status"], "failed")
+        self.assertFalse(
+            runner.resolve_project_path(self.project, state["run_manifest_path"]).exists()
+        )
+        self.assertFalse(
+            runner.resolve_project_path(self.project, state["batch_manifest_path"]).exists()
+        )
+
+    def test_malformed_input_inventory_stops_before_phase_transition(self) -> None:
+        config = self.structured_config()
+        state = runner.initial_state(config)
+        state["active_phase"] = "execute"
+        state["active_batch_id"] = "batch-1"
+        state["active_batch_artifact_root"] = runner.batch_artifact_root(state, "batch-1")
+        state["batch_manifest_path"] = runner.batch_manifest_path(state, "batch-1")
+        state["dispatch_path"] = "project-notes/architecture/dispatch/batch-1.md"
+        state["spec_path"] = "project-notes/architecture/batch-1-spec.md"
+        self.touch_project_path(state["dispatch_path"])
+        self.touch_project_path(state["spec_path"])
+        runner.write_state(config.state_path, state)
+        inventory_path = runner.phase_input_inventory_path(state, "execute")
+        inventory_file = runner.resolve_project_path(self.project, inventory_path)
+        inventory_file.parent.mkdir(parents=True, exist_ok=True)
+        inventory_file.write_text('{"not": "inventory"}', encoding="utf-8")
+        result = self.make_result(
+            "execute",
+            "closeout",
+            receipt_path=runner.phase_receipt_path(state, "execute"),
+            evidence_paths=[inventory_path],
+        )
+        self.write_receipt(result)
+
+        with self.assertRaisesRegex(runner.RunnerError, "input inventory"):
+            runner.run(
+                runner.RunnerConfig(**{**config.__dict__, "resume": True}),
+                phase_executor=lambda config, state, phase: result,
+                status_reader=lambda project: [],
+            )
+
+        stopped = runner.load_state(config.state_path)
+        self.assertEqual(stopped["active_phase"], "execute")
+        self.assertEqual(stopped["last_phase_status"], "failed")
+        self.assertFalse(
+            runner.resolve_project_path(self.project, state["run_manifest_path"]).exists()
+        )
+        self.assertFalse(
+            runner.resolve_project_path(self.project, state["batch_manifest_path"]).exists()
+        )
+
+    def test_execute_worktree_allows_receipt_and_inventory_evidence_only(self) -> None:
+        config = self.structured_config()
+        state = runner.initial_state(config)
+        state["active_phase"] = "execute"
+        state["active_batch_id"] = "batch-1"
+        state["active_batch_artifact_root"] = runner.batch_artifact_root(state, "batch-1")
+        state["batch_manifest_path"] = runner.batch_manifest_path(state, "batch-1")
+        state["dispatch_path"] = "project-notes/architecture/dispatch/batch-1.md"
+        state["spec_path"] = "project-notes/architecture/batch-1-spec.md"
+        self.touch_project_path(state["dispatch_path"])
+        self.touch_project_path(state["spec_path"])
+        runner.write_state(config.state_path, state)
+        inventory_path = self.write_input_inventory(state, "execute")
+        result = self.make_result(
+            "execute",
+            "closeout",
+            receipt_path=runner.phase_receipt_path(state, "execute"),
+            evidence_paths=[inventory_path],
+        )
+        self.write_receipt(result)
+        calls = {"count": 0}
+
+        def status_reader(project: Any) -> list[str]:
+            calls["count"] += 1
+            if calls["count"] == 1:
+                return []
+            return [f" M {result['receipt_path']}", f" M {inventory_path}"]
+
+        final_state = runner.run(
+            runner.RunnerConfig(
+                **{**config.__dict__, "resume": True, "stop_after_phase": "execute"}
+            ),
+            phase_executor=lambda config, state, phase: result,
+            status_reader=status_reader,
+        )
+
+        self.assertEqual(final_state["active_phase"], "closeout")
+
+    def test_execute_worktree_still_rejects_unrelated_dirty_files(self) -> None:
+        config = self.structured_config()
+        state = runner.initial_state(config)
+        state["active_phase"] = "execute"
+        state["active_batch_id"] = "batch-1"
+        state["active_batch_artifact_root"] = runner.batch_artifact_root(state, "batch-1")
+        state["batch_manifest_path"] = runner.batch_manifest_path(state, "batch-1")
+        state["dispatch_path"] = "project-notes/architecture/dispatch/batch-1.md"
+        state["spec_path"] = "project-notes/architecture/batch-1-spec.md"
+        self.touch_project_path(state["dispatch_path"])
+        self.touch_project_path(state["spec_path"])
+        runner.write_state(config.state_path, state)
+        inventory_path = self.write_input_inventory(state, "execute")
+        result = self.make_result(
+            "execute",
+            "closeout",
+            receipt_path=runner.phase_receipt_path(state, "execute"),
+            evidence_paths=[inventory_path],
+        )
+        self.write_receipt(result)
+        calls = {"count": 0}
+
+        def status_reader(project: Any) -> list[str]:
+            calls["count"] += 1
+            if calls["count"] == 1:
+                return []
+            return [f" M {result['receipt_path']}", f" M {inventory_path}", " M README.md"]
+
+        with self.assertRaisesRegex(runner.RunnerError, "dirty files"):
+            runner.run(
+                runner.RunnerConfig(**{**config.__dict__, "resume": True}),
+                phase_executor=lambda config, state, phase: result,
+                status_reader=status_reader,
+            )
 
     def test_resume_missing_dispatch_artifact_stops(self) -> None:
         state = runner.initial_state(self.config)
