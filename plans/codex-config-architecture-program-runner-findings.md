@@ -84,7 +84,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | APR-13. Structured failure paths do not refresh manifests consistently | Closed | Runner boundary split Slice 4; malformed-result regression | None | Failure-path manifest refresh behavior exists. |
 | APR-14. Prior planning docs are useful but stale as coordination state | Superseded | This refreshed ledger and `CONTEXT.md` | Use APR-22 | Reframed as **Planning Root** and **Plan Archive** migration. |
 | APR-15. `codex_owner.py` is small and not the architecture hotspot | Deferred | `tests/test_codex_owner.py` | Revisit only when ownership behavior changes | Still outside the runner concept-ownership program. |
-| APR-16. **Phase Environment** lacks a concept owner | Ready | `CONTEXT.md`; current command/config/env tests | Create selected dispatch packet, then a concrete runway spec | Launch context and prompt context are spread across CLI parsing, `RunnerConfig`, env override handling, sandbox selection, command construction, and prompt assembly. |
+| APR-16. **Phase Environment** lacks a concept owner | Closed | `950ddf9`, `82e8c8e`, `556b6bd`, `e00f667`; `scripts/architecture_program_runner_environment.py`; focused tests and dry-run smoke | None | **Phase Environment** now owns runner-supplied launch and prompt context while **Phase Contract** rendering remains in command tests. |
 | APR-17. **Phase Transition** is expressed as run-loop state-key mutation | Open | `CONTEXT.md`; run-loop tests | Schedule after APR-16 | Transition should consume a valid **Phase Result** and update **Run State** without owning validation, execution, or observation writing. |
 | APR-18. **Change Allowance** is still encoded as dirty-path helpers in the Runner Facade | Open | `CONTEXT.md`; worktree tests | Schedule after APR-17 or combine if small | Preserve conservative changed-path behavior while moving the concept behind a clearer interface. |
 | APR-19. **Phase Contract** facts are embedded in prompt string construction | Open | `CONTEXT.md`; command/prompt tests | Schedule after APR-16 | Separate normative phase obligations from rendered prompt text and supplied **Phase Environment** facts. |
@@ -97,7 +97,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | Batch | Findings | Status | Why grouped | Depends on | Validation class | Dispatch | Spec |
 |---|---|---|---|---|---|---|---|
 | runner-boundary-split | APR-11, APR-12, APR-13 | Closed | First split of the monolithic Runner Facade and broad tests | None | Focused unit tests plus dry-run smoke | `plans/dispatch/runner-boundary-split-dispatch.md` | `plans/codex-config-architecture-program-runner-boundary-split-runway.md` |
-| phase-environment-ownership | APR-16 | Ready | Establishes the first new **Concept Owner** from `CONTEXT.md` and clarifies launch/prompt context before contract and observation work | Refreshed ledger and `CONTEXT.md` | Focused command/config/env tests plus dry-run smoke | TBD | TBD |
+| phase-environment-ownership | APR-16 | Closed | Establishes the first new **Concept Owner** from `CONTEXT.md` and clarifies launch/prompt context before contract and observation work | Refreshed ledger and `CONTEXT.md` | Focused command/config/env tests plus dry-run smoke | `plans/dispatch/phase-environment-ownership-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-environment-runway.md` |
 | phase-transition-change-allowance | APR-17, APR-18 | Candidate | Both reduce run-loop state/path policy knowledge after environment context is clearer | APR-16 preferred | Run-loop and changed-path tests plus dry-run smoke | TBD | TBD |
 | phase-contract-catalog | APR-19 | Candidate | Separates normative **Phase Contract** facts from rendered prompt text | APR-16 preferred | Command/prompt tests plus dry-run smoke | TBD | TBD |
 | phase-observation-attribution | APR-20 | Candidate | Reframes telemetry attribution as **Phase Observation** work | APR-16, APR-19 preferred | Artifact tests with synthetic session logs; optional live runner rehearsal | TBD | TBD |
@@ -107,8 +107,9 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 ## Selected Batch Brief
 
 - Batch: `phase-environment-ownership`
-- Dispatch: TBD
-- Status: Ready to dispatch
+- Dispatch: `plans/dispatch/phase-environment-ownership-dispatch.md`
+- Spec: `plans/codex-config-architecture-program-runner-phase-environment-runway.md`
+- Status: Closed by commits `950ddf9`, `82e8c8e`, `556b6bd`, and `e00f667`
 - Goal: Create a clear **Phase Environment** concept owner that gathers
   runner-supplied launch context and prompt context without changing runner
   behavior.
@@ -131,14 +132,17 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 
 ## Recommended Work Order
 
-1. `phase-environment-ownership`: clarify launch and prompt context first.
-2. `phase-transition-change-allowance`: remove state/path policy knowledge from
+Completed:
+- `phase-environment-ownership`: clarified launch and prompt context first.
+
+Remaining:
+1. `phase-transition-change-allowance`: remove state/path policy knowledge from
    the run loop after environment context is named.
-3. `phase-contract-catalog`: make phase obligations testable independently of
+2. `phase-contract-catalog`: make phase obligations testable independently of
    prompt layout.
-4. `phase-observation-attribution`: improve exact session/path attribution.
-5. `input-inventory-contract`: enforce consumed-input evidence.
-6. `planning-root-archive-migration`: move active planning to `docs/plans/`,
+3. `phase-observation-attribution`: improve exact session/path attribution.
+4. `input-inventory-contract`: enforce consumed-input evidence.
+5. `planning-root-archive-migration`: move active planning to `docs/plans/`,
    create `docs/plans/archive/`, and record the ADR.
 
 ## Closeout Rules
@@ -164,4 +168,6 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 - Last closed runner-boundary batch reported 71 focused runner tests passing,
   dry-run smoke passing, `uvx ruff check` passing with a non-fatal Python
   symlink warning, and `git diff --check` passing.
-- Current refresh was planning-only; no code tests were run.
+- Phase Environment closeout passed 78 focused runner tests, dry-run smoke,
+  `uvx ruff check` with the known non-fatal Python symlink warning, and
+  `git diff --check`.

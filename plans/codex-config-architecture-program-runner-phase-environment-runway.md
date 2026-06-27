@@ -475,6 +475,94 @@ Closeout expectations:
 - APR-17, APR-18, APR-19, APR-20, APR-21, and APR-22 must remain open or
   candidate unless separate later evidence closes them.
 
+## Final Batch Report
+
+Completed commits:
+- `950ddf9` Characterize architecture runner phase environment
+- `82e8c8e` Add architecture runner phase environment owner
+- `556b6bd` Route architecture runner command context through environment
+- `e00f667` Align architecture runner environment tests
+
+Final validation:
+- `python -m pytest tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_state.py tests/test_architecture_program_runner_validation.py tests/test_architecture_program_runner_artifacts.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner_worktree.py tests/test_architecture_program_runner_protocol.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`: 78 passed.
+- `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check scripts/architecture_program_runner.py scripts/architecture_program_runner_environment.py scripts/architecture_program_runner_command.py tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner_protocol.py tests/test_architecture_program_runner.py tests/test_codex_owner.py`: passed with the known non-fatal `/usr/bin/python3.14` symlink warning.
+- `python scripts/architecture_program_runner.py --project . --program-ledger plans/codex-config-architecture-program-runner-findings.md --dry-run --stop-after-phase select-dispatch`: passed.
+- `git diff --check`: passed.
+
+Skipped slices:
+- None.
+
+Remaining risks:
+- APR-17, APR-18, APR-19, APR-20, APR-21, and APR-22 remain deferred; this
+  batch intentionally did not implement phase transitions, change allowance,
+  phase contract cataloging, phase observation attribution, input inventory
+  enforcement, or planning-root migration.
+- `uvx ruff` continues to emit the known non-fatal base-Python symlink warning.
+
+Compatibility paths that remain:
+- The Runner Facade still reexports public command and environment helpers for
+  direct-script and import compatibility.
+- Command-owner wrappers remain for prompt and command rendering while
+  environment facts are owned by `scripts/architecture_program_runner_environment.py`.
+
+Orchestration anomalies:
+
+```yaml
+orchestration_anomalies: []
+```
+
+Inspection commands:
+- `git show --stat 950ddf9`
+- `git show --stat 82e8c8e`
+- `git show --stat 556b6bd`
+- `git show --stat e00f667`
+
+## Convergence Assessment
+
+### Phase
+`closure`
+
+### Scope trend
+`shrinking`
+
+### Closed this slice
+- APR-16, **Phase Environment** concept ownership.
+
+### Newly discovered
+- None.
+
+### Deferred out of scope
+- APR-17 **Phase Transition**
+- APR-18 **Change Allowance**
+- APR-19 **Phase Contract**
+- APR-20 **Phase Observation**
+- APR-21 **Input Inventory**
+- APR-22 **Planning Root** and **Plan Archive**
+
+### Remaining unknowns
+- None for the Phase Environment ownership batch.
+
+### Temporary compatibility paths
+- Runner Facade helper reexports remain intentionally supported and tested.
+
+### Blockers
+- None.
+
+### Completion forecastable
+`yes`
+
+### Forecast
+- The selected `phase-environment-ownership` batch is complete. Remaining work
+  is represented by separate candidate batches in the program ledger.
+
+### Evidence
+- Four reviewed slice commits, final focused validation, dry-run smoke, ruff,
+  and whitespace audit.
+
+### Next proof required
+- Select a future batch from the remaining program ledger candidates before
+  opening another concrete runway.
+
 ## Stop Conditions
 
 - Stop if the refactor changes CLI arguments, command flags, final summary
