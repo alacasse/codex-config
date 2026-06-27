@@ -141,7 +141,7 @@ Dirty-file constraints:
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
 | 1. Characterize Phase Environment facts | completed | slice commit | `pytest` 36 passed; `uvx ruff` passed; `git diff --check` passed | clean | Introduce owner from characterized facts | Characterization coverage added without production behavior changes. |
-| 2. Introduce Phase Environment owner | pending | | | | Route launch helpers through owner | Creates the single owner/API and compatibility surface. |
+| 2. Introduce Phase Environment owner | completed | slice commit | `pytest` 38 passed; dry-run smoke passed; `uvx ruff` passed; `git diff --check` passed | clean after staging-scope fix | Route launch helpers through owner | Added `PhaseEnvironment` owner and compatibility wrappers without behavior changes. |
 | 3. Route prompt and command context through owner | pending | | | | Narrow tests around owner/rendering split | Moves prompt and launch consumers onto the owner without changing rendered behavior. |
 | 4. Tighten test topology and facade compatibility | pending | | | | Final validation and closeout | Keeps owner tests responsible for environment facts and command/facade tests responsible for behavior. |
 
@@ -154,6 +154,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1. Characterize Phase Environment facts | slice commit | Added environment and launch fact characterization tests; no production behavior changed. | Worker: success; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_command.py`, `git diff --check` |
+| 2. Introduce Phase Environment owner | slice commit | Added `scripts/architecture_program_runner_environment.py`; command helpers delegate to the owner while prompt rendering remains in command owner. | Worker: success; reviewer: clean after staged-file separation; validation: `python -m pytest tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, dry-run smoke, `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check scripts/architecture_program_runner_environment.py scripts/architecture_program_runner_command.py tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_command.py`, `git diff --check` |
 
 ## Slice 1. Characterize Phase Environment Facts
 

@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 try:
+    from scripts import architecture_program_runner_environment as _runner_environment
     from scripts import architecture_program_runner_state as _runner_state
 except ModuleNotFoundError:  # pragma: no cover - direct script execution fallback.
+    import architecture_program_runner_environment as _runner_environment
     import architecture_program_runner_state as _runner_state
 
 RunnerError = _runner_state.RunnerError
@@ -20,21 +21,10 @@ phase_receipt_path = _runner_state.phase_receipt_path
 run_manifest_path = _runner_state.run_manifest_path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_PATH = (
-    REPO_ROOT
-    / "skills"
-    / "architecture-program-runway"
-    / "references"
-    / "local-runner-phase-result.schema.json"
-)
-RUNNER_REFERENCE_PATH = (
-    REPO_ROOT
-    / "skills"
-    / "architecture-program-runway"
-    / "references"
-    / "local-runner-v1.md"
-)
+SCHEMA_PATH = _runner_environment.SCHEMA_PATH
+RUNNER_REFERENCE_PATH = _runner_environment.RUNNER_REFERENCE_PATH
+PhaseEnvironment = _runner_environment.PhaseEnvironment
+build_phase_environment = _runner_environment.build_phase_environment
 
 CONTEXT_BUDGETS = {
     "select-dispatch": (50_000, 80_000),
@@ -45,19 +35,18 @@ CONTEXT_BUDGETS = {
 
 
 def build_prompt(config: Any, state: dict[str, Any], phase: str) -> str:
-    expected_receipt_path = phase_receipt_path(state, phase)
-    expected_input_inventory_path = phase_input_inventory_path(state, phase)
+    environment = build_phase_environment(config, state, phase)
     lines = [
         f"Use {phase_skill_instruction(phase)}.",
-        f"Follow {RUNNER_REFERENCE_PATH}.",
+        f"Follow {environment.runner_reference_path}.",
         "",
         "Run one local architecture-program runner phase only.",
         f"Project path: {config.project}",
         f"Program ledger: {config.program_ledger}",
         f"State path: {config.state_path}",
-        f"Batch limit: {batch_limit_label(config.max_batches)}",
+        f"Batch limit: {environment.batch_limit_label}",
         f"Current phase: {phase}",
-        f"Output schema path: {SCHEMA_PATH}",
+        f"Output schema path: {environment.schema_path}",
         "",
         "Single-level phase boundary:",
         "- You are already running inside the runner-launched phase process.",
@@ -66,7 +55,7 @@ def build_prompt(config: Any, state: dict[str, Any], phase: str) -> str:
         "- Do not probe nested Codex availability or create temporary CODEX_HOME workarounds.",
     ]
     if config.env_overrides:
-        lines.append(f"Runner env override keys: {env_override_key_label(config)}")
+        lines.append(f"Runner env override keys: {environment.env_override_key_label}")
         lines.append("Do not disclose runner env override values.")
         lines.append(
             "Before validation that depends on these keys, run a coordinator-shell "
@@ -76,14 +65,14 @@ def build_prompt(config: Any, state: dict[str, Any], phase: str) -> str:
         [
             "",
             "Expected artifact paths from current state:",
-            f"- active_batch_id: {state.get('active_batch_id')}",
-            f"- artifact_root: {state.get('artifact_root')}",
-            f"- active_batch_artifact_root: {state.get('active_batch_artifact_root')}",
-            f"- dispatch_path: {state.get('dispatch_path')}",
-            f"- spec_path: {state.get('spec_path')}",
-            f"- last_receipt_path: {state.get('last_receipt_path')}",
-            f"- run_manifest_path: {run_manifest_path(state)}",
-            f"- batch_manifest_path: {state.get('batch_manifest_path')}",
+            f"- active_batch_id: {environment.artifact_facts['active_batch_id']}",
+            f"- artifact_root: {environment.artifact_facts['artifact_root']}",
+            f"- active_batch_artifact_root: {environment.artifact_facts['active_batch_artifact_root']}",
+            f"- dispatch_path: {environment.artifact_facts['dispatch_path']}",
+            f"- spec_path: {environment.artifact_facts['spec_path']}",
+            f"- last_receipt_path: {environment.artifact_facts['last_receipt_path']}",
+            f"- run_manifest_path: {environment.artifact_facts['run_manifest_path']}",
+            f"- batch_manifest_path: {environment.artifact_facts['batch_manifest_path']}",
             "",
             "Return schema-valid JSON as the final response.",
             "Write the same JSON object to a compact phase receipt file.",
@@ -92,21 +81,21 @@ def build_prompt(config: Any, state: dict[str, Any], phase: str) -> str:
             "Do not parse or edit runner state directly.",
         ]
     )
-    if expected_receipt_path is not None:
+    if environment.expected_receipt_path is not None:
         lines.extend(
             [
                 "",
                 "Expected receipt path for this phase:",
-                expected_receipt_path,
+                environment.expected_receipt_path,
                 "Write the phase receipt to exactly this path and return exactly this path in receipt_path.",
             ]
         )
-    if expected_input_inventory_path is not None:
+    if environment.expected_input_inventory_path is not None:
         lines.extend(
             [
                 "",
                 "Expected input inventory path for this phase:",
-                expected_input_inventory_path,
+                environment.expected_input_inventory_path,
                 "If you perform broad source reads, large file reads, or consume subagent reports, write a compact input inventory there and include it in evidence_paths.",
                 "Prefer compact dispatch, receipt, manifest, and telemetry artifacts before rereading broad source or planning files.",
             ]
@@ -183,15 +172,16 @@ def phase_skill_instruction(phase: str) -> str:
 def build_codex_command(
     config: Any, phase: str, prompt: str, output_last_message: Path
 ) -> list[str]:
+    environment = build_phase_environment(config, {}, phase)
     command = [
         "codex",
         "exec",
         "--cd",
         str(config.project),
         "--sandbox",
-        sandbox_for_phase(config, phase),
+        environment.sandbox,
         "--output-schema",
-        str(SCHEMA_PATH),
+        str(environment.schema_path),
         "--output-last-message",
         str(output_last_message),
     ]
@@ -202,9 +192,7 @@ def build_codex_command(
 
 
 def sandbox_for_phase(config: Any, phase: str) -> str:
-    if phase == "execute" and config.execute_sandbox:
-        return config.execute_sandbox
-    return config.sandbox
+    return _runner_environment.sandbox_for_phase(config, phase)
 
 
 def build_subprocess_env(
@@ -212,20 +200,17 @@ def build_subprocess_env(
     *,
     base_env: Mapping[str, str] | None = None,
 ) -> dict[str, str]:
-    env = dict(os.environ if base_env is None else base_env)
-    for key, value in overrides:
-        env[key] = value
-    return env
+    return _runner_environment.build_subprocess_env(overrides, base_env=base_env)
 
 
 def env_override_key_label(config: Any) -> str:
-    keys = [key for key, _value in config.env_overrides]
-    return ", ".join(dict.fromkeys(keys))
+    return _runner_environment.env_override_key_label(config)
 
 
 def print_dry_run(config: Any, state: dict[str, Any]) -> None:
     phase = state["active_phase"]
     prompt = build_prompt(config, state, phase)
+    environment = build_phase_environment(config, state, phase)
     command = build_codex_command(config, phase, prompt, Path("<tmp-result>"))
     print("Command:")
     print(shell_join(command))
@@ -233,18 +218,14 @@ def print_dry_run(config: Any, state: dict[str, Any]) -> None:
         print(f"Base sandbox: {config.sandbox}")
         print(f"Execute sandbox: {config.execute_sandbox}")
     if config.env_overrides:
-        print(f"Env override keys: {env_override_key_label(config)}")
+        print(f"Env override keys: {environment.env_override_key_label}")
     print()
     print("Prompt:")
     print(prompt)
 
 
 def batch_limit_label(max_batches: int | None) -> str:
-    if max_batches is None:
-        return "all executable batches until stop condition"
-    if max_batches == 1:
-        return "1 batch"
-    return f"{max_batches} batches"
+    return _runner_environment.batch_limit_label(max_batches)
 
 
 def shell_join(command: Iterable[str]) -> str:

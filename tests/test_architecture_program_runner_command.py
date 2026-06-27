@@ -8,6 +8,7 @@ from pathlib import Path
 
 from scripts import architecture_program_runner as runner
 from scripts import architecture_program_runner_command as command_owner
+from scripts import architecture_program_runner_environment as environment_owner
 
 
 class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
@@ -38,6 +39,7 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
         self.assertIs(runner.build_codex_command, command_owner.build_codex_command)
         self.assertIs(runner.sandbox_for_phase, command_owner.sandbox_for_phase)
         self.assertIs(runner.print_dry_run, command_owner.print_dry_run)
+        self.assertIs(command_owner.build_phase_environment, environment_owner.build_phase_environment)
 
     def test_prompt_guardrails_and_phase_contracts_are_built_by_owner(self) -> None:
         state = runner.initial_state(self.config)
@@ -130,6 +132,14 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
             "workspace-write",
         )
         self.assertEqual(command_owner.sandbox_for_phase(config, "execute"), "danger-full-access")
+        self.assertEqual(
+            command_owner.sandbox_for_phase(config, "execute"),
+            environment_owner.build_phase_environment(
+                config,
+                runner.initial_state(config),
+                "execute",
+            ).sandbox,
+        )
 
     def test_codex_command_includes_schema_output_model_and_prompt(self) -> None:
         config = runner.RunnerConfig(**{**self.config.__dict__, "model": "gpt-5-codex"})
@@ -196,6 +206,13 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
         self.assertEqual(env["KEEP_ME"], "yes")
         self.assertEqual(env["OVERRIDE_ME"], "new")
         self.assertEqual(env["ADDED"], "value")
+        self.assertEqual(
+            env,
+            environment_owner.build_subprocess_env(
+                (("OVERRIDE_ME", "new"), ("ADDED", "value")),
+                base_env={"KEEP_ME": "yes", "OVERRIDE_ME": "old"},
+            ),
+        )
 
     def test_dry_run_displays_env_keys_without_values(self) -> None:
         secret_value = "secret-value"
