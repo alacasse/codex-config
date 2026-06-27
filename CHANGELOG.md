@@ -55,6 +55,8 @@ after successful phases, and includes `artifact_root` in the final summary.
 `--resume` without `--state` now finds the latest structured run for the ledger
 before falling back to the old flat state file, while explicit old `--state`
 paths remain supported.
+The artifact root is derived from the parent directory of `--program-ledger`,
+not from a project-specific planning folder such as Graphify's `my-docs/`.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing

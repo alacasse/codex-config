@@ -4,12 +4,12 @@
 
 The local architecture program runner currently leaves run artifacts in a layout that is technically valid but hard to navigate:
 
-- `my-docs/plans/architecture-program-run-state.json`
-- `my-docs/plans/dispatch/catalog-boundary-reassessment-dispatch.md`
-- `my-docs/plans/receipts/architecture-program-select-dispatch-catalog-boundary.json`
-- `my-docs/plans/receipts/architecture-program-create-spec-catalog-boundary.json`
-- `my-docs/plans/receipts/architecture-program-execute-catalog-boundary.json`
-- `my-docs/plans/receipts/architecture-program-closeout-catalog-boundary-runner-failed.json`
+- `<ledger-dir>/architecture-program-run-state.json`
+- `<ledger-dir>/dispatch/catalog-boundary-reassessment-dispatch.md`
+- `<ledger-dir>/receipts/architecture-program-select-dispatch-catalog-boundary.json`
+- `<ledger-dir>/receipts/architecture-program-create-spec-catalog-boundary.json`
+- `<ledger-dir>/receipts/architecture-program-execute-catalog-boundary.json`
+- `<ledger-dir>/receipts/architecture-program-closeout-catalog-boundary-runner-failed.json`
 
 The receipt JSON includes `program_ledger`, `batch_id`, `dispatch_path`, `spec_path`, and `receipt_path`, so the data is not lost. The problem is that the filesystem does not show the run boundary or the batch boundary. A user must open JSON to answer:
 
@@ -18,7 +18,7 @@ The receipt JSON includes `program_ledger`, `batch_id`, `dispatch_path`, `spec_p
 - Which dispatch packet and concrete runway spec produced this execution?
 - Which files are current active state versus historical evidence?
 
-That is especially confusing because `my-docs/plans/` already contains long-lived human planning files, generated semantic graph files, dispatch packets, runner state, and phase receipts.
+That is especially confusing because `<ledger-dir>/` already contains long-lived human planning files, generated semantic graph files, dispatch packets, runner state, and phase receipts.
 
 ## Current Contract Observations
 
@@ -28,7 +28,7 @@ Current runner behavior in `codex-config`:
 - Phase agents choose and return `receipt_path`; the runner validates that the receipt file content exactly matches the final phase JSON.
 - The prompt tells the phase to write a compact phase receipt but does not provide a deterministic receipt path.
 - Dirty-worktree classification allows state, last receipt, and phase-specific expected artifacts by path.
-- Tests encode examples such as `my-docs/plans/receipts/<phase>.json`.
+- Tests encode examples such as `<ledger-dir>/receipts/<phase>.json`.
 
 Current local runner reference behavior:
 
@@ -51,7 +51,7 @@ Make runner artifacts self-locating from the filesystem while preserving the exi
 Use a runner-owned artifact root under the program ledger directory:
 
 ```text
-my-docs/plans/
+<ledger-dir>/
   install-sandbox-architecture-findings.md
   dispatch/
     catalog-boundary-reassessment-dispatch.md
@@ -75,9 +75,9 @@ my-docs/plans/
 
 The stable source documents stay in their existing locations:
 
-- Program ledger: `my-docs/plans/install-sandbox-architecture-findings.md`
-- Dispatch packet: `my-docs/plans/dispatch/catalog-boundary-reassessment-dispatch.md`
-- Concrete spec: `my-docs/plans/install-sandbox-catalog-boundary-runway.md`
+- Program ledger: `<ledger-dir>/install-sandbox-architecture-findings.md`
+- Dispatch packet: `<ledger-dir>/dispatch/catalog-boundary-reassessment-dispatch.md`
+- Concrete spec: `<ledger-dir>/install-sandbox-catalog-boundary-runway.md`
 
 The generated runner files move under a run-scoped directory:
 
@@ -99,17 +99,17 @@ The generated runner files move under a run-scoped directory:
   "runner_version": "local-runner-v1",
   "run_id": "run-20260626-204812-catalog-boundary-reassessment",
   "project": "/home/alacasse/projects/graphify",
-  "program_ledger": "my-docs/plans/install-sandbox-architecture-findings.md",
-  "state_path": "my-docs/plans/architecture-program-runs/install-sandbox-architecture-findings/run-20260626-204812-catalog-boundary-reassessment/run-state.json",
+  "program_ledger": "<ledger-dir>/install-sandbox-architecture-findings.md",
+  "state_path": "<ledger-dir>/architecture-program-runs/install-sandbox-architecture-findings/run-20260626-204812-catalog-boundary-reassessment/run-state.json",
   "max_batches": 1,
   "execute_batches": true,
   "batches": [
     {
       "batch_id": "catalog-boundary-reassessment",
-      "batch_artifact_root": "my-docs/plans/architecture-program-runs/install-sandbox-architecture-findings/run-20260626-204812-catalog-boundary-reassessment/batches/catalog-boundary-reassessment",
-      "dispatch_path": "my-docs/plans/dispatch/catalog-boundary-reassessment-dispatch.md",
-      "spec_path": "my-docs/plans/install-sandbox-catalog-boundary-runway.md",
-      "last_receipt_path": "my-docs/plans/architecture-program-runs/install-sandbox-architecture-findings/run-20260626-204812-catalog-boundary-reassessment/batches/catalog-boundary-reassessment/receipts/04-closeout.json",
+      "batch_artifact_root": "<ledger-dir>/architecture-program-runs/install-sandbox-architecture-findings/run-20260626-204812-catalog-boundary-reassessment/batches/catalog-boundary-reassessment",
+      "dispatch_path": "<ledger-dir>/dispatch/catalog-boundary-reassessment-dispatch.md",
+      "spec_path": "<ledger-dir>/install-sandbox-catalog-boundary-runway.md",
+      "last_receipt_path": "<ledger-dir>/architecture-program-runs/install-sandbox-architecture-findings/run-20260626-204812-catalog-boundary-reassessment/batches/catalog-boundary-reassessment/receipts/04-closeout.json",
       "status": "failed"
     }
   ]
@@ -122,9 +122,9 @@ The generated runner files move under a run-scoped directory:
 {
   "schema_version": 1,
   "batch_id": "catalog-boundary-reassessment",
-  "program_ledger": "my-docs/plans/install-sandbox-architecture-findings.md",
-  "dispatch_path": "my-docs/plans/dispatch/catalog-boundary-reassessment-dispatch.md",
-  "spec_path": "my-docs/plans/install-sandbox-catalog-boundary-runway.md",
+  "program_ledger": "<ledger-dir>/install-sandbox-architecture-findings.md",
+  "dispatch_path": "<ledger-dir>/dispatch/catalog-boundary-reassessment-dispatch.md",
+  "spec_path": "<ledger-dir>/install-sandbox-catalog-boundary-runway.md",
   "receipts": {
     "select-dispatch": "receipts/01-select-dispatch.json",
     "create-spec": "receipts/02-create-spec.json",
@@ -167,10 +167,10 @@ Add deterministic artifact path ownership to the Python runner instead of leavin
 ```json
 {
   "run_id": "run-...",
-  "artifact_root": "my-docs/plans/architecture-program-runs/<ledger-stem>/<run-id>",
-  "active_batch_artifact_root": "my-docs/plans/architecture-program-runs/<ledger-stem>/<run-id>/batches/<batch-id>",
-  "run_manifest_path": "my-docs/plans/architecture-program-runs/<ledger-stem>/<run-id>/run-manifest.json",
-  "batch_manifest_path": "my-docs/plans/architecture-program-runs/<ledger-stem>/<run-id>/batches/<batch-id>/batch-manifest.json"
+  "artifact_root": "<ledger-dir>/architecture-program-runs/<ledger-stem>/<run-id>",
+  "active_batch_artifact_root": "<ledger-dir>/architecture-program-runs/<ledger-stem>/<run-id>/batches/<batch-id>",
+  "run_manifest_path": "<ledger-dir>/architecture-program-runs/<ledger-stem>/<run-id>/run-manifest.json",
+  "batch_manifest_path": "<ledger-dir>/architecture-program-runs/<ledger-stem>/<run-id>/batches/<batch-id>/batch-manifest.json"
 }
 ```
 
@@ -178,7 +178,7 @@ Add deterministic artifact path ownership to the Python runner instead of leavin
 
 ```text
 Expected receipt path for this phase:
-my-docs/plans/architecture-program-runs/<ledger-stem>/<run-id>/batches/<batch-id>/receipts/03-execute.json
+<ledger-dir>/architecture-program-runs/<ledger-stem>/<run-id>/batches/<batch-id>/receipts/03-execute.json
 ```
 
 6. Validate that `result["receipt_path"]` equals the expected receipt path for phases where the batch is known.
@@ -355,7 +355,7 @@ ruff check scripts/architecture_program_runner.py tests/test_architecture_progra
 
 ## Acceptance Criteria
 
-- New architecture-program runner invocations no longer dump state and receipts directly into `my-docs/plans/`.
+- New architecture-program runner invocations no longer dump state and receipts directly into `<ledger-dir>/`.
 - A user can browse from `architecture-program-runs/<ledger-stem>/<run-id>/batches/<batch-id>/` to the program ledger, dispatch packet, concrete runway spec, and phase receipts.
 - Receipts are phase-ordered and batch-local where possible.
 - Final summaries name `artifact_root`.

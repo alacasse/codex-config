@@ -77,16 +77,16 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.root = Path(self.temp_dir.name)
         self.project = self.root / "project"
         self.project.mkdir()
-        (self.project / "my-docs" / "plans").mkdir(parents=True)
-        (self.project / "my-docs" / "plans" / "program.md").write_text(
+        (self.project / "project-notes" / "architecture").mkdir(parents=True)
+        (self.project / "project-notes" / "architecture" / "program.md").write_text(
             "# Program\n", encoding="utf-8"
         )
         self.config = runner.RunnerConfig(
             project=self.project.resolve(),
-            program_ledger="my-docs/plans/program.md",
+            program_ledger="project-notes/architecture/program.md",
             max_batches=1,
             execute_batches=True,
-            state_path=self.project / "my-docs" / "plans" / "run-state.json",
+            state_path=self.project / "project-notes" / "architecture" / "run-state.json",
             sandbox="workspace-write",
             execute_sandbox=None,
             model=None,
@@ -107,9 +107,9 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             "stop_reason": None,
             "program_ledger": self.config.program_ledger,
             "batch_id": "batch-1",
-            "dispatch_path": "my-docs/plans/dispatch/batch-1.md",
-            "spec_path": "my-docs/plans/batch-1-spec.md",
-            "receipt_path": f"my-docs/plans/receipts/{phase}.json",
+            "dispatch_path": "project-notes/architecture/dispatch/batch-1.md",
+            "spec_path": "project-notes/architecture/batch-1-spec.md",
+            "receipt_path": f"project-notes/architecture/receipts/{phase}.json",
             "commit_range": None,
             "validation_summary": None,
             "review_summary": None,
@@ -121,8 +121,8 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
     def structured_config(self) -> Any:
         artifact_root = (
             self.project
-            / "my-docs"
-            / "plans"
+            / "project-notes"
+            / "architecture"
             / "architecture-program-runs"
             / "program"
             / "run-20260626-204812"
@@ -151,7 +151,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
                 "--project",
                 str(self.project),
                 "--program-ledger",
-                "my-docs/plans/program.md",
+                "project-notes/architecture/program.md",
             ]
         )
         config = runner.config_from_args(args)
@@ -163,15 +163,31 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.assertEqual(config.env_overrides, ())
         self.assertRegex(
             config.state_path.as_posix(),
-            r"/my-docs/plans/architecture-program-runs/program/run-\d{8}-\d{6}/run-state\.json$",
+            r"/project-notes/architecture/architecture-program-runs/program/run-\d{8}-\d{6}/run-state\.json$",
         )
         self.assertEqual(config.artifact_root, config.state_path.parent)
+
+    def test_default_artifact_root_follows_program_ledger_parent(self) -> None:
+        args = runner.parse_args(
+            [
+                "--project",
+                str(self.project),
+                "--program-ledger",
+                "ops/reviews/architecture-ledger.md",
+            ]
+        )
+        config = runner.config_from_args(args)
+
+        self.assertRegex(
+            config.state_path.as_posix(),
+            r"/ops/reviews/architecture-program-runs/architecture-ledger/run-\d{8}-\d{6}/run-state\.json$",
+        )
 
     def test_resume_without_state_uses_latest_structured_run(self) -> None:
         older = (
             self.project
-            / "my-docs"
-            / "plans"
+            / "project-notes"
+            / "architecture"
             / "architecture-program-runs"
             / "program"
             / "run-20260626-100000"
@@ -179,8 +195,8 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         )
         newer = (
             self.project
-            / "my-docs"
-            / "plans"
+            / "project-notes"
+            / "architecture"
             / "architecture-program-runs"
             / "program"
             / "run-20260626-110000"
@@ -196,7 +212,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
                 "--project",
                 str(self.project),
                 "--program-ledger",
-                "my-docs/plans/program.md",
+                "project-notes/architecture/program.md",
             ]
         )
 
@@ -206,7 +222,12 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.assertEqual(config.artifact_root, newer.parent)
 
     def test_resume_without_state_falls_back_to_legacy_flat_state(self) -> None:
-        legacy = self.project / "my-docs" / "plans" / "architecture-program-run-state.json"
+        legacy = (
+            self.project
+            / "project-notes"
+            / "architecture"
+            / "architecture-program-run-state.json"
+        )
         legacy.write_text("{}\n", encoding="utf-8")
         args = runner.parse_args(
             [
@@ -214,7 +235,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
                 "--project",
                 str(self.project),
                 "--program-ledger",
-                "my-docs/plans/program.md",
+                "project-notes/architecture/program.md",
             ]
         )
 
@@ -229,15 +250,18 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
                 "--project",
                 str(self.project),
                 "--program-ledger",
-                "my-docs/plans/program.md",
+                "project-notes/architecture/program.md",
                 "--state",
-                "my-docs/plans/run-state.json",
+                "project-notes/architecture/run-state.json",
             ]
         )
 
         config = runner.config_from_args(args)
 
-        self.assertEqual(config.state_path, self.project / "my-docs" / "plans" / "run-state.json")
+        self.assertEqual(
+            config.state_path,
+            self.project / "project-notes" / "architecture" / "run-state.json",
+        )
         self.assertIsNone(config.artifact_root)
 
     def test_all_batches_cli_sets_unbounded_mode(self) -> None:
@@ -246,7 +270,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
                 "--project",
                 str(self.project),
                 "--program-ledger",
-                "my-docs/plans/program.md",
+                "project-notes/architecture/program.md",
                 "--all-batches",
             ]
         )
@@ -262,7 +286,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
                         "--project",
                         str(self.project),
                         "--program-ledger",
-                        "my-docs/plans/program.md",
+                        "project-notes/architecture/program.md",
                         "--all-batches",
                         "--max-batches",
                         "1",
@@ -275,7 +299,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
                 "--project",
                 str(self.project),
                 "--program-ledger",
-                "my-docs/plans/program.md",
+                "project-notes/architecture/program.md",
                 "--max-batches",
                 "3",
             ]
@@ -290,7 +314,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
                 "--project",
                 str(self.project),
                 "--program-ledger",
-                "my-docs/plans/program.md",
+                "project-notes/architecture/program.md",
                 "--sandbox",
                 "workspace-write",
                 "--execute-sandbox",
@@ -310,7 +334,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
                 "--project",
                 str(self.project),
                 "--program-ledger",
-                "my-docs/plans/program.md",
+                "project-notes/architecture/program.md",
                 "--env",
                 "CACHE_DIR=/tmp/project-cache",
             ]
@@ -325,7 +349,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
                 "--project",
                 str(self.project),
                 "--program-ledger",
-                "my-docs/plans/program.md",
+                "project-notes/architecture/program.md",
                 "--env",
                 "CACHE_DIR=/tmp/project-cache",
                 "--env",
@@ -347,7 +371,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
                         "--project",
                         str(self.project),
                         "--program-ledger",
-                        "my-docs/plans/program.md",
+                        "project-notes/architecture/program.md",
                         "--env",
                         "CACHE_DIR",
                     ]
@@ -361,7 +385,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
                         "--project",
                         str(self.project),
                         "--program-ledger",
-                        "my-docs/plans/program.md",
+                        "project-notes/architecture/program.md",
                         "--env",
                         "=/tmp/project-cache",
                     ]
@@ -495,15 +519,15 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.assertEqual(state["run_id"], "run-20260626-204812")
         self.assertEqual(
             state["artifact_root"],
-            "my-docs/plans/architecture-program-runs/program/run-20260626-204812",
+            "project-notes/architecture/architecture-program-runs/program/run-20260626-204812",
         )
         self.assertEqual(
             state["run_manifest_path"],
-            "my-docs/plans/architecture-program-runs/program/run-20260626-204812/run-manifest.json",
+            "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/run-manifest.json",
         )
         self.assertEqual(
             runner.phase_receipt_path(state, "select-dispatch"),
-            "my-docs/plans/architecture-program-runs/program/run-20260626-204812/receipts/01-select-dispatch.json",
+            "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/receipts/01-select-dispatch.json",
         )
 
     def test_structured_prompt_includes_expected_phase_receipt_path(self) -> None:
@@ -517,7 +541,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
 
         self.assertIn("Expected receipt path for this phase:", prompt)
         self.assertIn(
-            "my-docs/plans/architecture-program-runs/program/run-20260626-204812/batches/batch-1/receipts/03-execute.json",
+            "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/batches/batch-1/receipts/03-execute.json",
             prompt,
         )
 
@@ -527,7 +551,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         result = self.make_result(
             "select-dispatch",
             "create-spec",
-            receipt_path="my-docs/plans/receipts/select-dispatch.json",
+            receipt_path="project-notes/architecture/receipts/select-dispatch.json",
         )
         self.write_receipt(result)
 
@@ -556,8 +580,8 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
 
         run_manifest = runner.read_json_object(
             self.project
-            / "my-docs"
-            / "plans"
+            / "project-notes"
+            / "architecture"
             / "architecture-program-runs"
             / "program"
             / "run-20260626-204812"
@@ -565,8 +589,8 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         )
         batch_manifest = runner.read_json_object(
             self.project
-            / "my-docs"
-            / "plans"
+            / "project-notes"
+            / "architecture"
             / "architecture-program-runs"
             / "program"
             / "run-20260626-204812"
@@ -576,8 +600,8 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         )
         index = (
             self.project
-            / "my-docs"
-            / "plans"
+            / "project-notes"
+            / "architecture"
             / "architecture-program-runs"
             / "program"
             / "run-20260626-204812"
@@ -588,7 +612,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
 
         self.assertEqual(
             final_state["active_batch_artifact_root"],
-            "my-docs/plans/architecture-program-runs/program/run-20260626-204812/batches/batch-1",
+            "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/batches/batch-1",
         )
         self.assertEqual(run_manifest["batches"][0]["batch_id"], "batch-1")
         self.assertEqual(
@@ -852,7 +876,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             batch_id=None,
             dispatch_path=None,
             spec_path=None,
-            receipt_path="my-docs/plans/receipts/select-dispatch-2.json",
+            receipt_path="project-notes/architecture/receipts/select-dispatch-2.json",
         )
         sequence = [
             first,
@@ -904,8 +928,8 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         state = runner.initial_state(config)
         state["active_phase"] = "execute"
         state["active_batch_id"] = "batch-1"
-        state["dispatch_path"] = "my-docs/plans/dispatch/batch-1.md"
-        state["spec_path"] = "my-docs/plans/batch-1-spec.md"
+        state["dispatch_path"] = "project-notes/architecture/dispatch/batch-1.md"
+        state["spec_path"] = "project-notes/architecture/batch-1-spec.md"
         self.touch_project_path(state["dispatch_path"])
         self.touch_project_path(state["spec_path"])
         runner.write_state(config.state_path, state)
@@ -971,7 +995,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             self.config,
             state,
             "select-dispatch",
-            status_reader=lambda project: ["?? my-docs/"],
+            status_reader=lambda project: ["?? project-notes/"],
         )
 
     def test_preflight_dirty_worktree_allows_structured_artifact_root(self) -> None:
@@ -983,7 +1007,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             state,
             "select-dispatch",
             status_reader=lambda project: [
-                "?? my-docs/plans/architecture-program-runs/program/run-20260626-204812/"
+                "?? project-notes/architecture/architecture-program-runs/program/run-20260626-204812/"
             ],
         )
 
@@ -991,10 +1015,10 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         state = runner.initial_state(self.config)
         state["active_phase"] = "execute"
         state["active_batch_id"] = "batch-1"
-        state["dispatch_path"] = "my-docs/plans/dispatch/batch-1.md"
-        state["spec_path"] = "my-docs/plans/batch-1-spec.md"
+        state["dispatch_path"] = "project-notes/architecture/dispatch/batch-1.md"
+        state["spec_path"] = "project-notes/architecture/batch-1-spec.md"
         state["last_phase_status"] = "stopped"
-        state["last_receipt_path"] = "my-docs/plans/receipts/execute.json"
+        state["last_receipt_path"] = "project-notes/architecture/receipts/execute.json"
         receipt = self.make_result(
             "execute",
             "stopped",
@@ -1024,10 +1048,10 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         state = runner.initial_state(self.config)
         state["active_phase"] = "execute"
         state["active_batch_id"] = "batch-1"
-        state["dispatch_path"] = "my-docs/plans/dispatch/batch-1.md"
-        state["spec_path"] = "my-docs/plans/batch-1-spec.md"
+        state["dispatch_path"] = "project-notes/architecture/dispatch/batch-1.md"
+        state["spec_path"] = "project-notes/architecture/batch-1-spec.md"
         state["last_phase_status"] = "failed"
-        state["last_receipt_path"] = "my-docs/plans/receipts/execute.json"
+        state["last_receipt_path"] = "project-notes/architecture/receipts/execute.json"
         receipt = self.make_result(
             "execute",
             "stopped",
@@ -1090,7 +1114,7 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         state = runner.initial_state(self.config)
         state["active_phase"] = "create-spec"
         state["active_batch_id"] = "batch-1"
-        state["dispatch_path"] = "my-docs/plans/dispatch/missing.md"
+        state["dispatch_path"] = "project-notes/architecture/dispatch/missing.md"
         runner.write_state(self.config.state_path, state)
 
         with self.assertRaisesRegex(runner.RunnerError, "dispatch_path does not exist"):
@@ -1130,11 +1154,11 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
     def test_resume_contradictory_artifact_state_stops(self) -> None:
         state = runner.initial_state(self.config)
         state["active_batch_id"] = "batch-1"
-        state["dispatch_path"] = "my-docs/plans/dispatch/batch-1.md"
+        state["dispatch_path"] = "project-notes/architecture/dispatch/batch-1.md"
         result = self.make_result(
             "select-dispatch",
             "create-spec",
-            dispatch_path="my-docs/plans/dispatch/other.md",
+            dispatch_path="project-notes/architecture/dispatch/other.md",
         )
 
         with self.assertRaisesRegex(runner.RunnerError, "dispatch_path contradicts"):
