@@ -23,7 +23,14 @@ class ArchitectureProgramRunnerChangeAllowanceTests(ArchitectureProgramRunnerTes
             runner.expected_change_allowance_paths,
             change_allowance.expected_change_allowance_paths,
         )
+        self.assertIs(runner.expected_dirty_paths, change_allowance.expected_dirty_paths)
         self.assertIs(runner.check_change_allowance, change_allowance.check_change_allowance)
+        self.assertIs(
+            runner.check_change_allowance_path,
+            change_allowance.check_change_allowance_path,
+        )
+        self.assertIs(runner.check_worktree, change_allowance.check_worktree)
+        self.assertIs(runner.git_status_lines, change_allowance.git_status_lines)
 
     def test_dirty_status_parser_includes_both_sides_of_renames(self) -> None:
         dirty = runner.dirty_paths_from_status(

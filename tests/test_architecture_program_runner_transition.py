@@ -21,6 +21,10 @@ class ArchitectureProgramRunnerTransitionTests(ArchitectureProgramRunnerTestCase
             runner.is_terminal_phase_transition_state,
             transition_owner.is_terminal_phase_transition_state,
         )
+        self.assertIs(
+            runner.is_terminal_completed_state,
+            runner.is_terminal_phase_transition_state,
+        )
 
     def test_phase_transition_owner_does_not_own_validation_or_receipts(self) -> None:
         self.assertFalse(hasattr(transition_owner, "validate_phase_result"))

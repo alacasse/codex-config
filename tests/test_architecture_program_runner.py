@@ -7,8 +7,10 @@ from pathlib import Path
 from typing import Any
 from unittest import mock
 
+from scripts import architecture_program_runner_change_allowance as change_allowance_owner
 from scripts import architecture_program_runner_command as command_owner
 from scripts import architecture_program_runner_environment as environment_owner
+from scripts import architecture_program_runner_transition as transition_owner
 from tests.architecture_program_runner_test_support import (
     ArchitectureProgramRunnerTestCase,
     runner,
@@ -30,6 +32,17 @@ class ArchitectureProgramRunnerIntegrationTests(ArchitectureProgramRunnerTestCas
         self.assertIs(runner.batch_limit_label, environment_owner.batch_limit_label)
         self.assertIs(runner.build_subprocess_env, environment_owner.build_subprocess_env)
         self.assertIs(runner.env_override_key_label, environment_owner.env_override_key_label)
+        self.assertIs(runner.apply_phase_result, transition_owner.apply_phase_transition)
+        self.assertIs(runner.apply_phase_transition, transition_owner.apply_phase_transition)
+        self.assertIs(
+            runner.is_terminal_completed_state,
+            transition_owner.is_terminal_phase_transition_state,
+        )
+        self.assertIs(runner.check_worktree, change_allowance_owner.check_worktree)
+        self.assertIs(
+            runner.check_change_allowance,
+            change_allowance_owner.check_change_allowance,
+        )
 
     def test_cli_defaults_and_state_path(self) -> None:
         args = runner.parse_args(
@@ -238,92 +251,6 @@ class ArchitectureProgramRunnerIntegrationTests(ArchitectureProgramRunnerTestCas
         text = output.getvalue()
         self.assertIn("CACHE_TOKEN", text)
         self.assertNotIn("secret-value", text)
-
-    def test_stop_after_phase_runs_named_phase_then_persists_next_phase(self) -> None:
-        result = self.make_result("select-dispatch", "create-spec")
-        self.write_receipt(result)
-        calls: list[str] = []
-
-        def fake_executor(config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
-            calls.append(phase)
-            return result
-
-        config = runner.RunnerConfig(
-            **{**self.config.__dict__, "stop_after_phase": "select-dispatch"}
-        )
-
-        final_state = runner.run(
-            config,
-            phase_executor=fake_executor,
-            status_reader=lambda project: [],
-        )
-
-        self.assertEqual(calls, ["select-dispatch"])
-        self.assertEqual(final_state["active_phase"], "create-spec")
-        self.assertEqual(runner.load_state(config.state_path)["active_phase"], "create-spec")
-
-    def test_missing_receipt_stops_safely_and_persists_state(self) -> None:
-        result = self.make_result("select-dispatch", "create-spec")
-
-        def fake_executor(config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
-            return result
-
-        with self.assertRaisesRegex(runner.RunnerError, "not found"):
-            runner.run(
-                self.config,
-                phase_executor=fake_executor,
-                status_reader=lambda project: [],
-            )
-
-        state = runner.load_state(self.config.state_path)
-        self.assertEqual(state["last_phase_status"], "failed")
-        self.assertIn("not found", state["stop_reason"])
-
-    def test_preflight_dirty_worktree_rejects_unexpected_path(self) -> None:
-        state = runner.initial_state(self.config)
-
-        with self.assertRaisesRegex(runner.RunnerError, "dirty files"):
-            runner.check_worktree(
-                self.config,
-                state,
-                "select-dispatch",
-                status_reader=lambda project: [" M graphify/core.py"],
-            )
-
-    def test_preflight_dirty_worktree_allows_expected_state_path(self) -> None:
-        state = runner.initial_state(self.config)
-
-        runner.check_worktree(
-            self.config,
-            state,
-            "select-dispatch",
-            status_reader=lambda project: ["?? project-notes/"],
-        )
-
-    def test_resume_matching_artifact_can_continue(self) -> None:
-        result = self.make_result("create-spec", "execute")
-        self.write_receipt(result)
-        dispatch = runner.resolve_project_path(self.config.project, result["dispatch_path"])
-        dispatch.parent.mkdir(parents=True, exist_ok=True)
-        dispatch.write_text("dispatch\n", encoding="utf-8")
-        state = runner.initial_state(self.config)
-        state["active_phase"] = "create-spec"
-        state["active_batch_id"] = result["batch_id"]
-        state["dispatch_path"] = result["dispatch_path"]
-        runner.write_state(self.config.state_path, state)
-
-        def fake_executor(config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
-            return result
-
-        final_state = runner.run(
-            runner.RunnerConfig(
-                **{**self.config.__dict__, "resume": True, "stop_after_phase": "create-spec"}
-            ),
-            phase_executor=fake_executor,
-            status_reader=lambda project: [],
-        )
-
-        self.assertEqual(final_state["active_phase"], "execute")
 
 if __name__ == "__main__":
     import unittest
