@@ -4,6 +4,12 @@ When working in `/home/alacasse/projects/graphify`, first use Codex's normal pro
 
 Treat `my-docs/AGENTS.md` as a local additive overlay, not a replacement for the committed repo `AGENTS.md`. If the two files conflict, prefer the local `my-docs/AGENTS.md` only for personal workflow/configuration details; prefer the committed repo `AGENTS.md` for upstream project rules unless the user explicitly says otherwise. The `my-docs/` directory is intentionally ignored and should not be committed.
 
+## GitHub issues and comments
+
+When creating or updating GitHub issues, PR comments, or issue comments, keep the GitHub body compact and actionable. Use GitHub for the decision-oriented core: summary, why, proposed direction, acceptance criteria, and links or paths to detailed design artifacts.
+
+Do not put long design documents, large schema sketches, long logs, or giant Markdown dumps directly into GitHub issue/comment bodies. If the design is substantial, create or update a repo-owned planning/reference document and link or name that file from the issue instead. Prefer short follow-up comments for addenda.
+
 ## Codex config ownership
 
 When editing a path under `~/.codex`, first check whether it is linked from `/home/alacasse/src/codex-config`:
