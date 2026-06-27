@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 
 from scripts import architecture_program_runner_artifacts as artifacts
+from scripts import architecture_program_runner_phase_observation as observation_owner
 from tests.architecture_program_runner_test_support import (
     ArchitectureProgramRunnerTestCase,
     runner,
@@ -20,6 +22,12 @@ PHASE_OBSERVATION_EXECUTION_META_KEYS = {
 
 
 class ArchitectureProgramRunnerPhaseObservationTests(ArchitectureProgramRunnerTestCase):
+    def write_codex_session_file(self, codex_home: Path, relative_path: str) -> str:
+        path = codex_home / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{}\n", encoding="utf-8")
+        return str(path)
+
     def write_session_jsonl(self, *records: dict[str, Any]) -> str:
         path = self.root / "codex-session.jsonl"
         path.write_text(
@@ -49,7 +57,9 @@ class ArchitectureProgramRunnerPhaseObservationTests(ArchitectureProgramRunnerTe
         session_id = "019f0679-3875-7601-a4f8-a2a22303f3c4"
 
         self.assertEqual(
-            runner.extract_codex_session_id(f"codex exec started session {session_id}\n"),
+            observation_owner.extract_codex_session_id(
+                f"codex exec started session {session_id}\n"
+            ),
             session_id,
         )
 
@@ -57,7 +67,7 @@ class ArchitectureProgramRunnerPhaseObservationTests(ArchitectureProgramRunnerTe
         session_id = "019f0679-3875-7601-a4f8-a2a22303f3c5"
 
         self.assertEqual(
-            runner.extract_codex_session_id(f"warning: resumed session {session_id}\n"),
+            observation_owner.extract_codex_session_id(f"warning: resumed session {session_id}\n"),
             session_id,
         )
 
@@ -67,9 +77,83 @@ class ArchitectureProgramRunnerPhaseObservationTests(ArchitectureProgramRunnerTe
         stderr = f"codex session: {session_id}"
 
         self.assertEqual(
-            runner.extract_codex_session_id(f"{stdout}\n{stderr}"),
+            observation_owner.extract_codex_session_id(f"{stdout}\n{stderr}"),
             session_id,
         )
+
+    def test_phase_observation_owner_builds_execution_metadata_with_exact_session_path(
+        self,
+    ) -> None:
+        session_id = "019f0679-3875-7601-a4f8-a2a22303f3c9"
+        codex_home = self.root / "codex-home"
+        session_path = self.write_codex_session_file(
+            codex_home,
+            f"sessions/2026/06/27/rollout-2026-06-27T12-00-00-{session_id}.jsonl",
+        )
+
+        observation = observation_owner.build_phase_execution_observation(
+            exit_code=0,
+            stdout=f"started {session_id}\n",
+            stderr="warning avoided\n",
+            subprocess_env={"CODEX_HOME": str(codex_home)},
+        )
+
+        self.assertEqual(observation.exit_code, 0)
+        self.assertEqual(observation.stdout_bytes, len(f"started {session_id}\n".encode()))
+        self.assertEqual(observation.stderr_bytes, len("warning avoided\n".encode()))
+        self.assertEqual(observation.codex_session_id, session_id)
+        self.assertEqual(observation.codex_session_path, session_path)
+        self.assertEqual(
+            observation.as_execution_meta(),
+            {
+                "exit_code": 0,
+                "stdout_bytes": observation.stdout_bytes,
+                "stderr_bytes": observation.stderr_bytes,
+                "codex_session_id": session_id,
+                "codex_session_path": session_path,
+            },
+        )
+
+    def test_phase_observation_path_discovery_returns_none_when_no_match(self) -> None:
+        codex_home = self.root / "codex-home"
+        (codex_home / "sessions" / "2026" / "06" / "27").mkdir(parents=True)
+
+        self.assertIsNone(
+            observation_owner.discover_codex_session_path(
+                "019f0679-3875-7601-a4f8-a2a22303f3ca",
+                {"CODEX_HOME": str(codex_home)},
+            )
+        )
+
+    def test_phase_observation_path_discovery_returns_none_when_ambiguous(self) -> None:
+        session_id = "019f0679-3875-7601-a4f8-a2a22303f3cb"
+        codex_home = self.root / "codex-home"
+        self.write_codex_session_file(
+            codex_home,
+            f"sessions/2026/06/27/rollout-2026-06-27T12-00-00-{session_id}.jsonl",
+        )
+        self.write_codex_session_file(
+            codex_home,
+            f"sessions/2026/06/28/rollout-2026-06-28T12-00-00-{session_id}.jsonl",
+        )
+
+        self.assertIsNone(
+            observation_owner.discover_codex_session_path(
+                session_id,
+                {"CODEX_HOME": str(codex_home)},
+            )
+        )
+
+    def test_runner_facade_reexports_phase_observation_owner_for_compatibility(self) -> None:
+        self.assertIs(
+            runner.PhaseExecutionObservation,
+            observation_owner.PhaseExecutionObservation,
+        )
+        self.assertIs(
+            runner.build_phase_execution_observation,
+            observation_owner.build_phase_execution_observation,
+        )
+        self.assertIs(runner.extract_codex_session_id, observation_owner.extract_codex_session_id)
 
     def test_phase_observation_missing_session_attribution_is_non_fatal(self) -> None:
         telemetry = self.build_telemetry(

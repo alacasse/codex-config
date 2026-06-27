@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import subprocess
 import sys
 import tempfile
@@ -22,6 +21,7 @@ try:
     from scripts import architecture_program_runner_change_allowance as _runner_change_allowance
     from scripts import architecture_program_runner_command as _runner_command
     from scripts import architecture_program_runner_environment as _runner_environment
+    from scripts import architecture_program_runner_phase_observation as _phase_observation
     from scripts import architecture_program_runner_phase_contract as _phase_contract
     from scripts import architecture_program_runner_state as _runner_state
     from scripts import architecture_program_runner_transition as _runner_transition
@@ -31,6 +31,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution fallba
     import architecture_program_runner_change_allowance as _runner_change_allowance
     import architecture_program_runner_command as _runner_command
     import architecture_program_runner_environment as _runner_environment
+    import architecture_program_runner_phase_observation as _phase_observation
     import architecture_program_runner_phase_contract as _phase_contract
     import architecture_program_runner_state as _runner_state
     import architecture_program_runner_transition as _runner_transition
@@ -95,6 +96,11 @@ build_phase_environment = _runner_environment.build_phase_environment
 build_subprocess_env = _runner_environment.build_subprocess_env
 env_override_key_label = _runner_environment.env_override_key_label
 sandbox_for_phase = _runner_environment.sandbox_for_phase
+PhaseExecutionObservation = _phase_observation.PhaseExecutionObservation
+build_phase_execution_observation = _phase_observation.build_phase_execution_observation
+discover_codex_session_path = _phase_observation.discover_codex_session_path
+effective_codex_home = _phase_observation.effective_codex_home
+extract_codex_session_id = _phase_observation.extract_codex_session_id
 apply_execution_meta_to_state = _runner_artifacts.apply_execution_meta_to_state
 artifact_batch_entry = _runner_artifacts.artifact_batch_entry
 artifact_size_entries = _runner_artifacts.artifact_size_entries
@@ -318,15 +324,6 @@ def execute_codex_phase(config: RunnerConfig, state: dict[str, Any], phase: str)
                 f"{phase} with exit {completed.returncode}\n{completed.stderr.strip()}"
             )
         return read_json_object(output_last_message)
-
-
-def extract_codex_session_id(text: str) -> str | None:
-    match = re.search(
-        r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b",
-        text,
-        flags=re.IGNORECASE,
-    )
-    return match.group(0) if match else None
 
 
 def check_required_artifacts(config: RunnerConfig, state: dict[str, Any]) -> None:

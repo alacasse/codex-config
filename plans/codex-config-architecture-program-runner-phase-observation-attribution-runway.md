@@ -146,7 +146,7 @@ Dirty-file constraints:
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
 | 1. Characterize Phase Observation attribution | completed | slice commit | `pytest` 30 passed; `uvx ruff` passed; `git diff --check` passed | clean | Introduce observation owner from characterized facts | Characterization coverage added without production behavior changes. |
-| 2. Introduce Phase Observation owner | pending |  |  |  | Route runner execution through owner |  |
+| 2. Introduce Phase Observation owner | completed | slice commit | `pytest` 29 passed; dry-run smoke passed; `uvx ruff` passed; `git diff --check` passed | clean after planning-artifact staging fix | Route runner execution through owner | Added `PhaseExecutionObservation` owner, exact session id parsing, and unique session JSONL path discovery without routing execution yet. |
 | 3. Route execution metadata through observation owner | pending |  |  |  | Tighten telemetry/facade compatibility |  |
 | 4. Tighten telemetry and compatibility tests | pending |  |  |  | Final validation and closeout |  |
 
@@ -159,6 +159,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1. Characterize Phase Observation attribution | slice commit | Added characterization coverage for exact session id parsing, non-fatal missing attribution, and synthetic token summaries from exact session JSONL paths; no production behavior changed. | Worker: success; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_phase_observation.py tests/test_architecture_program_runner_artifacts.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check tests/test_architecture_program_runner_phase_observation.py`, `git diff --check` |
+| 2. Introduce Phase Observation owner | slice commit | Added `scripts/architecture_program_runner_phase_observation.py`; runner facade reexports the owner API while execution routing remains unchanged for Slice 3. | Worker: success; reviewer: clean after planning-artifact staging fix; validation: `python -m pytest tests/test_architecture_program_runner_phase_observation.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, dry-run smoke, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check scripts/architecture_program_runner_phase_observation.py scripts/architecture_program_runner.py tests/test_architecture_program_runner_phase_observation.py tests/test_architecture_program_runner.py`, `git diff --check` |
 
 ## Slice 1. Characterize Phase Observation Attribution
 

@@ -10,6 +10,7 @@ from unittest import mock
 from scripts import architecture_program_runner_change_allowance as change_allowance_owner
 from scripts import architecture_program_runner_command as command_owner
 from scripts import architecture_program_runner_environment as environment_owner
+from scripts import architecture_program_runner_phase_observation as observation_owner
 from scripts import architecture_program_runner_phase_contract as phase_contract_owner
 from scripts import architecture_program_runner_transition as transition_owner
 from tests.architecture_program_runner_test_support import (
@@ -35,6 +36,22 @@ class ArchitectureProgramRunnerIntegrationTests(ArchitectureProgramRunnerTestCas
         self.assertIs(runner.batch_limit_label, environment_owner.batch_limit_label)
         self.assertIs(runner.build_subprocess_env, environment_owner.build_subprocess_env)
         self.assertIs(runner.env_override_key_label, environment_owner.env_override_key_label)
+        self.assertIs(
+            runner.PhaseExecutionObservation,
+            observation_owner.PhaseExecutionObservation,
+        )
+        self.assertIs(
+            runner.build_phase_execution_observation,
+            observation_owner.build_phase_execution_observation,
+        )
+        self.assertIs(
+            runner.discover_codex_session_path,
+            observation_owner.discover_codex_session_path,
+        )
+        self.assertIs(
+            runner.extract_codex_session_id,
+            observation_owner.extract_codex_session_id,
+        )
         self.assertIs(runner.apply_phase_result, transition_owner.apply_phase_transition)
         self.assertIs(runner.apply_phase_transition, transition_owner.apply_phase_transition)
         self.assertIs(
