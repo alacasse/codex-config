@@ -121,7 +121,7 @@ Dirty-file constraints:
 | 2. Phase result and receipt validation seam | Completed | See commit receipt | `71 passed`; dry-run smoke passed; `git diff --check` passed; ruff unavailable: `/usr/bin/python: No module named ruff` | Process-blocked review accepted after ledger recording; no code findings | Consumes Slice 1 path/state APIs where applicable. |
 | 3. Prompt, command, and env construction seam | Completed | See commit receipt | `71 passed`; dry-run smoke passed; ruff via `uvx` passed; `git diff --check` passed | Clean | Preserved exact prompt guardrails and command flags. |
 | 4. Artifact manifest and telemetry owner seams | Completed | See commit receipt | `89 passed`; dry-run smoke passed; ruff via `uvx` passed; `git diff --check` passed | Clean after fix loop | APR-13 closed: structured failure paths refresh manifests and telemetry through active batch state. |
-| 5. Test topology split and thin CLI integration suite | Pending |  |  |  | Mirrors new owner seams; keeps broad regression coverage. |
+| 5. Test topology split and thin CLI integration suite | Completed | See commit receipt | `71 passed`; dry-run smoke passed; ruff via `uvx` passed; `git diff --check` passed | Clean after coverage fix loops | Mirrored new owner seams and preserved broad regression coverage. |
 
 ## Completed Slice Archive
 
@@ -175,6 +175,18 @@ Dirty-file constraints:
   - Review: initial review found malformed-result failure-path attribution
     gaps; after two worker fix loops, final `runway_reviewer` pass returned
     clean with no findings.
+- Slice 5. Test topology split and thin CLI integration suite:
+  - Outcome: split the remaining broad runner tests into shared support,
+    run-loop, worktree, protocol, and thin CLI/integration modules while keeping
+    the owner-module focused tests from Slices 1-4.
+  - Commit: see coordinator commit receipt for the final hash.
+  - Validation: `python -m pytest tests/test_architecture_program_runner.py tests/test_architecture_program_runner_state.py tests/test_architecture_program_runner_validation.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_artifacts.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner_worktree.py tests/test_architecture_program_runner_protocol.py tests/test_codex_owner.py -q`
+    passed with 71 tests; dry-run runner smoke passed; `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check ...`
+    passed with a non-fatal Python symlink warning; `git diff --check` passed.
+  - Review: reviewer found and workers restored missing coverage for numeric
+    `--max-batches`, execute-sandbox subprocess command construction, env
+    override prompt guidance, and all-batches prompt label; final
+    `runway_reviewer` verification returned clean.
 
 ## Slice 1. Path and State Owner Seam
 

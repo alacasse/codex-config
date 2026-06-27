@@ -88,6 +88,32 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
         )
         self.assertIn("Prefer compact dispatch, receipt, manifest, and telemetry artifacts", prompt)
 
+    def test_prompt_with_env_overrides_requires_coordinator_shell_probe(self) -> None:
+        config = runner.RunnerConfig(
+            **{
+                **self.config.__dict__,
+                "env_overrides": (("UV_CACHE_DIR", "/tmp/graphify-uv-cache"),),
+            }
+        )
+        prompt = command_owner.build_prompt(config, runner.initial_state(config), "execute")
+
+        self.assertIn("Runner env override keys: UV_CACHE_DIR", prompt)
+        self.assertNotIn("/tmp/graphify-uv-cache", prompt)
+        self.assertIn("coordinator-shell environment probe", prompt)
+        self.assertIn("key-present/readable-path booleans", prompt)
+        self.assertIn("exact canonical command lines attempted", prompt)
+        self.assertIn("present in the command environment", prompt)
+        self.assertIn("path-like override values were readable", prompt)
+        self.assertIn("do not treat subagent-only validation output as canonical", prompt)
+
+    def test_prompt_generation_names_all_batches_limit(self) -> None:
+        config = runner.RunnerConfig(**{**self.config.__dict__, "max_batches": None})
+        state = runner.initial_state(config)
+
+        prompt = command_owner.build_prompt(config, state, "select-dispatch")
+
+        self.assertIn("Batch limit: all executable batches", prompt)
+
     def test_execute_sandbox_applies_to_execute_phase_only(self) -> None:
         config = runner.RunnerConfig(
             **{**self.config.__dict__, "execute_sandbox": "danger-full-access"}
