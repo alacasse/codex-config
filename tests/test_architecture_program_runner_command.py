@@ -113,6 +113,12 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
         prompt = command_owner.build_prompt(config, state, "select-dispatch")
 
         self.assertIn("Batch limit: all executable batches", prompt)
+        self.assertEqual(
+            command_owner.batch_limit_label(None),
+            "all executable batches until stop condition",
+        )
+        self.assertEqual(command_owner.batch_limit_label(1), "1 batch")
+        self.assertEqual(command_owner.batch_limit_label(3), "3 batches")
 
     def test_execute_sandbox_applies_to_execute_phase_only(self) -> None:
         config = runner.RunnerConfig(
@@ -142,12 +148,66 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
         self.assertEqual(command[command.index("--model") + 1], "gpt-5-codex")
         self.assertEqual(command[-1], "phase prompt")
 
-    def test_dry_run_displays_env_keys_without_values(self) -> None:
+    def test_codex_command_uses_execute_only_sandbox_and_optional_model_flag(
+        self,
+    ) -> None:
         config = runner.RunnerConfig(
             **{
                 **self.config.__dict__,
                 "execute_sandbox": "danger-full-access",
-                "env_overrides": (("CACHE_TOKEN", "secret-value"),),
+                "model": None,
+            }
+        )
+
+        create_command = command_owner.build_codex_command(
+            config,
+            "create-spec",
+            "create prompt",
+            Path("/tmp/create-result.json"),
+        )
+        execute_command = command_owner.build_codex_command(
+            config,
+            "execute",
+            "execute prompt",
+            Path("/tmp/execute-result.json"),
+        )
+
+        self.assertEqual(
+            create_command[create_command.index("--sandbox") + 1],
+            "workspace-write",
+        )
+        self.assertEqual(
+            execute_command[execute_command.index("--sandbox") + 1],
+            "danger-full-access",
+        )
+        self.assertNotIn("--model", create_command)
+        self.assertNotIn("--model", execute_command)
+        self.assertEqual(
+            execute_command[execute_command.index("--output-last-message") + 1],
+            "/tmp/execute-result.json",
+        )
+
+    def test_subprocess_environment_applies_runner_overrides(self) -> None:
+        env = command_owner.build_subprocess_env(
+            (("OVERRIDE_ME", "new"), ("ADDED", "value")),
+            base_env={"KEEP_ME": "yes", "OVERRIDE_ME": "old"},
+        )
+
+        self.assertEqual(env["KEEP_ME"], "yes")
+        self.assertEqual(env["OVERRIDE_ME"], "new")
+        self.assertEqual(env["ADDED"], "value")
+
+    def test_dry_run_displays_env_keys_without_values(self) -> None:
+        secret_value = "secret-value"
+        cache_path = "/tmp/cache-path-sentinel"
+        config = runner.RunnerConfig(
+            **{
+                **self.config.__dict__,
+                "execute_sandbox": "danger-full-access",
+                "env_overrides": (
+                    ("CACHE_TOKEN", secret_value),
+                    ("UV_CACHE_DIR", cache_path),
+                ),
             }
         )
         output = io.StringIO()
@@ -156,9 +216,10 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
             command_owner.print_dry_run(config, runner.initial_state(config))
 
         text = output.getvalue()
-        self.assertIn("Env override keys: CACHE_TOKEN", text)
+        self.assertIn("Env override keys: CACHE_TOKEN, UV_CACHE_DIR", text)
         self.assertIn("Execute sandbox: danger-full-access", text)
-        self.assertNotIn("secret-value", text)
+        self.assertNotIn(secret_value, text)
+        self.assertNotIn(cache_path, text)
 
     def test_display_quoting_is_shell_like_without_exposing_env_values(self) -> None:
         joined = command_owner.shell_join(["codex", "exec", "prompt with 'quote'"])
