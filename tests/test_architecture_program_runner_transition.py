@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from scripts import architecture_program_runner_transition as transition_owner
 from tests.architecture_program_runner_test_support import (
     ArchitectureProgramRunnerTestCase,
     runner,
@@ -9,6 +10,23 @@ from tests.architecture_program_runner_test_support import (
 
 
 class ArchitectureProgramRunnerTransitionTests(ArchitectureProgramRunnerTestCase):
+    def test_runner_facade_delegates_phase_transition_api_to_owner(self) -> None:
+        self.assertIs(runner.apply_phase_result, transition_owner.apply_phase_transition)
+        self.assertIs(runner.apply_phase_transition, transition_owner.apply_phase_transition)
+        self.assertIs(
+            runner.is_terminal_completed_state,
+            transition_owner.is_terminal_phase_transition_state,
+        )
+        self.assertIs(
+            runner.is_terminal_phase_transition_state,
+            transition_owner.is_terminal_phase_transition_state,
+        )
+
+    def test_phase_transition_owner_does_not_own_validation_or_receipts(self) -> None:
+        self.assertFalse(hasattr(transition_owner, "validate_phase_result"))
+        self.assertFalse(hasattr(transition_owner, "expected_next_phases"))
+        self.assertFalse(hasattr(transition_owner, "validate_receipt"))
+
     def test_execute_advances_to_closeout_without_completing_batch(self) -> None:
         state = runner.initial_state(self.config)
         result = self.make_result("execute", "closeout")

@@ -157,7 +157,7 @@ Dirty-file constraints:
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
 | 1. Characterize transition and allowance behavior | completed | slice commit | `pytest` 54 passed; `uvx ruff` passed; `git diff --check` passed | clean | Introduce Phase Transition owner | Characterization coverage added without production behavior changes. |
-| 2. Introduce Phase Transition owner | pending |  |  |  | Introduce Change Allowance owner | Move state advancement without taking validation ownership. |
+| 2. Introduce Phase Transition owner | completed | slice commit | `pytest` 41 passed; dry-run smoke passed; `uvx ruff` passed; `git diff --check` passed | clean | Introduce Change Allowance owner | Runner Facade delegates state advancement and terminal-state checks to the transition owner. |
 | 3. Introduce Change Allowance owner | pending |  |  |  | Route facade and tighten compatibility | Move dirty-path classification without weakening protection. |
 | 4. Route facade through owners and tighten tests | pending |  |  |  | Final validation and closeout | Keep Runner Facade compatibility exports and behavior stable. |
 
@@ -170,6 +170,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1. Characterize transition and allowance behavior | slice commit | Added focused transition and change allowance characterization tests; no production behavior changed. | Worker: success; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_transition.py tests/test_architecture_program_runner_change_allowance.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner_worktree.py tests/test_architecture_program_runner_validation.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check tests/test_architecture_program_runner_transition.py tests/test_architecture_program_runner_change_allowance.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner_worktree.py`, `git diff --check` |
+| 2. Introduce Phase Transition owner | slice commit | Added `scripts/architecture_program_runner_transition.py`; Runner Facade delegates transition helpers while validation and artifact ownership remain separate. | Worker: success; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_transition.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, dry-run smoke, `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check scripts/architecture_program_runner.py scripts/architecture_program_runner_transition.py tests/test_architecture_program_runner_transition.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner.py`, `git diff --check` |
 
 ## Slice 1. Characterize Transition and Allowance Behavior
 

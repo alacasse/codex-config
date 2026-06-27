@@ -22,12 +22,14 @@ try:
     from scripts import architecture_program_runner_command as _runner_command
     from scripts import architecture_program_runner_environment as _runner_environment
     from scripts import architecture_program_runner_state as _runner_state
+    from scripts import architecture_program_runner_transition as _runner_transition
     from scripts import architecture_program_runner_validation as _runner_validation
 except ModuleNotFoundError:  # pragma: no cover - direct script execution fallback.
     import architecture_program_runner_artifacts as _runner_artifacts
     import architecture_program_runner_command as _runner_command
     import architecture_program_runner_environment as _runner_environment
     import architecture_program_runner_state as _runner_state
+    import architecture_program_runner_transition as _runner_transition
     import architecture_program_runner_validation as _runner_validation
 
 PHASE_RECEIPT_NAMES = _runner_state.PHASE_RECEIPT_NAMES
@@ -112,6 +114,10 @@ write_artifact_manifests = _runner_artifacts.write_artifact_manifests
 write_batch_artifacts = _runner_artifacts.write_batch_artifacts
 write_phase_telemetry = _runner_artifacts.write_phase_telemetry
 write_run_telemetry = _runner_artifacts.write_run_telemetry
+apply_phase_result = _runner_transition.apply_phase_transition
+apply_phase_transition = _runner_transition.apply_phase_transition
+is_terminal_completed_state = _runner_transition.is_terminal_phase_transition_state
+is_terminal_phase_transition_state = _runner_transition.is_terminal_phase_transition_state
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -455,48 +461,6 @@ def check_required_artifacts(config: RunnerConfig, state: dict[str, Any]) -> Non
     if state.get("last_phase_status") == "completed" and receipt_path:
         receipt = read_json_object(resolve_project_path(config.project, receipt_path))
         validate_phase_result(receipt)
-
-
-def apply_phase_result(state: dict[str, Any], result: dict[str, Any]) -> None:
-    phase = result["phase"]
-    state["last_receipt_path"] = result["receipt_path"]
-    state["last_phase_status"] = result["status"]
-    state["stop_reason"] = result["stop_reason"]
-
-    if result["batch_id"]:
-        state["active_batch_id"] = result["batch_id"]
-        if structured_artifacts_enabled(state):
-            state["active_batch_artifact_root"] = batch_artifact_root(state, result["batch_id"])
-            state["batch_manifest_path"] = batch_manifest_path(state, result["batch_id"])
-    if result["dispatch_path"]:
-        state["dispatch_path"] = result["dispatch_path"]
-    if result["spec_path"]:
-        state["spec_path"] = result["spec_path"]
-    record_artifact_batch(state, result)
-
-    if result["status"] != "completed":
-        state["stop_reason"] = result["stop_reason"] or result["status"]
-        return
-
-    if phase == "closeout":
-        state["batches_completed"] += 1
-        if result["next_phase"] == "select-dispatch":
-            state["active_batch_id"] = None
-            state["dispatch_path"] = None
-            state["spec_path"] = None
-            state["active_batch_artifact_root"] = None
-            state["batch_manifest_path"] = None
-
-    if result["next_phase"] in PHASES:
-        state["active_phase"] = result["next_phase"]
-    else:
-        state["stop_reason"] = result["next_phase"]
-
-
-def is_terminal_completed_state(state: dict[str, Any]) -> bool:
-    return state.get("last_phase_status") == "completed" and state.get(
-        "stop_reason"
-    ) in {"done", "max_batches_reached"}
 
 
 def run(
