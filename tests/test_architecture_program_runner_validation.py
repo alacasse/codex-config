@@ -146,6 +146,24 @@ class ArchitectureProgramRunnerValidationTests(unittest.TestCase):
         matching = {**result, "receipt_path": expected}
         validation.validate_expected_receipt_path(matching, config, state)
 
+    def test_validation_owner_exposes_input_inventory_helpers_without_enforcement(
+        self,
+    ) -> None:
+        inventory = {
+            "schema_version": 1,
+            "phase": "execute",
+            "primary_inputs": [],
+            "broad_reads": [],
+            "large_file_reads": [],
+            "subagent_reports": [],
+        }
+
+        validation.validate_input_inventory(inventory, active_phase="execute")
+        self.assertEqual(
+            validation.resolve_project_relative_input_path(self.project, "README.md"),
+            self.project / "README.md",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

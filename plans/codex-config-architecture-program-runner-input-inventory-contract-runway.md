@@ -143,7 +143,7 @@ Dirty-file constraints:
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
 | 1. Characterize Input Inventory gap | completed | slice commit | `pytest` 48 passed; dry-run smoke passed; `uvx ruff` passed; `git diff --check` passed | clean after characterization coverage fix | Introduce concept owner from characterized facts | Characterization proves expected path and prompt guidance exist, artifact size telemetry lists the inventory path, and validation does not yet enforce evidence linkage, file existence, or compact shape. |
-| 2. Introduce Input Inventory owner | pending | | | | Enforce expected inventory evidence | |
+| 2. Introduce Input Inventory owner | completed | slice commit | `pytest` 44 passed; `uvx ruff` passed; `git diff --check` passed | clean after path-safety fixes | Enforce expected inventory evidence | Added project-neutral owner validation and helper exports without run-loop enforcement, schema changes, receipt changes, or transcript/session inference. |
 | 3. Enforce inventory evidence linkage | pending | | | | Update prompts, docs, and artifact integration | |
 | 4. Tighten prompt, docs, and artifact integration | pending | | | | Final validation and closeout | |
 
@@ -156,6 +156,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1. Characterize Input Inventory gap | slice commit | Added focused characterization tests for current **Input Inventory** prompt/path/artifact signals and missing enforcement. | Worker: success after reviewer-requested coverage fix; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_input_inventory.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_artifacts.py tests/test_architecture_program_runner_validation.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, dry-run smoke, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check tests/test_architecture_program_runner_input_inventory.py`, `git diff --check` |
+| 2. Introduce Input Inventory owner | slice commit | Added `scripts/architecture_program_runner_input_inventory.py` with compact JSON shape validation, project-relative path safety, expected-path helpers, and validation-owner helper exports. | Worker: success after reviewer-requested tilde path hardening; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_input_inventory.py tests/test_architecture_program_runner_validation.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check scripts/architecture_program_runner_input_inventory.py scripts/architecture_program_runner_validation.py tests/test_architecture_program_runner_input_inventory.py tests/test_architecture_program_runner_validation.py`, `git diff --check` |
 
 ## Slice 1. Characterize Input Inventory Gap
 

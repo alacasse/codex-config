@@ -5,8 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 try:
+    from scripts import architecture_program_runner_input_inventory as _input_inventory
     from scripts import architecture_program_runner_state as _runner_state
 except ModuleNotFoundError:  # pragma: no cover - direct script execution fallback.
+    import architecture_program_runner_input_inventory as _input_inventory
     import architecture_program_runner_state as _runner_state
 
 PHASES = _runner_state.PHASES
@@ -14,6 +16,12 @@ RunnerError = _runner_state.RunnerError
 phase_receipt_path = _runner_state.phase_receipt_path
 read_json_object = _runner_state.read_json_object
 resolve_project_path = _runner_state.resolve_project_path
+resolve_project_relative_input_path = _input_inventory.resolve_project_relative_path
+validate_expected_input_inventory_path = (
+    _input_inventory.validate_expected_input_inventory_path
+)
+validate_input_inventory = _input_inventory.validate_input_inventory
+validate_input_inventory_file = _input_inventory.validate_input_inventory_file
 
 NEXT_PHASES = (*PHASES, "done", "stopped")
 STATUSES = ("completed", "stopped", "failed")
