@@ -34,8 +34,14 @@ CONTEXT_BUDGETS = {
 }
 
 
-def build_prompt(config: Any, state: dict[str, Any], phase: str) -> str:
-    environment = build_phase_environment(config, state, phase)
+def build_prompt(
+    config: Any,
+    state: dict[str, Any],
+    phase: str,
+    *,
+    environment: PhaseEnvironment | None = None,
+) -> str:
+    environment = environment or build_phase_environment(config, state, phase)
     lines = [
         f"Use {phase_skill_instruction(phase)}.",
         f"Follow {environment.runner_reference_path}.",
@@ -170,9 +176,14 @@ def phase_skill_instruction(phase: str) -> str:
 
 
 def build_codex_command(
-    config: Any, phase: str, prompt: str, output_last_message: Path
+    config: Any,
+    phase: str,
+    prompt: str,
+    output_last_message: Path,
+    *,
+    environment: PhaseEnvironment | None = None,
 ) -> list[str]:
-    environment = build_phase_environment(config, {}, phase)
+    environment = environment or build_phase_environment(config, {}, phase)
     command = [
         "codex",
         "exec",
@@ -209,9 +220,15 @@ def env_override_key_label(config: Any) -> str:
 
 def print_dry_run(config: Any, state: dict[str, Any]) -> None:
     phase = state["active_phase"]
-    prompt = build_prompt(config, state, phase)
     environment = build_phase_environment(config, state, phase)
-    command = build_codex_command(config, phase, prompt, Path("<tmp-result>"))
+    prompt = build_prompt(config, state, phase, environment=environment)
+    command = build_codex_command(
+        config,
+        phase,
+        prompt,
+        Path("<tmp-result>"),
+        environment=environment,
+    )
     print("Command:")
     print(shell_join(command))
     if config.execute_sandbox:

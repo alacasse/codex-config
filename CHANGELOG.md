@@ -65,6 +65,11 @@ budget status, and token summaries when an exact session JSONL path is
 available; unattributed token data is marked missing instead of reconstructed.
 Phase prompts now ask agents to write compact input inventories when broad
 reads, large files, or subagent reports explain context growth.
+The runner now names **Phase Environment** as the concept owner for
+runner-supplied launch and prompt context. Prompt construction, command
+construction, sandbox selection, env override labels, expected receipt/input
+inventory paths, and artifact path facts now consume a single environment
+object while preserving the Runner Facade and existing command behavior.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing

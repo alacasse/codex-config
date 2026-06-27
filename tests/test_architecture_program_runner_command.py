@@ -5,6 +5,7 @@ import io
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from scripts import architecture_program_runner as runner
 from scripts import architecture_program_runner_command as command_owner
@@ -40,6 +41,43 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
         self.assertIs(runner.sandbox_for_phase, command_owner.sandbox_for_phase)
         self.assertIs(runner.print_dry_run, command_owner.print_dry_run)
         self.assertIs(command_owner.build_phase_environment, environment_owner.build_phase_environment)
+
+    def test_prompt_and_command_reuse_owner_produced_environment(self) -> None:
+        config = runner.RunnerConfig(
+            **{
+                **self.config.__dict__,
+                "max_batches": None,
+                "execute_sandbox": "danger-full-access",
+            }
+        )
+        state = runner.initial_state(config)
+        environment = environment_owner.build_phase_environment(config, state, "execute")
+
+        with mock.patch.object(
+            command_owner,
+            "build_phase_environment",
+            side_effect=AssertionError("environment should be supplied by caller"),
+        ):
+            prompt = command_owner.build_prompt(
+                config,
+                state,
+                "execute",
+                environment=environment,
+            )
+            command = command_owner.build_codex_command(
+                config,
+                "execute",
+                prompt,
+                Path("/tmp/result.json"),
+                environment=environment,
+            )
+
+        self.assertIn("Batch limit: all executable batches", prompt)
+        self.assertEqual(command[command.index("--sandbox") + 1], "danger-full-access")
+        self.assertEqual(
+            command[command.index("--output-schema") + 1],
+            str(environment.schema_path),
+        )
 
     def test_prompt_guardrails_and_phase_contracts_are_built_by_owner(self) -> None:
         state = runner.initial_state(self.config)
@@ -230,9 +268,15 @@ class ArchitectureProgramRunnerCommandTests(unittest.TestCase):
         output = io.StringIO()
 
         with contextlib.redirect_stdout(output):
-            command_owner.print_dry_run(config, runner.initial_state(config))
+            with mock.patch.object(
+                command_owner,
+                "build_phase_environment",
+                wraps=command_owner.build_phase_environment,
+            ) as build_environment:
+                command_owner.print_dry_run(config, runner.initial_state(config))
 
         text = output.getvalue()
+        self.assertEqual(build_environment.call_count, 1)
         self.assertIn("Env override keys: CACHE_TOKEN, UV_CACHE_DIR", text)
         self.assertIn("Execute sandbox: danger-full-access", text)
         self.assertNotIn(secret_value, text)

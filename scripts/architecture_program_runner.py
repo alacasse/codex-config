@@ -76,6 +76,7 @@ SCHEMA_PATH = _runner_command.SCHEMA_PATH
 RUNNER_REFERENCE_PATH = _runner_command.RUNNER_REFERENCE_PATH
 batch_limit_label = _runner_command.batch_limit_label
 build_codex_command = _runner_command.build_codex_command
+build_phase_environment = _runner_command.build_phase_environment
 build_prompt = _runner_command.build_prompt
 build_subprocess_env = _runner_command.build_subprocess_env
 env_override_key_label = _runner_command.env_override_key_label
@@ -258,12 +259,19 @@ def config_from_args(args: argparse.Namespace) -> RunnerConfig:
 
 
 def execute_codex_phase(config: RunnerConfig, state: dict[str, Any], phase: str) -> dict[str, Any]:
-    prompt = build_prompt(config, state, phase)
+    environment = build_phase_environment(config, state, phase)
+    prompt = build_prompt(config, state, phase, environment=environment)
     with tempfile.NamedTemporaryFile(
         "w", encoding="utf-8", prefix="architecture-program-runner-", suffix=".json"
     ) as handle:
         output_last_message = Path(handle.name)
-        command = build_codex_command(config, phase, prompt, output_last_message)
+        command = build_codex_command(
+            config,
+            phase,
+            prompt,
+            output_last_message,
+            environment=environment,
+        )
         completed = subprocess.run(
             command,
             cwd=config.project,
@@ -271,7 +279,7 @@ def execute_codex_phase(config: RunnerConfig, state: dict[str, Any], phase: str)
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
-            env=build_subprocess_env(config.env_overrides),
+            env=environment.subprocess_env(config.env_overrides),
         )
         state["_phase_execution_meta"] = {
             "exit_code": completed.returncode,
@@ -525,7 +533,10 @@ def run(
             phase_telemetry_path = next_phase_telemetry_path(state, phase)
             phase_started_at = utc_now()
             phase_start_monotonic = time.monotonic()
-            phase_prompt_bytes = len(build_prompt(config, state, phase).encode("utf-8"))
+            environment = build_phase_environment(config, state, phase)
+            phase_prompt_bytes = len(
+                build_prompt(config, state, phase, environment=environment).encode("utf-8")
+            )
             result = phase_executor(config, state, phase)
             execution_meta = pop_phase_execution_meta(state)
             apply_execution_meta_to_state(state, execution_meta)
