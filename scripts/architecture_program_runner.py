@@ -22,6 +22,7 @@ try:
     from scripts import architecture_program_runner_change_allowance as _runner_change_allowance
     from scripts import architecture_program_runner_command as _runner_command
     from scripts import architecture_program_runner_environment as _runner_environment
+    from scripts import architecture_program_runner_phase_contract as _phase_contract
     from scripts import architecture_program_runner_state as _runner_state
     from scripts import architecture_program_runner_transition as _runner_transition
     from scripts import architecture_program_runner_validation as _runner_validation
@@ -30,6 +31,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution fallba
     import architecture_program_runner_change_allowance as _runner_change_allowance
     import architecture_program_runner_command as _runner_command
     import architecture_program_runner_environment as _runner_environment
+    import architecture_program_runner_phase_contract as _phase_contract
     import architecture_program_runner_state as _runner_state
     import architecture_program_runner_transition as _runner_transition
     import architecture_program_runner_validation as _runner_validation
@@ -78,9 +80,11 @@ validate_required_string = _runner_validation.validate_required_string
 validate_result_against_state = _runner_validation.validate_result_against_state
 validate_summary = _runner_validation.validate_summary
 CONTEXT_BUDGETS = _runner_command.CONTEXT_BUDGETS
+PhaseContract = _phase_contract.PhaseContract
 SCHEMA_PATH = _runner_environment.SCHEMA_PATH
 RUNNER_REFERENCE_PATH = _runner_environment.RUNNER_REFERENCE_PATH
 build_codex_command = _runner_command.build_codex_command
+build_phase_contract = _phase_contract.build_phase_contract
 build_prompt = _runner_command.build_prompt
 phase_skill_instruction = _runner_command.phase_skill_instruction
 print_dry_run = _runner_command.print_dry_run

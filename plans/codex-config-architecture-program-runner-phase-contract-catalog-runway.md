@@ -149,7 +149,7 @@ Dirty-file constraints:
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
 | 1. Characterize Phase Contract obligations | completed | slice commit | `pytest` 39 passed; `uvx ruff` passed; `git diff --check` passed | clean | Introduce contract owner from characterized obligations | Characterization coverage added without production behavior changes. |
-| 2. Introduce Phase Contract owner | pending | | | | Route prompt rendering through contract owner | |
+| 2. Introduce Phase Contract owner | completed | slice commit | `pytest` 35 passed; dry-run smoke passed; `uvx ruff` passed; `git diff --check` passed | clean | Route prompt rendering through contract owner | Added structured `PhaseContract` owner and compatibility exports without behavior changes. |
 | 3. Route prompt rendering through contract owner | pending | | | | Tighten tests and facade compatibility | |
 | 4. Tighten contract tests and compatibility | pending | | | | Final validation and closeout | |
 
@@ -162,6 +162,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1. Characterize Phase Contract obligations | slice commit | Added focused characterization tests for shared single-level, result, env-override, and per-phase obligations; no production behavior changed. | Worker: success; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check tests/test_architecture_program_runner_phase_contract.py`, `git diff --check` |
+| 2. Introduce Phase Contract owner | slice commit | Added `scripts/architecture_program_runner_phase_contract.py`; command prompt helpers consume owner-produced obligations while environment and validation ownership remain separate. | Worker: success; reviewer: clean; validation: `python -m pytest tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`, dry-run smoke, `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check scripts/architecture_program_runner_phase_contract.py scripts/architecture_program_runner_command.py scripts/architecture_program_runner.py tests/test_architecture_program_runner_phase_contract.py tests/test_architecture_program_runner.py`, `git diff --check` |
 
 ## Slice 1. Characterize Phase Contract Obligations
 

@@ -10,6 +10,7 @@ from unittest import mock
 from scripts import architecture_program_runner_change_allowance as change_allowance_owner
 from scripts import architecture_program_runner_command as command_owner
 from scripts import architecture_program_runner_environment as environment_owner
+from scripts import architecture_program_runner_phase_contract as phase_contract_owner
 from scripts import architecture_program_runner_transition as transition_owner
 from tests.architecture_program_runner_test_support import (
     ArchitectureProgramRunnerTestCase,
@@ -25,6 +26,8 @@ class ArchitectureProgramRunnerIntegrationTests(ArchitectureProgramRunnerTestCas
         self.assertIs(runner.shell_join, command_owner.shell_join)
         self.assertIs(runner.quote_for_display, command_owner.quote_for_display)
         self.assertIs(runner.phase_skill_instruction, command_owner.phase_skill_instruction)
+        self.assertIs(runner.PhaseContract, phase_contract_owner.PhaseContract)
+        self.assertIs(runner.build_phase_contract, phase_contract_owner.build_phase_contract)
         self.assertIs(runner.SCHEMA_PATH, environment_owner.SCHEMA_PATH)
         self.assertIs(runner.RUNNER_REFERENCE_PATH, environment_owner.RUNNER_REFERENCE_PATH)
         self.assertIs(runner.build_phase_environment, environment_owner.build_phase_environment)
