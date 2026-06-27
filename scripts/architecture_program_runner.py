@@ -18,8 +18,10 @@ from typing import Any, Callable, Iterable, Mapping
 
 try:
     from scripts import architecture_program_runner_state as _runner_state
+    from scripts import architecture_program_runner_validation as _runner_validation
 except ModuleNotFoundError:  # pragma: no cover - direct script execution fallback.
     import architecture_program_runner_state as _runner_state
+    import architecture_program_runner_validation as _runner_validation
 
 PHASE_RECEIPT_NAMES = _runner_state.PHASE_RECEIPT_NAMES
 PHASES = _runner_state.PHASES
@@ -50,6 +52,20 @@ utc_now = _runner_state.utc_now
 validate_state = _runner_state.validate_state
 write_json_object = _runner_state.write_json_object
 write_state = _runner_state.write_state
+NEXT_PHASES = _runner_validation.NEXT_PHASES
+REQUIRED_RESULT_FIELDS = _runner_validation.REQUIRED_RESULT_FIELDS
+STATUSES = _runner_validation.STATUSES
+UNSUPPORTED_CODEX_OUTPUT_SCHEMA_KEYS = _runner_validation.UNSUPPORTED_CODEX_OUTPUT_SCHEMA_KEYS
+expected_next_phases = _runner_validation.expected_next_phases
+schema_keyword_paths = _runner_validation.schema_keyword_paths
+schema_subset_violations = _runner_validation.schema_subset_violations
+validate_expected_receipt_path = _runner_validation.validate_expected_receipt_path
+validate_nullable_string = _runner_validation.validate_nullable_string
+validate_phase_result = _runner_validation.validate_phase_result
+validate_receipt = _runner_validation.validate_receipt
+validate_required_string = _runner_validation.validate_required_string
+validate_result_against_state = _runner_validation.validate_result_against_state
+validate_summary = _runner_validation.validate_summary
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -68,29 +84,12 @@ RUNNER_REFERENCE_PATH = (
     / "local-runner-v1.md"
 )
 
-NEXT_PHASES = (*PHASES, "done", "stopped")
-STATUSES = ("completed", "stopped", "failed")
 CONTEXT_BUDGETS = {
     "select-dispatch": (50_000, 80_000),
     "create-spec": (60_000, 90_000),
     "execute": (120_000, 180_000),
     "closeout": (40_000, 70_000),
 }
-REQUIRED_RESULT_FIELDS = (
-    "status",
-    "phase",
-    "next_phase",
-    "stop_reason",
-    "program_ledger",
-    "batch_id",
-    "dispatch_path",
-    "spec_path",
-    "receipt_path",
-    "commit_range",
-    "validation_summary",
-    "review_summary",
-    "evidence_paths",
-)
 
 @dataclass(frozen=True)
 class RunnerConfig:
@@ -234,144 +233,6 @@ def config_from_args(args: argparse.Namespace) -> RunnerConfig:
         stop_after_phase=args.stop_after_phase,
         artifact_root=artifact_root,
     )
-
-
-def validate_phase_result(
-    result: dict[str, Any],
-    *,
-    current_phase: str | None = None,
-    state: dict[str, Any] | None = None,
-) -> None:
-    missing = [field for field in REQUIRED_RESULT_FIELDS if field not in result]
-    if missing:
-        raise RunnerError(f"phase result missing required field(s): {', '.join(missing)}")
-
-    extra = sorted(set(result) - set(REQUIRED_RESULT_FIELDS))
-    if extra:
-        raise RunnerError(f"phase result has unsupported field(s): {', '.join(extra)}")
-
-    if result["status"] not in STATUSES:
-        raise RunnerError(f"invalid phase status: {result['status']!r}")
-    if result["phase"] not in PHASES:
-        raise RunnerError(f"invalid phase: {result['phase']!r}")
-    if result["next_phase"] not in NEXT_PHASES:
-        raise RunnerError(f"invalid next_phase: {result['next_phase']!r}")
-
-    if current_phase is not None and result["phase"] != current_phase:
-        raise RunnerError(
-            f"phase result phase {result['phase']!r} does not match active phase {current_phase!r}"
-        )
-
-    validate_nullable_string(result, "stop_reason")
-    validate_required_string(result, "program_ledger")
-    validate_nullable_string(result, "batch_id")
-    validate_nullable_string(result, "dispatch_path")
-    validate_nullable_string(result, "spec_path")
-    validate_required_string(result, "receipt_path")
-    validate_nullable_string(result, "commit_range")
-    validate_summary(result, "validation_summary")
-    validate_summary(result, "review_summary")
-
-    evidence_paths = result["evidence_paths"]
-    if not isinstance(evidence_paths, list) or not all(
-        isinstance(path, str) for path in evidence_paths
-    ):
-        raise RunnerError("evidence_paths must be an array of strings")
-
-    status = result["status"]
-    next_phase = result["next_phase"]
-    if status in {"stopped", "failed"} and next_phase != "stopped":
-        raise RunnerError(f"status={status} must use next_phase=stopped")
-    if status == "completed" and next_phase == "stopped":
-        raise RunnerError("status=completed must not use next_phase=stopped")
-
-    if state is not None:
-        validate_result_against_state(result, state)
-
-
-def validate_required_string(result: dict[str, Any], field: str) -> None:
-    value = result[field]
-    if not isinstance(value, str) or not value:
-        raise RunnerError(f"{field} must be a non-empty string")
-
-
-def validate_nullable_string(result: dict[str, Any], field: str) -> None:
-    value = result[field]
-    if value is not None and not isinstance(value, str):
-        raise RunnerError(f"{field} must be a string or null")
-
-
-def validate_summary(result: dict[str, Any], field: str) -> None:
-    value = result[field]
-    if value is not None and not isinstance(value, str):
-        raise RunnerError(f"{field} must be a string or null")
-
-
-def validate_result_against_state(result: dict[str, Any], state: dict[str, Any]) -> None:
-    if result["program_ledger"] != state["program_ledger"]:
-        raise RunnerError("phase result program_ledger contradicts runner state")
-
-    if result["batch_id"] and state.get("active_batch_id"):
-        if result["batch_id"] != state["active_batch_id"]:
-            raise RunnerError("phase result batch_id contradicts runner state")
-    if result["dispatch_path"] and state.get("dispatch_path"):
-        if result["dispatch_path"] != state["dispatch_path"]:
-            raise RunnerError("phase result dispatch_path contradicts runner state")
-    if result["spec_path"] and state.get("spec_path"):
-        if result["spec_path"] != state["spec_path"]:
-            raise RunnerError("phase result spec_path contradicts runner state")
-
-    status = result["status"]
-    if status != "completed":
-        return
-
-    expected = expected_next_phases(result["phase"], state)
-    if result["next_phase"] not in expected:
-        allowed = ", ".join(sorted(expected))
-        raise RunnerError(
-            f"phase {result['phase']} cannot advance to {result['next_phase']}; "
-            f"expected one of: {allowed}"
-        )
-
-
-def expected_next_phases(phase: str, state: dict[str, Any]) -> set[str]:
-    if phase == "select-dispatch":
-        return {"create-spec"}
-    if phase == "create-spec":
-        return {"execute"} if state.get("execute_batches") else {"done"}
-    if phase == "execute":
-        return {"closeout"}
-    if phase == "closeout":
-        max_batches = state.get("max_batches")
-        completed = int(state.get("batches_completed", 0)) + 1
-        if max_batches is not None and completed >= int(max_batches):
-            return {"done"}
-        return {"select-dispatch", "done"}
-    raise RunnerError(f"unknown phase: {phase}")
-
-
-def validate_expected_receipt_path(
-    result: dict[str, Any], config: RunnerConfig, state: dict[str, Any]
-) -> None:
-    expected = phase_receipt_path(state, result["phase"])
-    if expected is None:
-        return
-    expected_path = resolve_project_path(config.project, expected).resolve()
-    actual_path = resolve_project_path(config.project, result["receipt_path"]).resolve()
-    if actual_path != expected_path:
-        raise RunnerError(
-            "phase result receipt_path must match runner-provided expected path: "
-            f"{expected}"
-        )
-
-
-def validate_receipt(result: dict[str, Any], config: RunnerConfig, state: dict[str, Any]) -> None:
-    validate_expected_receipt_path(result, config, state)
-    receipt_path = resolve_project_path(config.project, result["receipt_path"])
-    receipt = read_json_object(receipt_path)
-    validate_phase_result(receipt, current_phase=result["phase"], state=state)
-    if receipt != result:
-        raise RunnerError("receipt content does not match final phase result")
 
 
 def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str:

@@ -23,52 +23,12 @@ PHASE_RESULT_SCHEMA = (
     / "references"
     / "local-runner-phase-result.schema.json"
 )
-UNSUPPORTED_CODEX_OUTPUT_SCHEMA_KEYS = {
-    "allOf",
-    "anyOf",
-    "oneOf",
-    "not",
-    "if",
-    "then",
-    "else",
-}
 spec = importlib.util.spec_from_file_location("architecture_program_runner", SCRIPT)
 assert spec is not None
 runner = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
 sys.modules["architecture_program_runner"] = runner
 spec.loader.exec_module(runner)
-
-
-def schema_keyword_paths(value: Any, path: str = "$") -> list[str]:
-    paths: list[str] = []
-    if isinstance(value, dict):
-        for key, child in value.items():
-            child_path = f"{path}.{key}"
-            if key in UNSUPPORTED_CODEX_OUTPUT_SCHEMA_KEYS:
-                paths.append(child_path)
-            paths.extend(schema_keyword_paths(child, child_path))
-    elif isinstance(value, list):
-        for index, child in enumerate(value):
-            paths.extend(schema_keyword_paths(child, f"{path}[{index}]"))
-    return paths
-
-
-def schema_subset_violations(value: Any, path: str = "$") -> list[str]:
-    violations: list[str] = []
-    if isinstance(value, dict):
-        schema_type = value.get("type")
-        schema_types = schema_type if isinstance(schema_type, list) else [schema_type]
-        if "object" in schema_types and value.get("additionalProperties") is not False:
-            violations.append(f"{path}: object schemas must set additionalProperties=false")
-        if "array" in schema_types and "items" not in value:
-            violations.append(f"{path}: array schemas must define items")
-        for key, child in value.items():
-            violations.extend(schema_subset_violations(child, f"{path}.{key}"))
-    elif isinstance(value, list):
-        for index, child in enumerate(value):
-            violations.extend(schema_subset_violations(child, f"{path}[{index}]"))
-    return violations
 
 
 class ArchitectureProgramRunnerTests(unittest.TestCase):
@@ -774,11 +734,11 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         )
         self.assertEqual(schema["additionalProperties"], False)
         self.assertEqual(
-            schema_keyword_paths(schema),
+            runner.schema_keyword_paths(schema),
             [],
         )
         self.assertEqual(
-            schema_subset_violations(schema),
+            runner.schema_subset_violations(schema),
             [],
         )
 
