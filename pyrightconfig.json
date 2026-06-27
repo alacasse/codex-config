@@ -1,0 +1,17 @@
+{
+  "include": [
+    "scripts"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    ".venv",
+    ".git",
+    ".pytest_cache",
+    ".ruff_cache"
+  ],
+  "typeCheckingMode": "standard",
+  "reportUnknownMemberType": "error",
+  "reportUnknownVariableType": "error",
+  "reportUnknownArgumentType": "error",
+  "reportUnknownParameterType": "error"
+}
