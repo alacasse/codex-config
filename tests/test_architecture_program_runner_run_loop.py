@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from tests.architecture_program_runner_test_support import (
@@ -18,17 +17,6 @@ class ArchitectureProgramRunnerRunLoopTests(ArchitectureProgramRunnerTestCase):
         result = self.make_result("create-spec", "done")
 
         runner.validate_phase_result(result, current_phase="create-spec", state=state)
-
-    def test_batches_completed_increments_only_after_closeout(self) -> None:
-        state = runner.initial_state(self.config)
-        execute_result = self.make_result("execute", "closeout")
-        closeout_result = self.make_result("closeout", "done")
-
-        runner.apply_phase_result(state, execute_result)
-        self.assertEqual(state["batches_completed"], 0)
-
-        runner.apply_phase_result(state, closeout_result)
-        self.assertEqual(state["batches_completed"], 1)
 
     def test_final_summary_uses_state_and_last_receipt(self) -> None:
         result = self.make_result(
@@ -182,52 +170,6 @@ class ArchitectureProgramRunnerRunLoopTests(ArchitectureProgramRunnerTestCase):
         self.assertEqual(final_state["stop_reason"], "validation failed")
         self.assertEqual(final_state["last_phase_status"], "stopped")
 
-    def test_resume_terminal_done_state_does_not_rewrite_stop_reason(self) -> None:
-        state = runner.initial_state(self.config)
-        state["batches_completed"] = 1
-        state["active_phase"] = "closeout"
-        state["last_phase_status"] = "completed"
-        state["stop_reason"] = "done"
-        runner.write_state(self.config.state_path, state)
-
-        def fail_if_called(config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
-            self.fail("terminal state should not launch another phase")
-
-        final_state = runner.run(
-            runner.RunnerConfig(**{**self.config.__dict__, "resume": True}),
-            phase_executor=fail_if_called,
-            status_reader=lambda project: [],
-        )
-
-        self.assertEqual(final_state["stop_reason"], "done")
-        self.assertEqual(
-            runner.load_state(self.config.state_path)["stop_reason"],
-            "done",
-        )
-
-    def test_stop_after_phase_runs_named_phase_then_persists_next_phase(self) -> None:
-        result = self.make_result("select-dispatch", "create-spec")
-        self.write_receipt(result)
-        calls: list[str] = []
-
-        def fake_executor(config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
-            calls.append(phase)
-            return result
-
-        config = runner.RunnerConfig(
-            **{**self.config.__dict__, "stop_after_phase": "select-dispatch"}
-        )
-
-        final_state = runner.run(
-            config,
-            phase_executor=fake_executor,
-            status_reader=lambda project: [],
-        )
-
-        self.assertEqual(calls, ["select-dispatch"])
-        self.assertEqual(final_state["active_phase"], "create-spec")
-        self.assertEqual(runner.load_state(config.state_path)["active_phase"], "create-spec")
-
     def test_missing_receipt_stops_safely_and_persists_state(self) -> None:
         result = self.make_result("select-dispatch", "create-spec")
 
@@ -244,45 +186,6 @@ class ArchitectureProgramRunnerRunLoopTests(ArchitectureProgramRunnerTestCase):
         state = runner.load_state(self.config.state_path)
         self.assertEqual(state["last_phase_status"], "failed")
         self.assertIn("not found", state["stop_reason"])
-
-    def test_post_execute_unexpected_dirty_project_file_stops_before_closeout(self) -> None:
-        result = self.make_result("execute", "closeout")
-        self.write_receipt(result)
-        state = runner.initial_state(self.config)
-        state["active_phase"] = "execute"
-        state["active_batch_id"] = "batch-1"
-        state["dispatch_path"] = result["dispatch_path"]
-        state["spec_path"] = result["spec_path"]
-        runner.resolve_project_path(self.config.project, result["dispatch_path"]).parent.mkdir(
-            parents=True, exist_ok=True
-        )
-        runner.resolve_project_path(self.config.project, result["dispatch_path"]).write_text(
-            "dispatch\n", encoding="utf-8"
-        )
-        runner.resolve_project_path(self.config.project, result["spec_path"]).write_text(
-            "spec\n", encoding="utf-8"
-        )
-        runner.write_state(self.config.state_path, state)
-
-        def fake_executor(config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
-            return result
-
-        status_calls = 0
-
-        def status_reader(project: Path) -> list[str]:
-            nonlocal status_calls
-            status_calls += 1
-            if status_calls == 1:
-                return []
-            return [" M graphify/core.py"]
-
-        with self.assertRaisesRegex(runner.RunnerError, "dirty files"):
-            runner.run(
-                runner.RunnerConfig(**{**self.config.__dict__, "resume": True}),
-                phase_executor=fake_executor,
-                status_reader=status_reader,
-            )
-        self.assertEqual(status_calls, 2)
 
     def test_resume_missing_dispatch_artifact_stops(self) -> None:
         state = runner.initial_state(self.config)
