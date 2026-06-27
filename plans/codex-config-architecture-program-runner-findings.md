@@ -85,8 +85,8 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | APR-14. Prior planning docs are useful but stale as coordination state | Superseded | This refreshed ledger and `CONTEXT.md` | Use APR-22 | Reframed as **Planning Root** and **Plan Archive** migration. |
 | APR-15. `codex_owner.py` is small and not the architecture hotspot | Deferred | `tests/test_codex_owner.py` | Revisit only when ownership behavior changes | Still outside the runner concept-ownership program. |
 | APR-16. **Phase Environment** lacks a concept owner | Closed | `950ddf9`, `82e8c8e`, `556b6bd`, `e00f667`; `scripts/architecture_program_runner_environment.py`; focused tests and dry-run smoke | None | **Phase Environment** now owns runner-supplied launch and prompt context while **Phase Contract** rendering remains in command tests. |
-| APR-17. **Phase Transition** is expressed as run-loop state-key mutation | In runway | `CONTEXT.md`; run-loop tests; `plans/dispatch/phase-transition-change-allowance-dispatch.md`; `plans/codex-config-architecture-program-runner-phase-transition-change-allowance-runway.md` | Execute `phase-transition-change-allowance` | Transition should consume a valid **Phase Result** and update **Run State** without owning validation, execution, or observation writing. |
-| APR-18. **Change Allowance** is still encoded as dirty-path helpers in the Runner Facade | In runway | `CONTEXT.md`; worktree tests; `plans/dispatch/phase-transition-change-allowance-dispatch.md`; `plans/codex-config-architecture-program-runner-phase-transition-change-allowance-runway.md` | Execute `phase-transition-change-allowance` | Preserve conservative changed-path behavior while moving the concept behind a clearer interface. |
+| APR-17. **Phase Transition** is expressed as run-loop state-key mutation | Closed | `c6d7705`, `19d6b8a`, `6cb9e20`; `scripts/architecture_program_runner_transition.py`; focused tests and dry-run smoke | None | **Phase Transition** now consumes a valid **Phase Result** and updates **Run State** without owning validation, execution, or observation writing. |
+| APR-18. **Change Allowance** is still encoded as dirty-path helpers in the Runner Facade | Closed | `c6d7705`, `a69eb40`, `6cb9e20`; `scripts/architecture_program_runner_change_allowance.py`; focused tests and dry-run smoke | None | **Change Allowance** now owns dirty-path classification and worktree checks while preserving conservative rejection behavior. |
 | APR-19. **Phase Contract** facts are embedded in prompt string construction | Open | `CONTEXT.md`; command/prompt tests | Schedule after APR-16 | Separate normative phase obligations from rendered prompt text and supplied **Phase Environment** facts. |
 | APR-20. **Phase Observation** attribution is incomplete | Candidate | APR-9 evidence; current artifact tests | Schedule after concept owners settle | Exact Codex session JSONL discovery is still missing unless a path is supplied. |
 | APR-21. **Input Inventory** has no enforced contract | Candidate | APR-10 evidence; prompt guidance | Schedule after APR-20 or after Phase Environment if needed | Runner prompts mention inventories, but existence, shape, and manifest linkage are not validated. |
@@ -98,7 +98,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 |---|---|---|---|---|---|---|---|
 | runner-boundary-split | APR-11, APR-12, APR-13 | Closed | First split of the monolithic Runner Facade and broad tests | None | Focused unit tests plus dry-run smoke | `plans/dispatch/runner-boundary-split-dispatch.md` | `plans/codex-config-architecture-program-runner-boundary-split-runway.md` |
 | phase-environment-ownership | APR-16 | Closed | Establishes the first new **Concept Owner** from `CONTEXT.md` and clarifies launch/prompt context before contract and observation work | Refreshed ledger and `CONTEXT.md` | Focused command/config/env tests plus dry-run smoke | `plans/dispatch/phase-environment-ownership-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-environment-runway.md` |
-| phase-transition-change-allowance | APR-17, APR-18 | In runway | Both reduce run-loop state/path policy knowledge after environment context is clearer | APR-16 satisfied | Run-loop and changed-path tests plus dry-run smoke | `plans/dispatch/phase-transition-change-allowance-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-transition-change-allowance-runway.md` |
+| phase-transition-change-allowance | APR-17, APR-18 | Closed | Both reduce run-loop state/path policy knowledge after environment context is clearer | APR-16 satisfied | Run-loop and changed-path tests plus dry-run smoke | `plans/dispatch/phase-transition-change-allowance-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-transition-change-allowance-runway.md` |
 | phase-contract-catalog | APR-19 | Candidate | Separates normative **Phase Contract** facts from rendered prompt text | APR-16 preferred | Command/prompt tests plus dry-run smoke | TBD | TBD |
 | phase-observation-attribution | APR-20 | Candidate | Reframes telemetry attribution as **Phase Observation** work | APR-16, APR-19 preferred | Artifact tests with synthetic session logs; optional live runner rehearsal | TBD | TBD |
 | input-inventory-contract | APR-21 | Candidate | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 preferred but not mandatory | Unit tests with synthetic inventories and prompt checks | TBD | TBD |
@@ -110,7 +110,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 - Dispatch: `plans/dispatch/phase-transition-change-allowance-dispatch.md`
 - Spec:
   `plans/codex-config-architecture-program-runner-phase-transition-change-allowance-runway.md`
-- Status: Ready for execution
+- Status: Closed by commits `c6d7705`, `19d6b8a`, `a69eb40`, and `6cb9e20`
 - Goal: Give **Phase Transition** and **Change Allowance** clear concept owners
   while preserving Runner Facade behavior and conservative dirty-path
   protection.
@@ -139,10 +139,8 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 
 Completed:
 - `phase-environment-ownership`: clarified launch and prompt context first.
-
-Active:
-1. `phase-transition-change-allowance`: remove state/path policy knowledge from
-   the run loop after environment context is named.
+- `phase-transition-change-allowance`: removed state/path policy knowledge from
+  the run loop after environment context is named.
 
 Remaining:
 1. `phase-contract-catalog`: make phase obligations testable independently of
@@ -178,3 +176,6 @@ Remaining:
 - Phase Environment closeout passed 78 focused runner tests, dry-run smoke,
   `uvx ruff check` with the known non-fatal Python symlink warning, and
   `git diff --check`.
+- Phase Transition and Change Allowance closeout passed 80 focused runner tests,
+  dry-run smoke, `uvx ruff check` with the known non-fatal Python symlink
+  warning, and `git diff --check`.

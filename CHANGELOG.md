@@ -78,6 +78,12 @@ runner-supplied launch and prompt context. Prompt construction, command
 construction, sandbox selection, env override labels, expected receipt/input
 inventory paths, and artifact path facts now consume a single environment
 object while preserving the Runner Facade and existing command behavior.
+The runner now also names **Phase Transition** and **Change Allowance** as
+concept owners. State advancement and terminal-state checks moved behind the
+transition owner, while dirty-path parsing, expected-path calculation, prefix
+matching, and worktree checks moved behind the allowance owner. The Runner
+Facade keeps compatibility exports, and focused owner tests now carry the
+concept behavior while broad runner tests retain thin integration coverage.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing

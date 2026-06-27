@@ -512,3 +512,95 @@ Expected closeout evidence:
 - Stop if implementation expands into Phase Contract catalog, Phase Observation
   attribution, Input Inventory validation, Planning Root migration, or
   Graphify-specific logic.
+
+## Final Batch Report
+
+Completed commits:
+- `c6d7705` Characterize architecture runner transition allowances
+- `19d6b8a` Add architecture runner phase transition owner
+- `a69eb40` Add architecture runner change allowance owner
+- `6cb9e20` Tighten architecture runner transition facade
+
+Final validation:
+- `python -m pytest tests/test_architecture_program_runner_transition.py tests/test_architecture_program_runner_change_allowance.py tests/test_architecture_program_runner_environment.py tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner_state.py tests/test_architecture_program_runner_validation.py tests/test_architecture_program_runner_artifacts.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner_worktree.py tests/test_architecture_program_runner_protocol.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`: 80 passed.
+- `python scripts/architecture_program_runner.py --project . --program-ledger plans/codex-config-architecture-program-runner-findings.md --dry-run --stop-after-phase select-dispatch`: passed.
+- `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check scripts/architecture_program_runner.py scripts/architecture_program_runner_transition.py scripts/architecture_program_runner_change_allowance.py tests/test_architecture_program_runner_transition.py tests/test_architecture_program_runner_change_allowance.py tests/test_architecture_program_runner_run_loop.py tests/test_architecture_program_runner_worktree.py tests/test_architecture_program_runner.py`: passed with the known non-fatal `/usr/bin/python3.14` symlink warning.
+- `git diff --check`: passed.
+
+Skipped slices:
+- None.
+
+Remaining risks:
+- APR-19, APR-20, APR-21, and APR-22 remain deferred; this batch intentionally
+  did not implement phase contract cataloging, phase observation attribution,
+  input inventory enforcement, or planning-root migration.
+- `uvx ruff` continues to emit the known non-fatal base-Python symlink warning.
+
+Compatibility paths that remain:
+- The Runner Facade still reexports transition and change allowance helpers for
+  direct-script and import compatibility.
+- Compatibility aliases remain for `apply_phase_result`,
+  `is_terminal_completed_state`, `expected_dirty_paths`, `path_is_expected`,
+  and `check_worktree`.
+
+Orchestration anomalies:
+
+```yaml
+orchestration_anomalies: []
+```
+
+Inspection commands:
+- `git show --stat c6d7705`
+- `git show --stat 19d6b8a`
+- `git show --stat a69eb40`
+- `git show --stat 6cb9e20`
+
+## Convergence Assessment
+
+### Phase
+`closure`
+
+### Scope trend
+`shrinking`
+
+### Closed this slice
+- APR-17: **Phase Transition** now owns state advancement and terminal-state
+  checks for schema-valid **Phase Result** objects.
+- APR-18: **Change Allowance** now owns dirty-path parsing, expected-path
+  calculation, prefix matching, and worktree checks.
+
+### Newly discovered
+- None.
+
+### Deferred out of scope
+- APR-19: **Phase Contract** catalog.
+- APR-20: **Phase Observation** attribution.
+- APR-21: **Input Inventory** contract enforcement.
+- APR-22: **Planning Root** and **Plan Archive** migration.
+
+### Remaining unknowns
+- Exact session/path attribution and input inventory enforcement remain
+  intentionally unresolved for later batches.
+
+### Temporary compatibility paths
+- Runner Facade reexports remain for existing tests and direct-script users.
+
+### Blockers
+- None.
+
+### Completion forecastable
+`yes`
+
+### Forecast
+- The batch is complete. Remaining architecture-program runner work is bounded
+  by the deferred candidate batches in the program ledger.
+
+### Evidence
+- Four committed, reviewed slices.
+- Final focused runner validation, dry-run smoke, ruff, and whitespace checks
+  passed.
+- Program ledger marks APR-17 and APR-18 closed.
+
+### Next proof required
+- Select the next candidate batch from the program ledger before implementing
+  additional runner concept ownership.
