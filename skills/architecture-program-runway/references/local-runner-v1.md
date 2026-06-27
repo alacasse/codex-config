@@ -135,6 +135,41 @@ Resume with the same control arguments used for the original run:
   --execute-batches
 ```
 
+New runs store runner-owned artifacts under the program ledger directory:
+
+```text
+<ledger-dir>/architecture-program-runs/<ledger-stem>/<run-id>/
+  run-state.json
+  run-manifest.json
+  receipts/
+    01-select-dispatch.json
+  batches/
+    <batch-id>/
+      batch-manifest.json
+      index.md
+      receipts/
+        02-create-spec.json
+        03-execute.json
+        04-closeout.json
+```
+
+The program ledger, selected dispatch packet, and generated Batch Runway spec
+remain canonical files in their normal planning locations. The run directory
+contains operational state, receipts, manifests, and browseable backlinks; it
+does not snapshot or duplicate long-lived planning documents.
+
+For structured runs, the runner provides an exact expected receipt path in each
+phase prompt and rejects phase results that return a different `receipt_path`.
+The first `select-dispatch` receipt is run-scoped because the batch ID is not
+known before selection; later phase receipts are batch-local once the selected
+batch exists. Additional `select-dispatch` receipts in an all-batches run use
+the next run-scoped selection number instead of overwriting earlier selections.
+
+`--resume` without `--state` looks for the latest structured run for the
+program ledger, then falls back to the legacy flat
+`architecture-program-run-state.json` if no structured run exists. Use
+`--state <path>` to resume a specific run, including an old flat stopped run.
+
 Pass project-supplied environment variables to every nested `codex exec` phase
 when the validation environment requires them:
 
@@ -194,6 +229,7 @@ report that summary instead of reconstructing fields from conversation memory.
 The summary contains:
 
 - `state_path`
+- `artifact_root`
 - `last_receipt_path`
 - `stop_reason`
 - `batches_completed`
@@ -230,6 +266,7 @@ detailed structured evidence in referenced files and list those paths in
 Every phase must:
 
 - write a phase receipt file;
+- use the exact runner-provided expected receipt path when the prompt names one;
 - return the same JSON object as its final schema-valid result;
 - include `receipt_path` in that JSON object;
 - write that exact object to `receipt_path`;

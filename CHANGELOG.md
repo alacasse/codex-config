@@ -46,6 +46,15 @@ model: phase agents must not run nested `codex exec`, recursively launch the
 local runner, probe nested Codex availability, or create temporary `CODEX_HOME`
 workarounds. Closeout telemetry is now explicitly file-based ledger, receipt,
 or evidence updates.
+New local-runner invocations now place state, receipts, manifests, and
+browseable batch indexes under
+`architecture-program-runs/<ledger-stem>/<run-id>/` by default. The runner
+provides exact expected receipt paths to phase agents, rejects mismatched
+receipt locations for structured runs, writes compact run and batch manifests
+after successful phases, and includes `artifact_root` in the final summary.
+`--resume` without `--state` now finds the latest structured run for the ledger
+before falling back to the old flat state file, while explicit old `--state`
+paths remain supported.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing

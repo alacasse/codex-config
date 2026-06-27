@@ -7,6 +7,7 @@ import argparse
 import datetime as dt
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -35,6 +36,11 @@ RUNNER_VERSION = "local-runner-v1"
 PHASES = ("select-dispatch", "create-spec", "execute", "closeout")
 NEXT_PHASES = (*PHASES, "done", "stopped")
 STATUSES = ("completed", "stopped", "failed")
+PHASE_RECEIPT_NAMES = {
+    "create-spec": "02-create-spec.json",
+    "execute": "03-execute.json",
+    "closeout": "04-closeout.json",
+}
 REQUIRED_RESULT_FIELDS = (
     "status",
     "phase",
@@ -70,6 +76,7 @@ class RunnerConfig:
     dry_run: bool
     resume: bool
     stop_after_phase: str | None
+    artifact_root: Path | None = None
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -178,7 +185,9 @@ def env_override(value: str) -> tuple[str, str]:
 
 def config_from_args(args: argparse.Namespace) -> RunnerConfig:
     project = Path(args.project).expanduser().resolve()
-    state_path = resolve_state_path(project, args.program_ledger, args.state)
+    state_path, artifact_root = resolve_state_path(
+        project, args.program_ledger, args.state, resume=args.resume
+    )
     max_batches = None if args.all_batches else args.max_batches or 1
     return RunnerConfig(
         project=project,
@@ -193,15 +202,71 @@ def config_from_args(args: argparse.Namespace) -> RunnerConfig:
         dry_run=args.dry_run,
         resume=args.resume,
         stop_after_phase=args.stop_after_phase,
+        artifact_root=artifact_root,
     )
 
 
-def resolve_state_path(project: Path, program_ledger: str, value: str | None) -> Path:
+def resolve_state_path(
+    project: Path, program_ledger: str, value: str | None, *, resume: bool = False
+) -> tuple[Path, Path | None]:
     if value:
         path = Path(value).expanduser()
-        return path if path.is_absolute() else project / path
-    ledger_dir = Path(program_ledger).parent
-    return project / ledger_dir / "architecture-program-run-state.json"
+        state_path = path if path.is_absolute() else project / path
+        artifact_root = artifact_root_from_state_path(state_path)
+        return state_path, artifact_root
+    if resume:
+        discovered = discover_resume_state_path(project, program_ledger)
+        if discovered is not None:
+            artifact_root = artifact_root_from_state_path(discovered)
+            return discovered, artifact_root
+    run_id = new_run_id()
+    artifact_root = default_artifact_root(project, program_ledger, run_id)
+    return artifact_root / "run-state.json", artifact_root
+
+
+def legacy_state_path(project: Path, program_ledger: str) -> Path:
+    return project / Path(program_ledger).parent / "architecture-program-run-state.json"
+
+
+def artifact_root_from_state_path(state_path: Path) -> Path | None:
+    if state_path.name != "run-state.json":
+        return None
+    if "architecture-program-runs" not in state_path.parts:
+        return None
+    return state_path.parent
+
+
+def discover_resume_state_path(project: Path, program_ledger: str) -> Path | None:
+    root = project / Path(program_ledger).parent / "architecture-program-runs" / ledger_slug(
+        program_ledger
+    )
+    candidates = sorted(root.glob("run-*/run-state.json")) if root.exists() else []
+    if candidates:
+        return candidates[-1]
+    legacy = legacy_state_path(project, program_ledger)
+    return legacy if legacy.exists() else None
+
+
+def default_artifact_root(project: Path, program_ledger: str, run_id: str) -> Path:
+    return project / Path(program_ledger).parent / "architecture-program-runs" / ledger_slug(
+        program_ledger
+    ) / run_id
+
+
+def ledger_slug(program_ledger: str) -> str:
+    return slugify_path_component(Path(program_ledger).stem)
+
+
+def new_run_id(initial_batch_id: str | None = None) -> str:
+    timestamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d-%H%M%S")
+    if initial_batch_id:
+        return f"run-{timestamp}-{slugify_path_component(initial_batch_id)}"
+    return f"run-{timestamp}"
+
+
+def slugify_path_component(value: str) -> str:
+    slug = re.sub(r"[^A-Za-z0-9_.-]+", "-", value).strip(".-")
+    return slug or "unnamed"
 
 
 def utc_now() -> str:
@@ -214,7 +279,7 @@ def utc_now() -> str:
 
 
 def initial_state(config: RunnerConfig) -> dict[str, Any]:
-    return {
+    state: dict[str, Any] = {
         "schema_version": 1,
         "runner_version": RUNNER_VERSION,
         "project": str(config.project),
@@ -232,6 +297,19 @@ def initial_state(config: RunnerConfig) -> dict[str, Any]:
         "stop_reason": None,
         "updated_at": None,
     }
+    if config.artifact_root is not None:
+        artifact_root = project_relative(config.project, config.artifact_root)
+        state.update(
+            {
+                "run_id": config.artifact_root.name,
+                "artifact_root": artifact_root,
+                "active_batch_artifact_root": None,
+                "run_manifest_path": f"{artifact_root}/run-manifest.json",
+                "batch_manifest_path": None,
+                "artifact_batches": [],
+            }
+        )
+    return state
 
 
 def load_state(path: Path) -> dict[str, Any]:
@@ -262,10 +340,27 @@ def validate_state(state: dict[str, Any]) -> None:
         raise RunnerError("state batches_completed must be an integer")
     if state["batches_completed"] < 0:
         raise RunnerError("state batches_completed must be non-negative")
+    for field in (
+        "run_id",
+        "artifact_root",
+        "active_batch_artifact_root",
+        "run_manifest_path",
+        "batch_manifest_path",
+    ):
+        value = state.get(field)
+        if value is not None and not isinstance(value, str):
+            raise RunnerError(f"state {field} must be a string or null")
+    artifact_batches = state.get("artifact_batches")
+    if artifact_batches is not None and not isinstance(artifact_batches, list):
+        raise RunnerError("state artifact_batches must be an array when present")
 
 
 def write_state(path: Path, state: dict[str, Any]) -> None:
     state["updated_at"] = utc_now()
+    write_json_object(path, state)
+
+
+def write_json_object(path: Path, value: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(
         "w",
@@ -276,7 +371,7 @@ def write_state(path: Path, state: dict[str, Any]) -> None:
         delete=False,
     ) as handle:
         tmp_path = Path(handle.name)
-        json.dump(state, handle, indent=2, sort_keys=True)
+        json.dump(value, handle, indent=2, sort_keys=True)
         handle.write("\n")
     os.replace(tmp_path, path)
 
@@ -419,7 +514,68 @@ def project_relative(project: Path, path: Path) -> str:
         return path.as_posix()
 
 
+def structured_artifacts_enabled(state: dict[str, Any]) -> bool:
+    return bool(state.get("artifact_root"))
+
+
+def run_manifest_path(state: dict[str, Any]) -> str | None:
+    artifact_root = state.get("artifact_root")
+    if not isinstance(artifact_root, str) or not artifact_root:
+        return None
+    value = state.get("run_manifest_path")
+    if isinstance(value, str) and value:
+        return value
+    return f"{artifact_root}/run-manifest.json"
+
+
+def batch_artifact_root(state: dict[str, Any], batch_id: str) -> str | None:
+    artifact_root = state.get("artifact_root")
+    if not isinstance(artifact_root, str) or not artifact_root:
+        return None
+    return f"{artifact_root}/batches/{slugify_path_component(batch_id)}"
+
+
+def batch_manifest_path(state: dict[str, Any], batch_id: str) -> str | None:
+    root = batch_artifact_root(state, batch_id)
+    return f"{root}/batch-manifest.json" if root else None
+
+
+def phase_receipt_path(state: dict[str, Any], phase: str) -> str | None:
+    artifact_root = state.get("artifact_root")
+    if not isinstance(artifact_root, str) or not artifact_root:
+        return None
+    if phase == "select-dispatch" and not state.get("active_batch_id"):
+        select_index = int(state.get("batches_completed", 0)) + 1
+        return f"{artifact_root}/receipts/{select_index:02d}-select-dispatch.json"
+
+    batch_id = state.get("active_batch_id")
+    if not isinstance(batch_id, str) or not batch_id:
+        return None
+    if phase == "select-dispatch":
+        receipt_name = "01-select-dispatch.json"
+    else:
+        receipt_name = PHASE_RECEIPT_NAMES[phase]
+    root = batch_artifact_root(state, batch_id)
+    return f"{root}/receipts/{receipt_name}" if root else None
+
+
+def validate_expected_receipt_path(
+    result: dict[str, Any], config: RunnerConfig, state: dict[str, Any]
+) -> None:
+    expected = phase_receipt_path(state, result["phase"])
+    if expected is None:
+        return
+    expected_path = resolve_project_path(config.project, expected).resolve()
+    actual_path = resolve_project_path(config.project, result["receipt_path"]).resolve()
+    if actual_path != expected_path:
+        raise RunnerError(
+            "phase result receipt_path must match runner-provided expected path: "
+            f"{expected}"
+        )
+
+
 def validate_receipt(result: dict[str, Any], config: RunnerConfig, state: dict[str, Any]) -> None:
+    validate_expected_receipt_path(result, config, state)
     receipt_path = resolve_project_path(config.project, result["receipt_path"])
     receipt = read_json_object(receipt_path)
     validate_phase_result(receipt, current_phase=result["phase"], state=state)
@@ -428,6 +584,7 @@ def validate_receipt(result: dict[str, Any], config: RunnerConfig, state: dict[s
 
 
 def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str:
+    expected_receipt_path = phase_receipt_path(state, phase)
     lines = [
         f"Use {phase_skill_instruction(phase)}.",
         f"Follow {RUNNER_REFERENCE_PATH}.",
@@ -458,9 +615,13 @@ def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str
             "",
             "Expected artifact paths from current state:",
             f"- active_batch_id: {state.get('active_batch_id')}",
+            f"- artifact_root: {state.get('artifact_root')}",
+            f"- active_batch_artifact_root: {state.get('active_batch_artifact_root')}",
             f"- dispatch_path: {state.get('dispatch_path')}",
             f"- spec_path: {state.get('spec_path')}",
             f"- last_receipt_path: {state.get('last_receipt_path')}",
+            f"- run_manifest_path: {run_manifest_path(state)}",
+            f"- batch_manifest_path: {state.get('batch_manifest_path')}",
             "",
             "Return schema-valid JSON as the final response.",
             "Write the same JSON object to a compact phase receipt file.",
@@ -469,6 +630,15 @@ def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str
             "Do not parse or edit runner state directly.",
         ]
     )
+    if expected_receipt_path is not None:
+        lines.extend(
+            [
+                "",
+                "Expected receipt path for this phase:",
+                expected_receipt_path,
+                "Write the phase receipt to exactly this path and return exactly this path in receipt_path.",
+            ]
+        )
 
     if phase == "select-dispatch":
         lines.extend(
@@ -677,6 +847,11 @@ def expected_dirty_paths(
     extra_paths: Iterable[str] = (),
 ) -> set[str]:
     expected: set[str] = {project_relative(config.project, config.state_path)}
+    if state.get("artifact_root"):
+        expected.add(str(state["artifact_root"]))
+    for field in ("run_manifest_path", "batch_manifest_path", "active_batch_artifact_root"):
+        if state.get(field):
+            expected.add(str(state[field]))
     for value in extra_paths:
         expected.add(project_relative(config.project, resolve_project_path(config.project, value)))
 
@@ -792,10 +967,14 @@ def apply_phase_result(state: dict[str, Any], result: dict[str, Any]) -> None:
 
     if result["batch_id"]:
         state["active_batch_id"] = result["batch_id"]
+        if structured_artifacts_enabled(state):
+            state["active_batch_artifact_root"] = batch_artifact_root(state, result["batch_id"])
+            state["batch_manifest_path"] = batch_manifest_path(state, result["batch_id"])
     if result["dispatch_path"]:
         state["dispatch_path"] = result["dispatch_path"]
     if result["spec_path"]:
         state["spec_path"] = result["spec_path"]
+    record_artifact_batch(state, result)
 
     if result["status"] != "completed":
         state["stop_reason"] = result["stop_reason"] or result["status"]
@@ -807,11 +986,168 @@ def apply_phase_result(state: dict[str, Any], result: dict[str, Any]) -> None:
             state["active_batch_id"] = None
             state["dispatch_path"] = None
             state["spec_path"] = None
+            state["active_batch_artifact_root"] = None
+            state["batch_manifest_path"] = None
 
     if result["next_phase"] in PHASES:
         state["active_phase"] = result["next_phase"]
     else:
         state["stop_reason"] = result["next_phase"]
+
+
+def record_artifact_batch(state: dict[str, Any], result: dict[str, Any]) -> None:
+    if not structured_artifacts_enabled(state) or not result.get("batch_id"):
+        return
+    batch_id = result["batch_id"]
+    batches = state.setdefault("artifact_batches", [])
+    if not isinstance(batches, list):
+        return
+    entry = next(
+        (
+            item
+            for item in batches
+            if isinstance(item, dict) and item.get("batch_id") == batch_id
+        ),
+        None,
+    )
+    if entry is None:
+        entry = {
+            "batch_id": batch_id,
+            "batch_artifact_root": batch_artifact_root(state, batch_id),
+            "dispatch_path": None,
+            "spec_path": None,
+            "last_receipt_path": None,
+            "receipts": {},
+            "status": None,
+        }
+        batches.append(entry)
+    if result.get("dispatch_path"):
+        entry["dispatch_path"] = result["dispatch_path"]
+    if result.get("spec_path"):
+        entry["spec_path"] = result["spec_path"]
+    entry["last_receipt_path"] = result["receipt_path"]
+    if isinstance(entry.get("receipts"), dict):
+        entry["receipts"][result["phase"]] = result["receipt_path"]
+    entry["status"] = result["status"]
+
+
+def write_artifact_manifests(
+    config: RunnerConfig, state: dict[str, Any], result: dict[str, Any]
+) -> None:
+    if not structured_artifacts_enabled(state):
+        return
+    manifest_path = run_manifest_path(state)
+    if manifest_path:
+        write_json_object(
+            resolve_project_path(config.project, manifest_path),
+            build_run_manifest(config, state),
+        )
+    batch_id = result.get("batch_id") or state.get("active_batch_id")
+    if isinstance(batch_id, str) and batch_id:
+        write_batch_artifacts(config, state, batch_id)
+
+
+def build_run_manifest(config: RunnerConfig, state: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "runner_version": RUNNER_VERSION,
+        "run_id": state.get("run_id"),
+        "project": str(config.project),
+        "program_ledger": state.get("program_ledger"),
+        "state_path": project_relative(config.project, config.state_path),
+        "max_batches": state.get("max_batches"),
+        "execute_batches": state.get("execute_batches"),
+        "batches": state.get("artifact_batches", []),
+    }
+
+
+def write_batch_artifacts(config: RunnerConfig, state: dict[str, Any], batch_id: str) -> None:
+    root_value = batch_artifact_root(state, batch_id)
+    manifest_value = batch_manifest_path(state, batch_id)
+    if root_value is None or manifest_value is None:
+        return
+    root = resolve_project_path(config.project, root_value)
+    write_json_object(
+        resolve_project_path(config.project, manifest_value),
+        build_batch_manifest(state, batch_id),
+    )
+    index_path = root / "index.md"
+    index_path.write_text(build_batch_index(config, state, batch_id, root), encoding="utf-8")
+
+
+def build_batch_manifest(state: dict[str, Any], batch_id: str) -> dict[str, Any]:
+    entry = artifact_batch_entry(state, batch_id)
+    return {
+        "schema_version": 1,
+        "batch_id": batch_id,
+        "program_ledger": state.get("program_ledger"),
+        "dispatch_path": entry.get("dispatch_path") or state.get("dispatch_path"),
+        "spec_path": entry.get("spec_path") or state.get("spec_path"),
+        "receipts": entry.get("receipts", {}),
+        "commit_range": latest_receipt_field(state, "commit_range"),
+        "validation_summary": latest_receipt_field(state, "validation_summary"),
+        "review_summary": latest_receipt_field(state, "review_summary"),
+        "status": entry.get("status"),
+    }
+
+
+def artifact_batch_entry(state: dict[str, Any], batch_id: str) -> dict[str, Any]:
+    batches = state.get("artifact_batches")
+    if isinstance(batches, list):
+        for entry in batches:
+            if isinstance(entry, dict) and entry.get("batch_id") == batch_id:
+                return entry
+    return {}
+
+
+def latest_receipt_field(state: dict[str, Any], field: str) -> Any:
+    receipt_path = state.get("last_receipt_path")
+    project = state.get("project")
+    if not isinstance(receipt_path, str) or not isinstance(project, str):
+        return None
+    try:
+        receipt = read_json_object(resolve_project_path(Path(project), receipt_path))
+    except RunnerError:
+        return None
+    return receipt.get(field)
+
+
+def build_batch_index(
+    config: RunnerConfig, state: dict[str, Any], batch_id: str, batch_root: Path
+) -> str:
+    entry = artifact_batch_entry(state, batch_id)
+    lines = [
+        f"# {batch_id} Runner Artifacts",
+        "",
+        f"- Program ledger: {relative_project_link(config, batch_root, state['program_ledger'])}",
+    ]
+    dispatch_path = entry.get("dispatch_path") or state.get("dispatch_path")
+    spec_path = entry.get("spec_path") or state.get("spec_path")
+    if dispatch_path:
+        lines.append(f"- Dispatch packet: {relative_project_link(config, batch_root, dispatch_path)}")
+    if spec_path:
+        lines.append(f"- Runway spec: {relative_project_link(config, batch_root, spec_path)}")
+    lines.extend(
+        [
+            f"- Run state: {relative_project_link(config, batch_root, project_relative(config.project, config.state_path))}",
+            "- Receipts:",
+        ]
+    )
+    receipts = entry.get("receipts", {})
+    if isinstance(receipts, dict) and receipts:
+        for phase in PHASES:
+            path = receipts.get(phase)
+            if isinstance(path, str):
+                lines.append(f"  - {phase}: {relative_project_link(config, batch_root, path)}")
+    else:
+        lines.append("  - none recorded yet")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def relative_project_link(config: RunnerConfig, from_dir: Path, value: str) -> str:
+    path = resolve_project_path(config.project, value)
+    return os.path.relpath(path, start=from_dir).replace(os.sep, "/")
 
 
 def is_terminal_completed_state(state: dict[str, Any]) -> bool:
@@ -867,6 +1203,7 @@ def run(
 
         apply_phase_result(state, result)
         write_state(config.state_path, state)
+        write_artifact_manifests(config, state, result)
 
         if config.stop_after_phase == phase:
             return state
@@ -896,6 +1233,7 @@ def build_final_summary(state: dict[str, Any], config: RunnerConfig) -> dict[str
 
     return {
         "state_path": str(config.state_path),
+        "artifact_root": state.get("artifact_root"),
         "last_receipt_path": receipt_path,
         "stop_reason": state.get("stop_reason"),
         "batches_completed": state.get("batches_completed"),
