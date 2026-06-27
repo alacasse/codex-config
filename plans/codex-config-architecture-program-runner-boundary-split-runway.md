@@ -119,7 +119,7 @@ Dirty-file constraints:
 |---|---|---|---|---|---|
 | 1. Path and state owner seam | Completed | See commit receipt | `70 passed`; dry-run smoke passed; `git diff --check` passed; ruff unavailable: `/usr/bin/python: No module named ruff` | Process-blocked review accepted after ledger recording; no code findings | Creates the first reusable owner API for path/state helpers. |
 | 2. Phase result and receipt validation seam | Completed | See commit receipt | `71 passed`; dry-run smoke passed; `git diff --check` passed; ruff unavailable: `/usr/bin/python: No module named ruff` | Process-blocked review accepted after ledger recording; no code findings | Consumes Slice 1 path/state APIs where applicable. |
-| 3. Prompt, command, and env construction seam | Pending |  |  |  | Must preserve exact prompt guardrails and command flags. |
+| 3. Prompt, command, and env construction seam | Completed | See commit receipt | `71 passed`; dry-run smoke passed; ruff via `uvx` passed; `git diff --check` passed | Clean | Preserved exact prompt guardrails and command flags. |
 | 4. Artifact manifest and telemetry owner seams | Pending |  |  |  | Includes APR-13 decision or small fix for failure-path manifests. |
 | 5. Test topology split and thin CLI integration suite | Pending |  |  |  | Mirrors new owner seams; keeps broad regression coverage. |
 
@@ -149,6 +149,17 @@ Dirty-file constraints:
     findings. The reviewer required ruff in an environment where it is
     available; this environment gap is recorded here per the spec's validation
     limitation handling.
+- Slice 3. Prompt, command, and env construction seam:
+  - Outcome: extracted prompt, command, sandbox, env override, dry-run display,
+    and command quoting helpers to `scripts/architecture_program_runner_command.py`
+    while keeping compatibility re-exports in
+    `scripts/architecture_program_runner.py`.
+  - Commit: see coordinator commit receipt for the final hash.
+  - Validation: `python -m pytest tests/test_architecture_program_runner_command.py tests/test_architecture_program_runner.py tests/test_codex_owner.py -q`
+    passed with 71 tests; dry-run runner smoke passed; `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check ...`
+    passed with a non-fatal Python symlink warning; `git diff --check` passed.
+  - Review: separate `runway_reviewer` returned clean with no findings or
+    residual risks.
 
 ## Slice 1. Path and State Owner Seam
 
