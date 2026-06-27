@@ -6,11 +6,13 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
 import os
 import re
 import subprocess
 import sys
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping
@@ -40,6 +42,12 @@ PHASE_RECEIPT_NAMES = {
     "create-spec": "02-create-spec.json",
     "execute": "03-execute.json",
     "closeout": "04-closeout.json",
+}
+CONTEXT_BUDGETS = {
+    "select-dispatch": (50_000, 80_000),
+    "create-spec": (60_000, 90_000),
+    "execute": (120_000, 180_000),
+    "closeout": (40_000, 70_000),
 }
 REQUIRED_RESULT_FIELDS = (
     "status",
@@ -306,6 +314,9 @@ def initial_state(config: RunnerConfig) -> dict[str, Any]:
                 "active_batch_artifact_root": None,
                 "run_manifest_path": f"{artifact_root}/run-manifest.json",
                 "batch_manifest_path": None,
+                "run_telemetry_path": f"{artifact_root}/telemetry/run-telemetry.json",
+                "last_phase_telemetry_path": None,
+                "phase_telemetry_paths": [],
                 "artifact_batches": [],
             }
         )
@@ -346,13 +357,16 @@ def validate_state(state: dict[str, Any]) -> None:
         "active_batch_artifact_root",
         "run_manifest_path",
         "batch_manifest_path",
+        "run_telemetry_path",
+        "last_phase_telemetry_path",
     ):
         value = state.get(field)
         if value is not None and not isinstance(value, str):
             raise RunnerError(f"state {field} must be a string or null")
-    artifact_batches = state.get("artifact_batches")
-    if artifact_batches is not None and not isinstance(artifact_batches, list):
-        raise RunnerError("state artifact_batches must be an array when present")
+    for field in ("artifact_batches", "phase_telemetry_paths"):
+        value = state.get(field)
+        if value is not None and not isinstance(value, list):
+            raise RunnerError(f"state {field} must be an array when present")
 
 
 def write_state(path: Path, state: dict[str, Any]) -> None:
@@ -540,6 +554,25 @@ def batch_manifest_path(state: dict[str, Any], batch_id: str) -> str | None:
     return f"{root}/batch-manifest.json" if root else None
 
 
+def run_telemetry_path(state: dict[str, Any]) -> str | None:
+    artifact_root = state.get("artifact_root")
+    if not isinstance(artifact_root, str) or not artifact_root:
+        return None
+    value = state.get("run_telemetry_path")
+    if isinstance(value, str) and value:
+        return value
+    return f"{artifact_root}/telemetry/run-telemetry.json"
+
+
+def next_phase_telemetry_path(state: dict[str, Any], phase: str) -> str | None:
+    artifact_root = state.get("artifact_root")
+    if not isinstance(artifact_root, str) or not artifact_root:
+        return None
+    paths = state.get("phase_telemetry_paths")
+    sequence = len(paths) + 1 if isinstance(paths, list) else 1
+    return f"{artifact_root}/telemetry/phases/{sequence:02d}-{phase}.telemetry.json"
+
+
 def phase_receipt_path(state: dict[str, Any], phase: str) -> str | None:
     artifact_root = state.get("artifact_root")
     if not isinstance(artifact_root, str) or not artifact_root:
@@ -557,6 +590,13 @@ def phase_receipt_path(state: dict[str, Any], phase: str) -> str | None:
         receipt_name = PHASE_RECEIPT_NAMES[phase]
     root = batch_artifact_root(state, batch_id)
     return f"{root}/receipts/{receipt_name}" if root else None
+
+
+def phase_input_inventory_path(state: dict[str, Any], phase: str) -> str | None:
+    telemetry_path = next_phase_telemetry_path(state, phase)
+    if telemetry_path is None:
+        return None
+    return telemetry_path.replace(".telemetry.json", ".input-inventory.json")
 
 
 def validate_expected_receipt_path(
@@ -585,6 +625,7 @@ def validate_receipt(result: dict[str, Any], config: RunnerConfig, state: dict[s
 
 def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str:
     expected_receipt_path = phase_receipt_path(state, phase)
+    expected_input_inventory_path = phase_input_inventory_path(state, phase)
     lines = [
         f"Use {phase_skill_instruction(phase)}.",
         f"Follow {RUNNER_REFERENCE_PATH}.",
@@ -637,6 +678,16 @@ def build_prompt(config: RunnerConfig, state: dict[str, Any], phase: str) -> str
                 "Expected receipt path for this phase:",
                 expected_receipt_path,
                 "Write the phase receipt to exactly this path and return exactly this path in receipt_path.",
+            ]
+        )
+    if expected_input_inventory_path is not None:
+        lines.extend(
+            [
+                "",
+                "Expected input inventory path for this phase:",
+                expected_input_inventory_path,
+                "If you perform broad source reads, large file reads, or consume subagent reports, write a compact input inventory there and include it in evidence_paths.",
+                "Prefer compact dispatch, receipt, manifest, and telemetry artifacts before rereading broad source or planning files.",
             ]
         )
 
@@ -767,12 +818,30 @@ def execute_codex_phase(config: RunnerConfig, state: dict[str, Any], phase: str)
             check=False,
             env=build_subprocess_env(config.env_overrides),
         )
+        state["_phase_execution_meta"] = {
+            "exit_code": completed.returncode,
+            "stdout_bytes": len(completed.stdout.encode("utf-8")),
+            "stderr_bytes": len(completed.stderr.encode("utf-8")),
+            "codex_session_id": extract_codex_session_id(
+                f"{completed.stdout}\n{completed.stderr}"
+            ),
+            "codex_session_path": None,
+        }
         if completed.returncode != 0:
             raise RunnerError(
                 "codex exec failed for "
                 f"{phase} with exit {completed.returncode}\n{completed.stderr.strip()}"
             )
         return read_json_object(output_last_message)
+
+
+def extract_codex_session_id(text: str) -> str | None:
+    match = re.search(
+        r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b",
+        text,
+        flags=re.IGNORECASE,
+    )
+    return match.group(0) if match else None
 
 
 def print_dry_run(config: RunnerConfig, state: dict[str, Any]) -> None:
@@ -1055,6 +1124,8 @@ def build_run_manifest(config: RunnerConfig, state: dict[str, Any]) -> dict[str,
         "project": str(config.project),
         "program_ledger": state.get("program_ledger"),
         "state_path": project_relative(config.project, config.state_path),
+        "run_telemetry_path": run_telemetry_path(state),
+        "phase_telemetry_paths": state.get("phase_telemetry_paths", []),
         "max_batches": state.get("max_batches"),
         "execute_batches": state.get("execute_batches"),
         "batches": state.get("artifact_batches", []),
@@ -1084,6 +1155,7 @@ def build_batch_manifest(state: dict[str, Any], batch_id: str) -> dict[str, Any]
         "dispatch_path": entry.get("dispatch_path") or state.get("dispatch_path"),
         "spec_path": entry.get("spec_path") or state.get("spec_path"),
         "receipts": entry.get("receipts", {}),
+        "telemetry": entry.get("telemetry", {}),
         "commit_range": latest_receipt_field(state, "commit_range"),
         "validation_summary": latest_receipt_field(state, "validation_summary"),
         "review_summary": latest_receipt_field(state, "review_summary"),
@@ -1150,6 +1222,313 @@ def relative_project_link(config: RunnerConfig, from_dir: Path, value: str) -> s
     return os.path.relpath(path, start=from_dir).replace(os.sep, "/")
 
 
+def pop_phase_execution_meta(state: dict[str, Any]) -> dict[str, Any]:
+    value = state.pop("_phase_execution_meta", {})
+    return value if isinstance(value, dict) else {}
+
+
+def apply_execution_meta_to_state(state: dict[str, Any], execution_meta: dict[str, Any]) -> None:
+    session_id = execution_meta.get("codex_session_id")
+    if isinstance(session_id, str) and session_id:
+        state["last_codex_session"] = session_id
+
+
+def build_phase_telemetry(
+    config: RunnerConfig,
+    state: dict[str, Any],
+    phase: str,
+    *,
+    started_at: str,
+    elapsed_seconds: float,
+    prompt_bytes: int,
+    result: dict[str, Any] | None,
+    status: str,
+    error: str | None,
+    execution_meta: dict[str, Any],
+) -> dict[str, Any]:
+    session_path = execution_meta.get("codex_session_path")
+    token_summary = summarize_token_events(Path(session_path)) if isinstance(
+        session_path, str
+    ) else missing_token_summary()
+    budget = context_budget_summary(phase, token_summary)
+    return {
+        "schema_version": 1,
+        "runner_version": RUNNER_VERSION,
+        "run_id": state.get("run_id"),
+        "batch_id": result.get("batch_id") if result else state.get("active_batch_id"),
+        "phase": phase,
+        "status": status,
+        "error": error,
+        "started_at": started_at,
+        "ended_at": utc_now(),
+        "elapsed_seconds": elapsed_seconds,
+        "model": config.model,
+        "sandbox": sandbox_for_phase(config, phase),
+        "exit_code": execution_meta.get("exit_code"),
+        "stdout_bytes": execution_meta.get("stdout_bytes"),
+        "stderr_bytes": execution_meta.get("stderr_bytes"),
+        "prompt_bytes": prompt_bytes,
+        "prompt_chars": prompt_bytes,
+        "codex_session_id": execution_meta.get("codex_session_id"),
+        "codex_session_path": execution_meta.get("codex_session_path"),
+        "token_summary": token_summary,
+        "context_budget": budget,
+        "input_inventory_path": phase_input_inventory_path(state, phase),
+        "artifact_sizes": artifact_size_entries(config, state, result),
+    }
+
+
+def missing_token_summary() -> dict[str, Any]:
+    return {
+        "status": "missing",
+        "turn_count": 0,
+        "max_input_tokens": None,
+        "max_context_used_percent": None,
+        "final_input_tokens": None,
+        "total_input_tokens": None,
+        "total_tokens": None,
+        "cached_input_tokens": None,
+        "context_pressure": "missing",
+    }
+
+
+def summarize_token_events(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return missing_token_summary()
+    turn_count = 0
+    max_input_tokens: int | None = None
+    final_input_tokens: int | None = None
+    cached_input_tokens: int | None = None
+    total_input_tokens: int | None = None
+    total_tokens: int | None = None
+    context_window: int | None = None
+    max_context_percent: float | None = None
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return missing_token_summary()
+    for line in lines:
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        payload = record.get("payload") if isinstance(record, dict) else None
+        if not isinstance(payload, dict):
+            payload = record if isinstance(record, dict) else {}
+        if payload.get("type") != "token_count":
+            continue
+        usage = payload.get("last_token_usage")
+        if not isinstance(usage, dict):
+            usage = payload
+        total_usage = payload.get("total_token_usage")
+        if not isinstance(total_usage, dict):
+            total_usage = {}
+        input_tokens = int_or_none(usage.get("input_tokens"))
+        if input_tokens is not None:
+            max_input_tokens = max(input_tokens, max_input_tokens or 0)
+            final_input_tokens = input_tokens
+        cached_input_tokens = int_or_none(usage.get("cached_input_tokens"))
+        total_input_tokens = int_or_none(total_usage.get("input_tokens"))
+        output_tokens = int_or_none(total_usage.get("output_tokens")) or 0
+        reasoning_tokens = int_or_none(total_usage.get("reasoning_output_tokens")) or 0
+        if total_input_tokens is not None:
+            total_tokens = total_input_tokens + output_tokens + reasoning_tokens
+        context_window = int_or_none(payload.get("model_context_window")) or context_window
+        turn_count += 1
+    if turn_count == 0:
+        return missing_token_summary()
+    if max_input_tokens is not None and context_window:
+        max_context_percent = round((max_input_tokens / context_window) * 100, 1)
+    return {
+        "status": "ok",
+        "turn_count": turn_count,
+        "max_input_tokens": max_input_tokens,
+        "max_context_used_percent": max_context_percent,
+        "final_input_tokens": final_input_tokens,
+        "total_input_tokens": total_input_tokens,
+        "total_tokens": total_tokens,
+        "cached_input_tokens": cached_input_tokens,
+        "context_pressure": context_pressure(max_context_percent),
+    }
+
+
+def int_or_none(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and math.isfinite(value):
+        return int(value)
+    return None
+
+
+def context_pressure(percent: float | None) -> str:
+    if percent is None:
+        return "missing"
+    if percent < 50:
+        return "context_ok"
+    if percent < 70:
+        return "context_watch"
+    if percent < 85:
+        return "context_pressure"
+    return "context_stop_recommended"
+
+
+def context_budget_summary(phase: str, token_summary: dict[str, Any]) -> dict[str, Any]:
+    soft, hard = CONTEXT_BUDGETS[phase]
+    max_input = token_summary.get("max_input_tokens")
+    if not isinstance(max_input, int):
+        status = "missing"
+    elif max_input > hard:
+        status = "hard_warning"
+    elif max_input > soft:
+        status = "soft_warning"
+    else:
+        status = "ok"
+    return {
+        "soft_budget_tokens": soft,
+        "hard_warning_tokens": hard,
+        "max_input_tokens": max_input if isinstance(max_input, int) else None,
+        "status": status,
+    }
+
+
+def artifact_size_entries(
+    config: RunnerConfig, state: dict[str, Any], result: dict[str, Any] | None
+) -> list[dict[str, Any]]:
+    values = [state.get("program_ledger"), state.get("dispatch_path"), state.get("spec_path")]
+    if result:
+        values.extend([result.get("dispatch_path"), result.get("spec_path"), result.get("receipt_path")])
+    inventory = phase_input_inventory_path(state, result["phase"]) if result else None
+    if inventory:
+        values.append(inventory)
+    entries: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for value in values:
+        if not isinstance(value, str) or not value or value in seen:
+            continue
+        seen.add(value)
+        path = resolve_project_path(config.project, value)
+        try:
+            stat = path.stat()
+        except OSError:
+            entries.append({"path": value, "exists": False, "bytes": None})
+        else:
+            entries.append({"path": value, "exists": True, "bytes": stat.st_size})
+    return entries
+
+
+def record_phase_telemetry_path(
+    state: dict[str, Any], path: str, result: dict[str, Any] | None = None
+) -> None:
+    state["last_phase_telemetry_path"] = path
+    paths = state.setdefault("phase_telemetry_paths", [])
+    if isinstance(paths, list) and path not in paths:
+        paths.append(path)
+    if result and result.get("batch_id"):
+        entry = artifact_batch_entry(state, result["batch_id"])
+        telemetry = entry.setdefault("telemetry", {})
+        if isinstance(telemetry, dict):
+            telemetry[result["phase"]] = path
+
+
+def write_phase_telemetry(config: RunnerConfig, path: str, telemetry: dict[str, Any]) -> None:
+    write_json_object(resolve_project_path(config.project, path), telemetry)
+
+
+def write_run_telemetry(config: RunnerConfig, state: dict[str, Any]) -> None:
+    path = run_telemetry_path(state)
+    if path is None:
+        return
+    phase_paths = state.get("phase_telemetry_paths")
+    phases = []
+    if isinstance(phase_paths, list):
+        for index, value in enumerate(phase_paths):
+            if not isinstance(value, str):
+                continue
+            try:
+                phase = read_json_object(resolve_project_path(config.project, value))
+                phase["_phase_index"] = index
+                phases.append(phase)
+            except RunnerError:
+                phases.append({"path": value, "status": "missing", "_phase_index": index})
+    write_json_object(
+        resolve_project_path(config.project, path),
+        build_run_telemetry(config, state, phases),
+    )
+
+
+def build_run_telemetry(
+    config: RunnerConfig, state: dict[str, Any], phases: list[dict[str, Any]]
+) -> dict[str, Any]:
+    max_context_percent = max_numeric(
+        phase.get("token_summary", {}).get("max_context_used_percent")
+        for phase in phases
+        if isinstance(phase.get("token_summary"), dict)
+    )
+    max_input_tokens = max_numeric(
+        phase.get("token_summary", {}).get("max_input_tokens")
+        for phase in phases
+        if isinstance(phase.get("token_summary"), dict)
+    )
+    elapsed_seconds = sum_numeric(phase.get("elapsed_seconds") for phase in phases)
+    return {
+        "schema_version": 1,
+        "runner_version": RUNNER_VERSION,
+        "run_id": state.get("run_id"),
+        "project": str(config.project),
+        "program_ledger": state.get("program_ledger"),
+        "state_path": project_relative(config.project, config.state_path),
+        "stop_reason": state.get("stop_reason"),
+        "phase_count": len(phases),
+        "elapsed_seconds": elapsed_seconds,
+        "max_input_tokens": max_input_tokens,
+        "max_context_used_percent": max_context_percent,
+        "context_pressure": context_pressure(max_context_percent),
+        "phases": [
+            {
+                "phase": phase.get("phase"),
+                "status": phase.get("status"),
+                "telemetry_path": telemetry_path_for_phase(state, phase),
+                "elapsed_seconds": phase.get("elapsed_seconds"),
+                "prompt_bytes": phase.get("prompt_bytes"),
+                "max_input_tokens": phase.get("token_summary", {}).get("max_input_tokens")
+                if isinstance(phase.get("token_summary"), dict)
+                else None,
+                "context_budget_status": phase.get("context_budget", {}).get("status")
+                if isinstance(phase.get("context_budget"), dict)
+                else None,
+                "codex_session_id": phase.get("codex_session_id"),
+            }
+            for phase in phases
+        ],
+    }
+
+
+def telemetry_path_for_phase(state: dict[str, Any], phase: dict[str, Any]) -> str | None:
+    paths = state.get("phase_telemetry_paths")
+    if not isinstance(paths, list):
+        return None
+    index = phase.get("_phase_index")
+    if isinstance(index, int) and 0 <= index < len(paths):
+        value = paths[index]
+        return value if isinstance(value, str) else None
+    phase_name = phase.get("phase")
+    for value in paths:
+        if isinstance(value, str) and isinstance(phase_name, str) and phase_name in value:
+            return value
+    return None
+
+
+def max_numeric(values: Iterable[Any]) -> int | float | None:
+    numeric = [value for value in values if isinstance(value, (int, float))]
+    return max(numeric) if numeric else None
+
+
+def sum_numeric(values: Iterable[Any]) -> float:
+    return round(sum(value for value in values if isinstance(value, (int, float))), 3)
+
+
 def is_terminal_completed_state(state: dict[str, Any]) -> bool:
     return state.get("last_phase_status") == "completed" and state.get(
         "stop_reason"
@@ -1181,10 +1560,21 @@ def run(
             return state
 
         phase = state["active_phase"]
+        phase_telemetry_path: str | None = None
+        phase_started_at: str | None = None
+        phase_start_monotonic: float | None = None
+        phase_prompt_bytes = 0
+        result: dict[str, Any] | None = None
         try:
             check_required_artifacts(config, state)
             check_worktree(config, state, phase, status_reader=status_reader)
+            phase_telemetry_path = next_phase_telemetry_path(state, phase)
+            phase_started_at = utc_now()
+            phase_start_monotonic = time.monotonic()
+            phase_prompt_bytes = len(build_prompt(config, state, phase).encode("utf-8"))
             result = phase_executor(config, state, phase)
+            execution_meta = pop_phase_execution_meta(state)
+            apply_execution_meta_to_state(state, execution_meta)
             validate_phase_result(result, current_phase=phase, state=state)
             validate_receipt(result, config, state)
             if phase == "execute":
@@ -1196,12 +1586,46 @@ def run(
                     extra_paths=[result["receipt_path"], *result["evidence_paths"]],
                 )
         except RunnerError as exc:
+            execution_meta = pop_phase_execution_meta(state)
+            apply_execution_meta_to_state(state, execution_meta)
             state["last_phase_status"] = "failed"
             state["stop_reason"] = str(exc)
+            if phase_telemetry_path and phase_started_at and phase_start_monotonic is not None:
+                telemetry = build_phase_telemetry(
+                    config,
+                    state,
+                    phase,
+                    started_at=phase_started_at,
+                    elapsed_seconds=round(time.monotonic() - phase_start_monotonic, 3),
+                    prompt_bytes=phase_prompt_bytes,
+                    result=result,
+                    status="failed",
+                    error=str(exc),
+                    execution_meta=execution_meta,
+                )
+                write_phase_telemetry(config, phase_telemetry_path, telemetry)
+                record_phase_telemetry_path(state, phase_telemetry_path, result)
+                write_run_telemetry(config, state)
             write_state(config.state_path, state)
             raise
 
         apply_phase_result(state, result)
+        if phase_telemetry_path and phase_started_at and phase_start_monotonic is not None:
+            telemetry = build_phase_telemetry(
+                config,
+                state,
+                phase,
+                started_at=phase_started_at,
+                elapsed_seconds=round(time.monotonic() - phase_start_monotonic, 3),
+                prompt_bytes=phase_prompt_bytes,
+                result=result,
+                status=result["status"],
+                error=None,
+                execution_meta=execution_meta,
+            )
+            write_phase_telemetry(config, phase_telemetry_path, telemetry)
+            record_phase_telemetry_path(state, phase_telemetry_path, result)
+            write_run_telemetry(config, state)
         write_state(config.state_path, state)
         write_artifact_manifests(config, state, result)
 
@@ -1234,6 +1658,8 @@ def build_final_summary(state: dict[str, Any], config: RunnerConfig) -> dict[str
     return {
         "state_path": str(config.state_path),
         "artifact_root": state.get("artifact_root"),
+        "run_telemetry_path": run_telemetry_path(state),
+        "last_phase_telemetry_path": state.get("last_phase_telemetry_path"),
         "last_receipt_path": receipt_path,
         "stop_reason": state.get("stop_reason"),
         "batches_completed": state.get("batches_completed"),

@@ -57,6 +57,14 @@ before falling back to the old flat state file, while explicit old `--state`
 paths remain supported.
 The artifact root is derived from the parent directory of `--program-ledger`,
 not from a project-specific planning folder such as Graphify's `my-docs/`.
+Structured runs now also write runner-owned telemetry under
+`telemetry/run-telemetry.json` and `telemetry/phases/*.telemetry.json`.
+Telemetry records direct runner measurements such as timestamps, elapsed time,
+sandbox/model, observable exit code, prompt bytes, artifact sizes, context
+budget status, and token summaries when an exact session JSONL path is
+available; unattributed token data is marked missing instead of reconstructed.
+Phase prompts now ask agents to write compact input inventories when broad
+reads, large files, or subagent reports explain context growth.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing

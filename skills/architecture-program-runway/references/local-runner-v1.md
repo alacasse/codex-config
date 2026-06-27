@@ -141,6 +141,10 @@ New runs store runner-owned artifacts under the program ledger directory:
 <ledger-dir>/architecture-program-runs/<ledger-stem>/<run-id>/
   run-state.json
   run-manifest.json
+  telemetry/
+    run-telemetry.json
+    phases/
+      01-select-dispatch.telemetry.json
   receipts/
     01-select-dispatch.json
   batches/
@@ -157,6 +161,15 @@ The program ledger, selected dispatch packet, and generated Batch Runway spec
 remain canonical files in their normal planning locations. The run directory
 contains operational state, receipts, manifests, and browseable backlinks; it
 does not snapshot or duplicate long-lived planning documents.
+
+Structured runs also write runner-owned telemetry beside receipts instead of
+expanding the phase receipt schema. Phase telemetry records direct runner
+measurements such as start/end timestamps, elapsed seconds, model, sandbox,
+exit code when observable, prompt bytes, artifact sizes, context-budget status,
+and token summaries when an exact Codex session JSONL path is available. When
+session token data is not attributable, token fields use `status=missing`
+instead of reconstructed guesses. `run-telemetry.json` aggregates phase
+telemetry paths, elapsed time, max context pressure, and final stop reason.
 
 For structured runs, the runner provides an exact expected receipt path in each
 phase prompt and rejects phase results that return a different `receipt_path`.
@@ -230,6 +243,8 @@ The summary contains:
 
 - `state_path`
 - `artifact_root`
+- `run_telemetry_path`
+- `last_phase_telemetry_path`
 - `last_receipt_path`
 - `stop_reason`
 - `batches_completed`

@@ -526,6 +526,10 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/run-manifest.json",
         )
         self.assertEqual(
+            state["run_telemetry_path"],
+            "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/telemetry/run-telemetry.json",
+        )
+        self.assertEqual(
             runner.phase_receipt_path(state, "select-dispatch"),
             "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/receipts/01-select-dispatch.json",
         )
@@ -540,10 +544,12 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         prompt = runner.build_prompt(config, state, "execute")
 
         self.assertIn("Expected receipt path for this phase:", prompt)
+        self.assertIn("Expected input inventory path for this phase:", prompt)
         self.assertIn(
             "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/batches/batch-1/receipts/03-execute.json",
             prompt,
         )
+        self.assertIn("Prefer compact dispatch, receipt, manifest, and telemetry artifacts", prompt)
 
     def test_structured_receipt_validation_rejects_unexpected_path(self) -> None:
         config = self.structured_config()
@@ -569,6 +575,13 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
         self.write_receipt(result)
 
         def fake_executor(config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
+            state["_phase_execution_meta"] = {
+                "exit_code": 0,
+                "stdout_bytes": 25,
+                "stderr_bytes": 0,
+                "codex_session_id": "019f0679-3875-7601-a4f8-a2a22303f3c4",
+                "codex_session_path": None,
+            }
             self.touch_project_path(result["dispatch_path"])
             return result
 
@@ -598,6 +611,28 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             / "batch-1"
             / "batch-manifest.json"
         )
+        phase_telemetry = runner.read_json_object(
+            self.project
+            / "project-notes"
+            / "architecture"
+            / "architecture-program-runs"
+            / "program"
+            / "run-20260626-204812"
+            / "telemetry"
+            / "phases"
+            / "01-select-dispatch.telemetry.json"
+        )
+        run_telemetry = runner.read_json_object(
+            self.project
+            / "project-notes"
+            / "architecture"
+            / "architecture-program-runs"
+            / "program"
+            / "run-20260626-204812"
+            / "telemetry"
+            / "run-telemetry.json"
+        )
+        summary = runner.build_final_summary(final_state, config)
         index = (
             self.project
             / "project-notes"
@@ -614,13 +649,95 @@ class ArchitectureProgramRunnerTests(unittest.TestCase):
             final_state["active_batch_artifact_root"],
             "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/batches/batch-1",
         )
+        self.assertEqual(final_state["last_codex_session"], "019f0679-3875-7601-a4f8-a2a22303f3c4")
         self.assertEqual(run_manifest["batches"][0]["batch_id"], "batch-1")
+        self.assertEqual(
+            run_manifest["run_telemetry_path"],
+            "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/telemetry/run-telemetry.json",
+        )
         self.assertEqual(
             batch_manifest["receipts"]["select-dispatch"],
             result["receipt_path"],
         )
+        self.assertEqual(
+            batch_manifest["telemetry"]["select-dispatch"],
+            "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/telemetry/phases/01-select-dispatch.telemetry.json",
+        )
+        self.assertEqual(phase_telemetry["phase"], "select-dispatch")
+        self.assertEqual(phase_telemetry["exit_code"], 0)
+        self.assertEqual(phase_telemetry["token_summary"]["status"], "missing")
+        self.assertEqual(phase_telemetry["context_budget"]["status"], "missing")
+        self.assertEqual(
+            phase_telemetry["codex_session_id"],
+            "019f0679-3875-7601-a4f8-a2a22303f3c4",
+        )
+        self.assertEqual(run_telemetry["phase_count"], 1)
+        self.assertEqual(run_telemetry["phases"][0]["phase"], "select-dispatch")
+        self.assertEqual(
+            summary["run_telemetry_path"],
+            "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/telemetry/run-telemetry.json",
+        )
+        self.assertEqual(
+            summary["last_phase_telemetry_path"],
+            "project-notes/architecture/architecture-program-runs/program/run-20260626-204812/telemetry/phases/01-select-dispatch.telemetry.json",
+        )
         self.assertIn("Program ledger:", index)
         self.assertIn("select-dispatch:", index)
+
+    def test_summarize_token_events_marks_context_pressure(self) -> None:
+        session = self.root / "session.jsonl"
+        session.write_text(
+            "\n".join(
+                [
+                    json.dumps(
+                        {
+                            "payload": {
+                                "type": "token_count",
+                                "last_token_usage": {
+                                    "input_tokens": 100,
+                                    "cached_input_tokens": 10,
+                                },
+                                "total_token_usage": {
+                                    "input_tokens": 100,
+                                    "output_tokens": 20,
+                                    "reasoning_output_tokens": 5,
+                                },
+                                "model_context_window": 1000,
+                            }
+                        }
+                    ),
+                    json.dumps(
+                        {
+                            "payload": {
+                                "type": "token_count",
+                                "last_token_usage": {
+                                    "input_tokens": 900,
+                                    "cached_input_tokens": 20,
+                                },
+                                "total_token_usage": {
+                                    "input_tokens": 1000,
+                                    "output_tokens": 50,
+                                    "reasoning_output_tokens": 30,
+                                },
+                                "model_context_window": 1000,
+                            }
+                        }
+                    ),
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        summary = runner.summarize_token_events(session)
+        budget = runner.context_budget_summary("execute", summary)
+
+        self.assertEqual(summary["status"], "ok")
+        self.assertEqual(summary["turn_count"], 2)
+        self.assertEqual(summary["max_input_tokens"], 900)
+        self.assertEqual(summary["final_input_tokens"], 900)
+        self.assertEqual(summary["total_tokens"], 1080)
+        self.assertEqual(summary["context_pressure"], "context_stop_recommended")
+        self.assertEqual(budget["status"], "ok")
 
     def test_prompt_generation_forbids_nested_codex_in_all_phases(self) -> None:
         state = runner.initial_state(self.config)
