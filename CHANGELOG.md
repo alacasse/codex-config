@@ -13,7 +13,8 @@ translation as the default strategy, defines intake, contract distillation,
 target design, runway handoff, and closeout modes, and documents the Python
 architecture-program runner as an example source scope without hardcoding a
 target product name. The skill now treats direct line-by-line translation as
-outside the workflow, requires durable repo-local contract artifacts for
+outside the workflow, requires domain/context documents such as `CONTEXT.md`
+during source intake, requires durable repo-local contract artifacts for
 non-trivial ports, and requires agents to load and follow the selected runway
 skill before creating a bounded handoff.
 

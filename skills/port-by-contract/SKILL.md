@@ -29,8 +29,9 @@ skill and route to a non-contract workflow.
 2. Identify the source implementation, target language/framework/runtime, and
    intended target product or module.
 3. Check the worktree before editing planning files or code.
-4. Read source docs, tests, CLI/API entrypoints, schemas, receipts, fixtures,
-   and recent plans before relying on code shape.
+4. Read source docs, domain/context docs such as `CONTEXT.md`, tests, CLI/API
+   entrypoints, schemas, receipts, fixtures, and recent plans before relying on
+   code shape.
 5. Choose the mode: `intake-source`, `distill-contract`, `design-target`,
    `create-port-runway`, or `closeout-port`.
 
@@ -74,6 +75,7 @@ Build a source map from behavior evidence, not from directory shape alone.
 Capture:
 
 - Purpose and user-facing promise.
+- Domain language, glossary, and concept boundaries from context documents.
 - Public CLI, API, config, or file interfaces.
 - State machine, lifecycle, resume, and idempotence rules.
 - Input/output schemas, receipts, manifests, artifacts, and path layout.
