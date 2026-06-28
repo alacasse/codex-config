@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import sys
 from pathlib import Path
 from typing import Any
 from unittest import mock
@@ -234,6 +235,7 @@ class ArchitectureProgramRunnerIntegrationTests(ArchitectureProgramRunnerTestCas
         self.assertEqual(captured["env"]["KEEP_ME"], "yes")
         self.assertEqual(captured["env"]["OVERRIDE_ME"], "new")
         self.assertEqual(captured["env"]["ADDED"], "value")
+        self.assertGreater(state["_phase_execution_meta"]["prompt_bytes"], 0)
 
     def test_execute_codex_phase_routes_through_worker_adapter(self) -> None:
         class FakeWorker:
@@ -262,6 +264,136 @@ class ArchitectureProgramRunnerIntegrationTests(ArchitectureProgramRunnerTestCas
 
         self.assertEqual(returned, self_result)
         self.assertEqual(worker.calls, [(self.config, state, "select-dispatch")])
+
+    def test_shell_worker_result_uses_existing_validation_receipt_and_transition(
+        self,
+    ) -> None:
+        config = self.structured_config()
+        state = runner.initial_state(config)
+        receipt_path = runner.phase_receipt_path(state, "select-dispatch")
+        inventory_path = runner.phase_input_inventory_path(state, "select-dispatch")
+        self.assertIsNotNone(receipt_path)
+        self.assertIsNotNone(inventory_path)
+        result = self.make_result(
+            "select-dispatch",
+            "create-spec",
+            receipt_path=receipt_path,
+            evidence_paths=[inventory_path],
+        )
+        script = self.project / "write_shell_phase_result.py"
+        script.write_text(
+            "\n".join(
+                [
+                    "import json, os",
+                    "from pathlib import Path",
+                    "result = json.loads(os.environ['PHASE_RESULT_JSON'])",
+                    "output = Path(os.environ['ARCHITECTURE_PROGRAM_PHASE_RESULT_PATH'])",
+                    "output.write_text(json.dumps(result), encoding='utf-8')",
+                    "receipt = Path(os.environ['ARCHITECTURE_PROGRAM_PROJECT']) / result['receipt_path']",
+                    "receipt.parent.mkdir(parents=True, exist_ok=True)",
+                    "receipt.write_text(json.dumps(result), encoding='utf-8')",
+                    "inventory = Path(os.environ['ARCHITECTURE_PROGRAM_PROJECT']) / os.environ['ARCHITECTURE_PROGRAM_EXPECTED_INPUT_INVENTORY_PATH']",
+                    "inventory.parent.mkdir(parents=True, exist_ok=True)",
+                    "inventory.write_text(json.dumps({'schema_version': 1, 'phase': os.environ['ARCHITECTURE_PROGRAM_PHASE'], 'primary_inputs': [], 'broad_reads': [], 'large_file_reads': [], 'subagent_reports': []}), encoding='utf-8')",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        shell_config = runner.RunnerConfig(
+            **{
+                **config.__dict__,
+                "env_overrides": (("PHASE_RESULT_JSON", json.dumps(result)),),
+            }
+        )
+        worker = worker_owner.ShellCommandWorker([sys.executable, str(script)])
+
+        returned = worker.run_phase(shell_config, state, "select-dispatch")
+        runner.validate_phase_result(returned, current_phase="select-dispatch", state=state)
+        runner.validate_receipt(returned, shell_config, state)
+        runner.apply_phase_result(state, returned)
+
+        self.assertEqual(returned, result)
+        self.assertEqual(state["active_phase"], "create-spec")
+        self.assertEqual(state["active_batch_id"], "batch-1")
+
+    def test_run_loop_shell_worker_does_not_need_codex_prompt_or_command(self) -> None:
+        config = self.structured_config()
+        state = runner.initial_state(config)
+        receipt_path = runner.phase_receipt_path(state, "select-dispatch")
+        inventory_path = runner.phase_input_inventory_path(state, "select-dispatch")
+        self.assertIsNotNone(receipt_path)
+        self.assertIsNotNone(inventory_path)
+        result = self.make_result(
+            "select-dispatch",
+            "create-spec",
+            receipt_path=receipt_path,
+            evidence_paths=[inventory_path],
+        )
+        script = self.project / "write_shell_phase_result.py"
+        script.write_text(
+            "\n".join(
+                [
+                    "import json, os",
+                    "from pathlib import Path",
+                    "result = json.loads(os.environ['PHASE_RESULT_JSON'])",
+                    "output = Path(os.environ['ARCHITECTURE_PROGRAM_PHASE_RESULT_PATH'])",
+                    "output.write_text(json.dumps(result), encoding='utf-8')",
+                    "receipt = Path(os.environ['ARCHITECTURE_PROGRAM_PROJECT']) / result['receipt_path']",
+                    "receipt.parent.mkdir(parents=True, exist_ok=True)",
+                    "receipt.write_text(json.dumps(result), encoding='utf-8')",
+                    "inventory = Path(os.environ['ARCHITECTURE_PROGRAM_PROJECT']) / os.environ['ARCHITECTURE_PROGRAM_EXPECTED_INPUT_INVENTORY_PATH']",
+                    "inventory.parent.mkdir(parents=True, exist_ok=True)",
+                    "inventory.write_text(json.dumps({'schema_version': 1, 'phase': os.environ['ARCHITECTURE_PROGRAM_PHASE'], 'primary_inputs': [], 'broad_reads': [], 'large_file_reads': [], 'subagent_reports': []}), encoding='utf-8')",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        shell_config = runner.RunnerConfig(
+            **{
+                **config.__dict__,
+                "env_overrides": (("PHASE_RESULT_JSON", json.dumps(result)),),
+                "stop_after_phase": "select-dispatch",
+            }
+        )
+        worker = worker_owner.ShellCommandWorker([sys.executable, str(script)])
+
+        def phase_executor(
+            config: runner.RunnerConfig,
+            state: dict[str, Any],
+            phase: str,
+        ) -> dict[str, Any]:
+            return worker.run_phase(config, state, phase)
+
+        with (
+            mock.patch.object(
+                runner,
+                "build_prompt",
+                side_effect=AssertionError("prompt should not be built"),
+            ),
+            mock.patch.object(
+                command_owner,
+                "build_prompt",
+                side_effect=AssertionError("prompt should not be built"),
+            ),
+            mock.patch.object(
+                runner,
+                "build_codex_command",
+                side_effect=AssertionError("codex command should not be built"),
+            ),
+            mock.patch.object(
+                command_owner,
+                "build_codex_command",
+                side_effect=AssertionError("codex command should not be built"),
+            ),
+        ):
+            final_state = runner.run(
+                shell_config,
+                phase_executor=phase_executor,
+                status_reader=lambda project: [],
+            )
+
+        self.assertEqual(final_state["active_phase"], "create-spec")
+        self.assertEqual(final_state["last_phase_status"], "completed")
 
     def test_execute_codex_phase_uses_execute_sandbox_for_execute_only(self) -> None:
         config = runner.RunnerConfig(

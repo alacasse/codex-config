@@ -357,12 +357,9 @@ def run(
             phase_telemetry_path = next_phase_telemetry_path(state, phase)
             phase_started_at = utc_now()
             phase_start_monotonic = time.monotonic()
-            environment = build_phase_environment(config, state, phase)
-            phase_prompt_bytes = len(
-                build_prompt(config, state, phase, environment=environment).encode("utf-8")
-            )
             result = phase_executor(config, state, phase)
             execution_meta = pop_phase_execution_meta(state)
+            phase_prompt_bytes = int(execution_meta.get("prompt_bytes") or 0)
             apply_execution_meta_to_state(state, execution_meta)
             validate_phase_result(result, current_phase=phase, state=state)
             validate_receipt(result, config, state)
@@ -377,6 +374,7 @@ def run(
                 )
         except RunnerError as exc:
             execution_meta = pop_phase_execution_meta(state)
+            phase_prompt_bytes = int(execution_meta.get("prompt_bytes") or phase_prompt_bytes)
             apply_execution_meta_to_state(state, execution_meta)
             state["last_phase_status"] = "failed"
             state["stop_reason"] = str(exc)

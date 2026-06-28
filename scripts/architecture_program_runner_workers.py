@@ -5,7 +5,7 @@ from __future__ import annotations
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Protocol, Sequence
 
 try:
     from scripts import architecture_program_runner_command as _runner_command
@@ -67,12 +67,68 @@ class CodexExecWorker:
                     codex_home_env=codex_home_env,
                 ).as_execution_meta()
             )
+            state["_phase_execution_meta"]["prompt_bytes"] = len(prompt.encode("utf-8"))
             if completed.returncode != 0:
                 raise RunnerError(
                     "codex exec failed for "
                     f"{phase} with exit {completed.returncode}\n{completed.stderr.strip()}"
                 )
             return read_json_object(output_last_message)
+
+
+class ShellCommandWorker:
+    """Run an internal shell command that writes a compact phase result JSON file."""
+
+    def __init__(self, command: Sequence[str]) -> None:
+        if isinstance(command, str):
+            raise TypeError("ShellCommandWorker command must be an argv sequence")
+        self.command = tuple(command)
+
+    def run_phase(self, config: Any, state: dict[str, Any], phase: str) -> dict[str, Any]:
+        with tempfile.TemporaryDirectory(prefix="architecture-program-runner-shell-") as temp_dir:
+            output_path = Path(temp_dir) / "phase-result.json"
+            subprocess_env = _runner_environment.build_subprocess_env(config.env_overrides)
+            subprocess_env.update(
+                {
+                    "ARCHITECTURE_PROGRAM_PHASE": phase,
+                    "ARCHITECTURE_PROGRAM_PHASE_RESULT_PATH": str(output_path),
+                    "ARCHITECTURE_PROGRAM_PROJECT": str(config.project),
+                }
+            )
+            expected_receipt_path = _runner_state.phase_receipt_path(state, phase)
+            if expected_receipt_path:
+                subprocess_env["ARCHITECTURE_PROGRAM_EXPECTED_RECEIPT_PATH"] = (
+                    expected_receipt_path
+                )
+            expected_inventory_path = _runner_state.phase_input_inventory_path(state, phase)
+            if expected_inventory_path:
+                subprocess_env["ARCHITECTURE_PROGRAM_EXPECTED_INPUT_INVENTORY_PATH"] = (
+                    expected_inventory_path
+                )
+            completed = subprocess.run(
+                self.command,
+                cwd=config.project,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+                env=subprocess_env,
+                shell=False,
+            )
+            state["_phase_execution_meta"] = {
+                "exit_code": completed.returncode,
+                "stdout_bytes": len(completed.stdout.encode("utf-8")),
+                "stderr_bytes": len(completed.stderr.encode("utf-8")),
+                "codex_session_id": None,
+                "codex_session_path": None,
+                "prompt_bytes": 0,
+            }
+            if completed.returncode != 0:
+                raise RunnerError(
+                    "shell command failed for "
+                    f"{phase} with exit {completed.returncode}\n{completed.stderr.strip()}"
+                )
+            return read_json_object(output_path)
 
 
 def execute_phase_with_worker(

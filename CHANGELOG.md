@@ -108,6 +108,9 @@ The runner now routes Codex phase execution through an internal **Worker**
 adapter seam. The initial `codex-exec` worker keeps the existing prompt,
 command, environment override, output-last-message, and observation behavior
 unchanged while giving future worker types a single phase-result API.
+The worker seam now also has an internal shell-command adapter proof that loads
+a compact JSON phase result through the same validation, receipt, and transition
+rules without exposing a public shell workflow CLI.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing
