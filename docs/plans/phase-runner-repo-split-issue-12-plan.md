@@ -9,8 +9,10 @@ and use `codex-config` as the first dogfooding consumer.
 
 ## Recommendation
 
-Decide the split direction now, but wait to extract code into a new repo until
-one extraction-prep batch is complete.
+Decide the split direction now. The extraction-prep batch is complete enough
+to make repo skeleton creation the next candidate, but code extraction should
+still move only the generic kernel and should define package basics before
+moving runtime behavior out of `codex-config`.
 
 The current **Runner Facade** has enough concept ownership to make the split
 worth planning. It is not yet shaped as a generic `phase-runner` **Module**.
@@ -39,13 +41,35 @@ Still `codex-config`-specific:
 - **Phase Contract** content names `architecture-program-runway` and
   `batch-runway`.
 - **Phase Environment** points at repo skill references and Codex schema files.
-- The only real execution **Adapter** is `codex exec`; the test seam accepts a
-  fake executor, but there are not yet two production **Adapters** at a generic
-  worker **Seam**.
+- The production `codex exec` path now crosses an internal worker **Seam**
+  through `CodexExecWorker`, and `ShellCommandWorker` proves the same
+  validation, receipt, and transition rules without Codex prompts.
 - Active planning now lives under `docs/plans/`; **Planning Root** and
-  **Plan Archive** are recorded in ADR 0001. The active extraction-prep runway
-  spec and dispatch remain under `plans/` only as a temporary compatibility
-  exception until that batch closes.
+  **Plan Archive** are recorded in ADR 0001. The closed extraction-prep runway
+  spec and dispatch remain under `plans/` as historical compatibility
+  artifacts; future active dispatch/spec work should be created under
+  `docs/plans/`.
+
+## Post-Prep Reassessment
+
+Evidence from `phase-runner-extraction-prep`:
+
+- APR-22: `docs/plans/` is the active **Planning Root** and
+  `docs/plans/archive/` is the **Plan Archive**, recorded by ADR 0001.
+- APR-23: `docs/plans/generic-phase-runner-workflow-contract.md` maps
+  **Workflow**, **Phase**, **Worker**, **Receipt**, **State**, and
+  **Artifact** while keeping Codex and Batch Runway policy out of the generic
+  boundary.
+- APR-24: `execute_codex_phase` now routes through `CodexExecWorker` and
+  `execute_phase_with_worker` without changing the **Runner Facade**.
+- APR-25: `ShellCommandWorker` tests prove a shell-only phase can use existing
+  result validation, receipt equality, and state transition rules without
+  Codex command construction or Batch Runway prompt language.
+
+Next action: create a bounded repo-skeleton/extraction batch for APR-26. That
+batch should define package basics first, then move only the generic worker,
+state, receipt, transition, and artifact kernel if the facade compatibility
+tests stay green.
 
 ## Wait Condition
 
@@ -123,6 +147,7 @@ Goal: make the generic **Interface** visible without moving code to a new repo.
 
 ## Decision
 
-Do not create the separate repo as the next coding step. Do the extraction-prep
-batch first. After that, split only the generic kernel and keep the Codex skills
-and architecture-program workflow integration in `codex-config`.
+Create the repo skeleton as the next candidate batch, not in this closeout
+slice. Split only the generic kernel and keep the Codex skills,
+architecture-program workflow integration, local planning policy, and
+Graphify-specific validation outside the new repo.

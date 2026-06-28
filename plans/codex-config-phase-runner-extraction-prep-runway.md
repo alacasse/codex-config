@@ -95,11 +95,11 @@ reference audit instead of running Python tests.
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 1 | completed | this commit | `git diff --check`; targeted path audit/readback | clean | Generic workflow contract maps current runner accurately | Active Program Ledger moved to `docs/plans/`; active spec/dispatch intentionally remain in `plans/` until closeout |
+| 1 | completed | `c60bdc3` | `git diff --check`; targeted path audit/readback | clean | Generic workflow contract maps current runner accurately | Active Program Ledger moved to `docs/plans/`; active spec/dispatch intentionally remain in `plans/` until closeout |
 | 2 | completed | `d1cd512` | `git diff --check`; contract/product-idea readback; terminology audit | pass after product-idea alignment fix | Codex execution routes through adapter with unchanged facade behavior | Contract added under `docs/plans/`; product idea marked non-normative where it sketches future YAML/provider examples |
 | 3 | completed | `ec58657` | focused runner pytest 33 passed; ruff passed with `/tmp` tool dir; `git diff --check` | clean | Shell worker uses same state/receipt/transition rules | Added `codex-exec` worker seam; public `execute_codex_phase` helper remains compatible |
-| 4 | ready to commit | pending | focused runner pytest 125 passed; ruff passed after approved network-backed retry; `git diff --check` | clean after argv/`shell=False` fix | Issue #12 and Program Ledger show the next decision clearly | Added internal shell worker proof; unrelated `port-by-contract` work remains unstaged/out of scope |
-| 5 | pending | | | | Issue #12 and Program Ledger show the next decision clearly | Docs plus final validation |
+| 4 | completed | `7a375b4` | focused runner pytest 125 passed; ruff passed after approved network-backed retry; `git diff --check` | clean after argv/`shell=False` fix | Issue #12 and Program Ledger show the next decision clearly | Added internal shell worker proof; unrelated `port-by-contract` work remains unstaged/out of scope |
+| 5 | completed | uncommitted | 132 focused runner/owner tests passed; dry-run smoke passed; ruff passed with known symlink warning; `git diff --check` passed | self-reviewed | Repo skeleton/extraction batch is the next candidate | Docs-only closeout; no GitHub issue update and no new repo created |
 
 ## Orchestration Anomalies
 
@@ -109,10 +109,11 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
-| 1 | this commit | Planning Root ADR created; active Program Ledger moved to `docs/plans/`; completed/superseded plans archived under `docs/plans/archive/`; current executing spec/dispatch kept under `plans/` as a temporary compatibility exception. | `docs/adr/0001-planning-root-and-plan-archive.md`; `docs/plans/README.md`; `docs/plans/codex-config-architecture-program-runner-findings.md`; review: clean |
+| 1 | `c60bdc3` | Planning Root ADR created; active Program Ledger moved to `docs/plans/`; completed/superseded plans archived under `docs/plans/archive/`; current executing spec/dispatch kept under `plans/` as a temporary compatibility exception. | `docs/adr/0001-planning-root-and-plan-archive.md`; `docs/plans/README.md`; `docs/plans/codex-config-architecture-program-runner-findings.md`; review: clean |
 | 2 | `d1cd512` | Generic workflow contract added and mapped current runner concepts to **Workflow**, **Phase**, **Worker**, **Receipt**, **State**, and **Artifact** while keeping Codex prompts, Batch Runway language, personal planning policy, Graphify validation, and GitHub coordination on the `codex-config` integration side. | `docs/plans/generic-phase-runner-workflow-contract.md`; `docs/plans/generic-phase-runner-product-idea.md`; review: pass after requested product-idea wording fix |
 | 3 | `ec58657` | Introduced `scripts/architecture_program_runner_workers.py` with `PhaseWorker`, `CodexExecWorker`, and `execute_phase_with_worker`; routed `execute_codex_phase` through the worker seam while preserving Codex command, prompt, environment, output-last-message, and observation behavior. | `scripts/architecture_program_runner_workers.py`; `scripts/architecture_program_runner.py`; `tests/test_architecture_program_runner.py`; `CHANGELOG.md`; review: clean |
-| 4 | pending | Added `ShellCommandWorker` as an internal argv-based, `shell=False` worker proof that loads compact JSON phase results through existing validation, receipt, transition, and run-loop rules without Codex prompt or command construction. | `scripts/architecture_program_runner_workers.py`; `scripts/architecture_program_runner.py`; `tests/test_architecture_program_runner.py`; `CHANGELOG.md`; review: clean after requested shell execution hardening |
+| 4 | `7a375b4` | Added `ShellCommandWorker` as an internal argv-based, `shell=False` worker proof that loads compact JSON phase results through existing validation, receipt, transition, and run-loop rules without Codex prompt or command construction. | `scripts/architecture_program_runner_workers.py`; `scripts/architecture_program_runner.py`; `tests/test_architecture_program_runner.py`; `CHANGELOG.md`; review: clean after requested shell execution hardening |
+| 5 | uncommitted | Reassessed issue #12, closed APR-22 through APR-25 in the Program Ledger, promoted APR-26 to the next repo-skeleton/extraction candidate, and left the new repo uncreated. | `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `docs/plans/codex-config-architecture-program-runner-findings.md`; `docs/plans/generic-phase-runner-workflow-contract.md`; final validation passed |
 
 ## Slice 1 - Planning Root ADR And Archive Migration
 

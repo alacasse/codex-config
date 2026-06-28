@@ -45,13 +45,28 @@ way:
 |---|---|
 | **Workflow** | One architecture-program runner invocation around a Program Ledger and the fixed `select-dispatch -> create-spec -> execute -> closeout` sequence |
 | **Phase** | The existing **Phase** concept from `CONTEXT.md` |
-| **Worker** | Today, the production Codex execution path behind `execute_codex_phase`; future slices introduce explicit `codex-exec` and `shell` adapters |
+| **Worker** | The internal `PhaseWorker` seam with `CodexExecWorker` for the production Codex path and `ShellCommandWorker` as the shell-only proof adapter |
 | **Receipt** | **Phase Receipt**, which persists exactly one schema-valid **Phase Result** and must match it exactly |
 | **State** | **Run State**, the resumable record for one architecture-program run |
 | **Artifact** | **Run Artifact** and **Batch Artifact**, including receipts, manifests, telemetry, dispatch packets, and generated runway evidence |
 
 The current architecture-program sequence is one valid `codex-config`
 workflow. It is not the only possible generic workflow.
+
+## Proven Internal Adapters
+
+The extraction-prep batch proved the worker boundary with two internal
+adapters:
+
+- `CodexExecWorker`: preserves the existing `codex exec` command, prompt,
+  environment, output-last-message, and phase-observation behavior behind the
+  worker seam.
+- `ShellCommandWorker`: runs an argv-based command with `shell=False`, reads a
+  compact phase-result JSON file, and lets existing validation, receipt, and
+  transition code handle the result.
+
+These adapters are evidence for extraction planning, not a public package API
+or user-facing workflow definition.
 
 ## `codex-config` Integration Boundary
 

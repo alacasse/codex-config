@@ -96,11 +96,11 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | APR-19. **Phase Contract** facts are embedded in prompt string construction | Closed | `22f2c72`, `81a6b70`, `ba04d7a`, `97a0faf`; `scripts/architecture_program_runner_phase_contract.py`; focused tests and dry-run smoke | None | **Phase Contract** now owns skill instructions, single-level boundary rules, shared result/receipt duties, env-override validation duties, and per-phase requirements while prompt rendering consumes those obligations separately from **Phase Environment** facts. |
 | APR-20. **Phase Observation** attribution is incomplete | Closed | `04efa20`, `cd84b00`, `adad417`, this closeout commit; `docs/plans/archive/dispatch/phase-observation-attribution-dispatch.md`; `docs/plans/archive/codex-config-architecture-program-runner-phase-observation-attribution-runway.md`; `scripts/architecture_program_runner_phase_observation.py`; final validation: focused runner pytest subset 89 passed, dry-run smoke passed, `uvx ruff` passed, `git diff --check` passed | None | **Phase Observation** now records exact runner-launched session ids and uniquely matched session JSONL paths when directly discoverable, keeps missing, ambiguous, or filesystem-error attribution non-fatal, does not persist env override values, and leaves token persistence in artifact telemetry. |
 | APR-21. **Input Inventory** has no enforced contract | Closed | `4331cd4`, `87e20b4`, `0857612`, this closeout commit; `scripts/architecture_program_runner_input_inventory.py`; `docs/plans/archive/dispatch/input-inventory-contract-dispatch.md`; `docs/plans/archive/codex-config-architecture-program-runner-input-inventory-contract-runway.md`; final validation: focused runner pytest subset 129 passed, dry-run smoke passed, `uvx ruff` passed, `git diff --check` passed | None | **Input Inventory** now has a project-neutral owner, compact JSON shape validation, expected evidence-path enforcement for structured phases, prompt/protocol documentation, and manifest/telemetry path exposure without transcript or session-log reconstruction. |
-| APR-22. **Planning Root** and **Plan Archive** are not implemented | In runway | `CONTEXT.md`; `docs/adr/0001-planning-root-and-plan-archive.md`; `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `plans/dispatch/phase-runner-extraction-prep-dispatch.md`; `plans/codex-config-phase-runner-extraction-prep-runway.md` | Execute `phase-runner-extraction-prep` Slice 1 | Active root is `docs/plans/`; archive is `docs/plans/archive/`; current runway spec and dispatch remain in `plans/` as a temporary active-batch compatibility exception. |
-| APR-23. Generic workflow contract is only product prose | In runway | `docs/plans/generic-phase-runner-product-idea.md`; `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `plans/dispatch/phase-runner-extraction-prep-dispatch.md`; `plans/codex-config-phase-runner-extraction-prep-runway.md` | Execute `phase-runner-extraction-prep` Slice 2 | Map current runner concepts to **Workflow**, **Phase**, **Worker**, **Receipt**, **State**, and **Artifact** before repo extraction. |
-| APR-24. Worker adapter seam is Codex-only in production | In runway | `scripts/architecture_program_runner.py`; `scripts/architecture_program_runner_command.py`; `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `plans/dispatch/phase-runner-extraction-prep-dispatch.md`; `plans/codex-config-phase-runner-extraction-prep-runway.md` | Execute `phase-runner-extraction-prep` Slice 3 | The current `phase_executor` hook is useful test injection, but production execution is still Codex-specific. |
-| APR-25. Shell-only workflow regression coverage is missing | In runway | `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `plans/dispatch/phase-runner-extraction-prep-dispatch.md`; `plans/codex-config-phase-runner-extraction-prep-runway.md` | Execute `phase-runner-extraction-prep` Slice 4 | A shell worker should prove state, receipt, validation, and transition behavior without Batch Runway prompt language. |
-| APR-26. Separate `phase-runner` repository split is premature | Deferred | `docs/plans/phase-runner-repo-split-issue-12-plan.md` | Reassess after `phase-runner-extraction-prep` | Do not create the repo until APR-22 through APR-25 provide evidence that the generic kernel is real. |
+| APR-22. **Planning Root** and **Plan Archive** are not implemented | Closed | `c60bdc3`; `docs/adr/0001-planning-root-and-plan-archive.md`; `docs/plans/README.md`; `docs/plans/archive/README.md` | None | Active planning root is `docs/plans/`; archive is `docs/plans/archive/`; the old `plans/` path is only a temporary compatibility location for the now-closing extraction-prep spec and dispatch. |
+| APR-23. Generic workflow contract is only product prose | Closed | `d1cd512`; `docs/plans/generic-phase-runner-workflow-contract.md`; `docs/plans/generic-phase-runner-product-idea.md` | None | Contract maps **Workflow**, **Phase**, **Worker**, **Receipt**, **State**, and **Artifact** while keeping Codex prompts, Batch Runway policy, personal plans, GitHub coordination, and Graphify validation outside the generic boundary. |
+| APR-24. Worker adapter seam is Codex-only in production | Closed | `ec58657`; `scripts/architecture_program_runner_workers.py`; `scripts/architecture_program_runner.py`; focused worker tests | None | Production Codex phase execution now routes through `CodexExecWorker` and `execute_phase_with_worker` while preserving `execute_codex_phase` compatibility and **Runner Facade** behavior. |
+| APR-25. Shell-only workflow regression coverage is missing | Closed | `7a375b4`; `ShellCommandWorker`; `tests/test_architecture_program_runner.py` | None | Shell worker coverage proves an argv-based command can produce a compact phase result that existing validation, receipt equality, and **Phase Transition** rules consume without Codex or Batch Runway prompt language. |
+| APR-26. Separate `phase-runner` repository split is premature | Candidate | `docs/plans/phase-runner-repo-split-issue-12-plan.md`; APR-22 through APR-25 closeout evidence | Create a bounded repo-skeleton/extraction batch | The generic boundary is now proven enough to plan repo skeleton creation; package basics and facade compatibility must be defined before moving code. |
 
 ## Batch Queue
 
@@ -112,44 +112,36 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | phase-contract-catalog | APR-19 | Closed | Separates normative **Phase Contract** facts from rendered prompt text | APR-16 satisfied; APR-17/APR-18 satisfied | Contract/command tests plus dry-run smoke | `docs/plans/archive/dispatch/phase-contract-catalog-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-phase-contract-catalog-runway.md` |
 | phase-observation-attribution | APR-20 | Closed | Reframes telemetry attribution as **Phase Observation** work | APR-16, APR-19 satisfied | Artifact and observation tests with synthetic session logs plus dry-run smoke; no live nested Codex required | `docs/plans/archive/dispatch/phase-observation-attribution-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-phase-observation-attribution-runway.md` |
 | input-inventory-contract | APR-21 | Closed | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 satisfied | Unit tests with synthetic inventories and prompt checks plus dry-run smoke | `docs/plans/archive/dispatch/input-inventory-contract-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-input-inventory-contract-runway.md` |
-| phase-runner-extraction-prep | APR-22, APR-23, APR-24, APR-25 | Ready | Closes the issue #12 wait condition before any repo split: planning root/archive, generic workflow contract, Codex adapter seam, and shell-worker proof | Closed concept-owner batches; issue #12 decision note | Project-harness production with docs-only overrides for planning slices | `plans/dispatch/phase-runner-extraction-prep-dispatch.md` | `plans/codex-config-phase-runner-extraction-prep-runway.md` |
+| phase-runner-extraction-prep | APR-22, APR-23, APR-24, APR-25 | Closed | Closed the issue #12 wait condition before any repo split: planning root/archive, generic workflow contract, Codex adapter seam, and shell-worker proof | Closed concept-owner batches; issue #12 decision note | Project-harness production with docs-only overrides for planning slices | `plans/dispatch/phase-runner-extraction-prep-dispatch.md` | `plans/codex-config-phase-runner-extraction-prep-runway.md` |
+| phase-runner-repo-skeleton | APR-26 | Candidate | Define the new repo/package boundary after the generic contract and two worker adapters proved the kernel shape inside `codex-config` | APR-22 through APR-25 closed; issue #12 reassessment | Focused facade compatibility tests, worker/state/receipt/transition tests, dry-run smoke, ruff, `git diff --check` | TBD under `docs/plans/` | TBD under `docs/plans/` |
 
-## Selected Batch Brief
+## Selected Next Candidate
 
-- Batch: `phase-runner-extraction-prep`
-- Dispatch: `plans/dispatch/phase-runner-extraction-prep-dispatch.md`
-- Spec: `plans/codex-config-phase-runner-extraction-prep-runway.md`
+- Batch: `phase-runner-repo-skeleton`
+- Dispatch: TBD under `docs/plans/`
+- Spec: TBD under `docs/plans/`
 - Active ledger: `docs/plans/codex-config-architecture-program-runner-findings.md`
-- Compatibility note: the active dispatch and spec remain in `plans/` until
-  this batch closes; future active planning should be created under
-  `docs/plans/`.
-- Status: ready for execution; planning-only dispatch/spec preparation complete
-- Goal: prepare for a future `phase-runner` repository decision without
-  creating the repo yet, by migrating the planning root, documenting the
-  generic workflow contract, introducing a worker adapter seam, and proving a
-  shell worker can use the same state/receipt/transition rules.
+- Status: candidate; create a dispatch/spec before coding
+- Goal: create the `phase-runner` repo skeleton or extraction branch boundary
+  only after package basics are explicit, then move only the generic kernel if
+  facade compatibility tests stay green.
 - Guardrails:
   - Preserve current CLI arguments, direct script execution, phase order, Run
     Summary shape, phase-result schema, receipt equality, and structured
     artifact layout.
-  - Do not create the separate `phase-runner` repository in this batch.
+  - Keep Codex skills, architecture-program phase prompts, personal planning
+    policy, and Graphify-specific validation in `codex-config`.
   - Keep Batch Runway, architecture-program phase prompts, personal planning
     policy, and Graphify-specific validation out of the generic core.
-  - Keep historical planning artifacts accessible after archive migration.
-  - Do not change the phase-result schema or public CLI to prove the worker
-    adapter seam.
+  - Define CLI entrypoint, tests, ruff/type command, CI expectations, and Docker
+    stance before moving code.
 - Suggested slices:
-  - Record the **Planning Root** ADR and migrate active planning to
-    `docs/plans/` with completed or superseded material under
-    `docs/plans/archive/`.
-  - Add a generic workflow contract mapping current runner concepts to
-    **Workflow**, **Phase**, **Worker**, **Receipt**, **State**, and
-    **Artifact**.
-  - Introduce a minimal worker adapter seam and route current Codex execution
-    through a `codex-exec` adapter without behavior changes.
-  - Add a shell worker adapter and tests proving shell-only state, receipt,
-    validation, and transition behavior.
-  - Reassess issue #12 and update this ledger with compact closeout evidence.
+  - Define package basics and ownership split for a new `phase-runner` repo.
+  - Identify the minimal generic kernel files and compatibility facade tests.
+  - Create the repo skeleton or extraction branch without importing
+    `codex-config` policy.
+  - Move generic worker/state/receipt/transition/artifact code only when the
+    existing Runner Facade remains green.
 
 ## Recommended Work Order
 
@@ -163,8 +155,8 @@ Completed:
   the phase-result schema or adding transcript reconstruction.
 
 Remaining:
-1. `phase-runner-extraction-prep`: close the issue #12 wait condition before
-   creating any separate repo.
+1. `phase-runner-repo-skeleton`: define package basics and extract only the
+   generic kernel if compatibility evidence stays green.
 
 ## Closeout Rules
 
@@ -191,8 +183,8 @@ Remaining:
 - Mark APR-25 closed only after a shell worker test proves the same state,
   receipt, validation, and transition rules without Codex or Batch Runway
   prompt language.
-- Keep APR-26 deferred until the extraction-prep batch evidence supports a
-  repo-split decision.
+- Promote APR-26 only when extraction-prep evidence supports a repo-split
+  decision, and keep package basics explicit before moving code.
 
 ## Validation Snapshot
 
@@ -208,3 +200,6 @@ Remaining:
 - Input Inventory closeout passed 129 focused runner tests, dry-run smoke,
   `uvx ruff check scripts tests` with the known non-fatal Python symlink
   warning, and `git diff --check`.
+- Phase Runner Extraction Prep closeout passed 132 focused runner/owner tests,
+  dry-run smoke, `uvx ruff check scripts tests` with the known non-fatal Python
+  symlink warning, and `git diff --check`.
