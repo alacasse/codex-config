@@ -18,8 +18,10 @@ validation evidence first. Only inspect source files to discover the contract;
 do not preserve file layout, private helper names, or language-specific control
 flow unless they represent an intentional public or operational contract.
 
-If the user explicitly asks for direct translation, state the risk and ask
-whether to bypass the contract-first workflow.
+If the user explicitly asks for direct line-by-line translation, state that
+this is outside port-by-contract work. Continue only if they confirm they want
+contract-first extraction; if they insist on direct translation, stop using this
+skill and route to a non-contract workflow.
 
 ## Required First Steps
 
@@ -35,6 +37,17 @@ whether to bypass the contract-first workflow.
 If the source scope, target, planning location, or validation authority is
 unclear, stop and ask for the missing value instead of creating speculative
 contracts.
+
+## Durable Artifacts
+
+For non-trivial ports, write compact repo-local contract or planning artifacts
+before creating a runway or target design. Use the project's existing planning
+convention, such as `docs/plans/`, `plans/`, or the repo's local planning
+overlay. Chat-only output is acceptable only for explicitly lightweight reviews
+or when the user asks not to write files.
+
+Artifacts should be short enough for future agents to read quickly and should
+link to source evidence instead of pasting raw code or long logs.
 
 ## Modes
 
@@ -129,6 +142,10 @@ After contract distillation, use the smallest workflow that fits:
 - Use `batch-runway` when one bounded 3-5 slice port plan is enough.
 - Use `architecture-program-runway` when multiple workstreams, staged ledgers,
   or repeated batches are needed.
+
+Before creating the handoff, read and follow the selected runway skill. Keep the
+handoff bounded to the next useful batch or program step, and point it at the
+contract artifact paths instead of reopening all raw source.
 
 The handoff should include:
 
