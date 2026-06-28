@@ -10,6 +10,8 @@ Active planning:
 - `phase-runner-repo-split-issue-12-plan.md`: current issue #12 decision note.
 - `generic-phase-runner-product-idea.md`: product idea feeding the generic
   workflow contract.
+- `generic-phase-runner-workflow-contract.md`: generic workflow boundary and
+  current runner mapping.
 
 Temporary compatibility exception:
 

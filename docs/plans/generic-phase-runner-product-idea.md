@@ -4,7 +4,17 @@
 
 Explore whether the current architecture program runner can evolve into a standalone, tool-agnostic open-source project.
 
-The generic project would not be a coding agent and would not be tied to Codex. It would be a small phase-based workflow runner for long-running work where each phase can be executed by a disposable worker and every phase returns durable, structured evidence.
+The generic project would not be a coding agent and would not be tied to
+Codex. It would be a small phase-based workflow runner for long-running work
+where each phase can be executed by a disposable worker that returns either a
+validated phase result or a runner error. Compact durable receipts can preserve
+evidence for completed phase results.
+
+Contract reference:
+`docs/plans/generic-phase-runner-workflow-contract.md` is the current boundary
+document for mapping this product idea to the `codex-config` runner. Keep this
+file as product positioning and examples; keep generic-vs-integration contract
+language in the contract document.
 
 ## Core thesis
 
@@ -15,7 +25,7 @@ Instead:
 - break the workflow into bounded phases;
 - run each phase with the best available worker;
 - persist state outside the worker;
-- require structured receipts;
+- keep compact durable evidence for completed phase results;
 - stop on explicit safety or completion conditions;
 - resume from durable artifacts.
 
@@ -33,6 +43,9 @@ Or, for agent-oriented positioning:
 
 ## Concepts
 
+This section is a non-normative product summary. The workflow contract is the
+authoritative boundary for generic runner behavior.
+
 ### Workflow
 
 A named set of phases, transitions, stop conditions, and artifact rules.
@@ -46,14 +59,16 @@ A phase has:
 - an id;
 - inputs;
 - a worker definition;
-- an expected receipt schema;
+- an expected phase-result shape;
+- receipt/evidence rules for completed results;
 - allowed outputs;
 - transition rules;
 - stop conditions.
 
 ### Worker
 
-Anything that can execute a phase and produce a receipt.
+Anything that can execute a phase and return a validated phase result or runner
+error.
 
 Possible worker types:
 
@@ -69,9 +84,10 @@ Possible worker types:
 
 ### Receipt
 
-A structured phase result.
+Compact durable evidence for one completed phase result.
 
-Receipts should be compact, machine-readable, and durable. They are not transcripts or logs.
+Receipts should be compact, machine-readable, and durable. They are not the
+worker result contract, transcripts, or logs.
 
 ### State
 
@@ -98,6 +114,9 @@ The same model can apply to:
 - backend batch processing.
 
 ## Example generic workflow
+
+This YAML is an illustrative product sketch, not a generic runner core
+requirement or committed file-shape contract.
 
 ```yaml
 name: report-export
@@ -127,6 +146,10 @@ phases:
 ```
 
 ## Example agent workflow
+
+This YAML is an illustrative Codex-oriented product example. Prompt paths and
+`output_schema` fields are provider/integration details, not generic runner
+core semantics.
 
 ```yaml
 name: agentic-refactor
@@ -227,12 +250,13 @@ phase-runner/
 
 ## Provider adapter concept
 
-A provider adapter executes one phase and returns a phase result.
+A provider adapter executes one phase and returns a validated phase result or a
+runner error.
 
 Conceptual interface:
 
 ```text
-run_phase(phase, state, artifacts, environment) -> PhaseResult
+run_phase(phase, state, artifacts, environment) -> PhaseResult | RunnerError
 ```
 
 Initial providers:
@@ -306,8 +330,8 @@ Recommended path:
 ## Initial acceptance criteria for exploration
 
 - Identify the smallest generic core that can be separated from `architecture-program-runway`.
-- Define one generic workflow file shape.
-- Define one phase receipt schema.
+- Sketch one possible workflow file shape as a future product example.
+- Sketch one possible receipt/evidence format as a future product example.
 - Keep at least one provider non-agentic, such as shell.
 - Keep Codex as a provider/example, not as the core abstraction.
 - Document how the current runner maps onto the generic model.

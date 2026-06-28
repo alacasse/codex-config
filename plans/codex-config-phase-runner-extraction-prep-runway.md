@@ -96,7 +96,7 @@ reference audit instead of running Python tests.
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
 | 1 | completed | this commit | `git diff --check`; targeted path audit/readback | clean | Generic workflow contract maps current runner accurately | Active Program Ledger moved to `docs/plans/`; active spec/dispatch intentionally remain in `plans/` until closeout |
-| 2 | pending | | | | Generic workflow contract maps current runner accurately | Docs-only override allowed |
+| 2 | ready to commit | pending | `git diff --check`; contract/product-idea readback; terminology audit | pass after product-idea alignment fix | Codex execution routes through adapter with unchanged facade behavior | Contract added under `docs/plans/`; product idea marked non-normative where it sketches future YAML/provider examples |
 | 3 | pending | | | | Codex execution routes through adapter with unchanged facade behavior | Production refactor |
 | 4 | pending | | | | Shell worker uses same state/receipt/transition rules | Production behavior shield |
 | 5 | pending | | | | Issue #12 and Program Ledger show the next decision clearly | Docs plus final validation |
@@ -110,6 +110,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1 | this commit | Planning Root ADR created; active Program Ledger moved to `docs/plans/`; completed/superseded plans archived under `docs/plans/archive/`; current executing spec/dispatch kept under `plans/` as a temporary compatibility exception. | `docs/adr/0001-planning-root-and-plan-archive.md`; `docs/plans/README.md`; `docs/plans/codex-config-architecture-program-runner-findings.md`; review: clean |
+| 2 | pending | Generic workflow contract added and mapped current runner concepts to **Workflow**, **Phase**, **Worker**, **Receipt**, **State**, and **Artifact** while keeping Codex prompts, Batch Runway language, personal planning policy, Graphify validation, and GitHub coordination on the `codex-config` integration side. | `docs/plans/generic-phase-runner-workflow-contract.md`; `docs/plans/generic-phase-runner-product-idea.md`; review: pass after requested product-idea wording fix |
 
 ## Slice 1 - Planning Root ADR And Archive Migration
 

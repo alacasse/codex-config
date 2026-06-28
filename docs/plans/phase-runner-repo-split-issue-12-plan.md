@@ -103,8 +103,8 @@ Goal: make the generic **Interface** visible without moving code to a new repo.
 2. **Generic Workflow Contract**
 
    - Files: `docs/plans/generic-phase-runner-product-idea.md`,
-     `skills/architecture-program-runway/references/local-runner-v1.md`, future
-     `docs/plans/` reference.
+     `docs/plans/generic-phase-runner-workflow-contract.md`,
+     `skills/architecture-program-runway/references/local-runner-v1.md`.
    - Problem: the product idea names generic concepts, but the executable
      runner still treats the architecture-program sequence as the only shape.
    - Solution: document and then code a generic workflow shape while mapping

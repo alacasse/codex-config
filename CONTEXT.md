@@ -89,6 +89,13 @@ _Avoid_: active plan, program ledger, dispatch packet
 The documentation location at `docs/plans/` where active program ledgers, dispatch packets, runway specs, and planning reports live.
 _Avoid_: source root, artifact root, plan archive
 
+**Generic Workflow Contract**:
+The planning reference at `docs/plans/generic-phase-runner-workflow-contract.md`
+that maps the current runner to generic **Workflow**, **Phase**, **Worker**,
+**Receipt**, **State**, and **Artifact** concepts while keeping
+`codex-config` integration language separate.
+_Avoid_: product idea, public package API, YAML workflow schema
+
 ## Relationships
 
 - The **Runner Facade** may preserve externally visible behavior while its internal shape changes.
@@ -116,6 +123,8 @@ _Avoid_: source root, artifact root, plan archive
 - A **Plan Archive** preserves historical planning evidence that should not be treated as active instructions.
 - The **Planning Root** is `docs/plans/`.
 - The **Plan Archive** is `docs/plans/archive/`.
+- The **Generic Workflow Contract** cross-references this glossary for current
+  runner terms and does not replace it.
 
 ## Example dialogue
 
