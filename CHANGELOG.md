@@ -11,11 +11,11 @@ needed is an implementation-neutral behavior contract.
 Decision: add a repo-owned `port-by-contract` skill. The skill rejects direct
 translation as the default strategy, defines intake, contract distillation,
 target design, runway handoff, and closeout modes, and documents the Python
-architecture-program runner to Go `baton-runner` path as the first use case.
-The skill now treats direct line-by-line translation as outside the workflow,
-requires durable repo-local contract artifacts for non-trivial ports, and
-requires agents to load and follow the selected runway skill before creating a
-bounded handoff.
+architecture-program runner as an example source scope without hardcoding a
+target product name. The skill now treats direct line-by-line translation as
+outside the workflow, requires durable repo-local contract artifacts for
+non-trivial ports, and requires agents to load and follow the selected runway
+skill before creating a bounded handoff.
 
 Expected effect: future rewrite planning can extract compact source contracts
 first, then hand implementation work to `architecture-program-runway` or

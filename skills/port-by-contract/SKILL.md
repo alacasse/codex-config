@@ -160,17 +160,17 @@ The handoff should include:
 Do not ask the next agent to reread the entire source unless a contract is
 missing, stale, contradictory, or explicitly insufficient.
 
-## First Documented Use Case
+## Example Source Scope
 
-Use this path for the Python architecture-program runner to Go
-`baton-runner` extraction:
+Use this path when extracting the Python architecture-program runner into a
+new generic runner product or module:
 
 - Source: `scripts/architecture_program_runner*.py`, runner tests, runner
   protocol references, schemas, and relevant planning docs.
-- Target: Go implementation for a generic phase runner or `baton-runner`
-  product.
+- Target: implementation in the requested language/runtime for a generic
+  runner product or module named by the user or current project plan.
 - Expected outputs: source architecture map, behavior contract, state machine
-  contract, receipt contract, artifact layout contract, Go target architecture
+  contract, receipt contract, artifact layout contract, target architecture
   notes, and a port runway plan.
 - Guardrail: do not copy the Python runner's file split into Go packages unless
   the contract evidence proves that split is a durable concept boundary.
