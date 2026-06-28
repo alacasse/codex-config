@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Port-by-contract skill
+
+Problem: cross-language or product rewrites can accidentally preserve source
+file layout, helper boundaries, and language-specific structure when what is
+needed is an implementation-neutral behavior contract.
+
+Decision: add a repo-owned `port-by-contract` skill. The skill rejects direct
+translation as the default strategy, defines intake, contract distillation,
+target design, runway handoff, and closeout modes, and documents the Python
+architecture-program runner to Go `baton-runner` path as the first use case.
+
+Expected effect: future rewrite planning can extract compact source contracts
+first, then hand implementation work to `architecture-program-runway` or
+`batch-runway` without asking a fresh agent to copy the source shape.
+
 ### GitHub issue writing policy
 
 Problem: GitHub issue/comment bodies can become large Markdown design dumps, which makes them noisy and harder for agents to create, update, and review reliably.

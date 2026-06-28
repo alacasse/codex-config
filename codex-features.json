@@ -35,6 +35,16 @@
         }
       ]
     },
+    "port-by-contract": {
+      "version": "1.0.0",
+      "description": "Contract-first workflow for implementation-neutral rewrites and ports.",
+      "links": [
+        {
+          "source": "skills/port-by-contract",
+          "target": "skills/port-by-contract"
+        }
+      ]
+    },
     "test-quality-review": {
       "version": "1.0.0",
       "description": "Review tests for behavioral confidence, regression protection, and design friction.",

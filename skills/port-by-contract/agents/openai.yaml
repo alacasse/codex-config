@@ -1,0 +1,4 @@
+interface:
+  display_name: "Port By Contract"
+  short_description: "Plan rewrites from neutral contracts"
+  default_prompt: "Use $port-by-contract to extract implementation-neutral contracts before planning a rewrite."
