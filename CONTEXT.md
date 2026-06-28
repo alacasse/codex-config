@@ -82,11 +82,11 @@ The compact handoff that describes the selected batch for spec creation.
 _Avoid_: batch spec, program ledger, receipt
 
 **Plan Archive**:
-The historical home for completed or superseded planning documents after their execution value is gone.
+The historical home at `docs/plans/archive/` for completed or superseded planning documents after their execution value is gone.
 _Avoid_: active plan, program ledger, dispatch packet
 
 **Planning Root**:
-The documentation location where active program ledgers, dispatch packets, runway specs, and planning reports live.
+The documentation location at `docs/plans/` where active program ledgers, dispatch packets, runway specs, and planning reports live.
 _Avoid_: source root, artifact root, plan archive
 
 ## Relationships
@@ -114,8 +114,8 @@ _Avoid_: source root, artifact root, plan archive
 - A **Run State** records the active **Batch** when one has been selected.
 - A **Run Summary** reports selected facts from **Run State** and the latest **Phase Receipt**.
 - A **Plan Archive** preserves historical planning evidence that should not be treated as active instructions.
-- The target **Planning Root** is `docs/plans/`.
-- The target **Plan Archive** is `docs/plans/archive/`.
+- The **Planning Root** is `docs/plans/`.
+- The **Plan Archive** is `docs/plans/archive/`.
 
 ## Example dialogue
 
@@ -158,9 +158,9 @@ _Avoid_: source root, artifact root, plan archive
 > **Dev:** "Should the runner automatically move completed plans into the **Plan Archive**?"
 > **Domain expert:** "No — start with an explicit filesystem convention; runner-managed archival can be considered later."
 > **Dev:** "Should active planning live directly under `plans/` forever?"
-> **Domain expert:** "No — the target **Planning Root** is `docs/plans/`, with migration handled as a separate batch."
+> **Domain expert:** "No — the **Planning Root** is `docs/plans/`; `plans/` is only a temporary compatibility location for the active extraction-prep spec and dispatch during their batch."
 > **Dev:** "Does moving the **Planning Root** need a decision record?"
-> **Domain expert:** "Yes — create an ADR when the migration batch is specified."
+> **Domain expert:** "Yes — use ADR 0001 for the planning-root and archive decision."
 
 ## Flagged ambiguities
 

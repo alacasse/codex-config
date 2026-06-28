@@ -42,9 +42,10 @@ Still `codex-config`-specific:
 - The only real execution **Adapter** is `codex exec`; the test seam accepts a
   fake executor, but there are not yet two production **Adapters** at a generic
   worker **Seam**.
-- Active planning still lives under `plans/`; **Planning Root** and
-  **Plan Archive** migration is still the remaining candidate in the program
-  ledger.
+- Active planning now lives under `docs/plans/`; **Planning Root** and
+  **Plan Archive** are recorded in ADR 0001. The active extraction-prep runway
+  spec and dispatch remain under `plans/` only as a temporary compatibility
+  exception until that batch closes.
 
 ## Wait Condition
 
@@ -54,7 +55,7 @@ Split after these conditions are true:
    **Plan Archive** exists at `docs/plans/archive/`, and an ADR records the
    planning-root decision.
 2. A generic workflow model exists in code, not only in
-   `plans/generic-phase-runner-product-idea.md`: **Workflow**, **Phase**,
+   `docs/plans/generic-phase-runner-product-idea.md`: **Workflow**, **Phase**,
    **Worker**, **Receipt**, **State**, and **Artifact**.
 3. A real worker **Adapter** **Seam** exists with at least two adapters,
    initially `shell` and `codex-exec`. One adapter is only a hypothetical seam.
@@ -101,7 +102,7 @@ Goal: make the generic **Interface** visible without moving code to a new repo.
 
 2. **Generic Workflow Contract**
 
-   - Files: `plans/generic-phase-runner-product-idea.md`,
+   - Files: `docs/plans/generic-phase-runner-product-idea.md`,
      `skills/architecture-program-runway/references/local-runner-v1.md`, future
      `docs/plans/` reference.
    - Problem: the product idea names generic concepts, but the executable
@@ -113,8 +114,8 @@ Goal: make the generic **Interface** visible without moving code to a new repo.
 
 3. **Planning Root Cleanup**
 
-   - Files: `plans/codex-config-architecture-program-runner-findings.md`,
-     `plans/*`, future `docs/plans/`, future ADR.
+   - Files: `docs/plans/codex-config-architecture-program-runner-findings.md`,
+     `docs/plans/`, `docs/plans/archive/`, ADR 0001.
    - Problem: a new public repo would inherit current planning-location churn.
    - Solution: close APR-22 before extraction.
    - Benefits: better **Locality** for active plans versus archives, and a

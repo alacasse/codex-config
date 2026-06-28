@@ -4,8 +4,7 @@
 
 Keep architecture-program runner findings visible across batches without
 requiring future agents to replay stale runway specs or block reports. This is
-the active **Program Ledger** until the **Planning Root** migration moves active
-planning to `docs/plans/`.
+the active **Program Ledger** under the **Planning Root** at `docs/plans/`.
 
 ## Glossary Anchor
 
@@ -20,7 +19,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 - Use **Phase Observation**, not telemetry, for runner-recorded phase facts.
 - Use **Change Allowance**, not dirty-worktree policy, for allowed changed
   paths at a phase.
-- Treat stale completed plans and reports as future **Plan Archive** material,
+- Treat stale completed plans and reports as **Plan Archive** material,
   not active coordination.
 
 ## Current Direction
@@ -39,14 +38,17 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
   production refactor should start with **Phase Environment** because launch
   context and prompt context are currently spread across CLI config, command
   construction, env override handling, sandbox selection, and prompt assembly.
-- Defer the **Planning Root** migration to a separate batch. The target is
-  `docs/plans/`, with **Plan Archive** at `docs/plans/archive/`; create an ADR
-  when that migration batch is specified.
+- Use `docs/plans/` as the active **Planning Root**, with **Plan Archive** at
+  `docs/plans/archive/`; see ADR 0001.
+- Do not create a separate `phase-runner` repo until the extraction-prep batch
+  proves a generic workflow contract and at least two worker adapters inside
+  `codex-config`.
 
 ## Current Active Surfaces
 
 - Glossary: `CONTEXT.md`
-- Current Program Ledger: `plans/codex-config-architecture-program-runner-findings.md`
+- Current Program Ledger:
+  `docs/plans/codex-config-architecture-program-runner-findings.md`
 - Runner Facade: `scripts/architecture_program_runner.py`
 - Current concept-owner files:
   - `scripts/architecture_program_runner_state.py`
@@ -66,6 +68,8 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
   - `tests/test_architecture_program_runner.py`
 - Behavioral runner reference:
   `skills/architecture-program-runway/references/local-runner-v1.md`
+- Repo-split decision note:
+  `docs/plans/phase-runner-repo-split-issue-12-plan.md`
 
 ## Findings Ledger
 
@@ -90,55 +94,62 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | APR-17. **Phase Transition** is expressed as run-loop state-key mutation | Closed | `c6d7705`, `19d6b8a`, `6cb9e20`; `scripts/architecture_program_runner_transition.py`; focused tests and dry-run smoke | None | **Phase Transition** now consumes a valid **Phase Result** and updates **Run State** without owning validation, execution, or observation writing. |
 | APR-18. **Change Allowance** is still encoded as dirty-path helpers in the Runner Facade | Closed | `c6d7705`, `a69eb40`, `6cb9e20`; `scripts/architecture_program_runner_change_allowance.py`; focused tests and dry-run smoke | None | **Change Allowance** now owns dirty-path classification and worktree checks while preserving conservative rejection behavior. |
 | APR-19. **Phase Contract** facts are embedded in prompt string construction | Closed | `22f2c72`, `81a6b70`, `ba04d7a`, `97a0faf`; `scripts/architecture_program_runner_phase_contract.py`; focused tests and dry-run smoke | None | **Phase Contract** now owns skill instructions, single-level boundary rules, shared result/receipt duties, env-override validation duties, and per-phase requirements while prompt rendering consumes those obligations separately from **Phase Environment** facts. |
-| APR-20. **Phase Observation** attribution is incomplete | Closed | `04efa20`, `cd84b00`, `adad417`, this closeout commit; `plans/dispatch/phase-observation-attribution-dispatch.md`; `plans/codex-config-architecture-program-runner-phase-observation-attribution-runway.md`; `scripts/architecture_program_runner_phase_observation.py`; final validation: focused runner pytest subset 89 passed, dry-run smoke passed, `uvx ruff` passed, `git diff --check` passed | None | **Phase Observation** now records exact runner-launched session ids and uniquely matched session JSONL paths when directly discoverable, keeps missing, ambiguous, or filesystem-error attribution non-fatal, does not persist env override values, and leaves token persistence in artifact telemetry. |
-| APR-21. **Input Inventory** has no enforced contract | Closed | `4331cd4`, `87e20b4`, `0857612`, this closeout commit; `scripts/architecture_program_runner_input_inventory.py`; `plans/dispatch/input-inventory-contract-dispatch.md`; `plans/codex-config-architecture-program-runner-input-inventory-contract-runway.md`; final validation: focused runner pytest subset 129 passed, dry-run smoke passed, `uvx ruff` passed, `git diff --check` passed | None | **Input Inventory** now has a project-neutral owner, compact JSON shape validation, expected evidence-path enforcement for structured phases, prompt/protocol documentation, and manifest/telemetry path exposure without transcript or session-log reconstruction. |
-| APR-22. **Planning Root** and **Plan Archive** are not implemented | Candidate | `CONTEXT.md` | Create ADR and migration batch when selected | Target active root is `docs/plans/`; target archive is `docs/plans/archive/`; current repo still uses `plans/`. |
+| APR-20. **Phase Observation** attribution is incomplete | Closed | `04efa20`, `cd84b00`, `adad417`, this closeout commit; `docs/plans/archive/dispatch/phase-observation-attribution-dispatch.md`; `docs/plans/archive/codex-config-architecture-program-runner-phase-observation-attribution-runway.md`; `scripts/architecture_program_runner_phase_observation.py`; final validation: focused runner pytest subset 89 passed, dry-run smoke passed, `uvx ruff` passed, `git diff --check` passed | None | **Phase Observation** now records exact runner-launched session ids and uniquely matched session JSONL paths when directly discoverable, keeps missing, ambiguous, or filesystem-error attribution non-fatal, does not persist env override values, and leaves token persistence in artifact telemetry. |
+| APR-21. **Input Inventory** has no enforced contract | Closed | `4331cd4`, `87e20b4`, `0857612`, this closeout commit; `scripts/architecture_program_runner_input_inventory.py`; `docs/plans/archive/dispatch/input-inventory-contract-dispatch.md`; `docs/plans/archive/codex-config-architecture-program-runner-input-inventory-contract-runway.md`; final validation: focused runner pytest subset 129 passed, dry-run smoke passed, `uvx ruff` passed, `git diff --check` passed | None | **Input Inventory** now has a project-neutral owner, compact JSON shape validation, expected evidence-path enforcement for structured phases, prompt/protocol documentation, and manifest/telemetry path exposure without transcript or session-log reconstruction. |
+| APR-22. **Planning Root** and **Plan Archive** are not implemented | In runway | `CONTEXT.md`; `docs/adr/0001-planning-root-and-plan-archive.md`; `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `plans/dispatch/phase-runner-extraction-prep-dispatch.md`; `plans/codex-config-phase-runner-extraction-prep-runway.md` | Execute `phase-runner-extraction-prep` Slice 1 | Active root is `docs/plans/`; archive is `docs/plans/archive/`; current runway spec and dispatch remain in `plans/` as a temporary active-batch compatibility exception. |
+| APR-23. Generic workflow contract is only product prose | In runway | `docs/plans/generic-phase-runner-product-idea.md`; `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `plans/dispatch/phase-runner-extraction-prep-dispatch.md`; `plans/codex-config-phase-runner-extraction-prep-runway.md` | Execute `phase-runner-extraction-prep` Slice 2 | Map current runner concepts to **Workflow**, **Phase**, **Worker**, **Receipt**, **State**, and **Artifact** before repo extraction. |
+| APR-24. Worker adapter seam is Codex-only in production | In runway | `scripts/architecture_program_runner.py`; `scripts/architecture_program_runner_command.py`; `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `plans/dispatch/phase-runner-extraction-prep-dispatch.md`; `plans/codex-config-phase-runner-extraction-prep-runway.md` | Execute `phase-runner-extraction-prep` Slice 3 | The current `phase_executor` hook is useful test injection, but production execution is still Codex-specific. |
+| APR-25. Shell-only workflow regression coverage is missing | In runway | `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `plans/dispatch/phase-runner-extraction-prep-dispatch.md`; `plans/codex-config-phase-runner-extraction-prep-runway.md` | Execute `phase-runner-extraction-prep` Slice 4 | A shell worker should prove state, receipt, validation, and transition behavior without Batch Runway prompt language. |
+| APR-26. Separate `phase-runner` repository split is premature | Deferred | `docs/plans/phase-runner-repo-split-issue-12-plan.md` | Reassess after `phase-runner-extraction-prep` | Do not create the repo until APR-22 through APR-25 provide evidence that the generic kernel is real. |
 
 ## Batch Queue
 
 | Batch | Findings | Status | Why grouped | Depends on | Validation class | Dispatch | Spec |
 |---|---|---|---|---|---|---|---|
-| runner-boundary-split | APR-11, APR-12, APR-13 | Closed | First split of the monolithic Runner Facade and broad tests | None | Focused unit tests plus dry-run smoke | `plans/dispatch/runner-boundary-split-dispatch.md` | `plans/codex-config-architecture-program-runner-boundary-split-runway.md` |
-| phase-environment-ownership | APR-16 | Closed | Establishes the first new **Concept Owner** from `CONTEXT.md` and clarifies launch/prompt context before contract and observation work | Refreshed ledger and `CONTEXT.md` | Focused command/config/env tests plus dry-run smoke | `plans/dispatch/phase-environment-ownership-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-environment-runway.md` |
-| phase-transition-change-allowance | APR-17, APR-18 | Closed | Both reduce run-loop state/path policy knowledge after environment context is clearer | APR-16 satisfied | Run-loop and changed-path tests plus dry-run smoke | `plans/dispatch/phase-transition-change-allowance-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-transition-change-allowance-runway.md` |
-| phase-contract-catalog | APR-19 | Closed | Separates normative **Phase Contract** facts from rendered prompt text | APR-16 satisfied; APR-17/APR-18 satisfied | Contract/command tests plus dry-run smoke | `plans/dispatch/phase-contract-catalog-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-contract-catalog-runway.md` |
-| phase-observation-attribution | APR-20 | Closed | Reframes telemetry attribution as **Phase Observation** work | APR-16, APR-19 satisfied | Artifact and observation tests with synthetic session logs plus dry-run smoke; no live nested Codex required | `plans/dispatch/phase-observation-attribution-dispatch.md` | `plans/codex-config-architecture-program-runner-phase-observation-attribution-runway.md` |
-| input-inventory-contract | APR-21 | Closed | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 satisfied | Unit tests with synthetic inventories and prompt checks plus dry-run smoke | `plans/dispatch/input-inventory-contract-dispatch.md` | `plans/codex-config-architecture-program-runner-input-inventory-contract-runway.md` |
-| planning-root-archive-migration | APR-22 | Candidate | Moves active planning under `docs/plans/` and creates `docs/plans/archive/` with an ADR | None, but do separately from runner behavior work | Markdown/readback plus path-reference audit | TBD | TBD |
+| runner-boundary-split | APR-11, APR-12, APR-13 | Closed | First split of the monolithic Runner Facade and broad tests | None | Focused unit tests plus dry-run smoke | `docs/plans/archive/dispatch/runner-boundary-split-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-boundary-split-runway.md` |
+| phase-environment-ownership | APR-16 | Closed | Establishes the first new **Concept Owner** from `CONTEXT.md` and clarifies launch/prompt context before contract and observation work | Refreshed ledger and `CONTEXT.md` | Focused command/config/env tests plus dry-run smoke | `docs/plans/archive/dispatch/phase-environment-ownership-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-phase-environment-runway.md` |
+| phase-transition-change-allowance | APR-17, APR-18 | Closed | Both reduce run-loop state/path policy knowledge after environment context is clearer | APR-16 satisfied | Run-loop and changed-path tests plus dry-run smoke | `docs/plans/archive/dispatch/phase-transition-change-allowance-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-phase-transition-change-allowance-runway.md` |
+| phase-contract-catalog | APR-19 | Closed | Separates normative **Phase Contract** facts from rendered prompt text | APR-16 satisfied; APR-17/APR-18 satisfied | Contract/command tests plus dry-run smoke | `docs/plans/archive/dispatch/phase-contract-catalog-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-phase-contract-catalog-runway.md` |
+| phase-observation-attribution | APR-20 | Closed | Reframes telemetry attribution as **Phase Observation** work | APR-16, APR-19 satisfied | Artifact and observation tests with synthetic session logs plus dry-run smoke; no live nested Codex required | `docs/plans/archive/dispatch/phase-observation-attribution-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-phase-observation-attribution-runway.md` |
+| input-inventory-contract | APR-21 | Closed | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 satisfied | Unit tests with synthetic inventories and prompt checks plus dry-run smoke | `docs/plans/archive/dispatch/input-inventory-contract-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-input-inventory-contract-runway.md` |
+| phase-runner-extraction-prep | APR-22, APR-23, APR-24, APR-25 | Ready | Closes the issue #12 wait condition before any repo split: planning root/archive, generic workflow contract, Codex adapter seam, and shell-worker proof | Closed concept-owner batches; issue #12 decision note | Project-harness production with docs-only overrides for planning slices | `plans/dispatch/phase-runner-extraction-prep-dispatch.md` | `plans/codex-config-phase-runner-extraction-prep-runway.md` |
 
 ## Selected Batch Brief
 
-- Batch: `input-inventory-contract`
-- Dispatch: `plans/dispatch/input-inventory-contract-dispatch.md`
-- Spec: `plans/codex-config-architecture-program-runner-input-inventory-contract-runway.md`
-- Status: closed; implementation, review, prompt/docs integration, and final
-  validation complete
-- Goal: give **Input Inventory** an enforced runner contract for phase-consumed
-  context evidence while preserving the existing phase-result schema and
-  **Runner Facade** behavior.
+- Batch: `phase-runner-extraction-prep`
+- Dispatch: `plans/dispatch/phase-runner-extraction-prep-dispatch.md`
+- Spec: `plans/codex-config-phase-runner-extraction-prep-runway.md`
+- Active ledger: `docs/plans/codex-config-architecture-program-runner-findings.md`
+- Compatibility note: the active dispatch and spec remain in `plans/` until
+  this batch closes; future active planning should be created under
+  `docs/plans/`.
+- Status: ready for execution; planning-only dispatch/spec preparation complete
+- Goal: prepare for a future `phase-runner` repository decision without
+  creating the repo yet, by migrating the planning root, documenting the
+  generic workflow contract, introducing a worker adapter seam, and proving a
+  shell worker can use the same state/receipt/transition rules.
 - Guardrails:
   - Preserve current CLI arguments, direct script execution, phase order, Run
     Summary shape, phase-result schema, receipt equality, and structured
     artifact layout.
-  - Use the existing `evidence_paths` array and runner-provided expected input
-    inventory path; do not add phase-result fields.
-  - Keep **Input Inventory** separate from **Phase Observation**, **Phase
-    Receipt**, and artifact telemetry.
-  - Do not infer broad reads from transcripts, prompt text, newest files, shell
-    logs, or Codex session JSONL.
-  - Do not implement worker/reviewer session attribution, hard context-stop
-    behavior, or **Planning Root** migration in this batch.
+  - Do not create the separate `phase-runner` repository in this batch.
+  - Keep Batch Runway, architecture-program phase prompts, personal planning
+    policy, and Graphify-specific validation out of the generic core.
+  - Keep historical planning artifacts accessible after archive migration.
+  - Do not change the phase-result schema or public CLI to prove the worker
+    adapter seam.
 - Suggested slices:
-  - Characterize the current **Input Inventory** gap with focused tests for
-    prompt guidance, expected path generation, artifact size reporting, and
-    missing validation.
-  - Introduce an **Input Inventory** concept owner with compact JSON shape
-    validation and project-relative path handling.
-  - Enforce expected inventory existence, compact shape, and `evidence_paths`
-    linkage during phase-result or receipt validation without changing the
-    phase-result schema.
-  - Update prompt/reference/manifest/telemetry integration so phase agents know
-    the contract and runner artifacts expose the inventory path consistently.
+  - Record the **Planning Root** ADR and migrate active planning to
+    `docs/plans/` with completed or superseded material under
+    `docs/plans/archive/`.
+  - Add a generic workflow contract mapping current runner concepts to
+    **Workflow**, **Phase**, **Worker**, **Receipt**, **State**, and
+    **Artifact**.
+  - Introduce a minimal worker adapter seam and route current Codex execution
+    through a `codex-exec` adapter without behavior changes.
+  - Add a shell worker adapter and tests proving shell-only state, receipt,
+    validation, and transition behavior.
+  - Reassess issue #12 and update this ledger with compact closeout evidence.
 
 ## Recommended Work Order
 
@@ -152,8 +163,8 @@ Completed:
   the phase-result schema or adding transcript reconstruction.
 
 Remaining:
-1. `planning-root-archive-migration`: move active planning to `docs/plans/`,
-   create `docs/plans/archive/`, and record the ADR.
+1. `phase-runner-extraction-prep`: close the issue #12 wait condition before
+   creating any separate repo.
 
 ## Closeout Rules
 
@@ -172,6 +183,16 @@ Remaining:
   manifest linkage are enforced or explicitly rejected.
 - Mark APR-22 closed only after the ADR exists, paths are migrated, and stale
   plans/reports have a clear **Plan Archive** home.
+- Mark APR-23 closed only after a generic workflow contract maps the current
+  runner to **Workflow**, **Phase**, **Worker**, **Receipt**, **State**, and
+  **Artifact**, while naming what remains `codex-config`-specific.
+- Mark APR-24 closed only after production Codex phase execution routes through
+  an explicit worker adapter seam without changing **Runner Facade** behavior.
+- Mark APR-25 closed only after a shell worker test proves the same state,
+  receipt, validation, and transition rules without Codex or Batch Runway
+  prompt language.
+- Keep APR-26 deferred until the extraction-prep batch evidence supports a
+  repo-split decision.
 
 ## Validation Snapshot
 
