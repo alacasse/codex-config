@@ -97,7 +97,7 @@ reference audit instead of running Python tests.
 |---|---|---|---|---|---|---|
 | 1 | completed | this commit | `git diff --check`; targeted path audit/readback | clean | Generic workflow contract maps current runner accurately | Active Program Ledger moved to `docs/plans/`; active spec/dispatch intentionally remain in `plans/` until closeout |
 | 2 | ready to commit | pending | `git diff --check`; contract/product-idea readback; terminology audit | pass after product-idea alignment fix | Codex execution routes through adapter with unchanged facade behavior | Contract added under `docs/plans/`; product idea marked non-normative where it sketches future YAML/provider examples |
-| 3 | pending | | | | Codex execution routes through adapter with unchanged facade behavior | Production refactor |
+| 3 | ready to commit | pending | focused runner pytest 33 passed; ruff passed with `/tmp` tool dir; `git diff --check` | clean | Shell worker uses same state/receipt/transition rules | Added `codex-exec` worker seam; public `execute_codex_phase` helper remains compatible |
 | 4 | pending | | | | Shell worker uses same state/receipt/transition rules | Production behavior shield |
 | 5 | pending | | | | Issue #12 and Program Ledger show the next decision clearly | Docs plus final validation |
 
@@ -111,6 +111,7 @@ orchestration_anomalies: []
 |---|---|---|---|
 | 1 | this commit | Planning Root ADR created; active Program Ledger moved to `docs/plans/`; completed/superseded plans archived under `docs/plans/archive/`; current executing spec/dispatch kept under `plans/` as a temporary compatibility exception. | `docs/adr/0001-planning-root-and-plan-archive.md`; `docs/plans/README.md`; `docs/plans/codex-config-architecture-program-runner-findings.md`; review: clean |
 | 2 | pending | Generic workflow contract added and mapped current runner concepts to **Workflow**, **Phase**, **Worker**, **Receipt**, **State**, and **Artifact** while keeping Codex prompts, Batch Runway language, personal planning policy, Graphify validation, and GitHub coordination on the `codex-config` integration side. | `docs/plans/generic-phase-runner-workflow-contract.md`; `docs/plans/generic-phase-runner-product-idea.md`; review: pass after requested product-idea wording fix |
+| 3 | pending | Introduced `scripts/architecture_program_runner_workers.py` with `PhaseWorker`, `CodexExecWorker`, and `execute_phase_with_worker`; routed `execute_codex_phase` through the worker seam while preserving Codex command, prompt, environment, output-last-message, and observation behavior. | `scripts/architecture_program_runner_workers.py`; `scripts/architecture_program_runner.py`; `tests/test_architecture_program_runner.py`; `CHANGELOG.md`; review: clean |
 
 ## Slice 1 - Planning Root ADR And Archive Migration
 

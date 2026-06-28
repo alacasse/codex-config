@@ -6,9 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import subprocess
 import sys
-import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +24,7 @@ try:
     from scripts import architecture_program_runner_state as _runner_state
     from scripts import architecture_program_runner_transition as _runner_transition
     from scripts import architecture_program_runner_validation as _runner_validation
+    from scripts import architecture_program_runner_workers as _runner_workers
 except ModuleNotFoundError:  # pragma: no cover - direct script execution fallback.
     import architecture_program_runner_artifacts as _runner_artifacts
     import architecture_program_runner_change_allowance as _runner_change_allowance
@@ -36,6 +35,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution fallba
     import architecture_program_runner_state as _runner_state
     import architecture_program_runner_transition as _runner_transition
     import architecture_program_runner_validation as _runner_validation
+    import architecture_program_runner_workers as _runner_workers
 
 PHASE_RECEIPT_NAMES = _runner_state.PHASE_RECEIPT_NAMES
 PHASES = _runner_state.PHASES
@@ -138,6 +138,10 @@ expected_change_allowance_paths = _runner_change_allowance.expected_change_allow
 expected_dirty_paths = _runner_change_allowance.expected_dirty_paths
 git_status_lines = _runner_change_allowance.git_status_lines
 path_is_expected = _runner_change_allowance.path_is_expected
+CodexExecWorker = _runner_workers.CodexExecWorker
+PhaseWorker = _runner_workers.PhaseWorker
+execute_phase_with_worker = _runner_workers.execute_phase_with_worker
+subprocess = _runner_workers.subprocess
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -286,44 +290,14 @@ def config_from_args(args: argparse.Namespace) -> RunnerConfig:
     )
 
 
-def execute_codex_phase(config: RunnerConfig, state: dict[str, Any], phase: str) -> dict[str, Any]:
-    environment = build_phase_environment(config, state, phase)
-    prompt = build_prompt(config, state, phase, environment=environment)
-    with tempfile.NamedTemporaryFile(
-        "w", encoding="utf-8", prefix="architecture-program-runner-", suffix=".json"
-    ) as handle:
-        output_last_message = Path(handle.name)
-        command = build_codex_command(
-            config,
-            phase,
-            prompt,
-            output_last_message,
-            environment=environment,
-        )
-        codex_home_env = environment.subprocess_env(())
-        subprocess_env = environment.subprocess_env(config.env_overrides)
-        completed = subprocess.run(
-            command,
-            cwd=config.project,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=False,
-            env=subprocess_env,
-        )
-        state["_phase_execution_meta"] = build_phase_execution_observation(
-            exit_code=completed.returncode,
-            stdout=completed.stdout,
-            stderr=completed.stderr,
-            subprocess_env=subprocess_env,
-            codex_home_env=codex_home_env,
-        ).as_execution_meta()
-        if completed.returncode != 0:
-            raise RunnerError(
-                "codex exec failed for "
-                f"{phase} with exit {completed.returncode}\n{completed.stderr.strip()}"
-            )
-        return read_json_object(output_last_message)
+def execute_codex_phase(
+    config: RunnerConfig,
+    state: dict[str, Any],
+    phase: str,
+    *,
+    worker: PhaseWorker | None = None,
+) -> dict[str, Any]:
+    return execute_phase_with_worker(config, state, phase, worker or CodexExecWorker())
 
 
 def check_required_artifacts(config: RunnerConfig, state: dict[str, Any]) -> None:

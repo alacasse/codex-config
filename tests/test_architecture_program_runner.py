@@ -13,6 +13,7 @@ from scripts import architecture_program_runner_environment as environment_owner
 from scripts import architecture_program_runner_phase_observation as observation_owner
 from scripts import architecture_program_runner_phase_contract as phase_contract_owner
 from scripts import architecture_program_runner_transition as transition_owner
+from scripts import architecture_program_runner_workers as worker_owner
 from tests.architecture_program_runner_test_support import (
     ArchitectureProgramRunnerTestCase,
     runner,
@@ -63,6 +64,8 @@ class ArchitectureProgramRunnerIntegrationTests(ArchitectureProgramRunnerTestCas
             runner.check_change_allowance,
             change_allowance_owner.check_change_allowance,
         )
+        self.assertIs(runner.CodexExecWorker, worker_owner.CodexExecWorker)
+        self.assertIs(runner.execute_phase_with_worker, worker_owner.execute_phase_with_worker)
 
     def test_cli_defaults_and_state_path(self) -> None:
         args = runner.parse_args(
@@ -231,6 +234,34 @@ class ArchitectureProgramRunnerIntegrationTests(ArchitectureProgramRunnerTestCas
         self.assertEqual(captured["env"]["KEEP_ME"], "yes")
         self.assertEqual(captured["env"]["OVERRIDE_ME"], "new")
         self.assertEqual(captured["env"]["ADDED"], "value")
+
+    def test_execute_codex_phase_routes_through_worker_adapter(self) -> None:
+        class FakeWorker:
+            def __init__(self) -> None:
+                self.calls: list[tuple[runner.RunnerConfig, dict[str, Any], str]] = []
+
+            def run_phase(
+                self,
+                config: runner.RunnerConfig,
+                state: dict[str, Any],
+                phase: str,
+            ) -> dict[str, Any]:
+                self.calls.append((config, state, phase))
+                return self_result
+
+        state = runner.initial_state(self.config)
+        self_result = self.make_result("select-dispatch", "create-spec")
+        worker = FakeWorker()
+
+        returned = runner.execute_codex_phase(
+            self.config,
+            state,
+            "select-dispatch",
+            worker=worker,
+        )
+
+        self.assertEqual(returned, self_result)
+        self.assertEqual(worker.calls, [(self.config, state, "select-dispatch")])
 
     def test_execute_codex_phase_uses_execute_sandbox_for_execute_only(self) -> None:
         config = runner.RunnerConfig(

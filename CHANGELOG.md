@@ -104,6 +104,10 @@ expected inventory path in `evidence_paths`, manifests and telemetry expose
 inventory paths and sizes without embedding content, and the protocol clarifies
 that the runner validates reported compact inventory files instead of
 reconstructing consumed context from transcripts or session logs.
+The runner now routes Codex phase execution through an internal **Worker**
+adapter seam. The initial `codex-exec` worker keeps the existing prompt,
+command, environment override, output-last-message, and observation behavior
+unchanged while giving future worker types a single phase-result API.
 
 Expected effect: future architecture-program passes can be resumed from disk
 artifacts and bounded by phase/state transitions while preserving the existing
