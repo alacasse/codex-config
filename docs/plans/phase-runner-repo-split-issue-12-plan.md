@@ -66,10 +66,12 @@ Evidence from `phase-runner-extraction-prep`:
   result validation, receipt equality, and state transition rules without
   Codex command construction or Batch Runway prompt language.
 
-Next action: create a bounded repo-skeleton/extraction batch for APR-26. That
-batch should define package basics first, then move only the generic worker,
-state, receipt, transition, and artifact kernel if the facade compatibility
-tests stay green.
+Next action: create a bounded contract-first business-logic extraction batch
+for APR-26 using `docs/plans/phase-runner-business-logic-contract.md`. That
+batch should define package basics first, then move only the generic workflow,
+state, result, receipt, worker, transition, artifact, telemetry, input
+inventory, and change-allowance kernel if the facade compatibility tests stay
+green.
 
 ## Wait Condition
 
@@ -86,9 +88,9 @@ Split after these conditions are true:
 4. `codex-config` consumes the generic core through a Codex adapter/example
    layer while keeping `architecture-program-runway`, `batch-runway`, personal
    plans, and Graphify workflow state in `codex-config`.
-5. Package basics are defined for the new repo or extraction branch: CLI
-   entrypoint, tests, ruff/type command, CI, and Docker only if dogfooding
-   proves it is needed.
+5. Package basics are defined for the new repo, extraction branch, or in-repo
+   generic package: CLI/API entrypoint, tests, ruff/type command, CI, and
+   Docker only if dogfooding proves it is needed.
 
 ## Smallest Useful Extraction Prep Batch
 

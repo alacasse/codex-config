@@ -100,7 +100,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | APR-23. Generic workflow contract is only product prose | Closed | `d1cd512`; `docs/plans/generic-phase-runner-workflow-contract.md`; `docs/plans/generic-phase-runner-product-idea.md` | None | Contract maps **Workflow**, **Phase**, **Worker**, **Receipt**, **State**, and **Artifact** while keeping Codex prompts, Batch Runway policy, personal plans, GitHub coordination, and Graphify validation outside the generic boundary. |
 | APR-24. Worker adapter seam is Codex-only in production | Closed | `ec58657`; `scripts/architecture_program_runner_workers.py`; `scripts/architecture_program_runner.py`; focused worker tests | None | Production Codex phase execution now routes through `CodexExecWorker` and `execute_phase_with_worker` while preserving `execute_codex_phase` compatibility and **Runner Facade** behavior. |
 | APR-25. Shell-only workflow regression coverage is missing | Closed | `7a375b4`; `ShellCommandWorker`; `tests/test_architecture_program_runner.py` | None | Shell worker coverage proves an argv-based command can produce a compact phase result that existing validation, receipt equality, and **Phase Transition** rules consume without Codex or Batch Runway prompt language. |
-| APR-26. Separate `phase-runner` repository split is premature | Candidate | `docs/plans/phase-runner-repo-split-issue-12-plan.md`; APR-22 through APR-25 closeout evidence | Create a bounded repo-skeleton/extraction batch | The generic boundary is now proven enough to plan repo skeleton creation; package basics and facade compatibility must be defined before moving code. |
+| APR-26. Separate `phase-runner` repository split is premature | Candidate | `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `docs/plans/phase-runner-business-logic-contract.md`; APR-22 through APR-25 closeout evidence | Create a bounded contract-first business-logic extraction batch | The generic boundary is proven enough to extract business-logic contracts first; package basics and facade compatibility must be defined before moving code or creating a repo skeleton. |
 
 ## Batch Queue
 
@@ -113,18 +113,20 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | phase-observation-attribution | APR-20 | Closed | Reframes telemetry attribution as **Phase Observation** work | APR-16, APR-19 satisfied | Artifact and observation tests with synthetic session logs plus dry-run smoke; no live nested Codex required | `docs/plans/archive/dispatch/phase-observation-attribution-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-phase-observation-attribution-runway.md` |
 | input-inventory-contract | APR-21 | Closed | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 satisfied | Unit tests with synthetic inventories and prompt checks plus dry-run smoke | `docs/plans/archive/dispatch/input-inventory-contract-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-input-inventory-contract-runway.md` |
 | phase-runner-extraction-prep | APR-22, APR-23, APR-24, APR-25 | Closed | Closed the issue #12 wait condition before any repo split: planning root/archive, generic workflow contract, Codex adapter seam, and shell-worker proof | Closed concept-owner batches; issue #12 decision note | Project-harness production with docs-only overrides for planning slices | `plans/dispatch/phase-runner-extraction-prep-dispatch.md` | `plans/codex-config-phase-runner-extraction-prep-runway.md` |
-| phase-runner-repo-skeleton | APR-26 | Candidate | Define the new repo/package boundary after the generic contract and two worker adapters proved the kernel shape inside `codex-config` | APR-22 through APR-25 closed; issue #12 reassessment | Focused facade compatibility tests, worker/state/receipt/transition tests, dry-run smoke, ruff, `git diff --check` | TBD under `docs/plans/` | TBD under `docs/plans/` |
+| phase-runner-business-logic-extraction | APR-26 | Candidate | Define the implementation-neutral runner business-logic contracts and only then choose repo/package boundaries | APR-22 through APR-25 closed; issue #12 reassessment; `docs/plans/phase-runner-business-logic-contract.md` | Contract tests for workflow/state/result/receipt/worker/artifact behavior, focused facade compatibility tests, dry-run smoke, ruff, `git diff --check` | TBD under `docs/plans/` | TBD under `docs/plans/` |
 
 ## Selected Next Candidate
 
-- Batch: `phase-runner-repo-skeleton`
+- Batch: `phase-runner-business-logic-extraction`
 - Dispatch: TBD under `docs/plans/`
 - Spec: TBD under `docs/plans/`
 - Active ledger: `docs/plans/codex-config-architecture-program-runner-findings.md`
 - Status: candidate; create a dispatch/spec before coding
-- Goal: create the `phase-runner` repo skeleton or extraction branch boundary
-  only after package basics are explicit, then move only the generic kernel if
-  facade compatibility tests stay green.
+- Contract source:
+  `docs/plans/phase-runner-business-logic-contract.md`
+- Goal: extract the runner business logic through implementation-neutral
+  contracts first, choose package/runtime basics explicitly, then move only the
+  generic control-plane kernel if facade compatibility tests stay green.
 - Guardrails:
   - Preserve current CLI arguments, direct script execution, phase order, Run
     Summary shape, phase-result schema, receipt equality, and structured
@@ -133,15 +135,16 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
     policy, and Graphify-specific validation in `codex-config`.
   - Keep Batch Runway, architecture-program phase prompts, personal planning
     policy, and Graphify-specific validation out of the generic core.
-  - Define CLI entrypoint, tests, ruff/type command, CI expectations, and Docker
-    stance before moving code.
+  - Define CLI/API entrypoint, tests, ruff/type command, CI expectations, and
+    Docker stance before moving code or creating a repo skeleton.
 - Suggested slices:
-  - Define package basics and ownership split for a new `phase-runner` repo.
-  - Identify the minimal generic kernel files and compatibility facade tests.
-  - Create the repo skeleton or extraction branch without importing
-    `codex-config` policy.
-  - Move generic worker/state/receipt/transition/artifact code only when the
-    existing Runner Facade remains green.
+  - Confirm package/runtime basics and target module/repo name.
+  - Build target contracts and tests for workflow, state, result, receipt,
+    transition, and workers without Codex prompt construction.
+  - Add provider-neutral artifact, telemetry, input inventory, and change
+    allowance contracts.
+  - Add the `codex-config` adapter/facade compatibility layer and move generic
+    code only when the existing Runner Facade remains green.
 
 ## Recommended Work Order
 
@@ -155,8 +158,9 @@ Completed:
   the phase-result schema or adding transcript reconstruction.
 
 Remaining:
-1. `phase-runner-repo-skeleton`: define package basics and extract only the
-   generic kernel if compatibility evidence stays green.
+1. `phase-runner-business-logic-extraction`: use the port-by-contract artifact
+   to define package basics, target contracts, and a facade compatibility layer
+   before any repo skeleton or runtime move.
 
 ## Closeout Rules
 
