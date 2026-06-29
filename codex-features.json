@@ -86,6 +86,16 @@
           "target": "rules/default.rules"
         }
       ]
+    },
+    "dead-surface-audit": {
+      "version": "1.0.0",
+      "description": "Audit code surfaces that are kept alive only by test-retained compatibility or topology assertions.",
+      "links": [
+        {
+          "source": "skills/dead-surface-audit",
+          "target": "skills/dead-surface-audit"
+        }
+      ]
     }
   }
 }

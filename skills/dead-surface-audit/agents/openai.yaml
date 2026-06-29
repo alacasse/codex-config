@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dead Surface Audit"
+  short_description: "Find code kept alive only by tests"
+  default_prompt: "Use $dead-surface-audit to find code surfaces that may be dead but preserved by tests."

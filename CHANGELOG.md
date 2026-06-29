@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Dead surface audit skill
+
+Problem: shallow compatibility facades and legacy wrappers can look alive when
+repo-local tests assert importability, alias identity, or module topology after
+production callers have already moved to owner modules.
+
+Decision: move the new `dead-surface-audit` skill into this repo and register it
+as a repo-owned Codex feature. The skill requires agents to split caller
+evidence into production, entrypoint, generated-artifact, documentation, and
+test-only buckets, then apply the deletion test with and without tests before
+classifying compatibility surfaces.
+
+Expected effect: future architecture and test-quality reviews can identify code
+kept alive only by migration-retention or topology-assertion tests, then decide
+whether to delete, migrate tests first, keep a thin entrypoint, or ask for an
+explicit compatibility contract decision.
+
 ### Port-by-contract skill
 
 Problem: cross-language or product rewrites can accidentally preserve source
