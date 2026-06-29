@@ -35,6 +35,8 @@ for compatibility questions, non-routine execution, recovery, and finalization.
    suspicious coordinator or subagent-lifecycle behavior. Do not use it for
    routine command output, normal validation logs, clean reviews, or
    implementation chronology.
+   Include unexpected `HEAD` or diff movement and stale review evidence here
+   when they affect execution confidence.
 10. If required custom agents are unavailable because Codex has not reloaded
    configuration yet, stop and ask for a restart or new thread rather than
    falling back to main-agent implementation.
@@ -81,9 +83,10 @@ Use `execute-slice-core-v1.md` for the normal version of this loop.
     unresolved, or indicates a dirty-file conflict.
 14. Spawn a separate review subagent with `agent_type="runway_reviewer"`.
 15. In lean mode, pass the absolute spec path, repo cwd, slice number, slice
-    anchor, task-scoped diff context, review focus, any explicit test quality
-    review setting, and a short contract capsule or relevant Batch Runway
-    reference path. Do not paste the full slice unless needed.
+    anchor, exact diff basis, task-scoped diff context, review focus, any
+    explicit test quality review setting, and a short contract capsule or
+    relevant Batch Runway reference path. Require reviewer YAML to include the
+    inspected `diff_basis`. Do not paste the full slice unless needed.
 16. If review finds issues, read `execute-recovery-v1.md`.
 17. Commit only the files intentionally changed for that slice once validation
     and review are clean.

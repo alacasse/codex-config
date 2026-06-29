@@ -144,15 +144,17 @@ Use agent_type="runway_reviewer".
 Review slice <N> against <absolute spec path>.
 Repo cwd: <absolute repository path>.
 Slice anchor: <heading text or line number>.
+Diff basis: <commit hash or task-scoped worktree diff paths>.
 Inspect only the task-scoped diff and relevant files.
 Check scope, acceptance criteria, validation evidence, dirty-file leakage, and behavior preservation.
-Return YAML only. Do not modify files.
+Return YAML only, including `diff_basis`. Do not modify files.
 ```
 
 Reviewer YAML:
 
 ```yaml
 status: clean
+diff_basis: "worktree diff against HEAD abc1234"
 findings: []
 residual_risks: []
 required_fixes: []
@@ -241,6 +243,8 @@ Examples:
 - confusing wait, resume, approval, or close controls
 - ambiguous, flaky, or escalation-prone validation command
 - near violation of the coordinator-only, worker-only, or reviewer-only contract
+- unexpected `HEAD`, index, or task-scoped diff change during orchestration
+- stale or mismatched reviewer evidence for the current diff basis
 
 Compact YAML:
 

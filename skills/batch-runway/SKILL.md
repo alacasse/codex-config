@@ -63,8 +63,9 @@ reference file by default.
   questions, or non-routine execution. Routine slices can use the execution core
   directly.
 - `references/execute-recovery-v1.md`: read only when validation fails, review
-  finds issues, blockers appear, escalation is required, or execution deviates
-  from the normal path.
+  finds issues, blockers appear, workspace state or review evidence stops
+  matching the expected diff, escalation is required, or execution deviates from
+  the normal path.
 - `references/finalize-batch-v1.md`: read only when closing a batch or producing
   a final report.
 - `references/subagent-briefs.md`: read only when full brief variants,
@@ -118,6 +119,10 @@ Non-negotiable execution rules:
 - Commit after each clean, focused slice.
 - Preserve unrelated dirty files.
 - Do not revert or commit files outside the slice scope.
+- If workspace reconciliation requires changing tracked source, test, spec, or
+  generated content, delegate that cleanup to `runway_worker` or stop for user
+  direction; coordinator-authored reverse patches are not allowed as
+  implementation cleanup.
 - Continue to the next pending slice after a commit receipt unless the user
   explicitly asks to stop or a stop condition remains active.
 - After an interruption, approval, permission issue, context transition, or
@@ -156,9 +161,10 @@ Keep live orchestration context small enough for long batches.
   subagent-lifecycle behavior that may need later workflow fixes, such as
   accidental extra agent spawns, wrong agent roles, unusable support output,
   malformed subagent reports, confusing controls, ambiguous validation, flaky
-  commands, escalation friction, or near contract violations. Do not use it for
-  routine command output, normal validation logs, clean reviews, or
-  implementation chronology.
+  commands, escalation friction, unexpected `HEAD` or diff movement, stale
+  review evidence, or near contract violations. Do not use it for routine
+  command output, normal validation logs, clean reviews, or implementation
+  chronology.
 - Use compact YAML for routine worker results, reviewer results, commit
   receipts, convergence, and ledger updates.
 - Move completed slice details out of the active ledger and into the completed

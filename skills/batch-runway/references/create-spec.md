@@ -83,6 +83,10 @@ implement only that slice, and must not spawn, delegate to, or wait on
 additional subagents. Coordinator-owned validation, review, ledger, and commit
 work should stay out of the worker role.
 
+Review subagent briefs should require the execution coordinator to provide the
+exact commit hash or task-scoped worktree diff basis being reviewed, and the
+reviewer should echo that `diff_basis` in compact YAML output.
+
 Only paste full acceptance criteria or full brief text when the subagent cannot
 reliably read the spec path, the review boundary is subtle, or the slice is
 unusually risky.

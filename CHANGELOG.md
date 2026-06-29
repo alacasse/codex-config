@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Batch Runway workspace reconciliation
+
+Problem: when a Batch Runway execution hit cross-slice worktree drift, an
+unexpected commit, and stale review evidence, the recovery contract did not make
+the coordinator's allowed cleanup actions explicit enough. That made manual
+reverse patches look like implementation, even when the intent was to isolate
+the slice before validation and review.
+
+Decision: add a workspace-reconciliation lane to `execute-recovery-v1.md`.
+Recovery now freezes commits until `HEAD`, status, staged files, unstaged files,
+and the task-scoped diff basis are reconciled; tracked content cleanup must be
+delegated to `runway_worker` or stopped for user direction. Review briefs and
+compact reviewer reports now include the inspected `diff_basis`, and the
+anomaly contract names unexpected `HEAD` movement, cross-slice drift,
+coordinator content edits, and stale review evidence as first-class categories.
+
+Expected effect: future executions should resolve dirty-file and stale-review
+incidents through a visible recovery lane, without blurring the coordinator-only
+boundary or accepting review evidence that does not match the current diff.
+
 ### Dead surface audit skill
 
 Problem: shallow compatibility facades and legacy wrappers can look alive when

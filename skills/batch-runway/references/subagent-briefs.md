@@ -39,11 +39,12 @@ Use agent_type="runway_reviewer".
 Review slice <N> against <absolute spec path>.
 Repo cwd: <absolute repository path>.
 Slice anchor: <heading text or line number>.
+Diff basis: <commit hash or task-scoped worktree diff paths>.
 Inspect only the task-scoped diff and relevant files.
 Check scope, acceptance criteria, validation evidence, dirty-file leakage, and behavior preservation.
 If the slice requests test quality review, invoke $test-quality-review in the requested mode and include compact YAML findings.
 Batch Runway reference, if needed: <absolute path to relevant reference file>.
-Use Compact Report Contract v1 reviewer format. Return YAML only. Do not modify files.
+Use Compact Report Contract v1 reviewer format. Return YAML only, including `diff_basis`. Do not modify files.
 ```
 
 Only paste full acceptance criteria when the reviewer cannot reliably read the

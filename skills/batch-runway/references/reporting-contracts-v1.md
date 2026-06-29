@@ -146,6 +146,7 @@ Reviewer report:
 
 ```yaml
 status: clean
+diff_basis: "worktree diff against HEAD abc1234"
 findings: []
 residual_risks: []
 required_fixes: []
@@ -192,6 +193,8 @@ near miss:
 - confusing wait, resume, approval, or close controls
 - ambiguous, flaky, or escalation-prone validation command
 - near violation of the coordinator-only, worker-only, or reviewer-only contract
+- unexpected `HEAD`, index, or task-scoped diff change during orchestration
+- reviewer evidence that appears stale or mismatched with the current diff basis
 
 Do not record routine command output, normal validation logs, clean reviews,
 implementation chronology, or repeated explanations of already-closed slices.
@@ -212,6 +215,10 @@ orchestration_anomalies:
 Use severity values `low`, `medium`, or `high`. Keep unresolved anomalies in the
 active ledger only while they may affect remaining execution. Move resolved or
 historical anomalies to the completed archive or final batch report.
+
+Use categories that name the workflow failure mode, such as
+`unexpected_head_change`, `cross_slice_workspace_drift`,
+`coordinator_content_edit`, or `stale_review_diff_basis`.
 
 Final batch reports must always print an `Orchestration Anomalies` section. Use
 `orchestration_anomalies: []` when no anomalies were recorded.
