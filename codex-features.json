@@ -96,6 +96,16 @@
           "target": "skills/dead-surface-audit"
         }
       ]
+    },
+    "legacy-removal": {
+      "version": "1.0.0",
+      "description": "Discovery and scoping workflow for evidence-backed legacy-removal ledgers.",
+      "links": [
+        {
+          "source": "skills/legacy-removal",
+          "target": "skills/legacy-removal"
+        }
+      ]
     }
   }
 }

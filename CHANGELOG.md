@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Legacy removal skill
+
+Problem: legacy cleanup requests can jump directly to deletion or concrete
+runway planning before obsolete behavior, compatibility requirements, canonical
+owners, and batch boundaries are evidenced.
+
+Decision: add a repo-owned `legacy-removal` skill for project-agnostic discovery
+and scoping. The skill requires a compact Legacy Removal Ledger with evidence,
+findings, canonical-model decisions, compatibility decisions, batch candidates,
+and an optional selected dispatch packet, while leaving multi-batch program
+management to `architecture-program-runway` and concrete execution specs to
+`batch-runway`.
+
+Expected effect: future cleanup work can distinguish unsupported internal
+legacy behavior from required compatibility before agents create a concrete
+runway spec or preserve old paths by inertia.
+
 ### Reusable workflow ownership guardrail
 
 Problem: agents could treat a single project observation as a reason to add
