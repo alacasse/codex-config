@@ -1,6 +1,6 @@
 ---
 name: legacy-removal
-description: Identify, scope, and track project-agnostic legacy-removal work before concrete implementation planning. Use when a repository or workstream shows obsolete internal design such as compatibility shims, deprecated aliases, fallback branches for removed behavior, dual old/new paths, transitional wrappers, obsolete entry points, stale names, tests or docs preserving superseded behavior, or agents repeatedly preserving compatibility the user did not request; also use before internal breaking refactors, migration cleanup, module/API consolidation, temporary compatibility-layer removal, canonical-model replacement, or Batch Runway planning when legacy-cleanup scope is still unclear. Do not use for ordinary bug fixes, small features, already scoped runway execution, explicitly required public API compatibility, production-safe phased migrations where compatibility is required, broad deletion without evidence, style-only cleanup, or speculative rewrites.
+description: Identify, scope, and track project-agnostic legacy-removal work before concrete implementation planning, optionally using dead-surface-audit for test-retained surface evidence. Use when a repository or workstream shows obsolete internal design such as compatibility shims, deprecated aliases, fallback branches for removed behavior, dual old/new paths, transitional wrappers, obsolete entry points, stale names, tests or docs preserving superseded behavior, or agents preserving compatibility the user did not request; also use before internal breaking refactors, migration cleanup, module/API consolidation, temporary compatibility-layer removal, canonical-model replacement, or Batch Runway planning when legacy-cleanup scope is still unclear. Do not use for ordinary bug fixes, small features, already scoped runway execution, explicitly required public API compatibility, required phased migration compatibility, broad deletion without evidence, style-only cleanup, or speculative rewrites.
 ---
 
 # Legacy Removal
@@ -13,13 +13,16 @@ Responsibility boundary:
 
 ```text
 legacy-removal
-  -> produces legacy findings, evidence, decisions, and optional selected dispatch packet
+  owns: ledger, scope, canonical model, compatibility decisions, batch candidates, selected dispatch packet
+
+dead-surface-audit
+  owns: evidence about surfaces kept alive by tests, import topology, aliases, facades, wrappers, or old module shape
 
 architecture-program-runway
-  -> owns multi-batch program ledger, grouping, prioritization, and selected batch dispatch
+  owns: grouping, prioritization, multi-batch program state, selected batch brief
 
 batch-runway
-  -> owns concrete 3-5 slice spec creation and execution workflow
+  owns: concrete 3-5 slice spec creation and execution workflow
 ```
 
 Do not use this skill to implement code, execute slices, make commits, or
@@ -29,7 +32,7 @@ orchestrate workers/reviewers.
 
 - Do not delete code merely because it looks old.
 - Do not preserve compatibility merely because it existed before.
-- Treat speculative compatibility as a defect.
+- Speculative compatibility is a defect.
 - Require scope and evidence before deletion.
 - Require a concrete reason before keeping compatibility.
 - Prefer one canonical path per behavior.
@@ -37,6 +40,8 @@ orchestrate workers/reviewers.
 - Make tests describe the canonical model instead of protecting obsolete
   behavior.
 - Keep durable records compact and actionable.
+- Do not collapse unrelated legacy findings into one batch.
+- Do not load auxiliary skills unless they materially improve the decision.
 
 A concrete reason for keeping compatibility must name at least one external
 caller, public API contract, documented migration requirement, production
@@ -50,7 +55,9 @@ instruction, or temporary transition period with a removal condition.
 2. Define the old model and candidate canonical model. If either is unclear,
    record the uncertainty instead of deleting or preserving by default.
 3. Inventory evidence across code, tests, docs, configs, generated artifacts,
-   entrypoints, public contracts, and known external callers.
+   entrypoints, public contracts, and known external callers. Load
+   `dead-surface-audit` only when test-retained liveness or import-topology
+   evidence would materially improve the decision.
 4. Classify legacy patterns: shim, alias, fallback, dual path, legacy test,
    stale name, obsolete entrypoint, transitional wrapper, obsolete doc, or
    another explicit pattern.
@@ -64,6 +71,44 @@ instruction, or temporary transition period with a removal condition.
      seams, risk classes, or possible batches.
    - Use `batch-runway create-spec` when exactly one clear selected batch is
      ready for a concrete 3-5 slice runway spec.
+
+## Relationship to dead-surface-audit
+
+`dead-surface-audit` is an optional auxiliary evidence skill. Load it only when
+useful; do not load it for ordinary legacy findings where direct inspection
+already gives enough caller, contract, and compatibility evidence.
+
+Use `dead-surface-audit` when a legacy finding involves signals such as:
+
+- tests that assert importability, `find_spec`, `__all__`, alias identity,
+  module presence, or root topology
+- compatibility facades with unclear production callers
+- root modules that mostly re-export owner modules
+- deprecated wrappers whose only known callers appear to be tests
+- old/new module paths that coexist for possible migration retention
+- test-only preservation of old import paths, aliases, or topology
+- uncertainty about whether a surface is externally supported or only
+  test-retained
+
+`dead-surface-audit` answers evidence questions, not planning questions. It can
+answer:
+
+- production/runtime caller evidence
+- CLI or public entrypoint evidence
+- docs, ADR, or generated artifact contract evidence
+- test-only liveness
+- whether tests preserve behavior or only shape/topology
+- whether a surface is a deletion candidate, test-migration candidate, valid
+  entrypoint, or human contract decision
+
+Convert useful `dead-surface-audit` conclusions into compact legacy-removal
+ledger rows. Do not paste the full dead-surface report unless a blocker decision
+requires it.
+
+Ambiguous dead-surface results are not automatic deletion. If the audit finds
+possible external compatibility but no clear contract, record it as a
+Compatibility decision, Open question, `human-contract-decision`, or deferred
+finding for `architecture-program-runway`.
 
 ## Ledger Rules
 
@@ -104,15 +149,17 @@ Use this structure:
 
 ## Evidence inventory
 
-| ID | Evidence type | Location | Observation | Implication |
-| --- | --- | --- | --- | --- |
-| E1 | code/test/doc/caller/config | path or symbol | what was found | why it matters |
+| ID | Evidence type | Source | Location | Observation | Implication |
+| --- | --- | --- | --- | --- | --- |
+| E1 | code/test/doc/caller/config | ordinary inspection/dead-surface-audit/etc. | path or symbol | what was found | why it matters |
+| E2 | test-retained surface | dead-surface-audit | path or symbol | Tests assert import shape only | Candidate for deletion or test migration |
 
 ## Legacy findings
 
 | ID | Status | Severity | Location | Legacy pattern | Why it matters | Recommended action |
 | --- | --- | --- | --- | --- | --- | --- |
 | L1 | Open | blocker/major/minor | path or symbol | shim/alias/fallback/dual-path/legacy-test/stale-name/etc. | impact on conceptual surface area | delete/rename/update-test/defer/keep-with-justification |
+| L2 | Open | major | path or symbol | test-retained compatibility surface | Tests preserve old shape without runtime caller evidence | delete or migrate tests first |
 
 ## Canonical model decision
 
@@ -129,6 +176,7 @@ Use this structure:
 | Item | Decision | Reason | Required by |
 | --- | --- | --- | --- |
 | <symbol/path/behavior> | remove/keep/defer | concrete reason | external caller/public contract/test/user requirement/none |
+| <ambiguous surface> | defer | possible external compatibility but no clear contract | human-contract-decision/open question |
 
 ## Batch candidates
 

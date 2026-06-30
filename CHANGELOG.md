@@ -13,7 +13,9 @@ and scoping. The skill requires a compact Legacy Removal Ledger with evidence,
 findings, canonical-model decisions, compatibility decisions, batch candidates,
 and an optional selected dispatch packet, while leaving multi-batch program
 management to `architecture-program-runway` and concrete execution specs to
-`batch-runway`.
+`batch-runway`. The skill can now optionally load `dead-surface-audit` for
+narrow evidence about test-retained surfaces, import topology, aliases, facades,
+wrappers, or old module shape without absorbing that skill's workflow.
 
 Expected effect: future cleanup work can distinguish unsupported internal
 legacy behavior from required compatibility before agents create a concrete
