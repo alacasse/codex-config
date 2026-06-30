@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Reusable workflow ownership guardrail
+
+Problem: agents could treat a single project observation as a reason to add
+project-name branches or hard-coded project paths directly into repo-owned
+skills.
+
+Decision: make the global instructions and repo instructions explicit that
+repo-owned skills are reusable workflow code. Project-specific names, paths,
+validation commands, cache locations, issue policy, and local planning layout
+must come from project instructions, overlays, active specs, or repo-owned
+reference docs instead.
+
+Expected effect: future skill edits should generalize project needs into
+discoverable project values or stop when those values are missing, instead of
+adding branches such as `if project == graphify`.
+
 ### Batch Runway worker validation boundaries
 
 Problem: test-only Batch Runway workers could infer that broad project refresh

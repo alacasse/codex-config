@@ -10,6 +10,10 @@ When creating or updating GitHub issues, PR comments, or issue comments, keep th
 
 Do not put long design documents, large schema sketches, long logs, or giant Markdown dumps directly into GitHub issue/comment bodies. If the design is substantial, create or update a repo-owned planning/reference document and link or name that file from the issue instead. Prefer short follow-up comments for addenda.
 
+## Reusable workflow ownership
+
+Repo-owned skills are reusable workflow code. Do not hard-code a single project's name, paths, validation commands, cache locations, issue policy, or local planning layout into a generic skill. If a workflow needs project-specific behavior, put those values in that project's instructions, local overlay, active spec, or a repo-owned reference document, then make the skill resolve them or stop when they are missing.
+
 ## Codex config ownership
 
 When editing a path under `~/.codex`, first check whether it is linked from `/home/alacasse/src/codex-config`:

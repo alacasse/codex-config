@@ -5,6 +5,7 @@ This repository defines the user's personal Codex configuration.
 ## Rules
 
 - Treat `skills/`, `agents/`, `rules/`, and `AGENTS.md` as production workflow code.
+- Keep repo-owned skills reusable. Do not add single-project branches or hard-code one project's paths, validation commands, cache locations, issue policy, or planning layout into a generic skill; resolve those values from project instructions, local overlays, active specs, or repo-owned reference docs instead.
 - Do not edit runtime Codex state from this repository.
 - Never add secrets, auth files, SQLite databases, logs, sessions, cache files, or machine-local runtime state.
 - Update `CHANGELOG.md` for every meaningful workflow change.

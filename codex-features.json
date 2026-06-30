@@ -2,7 +2,7 @@
   "schema_version": 1,
   "features": {
     "global-instructions": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Global Codex operating instructions.",
       "links": [
         {
