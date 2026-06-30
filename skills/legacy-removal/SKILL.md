@@ -31,10 +31,12 @@ orchestrate workers/reviewers.
 ## Core Principles
 
 - Do not delete code merely because it looks old.
+- Do not delete tests merely because they are inconvenient.
 - Do not preserve compatibility merely because it existed before.
 - Speculative compatibility is a defect.
 - Require scope and evidence before deletion.
 - Require a concrete reason before keeping compatibility.
+- Report uncertainty instead of inventing callers or contracts.
 - Prefer one canonical path per behavior.
 - Prefer failing loudly over silently supporting obsolete internal behavior.
 - Make tests describe the canonical model instead of protecting obsolete
@@ -72,6 +74,51 @@ instruction, or temporary transition period with a removal condition.
    - Use `batch-runway create-spec` when exactly one clear selected batch is
      ready for a concrete 3-5 slice runway spec.
 
+## Test preservation rules
+
+Tests are evidence, not authority. A failing test is not automatically evidence
+that production behavior is broken, and it is not automatically a requirement.
+Classify affected tests before preserving code to satisfy them.
+
+Existing tests may preserve obsolete internal surfaces. Do not preserve obsolete
+production code only to keep obsolete tests passing. During legacy removal,
+tests that assert legacy topology, importability, aliases, wrappers, or
+compatibility shape must be updated or deleted unless they protect a named
+external contract.
+
+The goal is not for all old tests to keep passing unchanged. The goal is for the
+remaining tests to describe the canonical model. A test may be deleted when its
+only purpose was to preserve an obsolete internal surface.
+
+Classify tests affected by legacy removal as:
+
+- `behavioral`: protects externally observable behavior such as CLI output, API
+  response, file effects, persisted state, generated artifacts, report fields,
+  or runtime behavior.
+- `compatibility-contract`: protects a documented public old path or
+  compatibility promise that users still rely on.
+- `migration-retention`: keeps a temporary facade, wrapper, alias, old import
+  path, or transition surface alive after a canonical owner already exists.
+- `topology-assertion`: asserts module presence, importability, alias identity,
+  `find_spec`, `__all__`, root topology, wrapper existence, or old
+  implementation shape without proving externally observable behavior.
+
+Use this decision rule before preserving code because a test fails:
+
+- `behavioral` tests are preservation signals by default.
+- `compatibility-contract` tests are preservation signals only when they name or
+  link to the external contract.
+- `migration-retention` tests are cleanup candidates unless a concrete
+  transition requirement remains.
+- `topology-assertion` tests are suspect by default and should usually be
+  updated or deleted during legacy removal.
+
+Only behavioral tests and documented compatibility-contract tests justify
+preserving behavior by default. Migration-retention and topology-assertion tests
+should usually be migrated, narrowed, or deleted unless they protect a concrete
+external contract, public API commitment, production migration requirement, or
+explicit user instruction.
+
 ## Relationship to dead-surface-audit
 
 `dead-surface-audit` is an optional auxiliary evidence skill. Load it only when
@@ -89,6 +136,11 @@ Use `dead-surface-audit` when a legacy finding involves signals such as:
 - test-only preservation of old import paths, aliases, or topology
 - uncertainty about whether a surface is externally supported or only
   test-retained
+
+Use `dead-surface-audit` when test classification requires deeper evidence about
+whether a surface is truly alive. It is especially useful for importability
+tests, alias identity tests, root topology tests, compatibility facades, wrapper
+surfaces, and test-only callers.
 
 `dead-surface-audit` answers evidence questions, not planning questions. It can
 answer:
@@ -149,17 +201,18 @@ Use this structure:
 
 ## Evidence inventory
 
-| ID | Evidence type | Source | Location | Observation | Implication |
-| --- | --- | --- | --- | --- | --- |
-| E1 | code/test/doc/caller/config | ordinary inspection/dead-surface-audit/etc. | path or symbol | what was found | why it matters |
-| E2 | test-retained surface | dead-surface-audit | path or symbol | Tests assert import shape only | Candidate for deletion or test migration |
+| ID | Evidence type | Source | Location | Test class | Observation | Implication |
+| --- | --- | --- | --- | --- | --- | --- |
+| E1 | code/doc/caller/config | ordinary inspection | path or symbol | n/a | what was found | why it matters |
+| E2 | test evidence | inspection | path::test_name | topology-assertion | Test asserts old import shape only | Candidate for deletion or rewrite |
+| E3 | test-retained surface | dead-surface-audit | path or symbol | migration-retention/topology-assertion | Tests assert import shape only | Candidate for deletion or test migration |
 
 ## Legacy findings
 
-| ID | Status | Severity | Location | Legacy pattern | Why it matters | Recommended action |
-| --- | --- | --- | --- | --- | --- | --- |
-| L1 | Open | blocker/major/minor | path or symbol | shim/alias/fallback/dual-path/legacy-test/stale-name/etc. | impact on conceptual surface area | delete/rename/update-test/defer/keep-with-justification |
-| L2 | Open | major | path or symbol | test-retained compatibility surface | Tests preserve old shape without runtime caller evidence | delete or migrate tests first |
+| ID | Status | Severity | Location | Legacy pattern | Test class | Why it matters | Recommended action |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| L1 | Open | blocker/major/minor | path or symbol | shim/alias/fallback/dual-path/legacy-test/stale-name/etc. | n/a or behavioral/compatibility-contract/migration-retention/topology-assertion | impact on conceptual surface area | delete/rename/update-test/defer/keep-with-justification |
+| L2 | Open | major | path or symbol | test-retained legacy surface | topology-assertion | Old surface is kept alive by shape tests only | delete surface and update/delete tests |
 
 ## Canonical model decision
 
