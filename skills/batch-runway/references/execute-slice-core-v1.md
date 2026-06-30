@@ -48,12 +48,13 @@ Use this core only when the slice is routine:
 - no active blocker
 - no failed validation
 - no reviewer-requested fix loop yet
-- no explicit test-quality-review request
+- no explicit or triggered specialist review that needs a full review brief
 - no escalation
 - no final batch closeout
 
 If any condition is false, read `execute-recovery-v1.md`,
-`test-quality-review.md`, or `finalize-batch-v1.md` as appropriate.
+`subagent-briefs.md`, `test-quality-review.md`, or `finalize-batch-v1.md` as
+appropriate.
 
 ## Coordinator Invariants
 
@@ -61,6 +62,8 @@ If any condition is false, read `execute-recovery-v1.md`,
 - Do not implement code directly except ledger updates and commits.
 - Delegate implementation to `runway_worker`.
 - Delegate review to a separate `runway_reviewer`.
+- Run triggered specialist support reviewers only when the task-scoped diff
+  matches a review route; keep `runway_reviewer` as the final gate.
 - Keep coordinator reads limited to orchestration state for routine slices.
 - Delegate broad read-only investigation to `fast_explorer` and carry forward
   only its compact findings.
@@ -86,15 +89,17 @@ If any condition is false, read `execute-recovery-v1.md`,
 3. Spawn `runway_worker` with the compact coding handoff below.
 4. Require compact YAML from the worker.
 5. Run or verify focused validation and selected-profile validation.
-6. Spawn `runway_reviewer` with the compact review handoff below.
-7. Require compact YAML from the reviewer.
-8. Commit only the intended slice files once validation and review are clean.
-9. Record any orchestration anomalies using the compact log below.
-10. Report the compact commit receipt.
-11. Update the active ledger with only remaining-work state.
-12. Move completed-slice audit references to the completed archive.
-13. Close completed subagents.
-14. Continue to the next pending slice unless a stop condition remains active or
+6. Classify the task-scoped diff for review triggers. If specialist support is
+   needed, use `subagent-briefs.md` and retain only compact YAML findings.
+7. Spawn `runway_reviewer` with the compact review handoff below.
+8. Require compact YAML from the reviewer.
+9. Commit only the intended slice files once validation and review are clean.
+10. Record any orchestration anomalies using the compact log below.
+11. Report the compact commit receipt.
+12. Update the active ledger with only remaining-work state.
+13. Move completed-slice audit references to the completed archive.
+14. Close completed subagents.
+15. Continue to the next pending slice unless a stop condition remains active or
     the user explicitly asks to stop.
 
 ## Worker Handoff
@@ -150,6 +155,8 @@ Slice anchor: <heading text or line number>.
 Diff basis: <commit hash or task-scoped worktree diff paths>.
 Inspect only the task-scoped diff and relevant files.
 Check scope, acceptance criteria, validation evidence, dirty-file leakage, and behavior preservation.
+Classify review lenses before the verdict and include `lenses_applied`.
+Include compact specialist-review findings already gathered by the coordinator.
 Return YAML only, including `diff_basis`. Do not modify files.
 ```
 
@@ -158,10 +165,23 @@ Reviewer YAML:
 ```yaml
 status: clean
 diff_basis: "worktree diff against HEAD abc1234"
+lenses_applied:
+  - import_topology_change
 findings: []
 residual_risks: []
 required_fixes: []
 ```
+
+## Triggered Specialist Review
+
+Do not force multiple reviewers for every slice. Use specialist support only
+when the task-scoped diff triggers a lens, then pass compact findings into the
+final `runway_reviewer` handoff.
+
+Use `import_topology_reviewer` for project-local import fallback, direct-script
+entrypoint, `sys.path` manipulation, alternate local import, or topology-only
+test changes. Do not use it for ordinary optional third-party dependency imports
+unless they obscure project-local topology ambiguity.
 
 ## Support Investigation Handoff
 
@@ -286,5 +306,5 @@ Allowed values:
 - Review found issues: read `execute-recovery-v1.md`.
 - Blocker, ambiguity, dirty-file conflict, or approval issue: read
   `execute-recovery-v1.md`.
-- Explicit test-quality-review request: read `test-quality-review.md`.
+- Explicit or triggered test-quality-review: read `test-quality-review.md`.
 - Last slice completed or final report requested: read `finalize-batch-v1.md`.

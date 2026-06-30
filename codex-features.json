@@ -12,7 +12,7 @@
       ]
     },
     "batch-runway": {
-      "version": "1.3.4",
+      "version": "1.3.5",
       "description": "Coordinator workflow for multi-slice runway execution.",
       "links": [
         {
@@ -56,12 +56,16 @@
       ]
     },
     "custom-agents": {
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "Reusable custom Codex agents.",
       "links": [
         {
           "source": "agents/fast_explorer.toml",
           "target": "agents/fast_explorer.toml"
+        },
+        {
+          "source": "agents/import_topology_reviewer.toml",
+          "target": "agents/import_topology_reviewer.toml"
         },
         {
           "source": "agents/runway_reviewer.toml",

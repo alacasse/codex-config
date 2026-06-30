@@ -45,13 +45,64 @@ Slice anchor: <heading text or line number>.
 Diff basis: <commit hash or task-scoped worktree diff paths>.
 Inspect only the task-scoped diff and relevant files.
 Check scope, acceptance criteria, validation evidence, dirty-file leakage, and behavior preservation.
-If the slice requests test quality review, invoke $test-quality-review in the requested mode and include compact YAML findings.
+Classify review lenses before the verdict and include `lenses_applied`.
+Include compact specialist-review findings already gathered by the coordinator.
 Batch Runway reference, if needed: <absolute path to relevant reference file>.
 Use Compact Report Contract v1 reviewer format. Return YAML only, including `diff_basis`. Do not modify files.
 ```
 
 Only paste full acceptance criteria when the reviewer cannot reliably read the
 spec path or when the review boundary is subtle.
+
+## Trigger-Based Review Routing
+
+The coordinator owns review routing. Specialist reviewers are support reviewers:
+they inspect one triggered risk lens, return compact YAML, and do not replace the
+final `runway_reviewer` verdict. Reviewers must not spawn, delegate to, or wait
+on other reviewers.
+
+Registered specialist reviewers may be invoked by the coordinator when
+triggered. Non-registered review lenses are handled by the final
+`runway_reviewer` and must not be treated as spawnable agent names.
+
+Always run the final `runway_reviewer`. Invoke specialist support only when the
+task-scoped diff triggers it:
+
+```yaml
+review_routing:
+  always:
+    - runway_reviewer
+
+  triggers:
+    tests_changed:
+      - test-quality-review
+
+    local_import_topology_changed:
+      - import_topology_reviewer
+
+    legacy_or_compatibility_cleanup:
+      - dead-surface-audit
+```
+
+Use `import_topology_reviewer` when the diff changes project-local imports,
+module entry behavior, path manipulation, direct-script fallback handling, or
+tests that preserve import topology. It should distinguish project-local import
+fallback from legitimate optional third-party dependency imports. A local import
+topology change alone should not trigger broader legacy-management review.
+
+Use `dead-surface-audit` only when legacy, compatibility, cleanup-candidate,
+test-retention, absence/importability/topology-test, alias, wrapper, facade, or
+migration-retention evidence suggests a surface may be kept alive by tests or
+compatibility logic.
+
+Deleting unsupported fallback paths is normally progress. Do not let cleanup
+candidate inventories become permanent contracts: a reviewer may flag a cleanup
+candidate that overlaps a supported entrypoint, but should not require a stable
+list of unsupported candidates to remain forever.
+
+Tests that only assert absence, import topology, alias identity, facade shape,
+or wrapper retention are suspicious unless they protect a documented external
+contract.
 
 ## Support-Only Custom Agents
 

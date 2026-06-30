@@ -147,13 +147,27 @@ Reviewer report:
 ```yaml
 status: clean
 diff_basis: "worktree diff against HEAD abc1234"
+lenses_applied:
+  - behavior_change
 findings: []
 residual_risks: []
 required_fixes: []
 ```
 
-If a slice requests test quality review, include the compact YAML findings from
-`$test-quality-review` in the reviewer report.
+Before final verdict, `runway_reviewer` classifies the task-scoped diff with all
+applicable review lenses:
+
+- `behavior_change`
+- `contract_change`
+- `test_change`
+- `import_topology_change`
+- `compatibility_or_legacy_cleanup`
+- `validation_or_reporting_change`
+- `docs_only_change`
+
+If the coordinator ran triggered specialist support reviews, include their
+compact findings in the final reviewer report. Specialist reviewers do not
+replace the final `runway_reviewer` verdict.
 
 Commit receipt:
 

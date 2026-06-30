@@ -6,12 +6,14 @@ A slice may explicitly request:
 Test quality review: none | delta-only | focused | full-audit
 ```
 
-Default to `none` when the field is omitted. Existing behavior must remain
-unchanged for specs that do not request test quality review.
+Default to `none` when the field is omitted and no review route is triggered.
+Existing behavior must remain unchanged for specs that do not request test
+quality review and do not change tests.
 
 If a slice requests `delta-only`, `focused`, or `full-audit`, invoke
 `$test-quality-review` using the requested mode and include its compact YAML
-findings in the review output.
+findings in the review output. If tests changed and the slice does not request a
+mode, use `delta-only` for trigger-based routing.
 
 Treat test-quality-review findings as review information only. Do not
 automatically modify execution flow, create issues, update the ledger, block

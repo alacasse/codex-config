@@ -69,10 +69,11 @@ reference file by default.
 - `references/finalize-batch-v1.md`: read only when closing a batch or producing
   a final report.
 - `references/subagent-briefs.md`: read only when full brief variants,
-  support-agent guidance, or non-routine subagent prompting is needed. Routine
-  handoffs are covered by the execution core.
+  support-agent guidance, triggered specialist review routing, or non-routine
+  subagent prompting is needed. Routine handoffs are covered by the execution
+  core.
 - `references/test-quality-review.md`: read only when a slice explicitly asks for
-  test quality review.
+  test quality review or when changed tests trigger test-review routing.
 
 When a subagent receives only a spec path, make sure the spec contains enough
 contract detail for that subagent to act safely, or include a short contract

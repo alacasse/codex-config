@@ -26,18 +26,22 @@ for compatibility questions, non-routine execution, recovery, and finalization.
    - active ledger rows versus completed slice archive
 6. Confirm subagent tooling is available.
 7. Prefer `runway_worker` for coding and `runway_reviewer` for review.
-8. Use `fast_explorer` for optional read-only side investigations when broad
+8. Classify likely review triggers from the spec and current diff. Always keep
+   `runway_reviewer` as the final review gate. Invoke specialist support
+   reviewers only when triggered by task-scoped changes, using
+   `subagent-briefs.md` for routing.
+9. Use `fast_explorer` for optional read-only side investigations when broad
    source, test, memory, prior-spec, or architecture exploration would otherwise
    enter coordinator context. Prefer one batch-scoped investigation for related
    adjacent slices, then pass only compact findings, selected per-slice notes, or
    artifact paths to workers and reviewers.
-9. Identify or create the spec's compact `orchestration_anomalies` location for
+10. Identify or create the spec's compact `orchestration_anomalies` location for
    suspicious coordinator or subagent-lifecycle behavior. Do not use it for
    routine command output, normal validation logs, clean reviews, or
    implementation chronology.
    Include unexpected `HEAD` or diff movement and stale review evidence here
    when they affect execution confidence.
-10. If required custom agents are unavailable because Codex has not reloaded
+11. If required custom agents are unavailable because Codex has not reloaded
    configuration yet, stop and ask for a restart or new thread rather than
    falling back to main-agent implementation.
 
@@ -84,24 +88,37 @@ Use `execute-slice-core-v1.md` for the normal version of this loop.
 12. Re-run validation after in-scope fixes.
 13. Stop only when the failure is ambiguous, out of scope, repeatedly
     unresolved, or indicates a dirty-file conflict.
-14. Spawn a separate review subagent with `agent_type="runway_reviewer"`.
-15. In lean mode, pass the absolute spec path, repo cwd, slice number, slice
+14. Before final review, run triggered specialist support reviewers when the
+    task-scoped diff changes the relevant surface:
+    - tests changed: `test-quality-review`
+    - local import topology changed: `import_topology_reviewer`
+    - legacy or compatibility cleanup: `dead-surface-audit`
+    - test-retained topology, absence/importability/topology tests, aliases,
+      wrappers, facades, compatibility surfaces, or cleanup-candidate
+      inventories kept alive by tests: `dead-surface-audit`
+    Contract, validation, and security concerns are non-registered review
+    lenses handled by the final `runway_reviewer`, not spawnable specialist
+    reviewers. Keep specialist outputs compact. Support reviewers must not spawn
+    other reviewers or replace the final verdict.
+15. Spawn a separate review subagent with `agent_type="runway_reviewer"`.
+16. In lean mode, pass the absolute spec path, repo cwd, slice number, slice
     anchor, exact diff basis, task-scoped diff context, review focus, any
-    explicit test quality review setting, and a short contract capsule or
+    triggered specialist-review findings, and a short contract capsule or
     relevant Batch Runway reference path. Require reviewer YAML to include the
-    inspected `diff_basis`. Do not paste the full slice unless needed.
-16. If review finds issues, read `execute-recovery-v1.md`.
-17. Commit only the files intentionally changed for that slice once validation
+    inspected `diff_basis` and `lenses_applied`. Do not paste the full slice
+    unless needed.
+17. If review finds issues, read `execute-recovery-v1.md`.
+18. Commit only the files intentionally changed for that slice once validation
     and review are clean.
-18. Record any orchestration anomalies using `Orchestration Anomaly Log v1`.
-19. Immediately report a YAML commit receipt using `Compact Report Contract v1`.
-20. Include compact convergence in routine commit receipts. Use the expanded
+19. Record any orchestration anomalies using `Orchestration Anomaly Log v1`.
+20. Immediately report a YAML commit receipt using `Compact Report Contract v1`.
+21. Include compact convergence in routine commit receipts. Use the expanded
     convergence template only when scope is expanding, significant uncertainty
     exists, blockers are present, or final batch reporting is being produced.
-21. Update the active ledger with only the state needed for remaining work. Move
+22. Update the active ledger with only the state needed for remaining work. Move
     completed slice audit references to the completed slice archive.
-22. Close completed subagents before continuing to avoid thread-limit failures.
-23. Continue directly to the next pending ledger row.
+23. Close completed subagents before continuing to avoid thread-limit failures.
+24. Continue directly to the next pending ledger row.
 
 ## Finalization
 

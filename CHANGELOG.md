@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Batch Runway review routing
+
+Problem: the general `runway_reviewer` can miss specialized smells unless the
+coordinator explicitly asks for the right review lens, and cleanup inventories
+can accidentally become permanent contracts.
+
+Decision: add trigger-based specialist review routing to Batch Runway guidance,
+extend `runway_reviewer` reports with `lenses_applied`, and add an
+`import_topology_reviewer` support agent for project-local import fallback,
+direct-entrypoint, `sys.path`, and topology-only test risks. A local import
+topology change routes only to that registered reviewer unless separate
+legacy/dead-surface or test-retention evidence is present, and non-registered
+contract, validation, and security lenses remain part of the final
+`runway_reviewer` check. Specialist reviewers remain coordinator-owned support
+reviewers; the final `runway_reviewer` verdict still gates the slice.
+
+Expected effect: future slices can get targeted import-topology review when the
+diff warrants it without turning every slice into a multi-reviewer committee or
+preserving unsupported cleanup candidates as stable contracts.
+
 ### Legacy removal skill
 
 Problem: legacy cleanup requests can jump directly to deletion or concrete
