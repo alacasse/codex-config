@@ -38,6 +38,10 @@ Per-slice validation:
 - ruff on touched test modules
 - `git diff --check`
 
+Do not run project-level integration harnesses, index/search/graph refreshes,
+generated-doc refreshes, package installs, or final validation per slice unless
+the slice explicitly requires them.
+
 Final validation:
 
 - full relevant test subset
@@ -45,8 +49,8 @@ Final validation:
 - project-specific integration harness only at final validation unless the slice
   changes harness execution behavior, direct-runner coverage, runtime
   import/path assumptions, or the spec requires earlier harness validation
-- project-specific index refresh only if project instructions require it after
-  test topology changes
+- project-specific index/search/graph/generated-doc refresh only when the spec
+  explicitly requires it for test topology changes
 
 ## `mechanical-production-refactor`
 
@@ -58,7 +62,9 @@ Per-slice validation:
 - focused pytest covering touched behavior
 - ruff on touched production and test files
 - `git diff --check`
-- project-specific index refresh when project instructions require it
+- project-specific index/search/graph/generated-doc refresh when project
+  instructions require it after production or source-code edits; do not apply
+  this to test-only edits unless the spec explicitly requires it
 
 Integration harness policy:
 

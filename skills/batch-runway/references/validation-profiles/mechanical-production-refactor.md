@@ -8,7 +8,9 @@ Per-slice validation:
 - focused pytest covering touched behavior
 - ruff on touched production and test files
 - `git diff --check`
-- project-specific index refresh when project instructions require it
+- project-specific index/search/graph/generated-doc refresh when project
+  instructions require it after production or source-code edits; do not apply
+  this to test-only edits unless the spec explicitly requires it
 
 Integration harness policy:
 

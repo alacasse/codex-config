@@ -114,6 +114,9 @@ Validation profile: <selected profile path or expanded profile>.
 You are already the required coding subagent for this slice. Do not spawn,
 delegate to, or wait on additional subagents. Implement only this slice.
 The coordinator handles validation, review delegation, ledger updates, and commits.
+Do not run project-level integration harnesses, index/search/graph refreshes,
+generated-doc refreshes, final validation, or cleanup commands unless this handoff
+explicitly assigns them.
 Read the full slice in the spec. Return YAML only.
 No implementation history, reasoning narrative, or chronological work log.
 ```

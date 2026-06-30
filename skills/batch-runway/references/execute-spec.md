@@ -50,16 +50,19 @@ Use `execute-slice-core-v1.md` for the normal version of this loop.
    anchor, allowed files, dirty-file constraints, slice-specific overrides, and
    a role-scoped contract capsule or the relevant Batch Runway reference path.
    The capsule must say the spawned worker is already the required coding
-   subagent, must implement only its assigned slice, and must not spawn,
-   delegate to, or wait on additional subagents. Do not paste the full slice
-   unless needed.
+   subagent, must implement only its assigned slice, must not spawn, delegate to,
+   or wait on additional subagents, and must not run project-level integration
+   harnesses, index/search/graph refreshes, generated-doc refreshes, final
+   validation, or cleanup commands unless the handoff explicitly assigns them.
+   Do not paste the full slice unless needed.
 3. Require the coding result to follow `Compact Report Contract v1`.
 4. Run or verify focused validation from the coordinator session when practical.
 5. Apply the active validation profile.
 6. If the slice is test-only and uses `test-only-topology`, do not run the
-   project-specific integration harness per slice unless the slice changes
+   project-specific integration harness, index/search/graph refresh,
+   generated-doc refresh, or final validation per slice unless the slice changes
    harness execution behavior, direct-runner coverage, runtime import/path
-   assumptions, or the spec requires it.
+   assumptions, generated artifacts, or the spec explicitly requires it.
 7. If the slice touches production code or behavior that the active project
    profile marks as harness-affecting, run the project-specific integration
    harness for that slice before review and before commit unless the validation

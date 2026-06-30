@@ -103,8 +103,9 @@ Non-negotiable execution rules:
   A spawned `runway_worker` is already the required coding subagent for its
   assigned slice; it must implement that slice directly and must not spawn,
   delegate to, or wait on additional coding or review agents.
-- The coordinator owns validation, review delegation, ledger updates, commits,
-  and subagent lifecycle unless a spec explicitly says otherwise.
+- The coordinator owns validation, project-level refresh/harness decisions,
+  review delegation, ledger updates, commits, and subagent lifecycle unless a
+  spec explicitly says otherwise.
 - The main agent is coordinator only.
 - The main agent must not implement code changes directly except for updating
   the ledger and making commits.
@@ -123,6 +124,9 @@ Non-negotiable execution rules:
   generated content, delegate that cleanup to `runway_worker` or stop for user
   direction; coordinator-authored reverse patches are not allowed as
   implementation cleanup.
+- Workers must not run project-level integration harnesses, index/search/graph
+  refreshes, generated-doc refreshes, final validation, package installs, or
+  cleanup commands unless their handoff explicitly assigns that work.
 - Continue to the next pending slice after a commit receipt unless the user
   explicitly asks to stop or a stop condition remains active.
 - After an interruption, approval, permission issue, context transition, or

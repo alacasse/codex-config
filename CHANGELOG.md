@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Batch Runway worker validation boundaries
+
+Problem: test-only Batch Runway workers could infer that broad project refresh
+commands belonged in their local validation because repository instructions may
+say to refresh project indexes after code changes. That made narrow test slices
+slower even when the coordinator later ran the correct validation.
+
+Decision: tighten the generic Batch Runway contracts so project-level
+integration harnesses, index/search/graph refreshes, generated-doc refreshes,
+package installs, cleanup commands, and final validation are coordinator-owned
+unless a worker handoff explicitly assigns them. The test-only profile now
+forbids those per-slice costs by default and requires specs to opt in when a
+project genuinely needs them.
+
+Expected effect: future test-only and docs-only slices should stay focused and
+fast while production slices can still run project-specific refresh and harness
+commands when the spec or coordinator assigns them.
+
 ### Batch Runway workspace reconciliation
 
 Problem: when a Batch Runway execution hit cross-slice worktree drift, an

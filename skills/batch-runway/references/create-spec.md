@@ -62,7 +62,10 @@ Overrides:
 For lean specs, do not repeat full command blocks in every slice if a validation
 profile covers them. Reference the selected profile file under
 `references/validation-profiles/` and list only slice-specific commands or
-overrides.
+overrides. For test-only or docs-only slices, explicitly state that project-level
+integration harnesses, index/search/graph refreshes, generated-doc refreshes,
+package installs, and final validation are not part of per-slice worker work
+unless the slice deliberately assigns them.
 
 Each slice must include:
 
