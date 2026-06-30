@@ -17,6 +17,25 @@ the program ledger above individual Batch Runway specs.
 - <Boundary that should remain stable>
 - <Public contract that must not change unless explicitly reclassified>
 
+Optional for active legacy-removal programs:
+
+```yaml
+legacy_removal_policy:
+  active: true
+  default_classification: remove_now
+  rule: "Documented/tested legacy is evidence of legacy, not proof of current support."
+legacy_surfaces:
+  - surface: "<legacy surface>"
+    classification: remove_now | defer_with_explicit_removal_batch | keep_as_current_contract
+    reason: "<short reason>"
+    affected_contract: "<internal | CLI | schema | artifact | API | import | none>"
+    follow_up_batch: "<required for deferred legacy>"
+    forbidden_scaffolding:
+      - "<alias/wrapper/fallback/test/registry that must not be added>"
+temporary_migration_guards: []
+deferred_legacy_followups: []
+```
+
 ## Source Context
 
 - Review source: `<path or summary>`
@@ -86,6 +105,18 @@ suggested_slices:
 stop_conditions:
   - <condition that should stop spec creation or execution>
 expected_spec_path: <local plan path or naming convention>
+legacy_removal:
+  active: true
+  surfaces:
+    - name: "<legacy surface>"
+      classification: remove_now | defer_with_explicit_removal_batch | keep_as_current_contract
+      reason: "<short reason>"
+      forbidden_scaffolding:
+        - "<alias/wrapper/fallback/test/registry that must not be added>"
+  stop_conditions:
+    - "A slice discovers an unclassified legacy surface."
+    - "A worker would need to preserve legacy not classified as keep/deferred."
+  closeout_note: "Reconcile temporary migration guards and deferred legacy before marking findings Closed."
 ```
 
 ## Recommended Work Order
@@ -151,6 +182,9 @@ so the program ledger stays readable.
   finding remains.
 - Mark a finding `Closed` only after implementation, validation, review, and
   ledger closeout are complete.
+- For active legacy-removal runways, do not mark a finding `Closed` while
+  unclassified legacy, unreconciled temporary migration guards, or hidden
+  deferred legacy remain.
 - Keep unrelated deferred findings visible.
 - Keep only compact closeout evidence in this ledger: dispatch path, spec path,
   commit range, validation result, review result, and unresolved follow-ups.
@@ -177,3 +211,5 @@ After a concrete runway finishes:
 4. Update the batch queue row to `Completed` or explain remaining work.
 5. Select or refresh the next `Ready` batch only if evidence supports it.
 6. If a runner drove the work, add a compact goal-run evaluation receipt.
+7. For active legacy-removal runways, record removed surfaces, deferred
+   surfaces, temporary migration guards that remain, and required follow-up.

@@ -71,6 +71,12 @@ For `/goal` or prompt-driven bounded runner use, read
 `references/goal-runner-v1.md` before starting the loop. For the split-phase
 local CLI runner, read `references/local-runner-v1.md`.
 
+For active legacy-removal programs, classify targeted legacy surfaces in the
+program ledger or selected dispatch packet. Workers execute already-classified
+slice instructions, reviewers flag unclassified preservation, aliases,
+wrappers, fallback paths, and cleanup scaffolding, and closeout keeps deferred
+or unreconciled legacy visible instead of marking it `Closed`.
+
 ## Local Runner Usage
 
 If the user asks to run the local architecture program runner, read
@@ -164,6 +170,8 @@ The brief should include:
 - Suggested 3-5 slice shape, if known, without full execution contracts.
 - Stop conditions that should prevent spec creation or execution.
 - Expected runway spec path or naming convention.
+- For active legacy-removal programs, classified legacy surfaces, forbidden
+  scaffolding, and stop conditions for unclassified legacy discoveries.
 
 After the brief exists, future `create-next-runway` work should consume the
 brief plus the minimum ledger excerpt needed for statuses and evidence. Do not

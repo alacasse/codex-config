@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Architecture-program legacy-removal dispatch
+
+Problem: active legacy-removal programs can lose their removal intent between
+program planning, selected dispatch, generated Batch Runway specs, review, and
+closeout, which lets agents preserve legacy or add cleanup scaffolding by
+inertia.
+
+Decision: add a compact `architecture-program-runway` guardrail and optional
+ledger/dispatch fields for classifying legacy surfaces, naming forbidden
+scaffolding, stopping on unclassified legacy discoveries, and keeping deferred
+or unreconciled legacy visible at closeout. Discovery and scoping remain with
+`legacy-removal`; concrete slice execution remains with `batch-runway`; no
+runner logic or new reference file was added.
+
+Expected effect: future legacy-removal dispatch packets carry enough policy for
+workers to execute classified removals and reviewers to flag unclassified
+preservation without turning the workflow into a larger framework.
+
 ### Batch Runway review routing
 
 Problem: the general `runway_reviewer` can miss specialized smells unless the
