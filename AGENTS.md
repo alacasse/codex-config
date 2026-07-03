@@ -10,6 +10,19 @@ When creating or updating GitHub issues, PR comments, or issue comments, keep th
 
 Do not put long design documents, large schema sketches, long logs, or giant Markdown dumps directly into GitHub issue/comment bodies. If the design is substantial, create or update a repo-owned planning/reference document and link or name that file from the issue instead. Prefer short follow-up comments for addenda.
 
+## Subagent delegation
+
+Main agents and workflow orchestrators are allowed to use any configured
+subagents without asking for explicit per-task permission when delegation would
+improve implementation, review, exploration, or context management. Use the
+registered role that matches the work, keep prompts scoped, and close completed
+subagents when the workflow requires it.
+
+This standing permission does not override narrower spawned-agent role
+boundaries. If a worker, reviewer, or explorer role says not to spawn or
+delegate to additional subagents, that role-specific instruction still applies
+inside that spawned agent.
+
 ## Reusable workflow ownership
 
 Repo-owned skills are reusable workflow code. Do not hard-code a single project's name, paths, validation commands, cache locations, issue policy, or local planning layout into a generic skill. If a workflow needs project-specific behavior, put those values in that project's instructions, local overlay, active spec, or a repo-owned reference document, then make the skill resolve them or stop when they are missing.

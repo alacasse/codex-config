@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Default subagent delegation permission
+
+Problem: main agents and workflow orchestrators could treat subagent use as
+requiring fresh user permission even when configured subagent roles already
+exist for implementation, review, exploration, or context management.
+
+Decision: add a global instruction that main agents and workflow orchestrators
+may use configured subagents without per-task permission when delegation is
+useful, while preserving spawned worker, reviewer, and explorer role boundaries
+that forbid recursive delegation.
+
+Expected effect: future Codex sessions can route work through configured
+subagents by default without the user having to restate that permission, and
+without weakening role-specific Batch Runway constraints.
+
 ### Architecture-program legacy-removal dispatch
 
 Problem: active legacy-removal programs can lose their removal intent between
