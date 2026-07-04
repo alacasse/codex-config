@@ -40,9 +40,13 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
   construction, env override handling, sandbox selection, and prompt assembly.
 - Use `docs/plans/` as the active **Planning Root**, with **Plan Archive** at
   `docs/plans/archive/`; see ADR 0001.
-- Do not create a separate `phase-runner` repo until the extraction-prep batch
-  proves a generic workflow contract and at least two worker adapters inside
-  `codex-config`.
+- Treat the long-term split target as an external OSS Go runner, but do not
+  move code by translating the Python file split. Extract versioned workflow,
+  state, result, receipt, artifact, telemetry, input-inventory, and
+  planning-state interop contracts first.
+- Keep `scripts/planning_state.py` as a separate diagnostic/protocol surface.
+  The runner may consume explicit planning-state facts later, but the generic
+  core must not depend on `codex-config` Markdown heuristics or Python imports.
 
 ## Current Active Surfaces
 
@@ -100,7 +104,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | APR-23. Generic workflow contract is only product prose | Closed | `d1cd512`; `docs/plans/generic-phase-runner-workflow-contract.md`; `docs/plans/generic-phase-runner-product-idea.md` | None | Contract maps **Workflow**, **Phase**, **Worker**, **Receipt**, **State**, and **Artifact** while keeping Codex prompts, Batch Runway policy, personal plans, GitHub coordination, and Graphify validation outside the generic boundary. |
 | APR-24. Worker adapter seam is Codex-only in production | Closed | `ec58657`; `scripts/architecture_program_runner_workers.py`; `scripts/architecture_program_runner.py`; focused worker tests | None | Production Codex phase execution now routes through `CodexExecWorker` and `execute_phase_with_worker` while preserving `execute_codex_phase` compatibility and **Runner Facade** behavior. |
 | APR-25. Shell-only workflow regression coverage is missing | Closed | `7a375b4`; `ShellCommandWorker`; `tests/test_architecture_program_runner.py` | None | Shell worker coverage proves an argv-based command can produce a compact phase result that existing validation, receipt equality, and **Phase Transition** rules consume without Codex or Batch Runway prompt language. |
-| APR-26. Separate `phase-runner` repository split is premature | Candidate | `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `docs/plans/phase-runner-business-logic-contract.md`; APR-22 through APR-25 closeout evidence | Create a bounded contract-first business-logic extraction batch | The generic boundary is proven enough to extract business-logic contracts first; package basics and facade compatibility must be defined before moving code or creating a repo skeleton. |
+| APR-26. Separate `phase-runner` repository split is premature | Candidate | `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `docs/plans/phase-runner-business-logic-contract.md`; APR-22 through APR-25 closeout evidence | Create a bounded contract-first business-logic extraction batch | The target direction is an external OSS Go runner, but the next safe step is still protocol extraction: package basics, shared schemas, planning-state interop, golden fixtures, and facade compatibility before moving code or creating a repo skeleton. |
 
 ## Batch Queue
 
@@ -113,7 +117,7 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | phase-observation-attribution | APR-20 | Closed | Reframes telemetry attribution as **Phase Observation** work | APR-16, APR-19 satisfied | Artifact and observation tests with synthetic session logs plus dry-run smoke; no live nested Codex required | `docs/plans/archive/dispatch/phase-observation-attribution-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-phase-observation-attribution-runway.md` |
 | input-inventory-contract | APR-21 | Closed | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 satisfied | Unit tests with synthetic inventories and prompt checks plus dry-run smoke | `docs/plans/archive/dispatch/input-inventory-contract-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-input-inventory-contract-runway.md` |
 | phase-runner-extraction-prep | APR-22, APR-23, APR-24, APR-25 | Closed | Closed the issue #12 wait condition before any repo split: planning root/archive, generic workflow contract, Codex adapter seam, and shell-worker proof | Closed concept-owner batches; issue #12 decision note | Project-harness production with docs-only overrides for planning slices | `plans/dispatch/phase-runner-extraction-prep-dispatch.md` | `plans/codex-config-phase-runner-extraction-prep-runway.md` |
-| phase-runner-business-logic-extraction | APR-26 | Candidate | Define the implementation-neutral runner business-logic contracts and only then choose repo/package boundaries | APR-22 through APR-25 closed; issue #12 reassessment; `docs/plans/phase-runner-business-logic-contract.md` | Contract tests for workflow/state/result/receipt/worker/artifact behavior, focused facade compatibility tests, dry-run smoke, ruff, `git diff --check` | TBD under `docs/plans/programs/architecture-program-runner/batches/phase-runner-business-logic-extraction/dispatch.md` | TBD under `docs/plans/programs/architecture-program-runner/batches/phase-runner-business-logic-extraction/runway.md` |
+| phase-runner-business-logic-extraction | APR-26 | Candidate | Define the implementation-neutral runner contracts, Go/OSS package boundary, and planning-state interop protocol before repo/package moves | APR-22 through APR-25 closed; issue #12 reassessment; `docs/plans/phase-runner-business-logic-contract.md` | Contract tests for workflow/state/result/receipt/worker/artifact behavior, planning-state interop fixture tests, focused facade compatibility tests, dry-run smoke, ruff, `git diff --check` | TBD under `docs/plans/programs/architecture-program-runner/batches/phase-runner-business-logic-extraction/dispatch.md` | TBD under `docs/plans/programs/architecture-program-runner/batches/phase-runner-business-logic-extraction/runway.md` |
 
 ## Selected Next Candidate
 
@@ -129,8 +133,9 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 - Contract source:
   `docs/plans/phase-runner-business-logic-contract.md`
 - Goal: extract the runner business logic through implementation-neutral
-  contracts first, choose package/runtime basics explicitly, then move only the
-  generic control-plane kernel if facade compatibility tests stay green.
+  contracts first, choose Go module/repo/package basics explicitly, define
+  planning-state interop as a command/file protocol, then move only the generic
+  control-plane kernel if facade compatibility tests stay green.
 - Guardrails:
   - Preserve current CLI arguments, direct script execution, phase order, Run
     Summary shape, phase-result schema, receipt equality, and structured
@@ -139,14 +144,18 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
     policy, and Graphify-specific validation in `codex-config`.
   - Keep Batch Runway, architecture-program phase prompts, personal planning
     policy, and Graphify-specific validation out of the generic core.
+  - Keep `planning_state` outside the runner core; consume planning facts only
+    through explicit schemas, command output, exit codes, and fixtures.
   - Define CLI/API entrypoint, tests, ruff/type command, CI expectations, and
     Docker stance before moving code or creating a repo skeleton.
 - Suggested slices:
-  - Confirm package/runtime basics and target module/repo name.
+  - Confirm Go package/runtime basics, target module/repo name, OSS license
+    stance, and compatibility promise.
   - Build target contracts and tests for workflow, state, result, receipt,
     transition, and workers without Codex prompt construction.
   - Add provider-neutral artifact, telemetry, input inventory, and change
     allowance contracts.
+  - Define planning-state interop fixtures and command/file protocol tests.
   - Add the `codex-config` adapter/facade compatibility layer and move generic
     code only when the existing Runner Facade remains green.
 
@@ -192,7 +201,8 @@ Remaining:
   receipt, validation, and transition rules without Codex or Batch Runway
   prompt language.
 - Promote APR-26 only when extraction-prep evidence supports a repo-split
-  decision, and keep package basics explicit before moving code.
+  decision, and keep Go package basics, protocol schemas, planning-state
+  interop, and facade compatibility explicit before moving code.
 
 ## Validation Snapshot
 

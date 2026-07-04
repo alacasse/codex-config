@@ -16,6 +16,9 @@ is planning-only; it does not implement code.
   mutate backing stores directly.
 - Keep generic tooling project-neutral. Project-specific paths, validation
   commands, and overlays belong in project instructions or active specs.
+- Keep planning-state tooling separate from the future OSS Go runner. Interop
+  belongs in explicit command/file protocols, schemas, and golden fixtures, not
+  Python imports or duplicated Markdown heuristics.
 
 ## Source Context
 
@@ -52,13 +55,14 @@ is planning-only; it does not implement code.
 | PST-4. Batch closeout lacks a bounded evidence-index contract | Candidate | None | Add `closeout.md` rendering and validation | Should stay compact and pointer-first. |
 | PST-5. Existing planning roots need migration without losing human readability | Candidate | None | Add migration inventory and state bootstrap | Pilot after read-only validation is reliable. |
 | PST-6. Operational queries are awkward from files alone | Deferred | None | Add optional SQLite projection and report commands | Do only after canonical state and rendering are stable. |
+| PST-7. Runner interoperability protocol is undefined | Candidate | None | Define planning-state command/file interop for the future Go runner | Depends on PST-1 and should inform PST-2/PST-3. Keep the runner core separate: planning-state exports facts and validation results; runners consume explicit inputs and write receipts/state. |
 
 ## Batch Queue
 
 | Batch | Findings | Status | Why grouped | Depends on | Validation class | Dispatch | Spec |
 |---|---|---|---|---|---|---|---|
 | planning-state-readonly-core | PST-1 | Completed | Establishes active-state precedence, stale-context warnings, and the safe tool boundary before any state writes | None | Focused Python unit tests and dry-run CLI checks against codex-config fixtures and the Graphify planning-root fixture | `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/runway.md` |
-| planning-state-write-transitions | PST-2, PST-3 | Candidate | Moves allocation, registration, selection, and obligations into commands | planning-state-readonly-core | Focused state/CLI tests plus Markdown round-trip checks | TBD | TBD |
+| planning-state-write-transitions | PST-2, PST-3, PST-7 | Candidate | Moves allocation, registration, selection, obligations, and runner-facing interop facts into commands | planning-state-readonly-core | Focused state/CLI tests, interop fixture tests, and Markdown round-trip checks | TBD | TBD |
 | planning-state-closeout-contract | PST-4 | Candidate | Makes completed-batch evidence bounded and validateable | planning-state-write-transitions | Focused rendering/validation tests | TBD | TBD |
 | planning-state-migration-pilot | PST-5 | Candidate | Bootstraps tool state from existing planning roots without hiding Markdown | planning-state-readonly-core; preferably planning-state-closeout-contract | Fixture migration tests and docs-only readback | TBD | TBD |
 | planning-state-sqlite-projection | PST-6 | Deferred | Adds fast operational reporting after canonical files are stable | planning-state-write-transitions; migration pilot evidence | SQLite rebuild/report tests | TBD | TBD |
@@ -85,7 +89,8 @@ Promoted to
 ## Recommended Work Order
 
 1. `planning-state-write-transitions`: move selection, path allocation,
-   registration, and cross-batch obligations behind commands.
+   registration, cross-batch obligations, and runner-facing interop facts behind
+   commands without making the runner import planning-state internals.
 2. `planning-state-closeout-contract`: render and validate bounded closeout
    evidence indexes.
 3. `planning-state-migration-pilot`: bootstrap state from existing `docs/plans/`
@@ -109,6 +114,10 @@ Promoted to
   Markdown while preserving human-readable artifacts and redirects.
 - Mark PST-6 `Closed` only after SQLite can be deleted and rebuilt from
   canonical artifacts, with agents still using command/report interfaces.
+- Mark PST-7 `Closed` only after planning-state facts have an explicit
+  command/file protocol with JSON shape, warning/error shape, exit-code meaning,
+  and golden fixtures that a future Go runner can consume without scraping
+  Markdown heuristics.
 
 ## Planning Rules
 

@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Go runner interoperability boundary
+
+Problem: future phase-runner work could treat the planned OSS Go runner as a
+direct translation of the current Python files, or accidentally fold
+`planning_state` diagnostics into the runner core.
+
+Decision: document the contract-first boundary across runner and planning-state
+plans. The future Go runner should interoperate through versioned schemas,
+files, command protocols, fixtures, and exit codes, while `codex-config`
+retains Codex prompts, planning policy, Graphify fixture policy, and
+planning-state Markdown diagnostics.
+
+Expected effect: future extraction batches should define shared protocols and
+compatibility fixtures before repo skeleton work, package moves, or runner
+integration.
+
 ### Planning-state read-only diagnostics
 
 Problem: agents still had to infer active planning state from `CURRENT.md`

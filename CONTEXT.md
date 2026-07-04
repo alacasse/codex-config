@@ -96,6 +96,19 @@ that maps the current runner to generic **Workflow**, **Phase**, **Worker**,
 `codex-config` integration language separate.
 _Avoid_: product idea, public package API, YAML workflow schema
 
+**External Runner Implementation**:
+A future implementation of the generic runner contracts outside
+`codex-config`, expected to be an OSS Go project. It should interoperate through
+versioned schemas, files, commands, fixtures, and exit codes rather than
+importing `codex-config` internals.
+_Avoid_: Python port, repo skeleton, copied runner module
+
+**Planning State Diagnostic**:
+The read-only `scripts/planning_state.py current` and `validate` command
+surface for Planning Artifact Layout v1 roots. It answers what planning state
+exists and whether it is structurally valid; it does not execute phases.
+_Avoid_: runner core, phase runner, state store
+
 ## Relationships
 
 - The **Runner Facade** may preserve externally visible behavior while its internal shape changes.
@@ -125,6 +138,12 @@ _Avoid_: product idea, public package API, YAML workflow schema
 - The **Plan Archive** is `docs/plans/archive/`.
 - The **Generic Workflow Contract** cross-references this glossary for current
   runner terms and does not replace it.
+- An **External Runner Implementation** satisfies the **Generic Workflow
+  Contract** through interoperable artifacts, not by copying the Python file
+  layout.
+- A **Planning State Diagnostic** may feed an **External Runner
+  Implementation** through an explicit adapter/protocol, but it is not part of
+  the runner core.
 
 ## Example dialogue
 
@@ -170,6 +189,10 @@ _Avoid_: product idea, public package API, YAML workflow schema
 > **Domain expert:** "No — the **Planning Root** is `docs/plans/`; `plans/` is only a temporary compatibility location for the active extraction-prep spec and dispatch during their batch."
 > **Dev:** "Does moving the **Planning Root** need a decision record?"
 > **Domain expert:** "Yes — use ADR 0001 for the planning-root and archive decision."
+> **Dev:** "Should the future Go runner import `scripts/planning_state.py`?"
+> **Domain expert:** "No — use an explicit command/file protocol if it needs planning-state facts."
+> **Dev:** "Can the Go runner copy the Python `architecture_program_runner*.py` split?"
+> **Domain expert:** "No — implement the contracts and adapters, not the accidental source layout."
 
 ## Flagged ambiguities
 
@@ -184,3 +207,6 @@ _Avoid_: product idea, public package API, YAML workflow schema
 - **Phase Contract** and **Phase Environment** both reach the phase through the
   prompt today; resolved: contract is normative, environment is supplied facts
   and settings.
+- `planning_state` can sound like runner state; resolved: **Planning State
+  Diagnostic** is planning-root discovery/validation, while **Run State** is the
+  runner's resumable execution record.

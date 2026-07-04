@@ -53,6 +53,33 @@ way:
 The current architecture-program sequence is one valid `codex-config`
 workflow. It is not the only possible generic workflow.
 
+## External Go Runner Boundary
+
+The intended long-term direction is a separate OSS Go runner that implements
+the generic workflow contract without depending on `codex-config` internals.
+Keep interoperability at file, schema, and CLI boundaries:
+
+- versioned workflow/run-state/result/receipt/input-inventory schemas;
+- declared artifact layout for runs, batches, receipts, telemetry, and
+  manifests;
+- stable exit-code and validation semantics;
+- golden fixtures that both the Python dogfooding runner and the Go runner can
+  read and write;
+- adapter-owned provider behavior such as `codex exec`, shell commands, or
+  future providers.
+
+Do not make the Go project import Python modules, reuse the Python file split,
+or depend on `codex-config` planning policy. Do not make `codex-config` import
+the Go implementation as a library during early extraction. The safe first
+integration is command/file interop: one side writes contract artifacts, the
+other validates or consumes them.
+
+`scripts/planning_state.py` is a diagnostic/protocol checker for Planning
+Artifact Layout v1 roots. It should remain independent of the runner core. A
+runner may call an external planning-state command or consume its schemas later,
+but the generic runner should not embed `codex-config` planning-root discovery,
+Graphify fixtures, or Markdown editing rules.
+
 ## Proven Internal Adapters
 
 The extraction-prep batch proved the worker boundary with two internal
@@ -91,6 +118,9 @@ integration side of the boundary.
 
 - Do not define a public Python API.
 - Do not define YAML workflow loading.
+- Do not define Go package layout.
+- Do not make `planning_state` part of the runner core.
+- Do not require either implementation to import the other.
 - Do not require SQLite, CI, Docker, GitHub, or network services.
 - Do not turn transcripts, session logs, or telemetry into receipts.
 - Do not make Batch Runway execution rules part of the generic runner core.

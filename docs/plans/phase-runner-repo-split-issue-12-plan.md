@@ -9,10 +9,11 @@ and use `codex-config` as the first dogfooding consumer.
 
 ## Recommendation
 
-Decide the split direction now. The extraction-prep batch is complete enough
-to make repo skeleton creation the next candidate, but code extraction should
-still move only the generic kernel and should define package basics before
-moving runtime behavior out of `codex-config`.
+Decide the split direction now: the long-term target is an external OSS Go
+runner. The next work should still be contract-first. Do not create a repo
+skeleton or move runtime behavior until the shared protocol is explicit enough
+for `codex-config` and the Go runner to interoperate through files, schemas,
+commands, fixtures, and exit codes.
 
 The current **Runner Facade** has enough concept ownership to make the split
 worth planning. It is not yet shaped as a generic `phase-runner` **Module**.
@@ -68,10 +69,16 @@ Evidence from `phase-runner-extraction-prep`:
 
 Next action: create a bounded contract-first business-logic extraction batch
 for APR-26 using `docs/plans/phase-runner-business-logic-contract.md`. That
-batch should define package basics first, then move only the generic workflow,
-state, result, receipt, worker, transition, artifact, telemetry, input
-inventory, and change-allowance kernel if the facade compatibility tests stay
-green.
+batch should define Go package basics and protocol boundaries first, then move
+only the generic workflow, state, result, receipt, worker, transition, artifact,
+telemetry, input inventory, change-allowance, and planning-state interop
+contracts if the facade compatibility tests stay green.
+
+`scripts/planning_state.py` should remain separate from the runner core. It can
+provide a documented preflight or adapter protocol for Planning Artifact Layout
+v1 facts, but the Go runner should not import Python internals, duplicate
+`codex-config` Markdown heuristics, or infer selected work from old filenames
+when root/program `CURRENT.md` files exist.
 
 ## Wait Condition
 
@@ -88,9 +95,12 @@ Split after these conditions are true:
 4. `codex-config` consumes the generic core through a Codex adapter/example
    layer while keeping `architecture-program-runway`, `batch-runway`, personal
    plans, and Graphify workflow state in `codex-config`.
-5. Package basics are defined for the new repo, extraction branch, or in-repo
-   generic package: CLI/API entrypoint, tests, ruff/type command, CI, and
-   Docker only if dogfooding proves it is needed.
+5. Package basics are defined for the new Go repo, extraction branch, or
+   in-repo generic package: module name, CLI/API entrypoint, tests, lint/type
+   command, CI, license stance, and Docker only if dogfooding proves it is
+   needed.
+6. Planning-state interop is defined as a command/file protocol with JSON
+   shape, warning/error shape, exit-code meaning, and golden fixtures.
 
 ## Smallest Useful Extraction Prep Batch
 
@@ -108,8 +118,8 @@ Goal: make the generic **Interface** visible without moving code to a new repo.
    **State**, **Receipt**, and **Transition** rules without Batch Runway skill
    language.
 5. Reassess issue #12 after that batch. If the shell workflow and Codex adapter
-   both cross the same seam cleanly, create the `phase-runner` repo skeleton
-   and move only the generic core.
+   both cross the same seam cleanly and planning-state interop is explicit,
+   create the Go repo skeleton and move only the generic core.
 
 ## Deepening Opportunities
 
@@ -149,7 +159,9 @@ Goal: make the generic **Interface** visible without moving code to a new repo.
 
 ## Decision
 
-Create the repo skeleton as the next candidate batch, not in this closeout
-slice. Split only the generic kernel and keep the Codex skills,
-architecture-program workflow integration, local planning policy, and
-Graphify-specific validation outside the new repo.
+Create the protocol-extraction batch as the next candidate, not a direct repo
+skeleton or file move. The eventual repo should be an OSS Go runner. Split only
+the generic kernel after shared contracts and fixtures exist, and keep the
+Codex skills, architecture-program workflow integration, local planning policy,
+planning-state Markdown diagnostics, and Graphify-specific validation outside
+the new repo.

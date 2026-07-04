@@ -12,6 +12,12 @@ This is planning work for a future implementation batch. It does not replace
 the existing architecture-program runner, Batch Runway, or Planning Artifact
 Layout v1.
 
+It also does not become the runner. The long-term runner direction is a
+separate OSS Go implementation behind shared workflow contracts. Planning-state
+tooling should stay interoperable through explicit command/file protocols,
+schemas, and fixtures rather than by becoming an imported dependency of the
+runner core.
+
 ## Source Context
 
 - GitHub issue #22: tool-owned planning state behind workflow-level commands.
@@ -87,6 +93,30 @@ searches. `current` reports the root/program active state and stale-context
 warnings; `validate` checks the same state without mutating Markdown, JSON,
 SQLite, or downstream project files.
 
+## Runner Interoperability Boundary
+
+Planning-state tooling and the phase runner should remain separate but
+interoperable.
+
+- `planning_state` answers "what planning state exists and is it structurally
+  valid?"
+- The runner answers "given an explicit workflow/work-unit input, how do phases
+  execute, persist receipts, transition state, and stop safely?"
+- The future Go runner should consume planning facts through a documented
+  adapter or preflight protocol, not by reimplementing `codex-config` Markdown
+  heuristics or importing Python internals.
+- The Python dogfooding runner and future Go runner should share golden
+  Planning Artifact Layout v1 fixtures for active `CURRENT.md` precedence,
+  redirects, stale historical files, selected/queued/active batch pointers, and
+  validation error boundaries.
+
+Future write-transition work should therefore define machine-readable outputs
+for planning-state facts before wiring them into runner workflows. A useful
+interop contract should name the command invocation, JSON shape, warning/error
+shape, and exit-code meaning. Until that exists, keep `planning_state` as an
+independent diagnostic command that future agents run before broad planning
+tree scans.
+
 ## State Boundaries
 
 The tool should own:
@@ -103,6 +133,8 @@ The tool should not own:
 
 - architecture decisions;
 - finding prioritization;
+- runner phase execution, state transition, receipts, telemetry, or worker
+  adapters;
 - Batch Runway slice design;
 - implementation code changes;
 - worker/reviewer delegation;
@@ -155,6 +187,8 @@ Runway specs, closeout decisions, full prompts, long logs, or transcripts.
 ## Non-Goals
 
 - Do not create a new `phase-runner` repository in this workstream.
+- Do not implement the future OSS Go runner in this workstream.
+- Do not make downstream runners depend on Python `planning_state` internals.
 - Do not require SQLite for active-state resolution.
 - Do not expose SQL to normal agent workflows.
 - Do not replace human-readable Markdown planning artifacts.
@@ -169,6 +203,8 @@ Runway specs, closeout decisions, full prompts, long logs, or transcripts.
   actions.
 - A fresh agent can run one command to validate whether state, `CURRENT.md`,
   ledgers, batch directories, and runner artifacts agree.
+- A future runner implementation can consume planning facts through explicit
+  schemas or command output instead of scraping historical filenames.
 - For the Graphify fixture, active state resolves from root/program
   `CURRENT.md` files and warns about stale pickup notes or historical flat files
   without treating them as selected work.

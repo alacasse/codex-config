@@ -7,8 +7,9 @@ implementation-neutral contracts before creating a separate `phase-runner`
 module or repository.
 
 This is contract work, not a file-by-file port. The target runtime and package
-format are intentionally unspecified here. A later runway must choose package
-basics before moving code.
+format are intentionally unspecified here, except that the long-term direction
+is an external OSS Go project. A later runway must choose package basics before
+moving code or creating a public repository boundary.
 
 ## Source Scope
 
@@ -52,6 +53,30 @@ The runner currently has three layers:
 The extraction target is the control-plane business logic. The current
 architecture-program workflow should become the first integration adapter or
 dogfooding workflow, not the generic runner itself.
+
+## Separation And Interoperability Direction
+
+The target should stay separate from `codex-config` while remaining
+interoperable with it.
+
+- The external Go runner owns the generic control plane: workflow execution,
+  state, transitions, result/receipt validation, artifact registration,
+  telemetry hooks, worker adapters, and stop conditions.
+- `codex-config` owns the dogfooding integration: architecture-program phase
+  names, prompts, skills, planning policy, Graphify fixture policy, and
+  repo-local validation commands.
+- `scripts/planning_state.py` owns read-only Planning Artifact Layout v1
+  diagnostics and future planning-state transitions. It is not part of the
+  runner core.
+- Interop should happen through versioned schemas, file artifacts, command
+  invocations, exit codes, and golden fixtures that both implementations can
+  validate.
+
+Do not couple the projects by sharing private helpers, importing Python modules
+from Go, shelling out to `planning_state` as an implicit hidden dependency, or
+copying the Python `scripts/architecture_program_runner*.py` file split into Go
+packages. If the Go runner needs planning-state facts, define a small explicit
+protocol: input root, output JSON, warning/error shape, and exit-code meaning.
 
 ## Contracts
 
@@ -296,6 +321,25 @@ dogfooding workflow, not the generic runner itself.
 - Validation: target tests must cover summaries with and without readable
   latest receipts.
 
+### PBC-15. Planning-State Interop
+
+- Status: proposed for the next extraction batch.
+- Source evidence: `scripts/planning_state.py`,
+  `tests/test_planning_state.py`, `docs/plans/planning-state-tooling-plan.md`,
+  and `docs/plans/generic-phase-runner-workflow-contract.md`.
+- Contract: planning-state discovery and validation are separate from runner
+  execution. A runner may receive planning-state facts as explicit inputs or
+  call a documented planning-state command, but it must not infer active work
+  from historical filenames when Layout v1 `CURRENT.md` files exist.
+- Target implication: the Go runner should define planning-state integration as
+  an adapter or preflight protocol, not as a built-in dependency on
+  `codex-config` Markdown conventions. The first interoperable shape should be
+  command/file based and fixture-tested.
+- Validation: target tests must include golden Planning Artifact Layout v1
+  fixtures where `current` and `validate` agree with the runner's selected work
+  input, and where stale historical files produce warnings without becoming
+  selected work.
+
 ## Integration-Specific Behavior To Keep Out Of The Core
 
 These behaviors are current and important, but they belong to the
@@ -326,6 +370,9 @@ These behaviors are current and important, but they belong to the
 
 A generic target should name owners by durable contracts, not source files:
 
+- **Protocol Boundary**: versioned schemas and fixture contracts shared between
+  the Python dogfooding runner, the future Go runner, and planning-state
+  diagnostics. Satisfies PBC-4, PBC-5, PBC-10, PBC-12, PBC-14, and PBC-15.
 - **Workflow Definition**: phase order, allowed next phases, phase metadata,
   and stop policy. Satisfies PBC-1, PBC-2, PBC-6, PBC-13.
 - **State Store**: versioned state, atomic persistence, resume discovery, and
@@ -344,6 +391,9 @@ A generic target should name owners by durable contracts, not source files:
   vocabulary, Batch Runway prompts, Codex command construction, and current
   facade compatibility. Satisfies integration behavior without polluting the
   generic core.
+- **Planning-State Adapter**: explicit command/file bridge for Layout v1
+  planning-state facts. Satisfies PBC-15 without making planning-state
+  diagnostics part of the runner core.
 
 ## Port Runway Handoff
 
@@ -353,21 +403,27 @@ contract-first business-logic extraction batch.
 Suggested slices:
 
 1. Define package/runtime basics and name the target module or repository.
-   Acceptance: the decision names language/runtime, CLI/API surface, test
-   command, lint/type command, CI stance, and whether extraction happens in
-   this repo first or a new repo.
+   Acceptance: the decision names Go module/repository boundaries, CLI/API
+   surface, test command, lint/type command, CI stance, license posture, and
+   whether extraction starts in this repo first or directly in a new OSS repo.
 2. Build the target's state/result/receipt/transition contracts with tests
    using fake or shell workers. Acceptance: PBC-1 through PBC-7 pass without
    Codex prompt construction.
 3. Add artifact, telemetry, input inventory, and change-allowance contracts.
    Acceptance: PBC-8 through PBC-13 pass with provider-neutral fixtures.
-4. Add the `codex-config` adapter/facade compatibility layer. Acceptance:
+4. Add planning-state interop fixtures and command/file protocol tests.
+   Acceptance: PBC-15 passes without importing `planning_state` into the
+   runner core.
+5. Add the `codex-config` adapter/facade compatibility layer. Acceptance:
    current runner CLI behavior, phase-result schema, receipts, dry-run smoke,
    final summary, and focused runner tests remain green.
 
 Guardrails:
 
 - Do not directly translate the current Python file split into target packages.
+- Do not make the Go project depend on `codex-config` private helpers.
+- Do not make `planning_state` an internal runner dependency; use an explicit
+  adapter/protocol if planning facts are needed.
 - Do not move Codex prompts, Batch Runway rules, or Program Ledger semantics
   into the generic core.
 - Do not move runtime behavior before package basics and compatibility tests
@@ -391,3 +447,5 @@ Open questions before implementation:
 - Public CLI/API name and compatibility promise.
 - Whether the current JSON field names are public compatibility or adapter
   translation details.
+- Exact planning-state interop protocol: command invocation, JSON shape, and
+  exit-code semantics.
