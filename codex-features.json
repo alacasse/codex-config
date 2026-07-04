@@ -110,6 +110,25 @@
           "target": "skills/legacy-removal"
         }
       ]
+    },
+    "agent-notifications": {
+      "version": "1.0.0",
+      "description": "Opt-in Codex Stop/SubagentStop phone notification hook script and registration example.",
+      "default_enabled": false,
+      "links": [
+        {
+          "source": "hooks/agent_done_notify.py",
+          "target": "hooks/agent_done_notify.py"
+        },
+        {
+          "source": "hooks/agent_done_hooks.example.json",
+          "target": "hooks/agent_done_hooks.example.json"
+        },
+        {
+          "source": "hooks/README.md",
+          "target": "hooks/README.md"
+        }
+      ]
     }
   }
 }
