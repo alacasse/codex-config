@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Planning-state facts protocol
+
+Problem: future runner adapters needed stable planning-state facts without
+depending on Python imports, Markdown filename inference, or the default
+human-readable diagnostics.
+
+Decision: add an opt-in `--format json` protocol for `planning_state current`
+and `planning_state validate`, with version negotiation, root/program facts,
+warnings, blockers, validation messages, and exit-code semantics. Define
+minimal future state and receipt fixture schema guards for write-transition
+tests.
+
+Expected effect: runners and fixtures can consume explicit command/file
+protocols while existing text output remains compatible.
+
 ### Go runner interoperability boundary
 
 Problem: future phase-runner work could treat the planned OSS Go runner as a

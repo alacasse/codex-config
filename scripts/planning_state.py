@@ -4,13 +4,20 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+import json
 from pathlib import Path
 import re
 import sys
-from typing import Iterable
+from typing import Any, Iterable
 
 
 NONE_VALUES = {"", "none", "none selected", "n/a", "tbd"}
+FIELD_PATTERN = re.compile(r"^(?:-\s*)?([^:|]+):\s*(.*)$")
+PLANNING_STATE_PROTOCOL_NAME = "planning-state-facts"
+PLANNING_STATE_PROTOCOL_VERSION = 1
+STATE_FIXTURE_SCHEMA_NAME = "planning-state-tool-state"
+RECEIPT_FIXTURE_SCHEMA_NAME = "planning-state-transition-receipt"
+SUPPORTED_SCHEMA_VERSION = 1
 
 
 @dataclass(frozen=True)
@@ -80,6 +87,10 @@ class PlanningState:
     redirects: tuple[RedirectEvidence, ...] = ()
     warnings: tuple[StateWarning, ...] = ()
     validation_messages: tuple[ValidationMessage, ...] = ()
+
+
+class ProtocolValidationError(ValueError):
+    """Raised when a machine-readable planning-state object is malformed."""
 
 
 def load_planning_state(root: str | Path) -> PlanningState:
@@ -192,6 +203,63 @@ def format_validation_report(state: PlanningState) -> str:
     return "\n".join(lines) + "\n"
 
 
+def format_protocol_report(
+    state: PlanningState,
+    *,
+    command: str,
+    exit_code: int,
+    protocol_version: int = PLANNING_STATE_PROTOCOL_VERSION,
+) -> str:
+    """Return versioned machine-readable planning-state facts."""
+
+    if protocol_version != PLANNING_STATE_PROTOCOL_VERSION:
+        raise ProtocolValidationError(
+            f"unsupported planning-state protocol version: {protocol_version}"
+        )
+    return json.dumps(
+        _protocol_document(state, command=command, exit_code=exit_code),
+        indent=2,
+        sort_keys=True,
+    ) + "\n"
+
+
+def validate_state_fixture_object(value: object) -> dict[str, Any]:
+    """Validate the minimal future write-transition state fixture schema."""
+
+    data = _require_object(value, "state fixture")
+    _require_protocol(data, STATE_FIXTURE_SCHEMA_NAME, "state fixture")
+    _require_string(data, "root")
+    programs = _require_array(data, "programs")
+    for index, program in enumerate(programs):
+        program_data = _require_object(program, f"programs[{index}]")
+        _require_string(program_data, "slug")
+        _require_optional_string(program_data, "current")
+        _require_optional_string(program_data, "ledger")
+        _require_optional_string(program_data, "selected_dispatch")
+        _require_optional_string(program_data, "active_runway")
+        _require_optional_string(program_data, "queued_batch")
+        _require_optional_string(program_data, "latest_closeout")
+    return data
+
+
+def validate_receipt_fixture_object(value: object) -> dict[str, Any]:
+    """Validate the minimal future write-transition receipt fixture schema."""
+
+    data = _require_object(value, "receipt fixture")
+    _require_protocol(data, RECEIPT_FIXTURE_SCHEMA_NAME, "receipt fixture")
+    _require_string(data, "root")
+    _require_string(data, "transition")
+    _require_string(data, "status")
+    messages = _require_array(data, "messages")
+    for index, message in enumerate(messages):
+        message_data = _require_object(message, f"messages[{index}]")
+        _require_string(message_data, "severity")
+        _require_string(message_data, "code")
+        _require_string(message_data, "message")
+        _require_optional_string(message_data, "source_path")
+    return data
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Read Planning Artifact Layout v1 state without writing files."
@@ -207,6 +275,18 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
         help="Planning root containing CURRENT.md.",
     )
+    current_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Output format. Defaults to text for existing agent workflows.",
+    )
+    current_parser.add_argument(
+        "--protocol-version",
+        type=int,
+        default=PLANNING_STATE_PROTOCOL_VERSION,
+        help="Machine-readable protocol version for --format json.",
+    )
     validate_parser = subparsers.add_parser(
         "validate",
         help="Validate active planning state without writing files.",
@@ -217,14 +297,52 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
         help="Planning root containing CURRENT.md.",
     )
+    validate_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Output format. Defaults to text for existing agent workflows.",
+    )
+    validate_parser.add_argument(
+        "--protocol-version",
+        type=int,
+        default=PLANNING_STATE_PROTOCOL_VERSION,
+        help="Machine-readable protocol version for --format json.",
+    )
     args = parser.parse_args(argv)
-    if args.command == "current":
-        sys.stdout.write(format_current_state(load_planning_state(args.root)))
-        return 0
-    if args.command == "validate":
-        state = load_planning_state(args.root)
-        sys.stdout.write(format_validation_report(state))
-        return 1 if _has_validation_errors(state) else 0
+    try:
+        if args.command == "current":
+            state = load_planning_state(args.root)
+            exit_code = 0
+            if args.format == "json":
+                sys.stdout.write(
+                    format_protocol_report(
+                        state,
+                        command="current",
+                        exit_code=exit_code,
+                        protocol_version=args.protocol_version,
+                    )
+                )
+            else:
+                sys.stdout.write(format_current_state(state))
+            return exit_code
+        if args.command == "validate":
+            state = load_planning_state(args.root)
+            exit_code = 1 if _has_validation_errors(state) else 0
+            if args.format == "json":
+                sys.stdout.write(
+                    format_protocol_report(
+                        state,
+                        command="validate",
+                        exit_code=exit_code,
+                        protocol_version=args.protocol_version,
+                    )
+                )
+            else:
+                sys.stdout.write(format_validation_report(state))
+            return exit_code
+    except ProtocolValidationError as error:
+        parser.exit(2, f"{parser.prog}: error: {error}\n")
     parser.error(f"unknown command: {args.command}")
     return 2
 
@@ -242,18 +360,35 @@ def _field_map(text: str) -> dict[str, str]:
     while index < len(lines):
         raw_line = lines[index]
         line = raw_line.strip()
-        match = re.match(r"^(?:-\s*)?([^:|]+):\s*(.*)$", line)
-        if match and not line.startswith("|"):
+        match = _field_match(line)
+        if match:
             key = _normal_key(match.group(1))
-            value = _clean_value(match.group(2))
-            if not value and index + 1 < len(lines):
+            value_lines = [match.group(2).strip()]
+            while index + 1 < len(lines):
                 next_line = lines[index + 1].strip()
-                if next_line.startswith("`") or next_line.startswith("<"):
-                    value = _clean_value(next_line)
-                    index += 1
+                if _ends_field_value(next_line):
+                    break
+                value_lines.append(next_line)
+                index += 1
+            value = _clean_value(" ".join(part for part in value_lines if part))
             fields[key] = value
         index += 1
     return fields
+
+
+def _field_match(line: str) -> re.Match[str] | None:
+    if line.startswith("|"):
+        return None
+    return FIELD_PATTERN.match(line)
+
+
+def _ends_field_value(line: str) -> bool:
+    return (
+        not line
+        or line.startswith("## ")
+        or line.startswith("|")
+        or _field_match(line) is not None
+    )
 
 
 def _active_programs(text: str, source_path: Path) -> list[ArtifactPointer]:
@@ -445,6 +580,162 @@ def _format_validation_warnings(messages: list[ValidationMessage]) -> list[str]:
     return lines
 
 
+def _protocol_document(
+    state: PlanningState,
+    *,
+    command: str,
+    exit_code: int,
+) -> dict[str, Any]:
+    validation_messages = [
+        _validation_message_object(message) for message in state.validation_messages
+    ]
+    blockers = [
+        message
+        for message in state.validation_messages
+        if message.severity == "error"
+    ]
+    return {
+        "protocol": {
+            "name": PLANNING_STATE_PROTOCOL_NAME,
+            "version": PLANNING_STATE_PROTOCOL_VERSION,
+            "command": command,
+        },
+        "exit": {
+            "code": exit_code,
+            "meaning": _exit_code_meaning(exit_code),
+            "semantics": {
+                "0": "command completed; validate found no blockers",
+                "1": "validate completed and found blockers",
+                "2": "command usage or protocol negotiation failed",
+            },
+        },
+        "root": {
+            "path": str(state.root.root_path),
+            "current": str(state.root.current_path),
+            "layout": state.root.layout,
+            "planning_root": state.root.planning_root,
+            "run_artifact_root": state.root.run_artifact_root,
+            "output_root": state.root.output_root,
+            "one_shot_intake": state.root.one_shot_intake,
+            "program_archive_root": state.root.program_archive_root,
+            "active_programs": [
+                _artifact_pointer_object(pointer)
+                for pointer in state.root.active_programs
+            ],
+            "next_safe_action": state.root.next_safe_action,
+        },
+        "programs": [_program_object(program) for program in state.programs],
+        "warnings": [
+            _warning_object(warning) for warning in state.warnings
+        ],
+        "blockers": [
+            _validation_message_object(message) for message in blockers
+        ],
+        "validation_messages": validation_messages,
+    }
+
+
+def _program_object(program: ProgramState) -> dict[str, Any]:
+    return {
+        "slug": program.slug,
+        "current": str(program.current_path),
+        "purpose": program.purpose,
+        "ledger": _artifact_pointer_object(program.ledger),
+        "selected_dispatch": _artifact_pointer_object(program.selected_dispatch),
+        "active_runway": _artifact_pointer_object(program.active_runway),
+        "queued_batch": _artifact_pointer_object(program.queued_batch),
+        "latest_closeout": _artifact_pointer_object(program.latest_closeout),
+        "run_artifact_location": _artifact_pointer_object(
+            program.run_artifact_location
+        ),
+        "archive_location": _artifact_pointer_object(program.archive_location),
+        "next_safe_action": program.next_safe_action,
+        "stop_conditions": list(program.stop_conditions),
+    }
+
+
+def _artifact_pointer_object(pointer: ArtifactPointer) -> dict[str, Any]:
+    return {
+        "label": pointer.label,
+        "value": pointer.value,
+        "source_path": str(pointer.source_path),
+        "exists": pointer.exists,
+    }
+
+
+def _warning_object(warning: StateWarning) -> dict[str, Any]:
+    return {
+        "severity": "warning",
+        "code": warning.code,
+        "message": warning.message,
+        "source_path": _optional_path(warning.source_path),
+    }
+
+
+def _validation_message_object(message: ValidationMessage) -> dict[str, Any]:
+    return {
+        "severity": message.severity,
+        "code": message.code,
+        "message": message.message,
+        "source_path": _optional_path(message.source_path),
+    }
+
+
+def _optional_path(path: Path | None) -> str | None:
+    return str(path) if path is not None else None
+
+
+def _exit_code_meaning(exit_code: int) -> str:
+    if exit_code == 0:
+        return "success"
+    if exit_code == 1:
+        return "validation_failed"
+    return "usage_or_protocol_error"
+
+
+def _require_protocol(data: dict[str, Any], name: str, context: str) -> None:
+    protocol = _require_object(data.get("protocol"), f"{context}.protocol")
+    actual_name = protocol.get("name")
+    actual_version = protocol.get("version")
+    if actual_name != name:
+        raise ProtocolValidationError(
+            f"{context}.protocol.name must be {name!r}"
+        )
+    if actual_version != SUPPORTED_SCHEMA_VERSION:
+        raise ProtocolValidationError(
+            f"{context}.protocol.version must be {SUPPORTED_SCHEMA_VERSION}"
+        )
+
+
+def _require_object(value: object, context: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ProtocolValidationError(f"{context} must be an object")
+    return value
+
+
+def _require_array(data: dict[str, Any], key: str) -> list[Any]:
+    value = data.get(key)
+    if not isinstance(value, list):
+        raise ProtocolValidationError(f"{key} must be an array")
+    return value
+
+
+def _require_string(data: dict[str, Any], key: str) -> str:
+    value = data.get(key)
+    if not isinstance(value, str) or not value:
+        raise ProtocolValidationError(f"{key} must be a non-empty string")
+    return value
+
+
+def _require_optional_string(data: dict[str, Any], key: str) -> str | None:
+    value = data.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ProtocolValidationError(f"{key} must be a string or null")
+    return value
+
+
 def _has_validation_errors(state: PlanningState) -> bool:
     return any(message.severity == "error" for message in state.validation_messages)
 
@@ -510,6 +801,8 @@ def _normal_key(value: str) -> str:
 def _clean_value(value: str) -> str:
     value = value.strip()
     value = re.sub(r"^`(.*)`$", r"\1", value)
+    value = re.sub(r"`([^`]*)`", r"\1", value)
+    value = re.sub(r"\s+", " ", value)
     return value.strip()
 
 

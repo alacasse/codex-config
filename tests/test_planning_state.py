@@ -1,11 +1,16 @@
+import json
 from pathlib import Path
 import subprocess
 import sys
 
 from scripts.planning_state import (
+    ProtocolValidationError,
     format_current_state,
+    format_protocol_report,
     format_validation_report,
     load_planning_state,
+    validate_receipt_fixture_object,
+    validate_state_fixture_object,
 )
 
 
@@ -210,6 +215,229 @@ def test_current_command_reports_validation_warnings(tmp_path: Path) -> None:
     assert "unknown_layout:" in output
     assert "no_active_programs:" in output
     assert "blockers:\n    []" in output
+
+
+def test_current_json_protocol_reports_root_program_warning_and_exit_facts(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "my-docs" / "plans"
+    _write_graphify_fixture(root)
+
+    result = _run_current_json(root)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["protocol"] == {
+        "name": "planning-state-facts",
+        "version": 1,
+        "command": "current",
+    }
+    assert payload["exit"]["code"] == 0
+    assert payload["exit"]["meaning"] == "success"
+    assert payload["exit"]["semantics"]["1"] == (
+        "validate completed and found blockers"
+    )
+    assert payload["root"]["planning_root"] == "my-docs/plans/"
+    assert payload["programs"][0]["slug"] == (
+        "install-sandbox-test-quality-architecture"
+    )
+    assert payload["programs"][0]["queued_batch"]["value"] is None
+    assert {warning["code"] for warning in payload["warnings"]} >= {
+        "redirect_ledger",
+        "stale_pickup_note",
+        "historical_batch_artifact",
+    }
+    assert payload["blockers"] == []
+    assert all("severity" in message for message in payload["validation_messages"])
+
+
+def test_json_protocol_normalizes_wrapped_live_style_fields(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    (root / "CURRENT.md").write_text(
+        """# Planning Current State
+
+## Layout
+
+- Layout: Planning Artifact Layout v1
+- Planning root: `docs/plans/`
+- Run artifact root: `<program-root>/architecture-program-runs/` when a program
+  uses the architecture-program runner; otherwise `None selected`
+- Output root: `None selected`
+- One-shot intake: `None`
+- Program archive root: `docs/plans/archive/`
+
+## Active Programs
+
+| Program | Current state |
+|---|---|
+| `planning-state-tooling` | `docs/plans/programs/planning-state-tooling/CURRENT.md` |
+""",
+        encoding="utf-8",
+    )
+    (root / "programs" / "planning-state-tooling" / "CURRENT.md").write_text(
+        """# Planning-State Tooling Current State
+
+## Program
+
+- Program slug: `planning-state-tooling`
+- Purpose: add tool-owned planning-state diagnostics and later state
+  transitions while keeping Markdown and JSON canonical.
+- Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
+- Selected dispatch path: `None`
+- Active Batch Runway spec path: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/runway.md`
+- Latest closeout path: `None`
+- Run artifact location: `None selected`
+- Program archive location: `docs/plans/archive/`
+""",
+        encoding="utf-8",
+    )
+
+    result = _run_validate_json(root)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["root"]["run_artifact_root"] == (
+        "<program-root>/architecture-program-runs/ when a program uses the "
+        "architecture-program runner; otherwise None selected"
+    )
+    assert payload["programs"][0]["purpose"] == (
+        "add tool-owned planning-state diagnostics and later state transitions "
+        "while keeping Markdown and JSON canonical."
+    )
+    assert payload["programs"][0]["queued_batch"]["value"] == (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-readonly-core/runway.md"
+    )
+    assert "`" not in payload["root"]["run_artifact_root"]
+    assert "`" not in payload["programs"][0]["purpose"]
+
+
+def test_validate_json_protocol_reports_blockers_and_exit_facts(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    root.mkdir(parents=True)
+
+    result = _run_validate_json(root)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert payload["protocol"]["command"] == "validate"
+    assert payload["exit"]["code"] == 1
+    assert payload["exit"]["meaning"] == "validation_failed"
+    assert payload["blockers"] == [
+        {
+            "severity": "error",
+            "code": "missing_root_current",
+            "message": "root CURRENT.md is missing",
+            "source_path": str(root / "CURRENT.md"),
+        }
+    ]
+
+
+def test_json_protocol_rejects_unsupported_versions(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "current",
+            "--root",
+            str(root),
+            "--format",
+            "json",
+            "--protocol-version",
+            "2",
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 2
+    assert "unsupported planning-state protocol version: 2" in result.stderr
+
+
+def test_protocol_formatter_rejects_unsupported_versions(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    try:
+        format_protocol_report(
+            load_planning_state(root),
+            command="current",
+            exit_code=0,
+            protocol_version=2,
+        )
+    except ProtocolValidationError as error:
+        assert "unsupported planning-state protocol version: 2" in str(error)
+    else:
+        raise AssertionError("expected unsupported protocol version to fail")
+
+
+def test_state_fixture_schema_rejects_malformed_objects() -> None:
+    valid_state = {
+        "protocol": {
+            "name": "planning-state-tool-state",
+            "version": 1,
+        },
+        "root": "docs/plans",
+        "programs": [
+            {
+                "slug": "planning-state-tooling",
+                "current": "docs/plans/programs/planning-state-tooling/CURRENT.md",
+                "ledger": "docs/plans/programs/planning-state-tooling/LEDGER.md",
+                "selected_dispatch": None,
+                "active_runway": None,
+                "queued_batch": None,
+                "latest_closeout": None,
+            }
+        ],
+    }
+
+    assert validate_state_fixture_object(valid_state) == valid_state
+    malformed_state = {**valid_state, "protocol": {"name": "wrong", "version": 1}}
+    try:
+        validate_state_fixture_object(malformed_state)
+    except ProtocolValidationError as error:
+        assert "state fixture.protocol.name" in str(error)
+    else:
+        raise AssertionError("expected malformed state fixture to fail")
+
+
+def test_receipt_fixture_schema_rejects_malformed_objects() -> None:
+    valid_receipt = {
+        "protocol": {
+            "name": "planning-state-transition-receipt",
+            "version": 1,
+        },
+        "root": "docs/plans",
+        "transition": "select-batch",
+        "status": "rejected",
+        "messages": [
+            {
+                "severity": "error",
+                "code": "missing_runway",
+                "message": "runway path is missing",
+                "source_path": None,
+            }
+        ],
+    }
+
+    assert validate_receipt_fixture_object(valid_receipt) == valid_receipt
+    malformed_receipt = {**valid_receipt, "messages": [{"severity": "error"}]}
+    try:
+        validate_receipt_fixture_object(malformed_receipt)
+    except ProtocolValidationError as error:
+        assert "code must be a non-empty string" in str(error)
+    else:
+        raise AssertionError("expected malformed receipt fixture to fail")
 
 
 def test_validate_command_passes_for_current_codex_fixture(tmp_path: Path) -> None:
@@ -539,9 +767,45 @@ def _run_current(root: Path) -> str:
     return result.stdout
 
 
+def _run_current_json(root: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "current",
+            "--root",
+            str(root),
+            "--format",
+            "json",
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+
 def _run_validate(root: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, str(PLANNING_STATE_SCRIPT), "validate", "--root", str(root)],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+
+def _run_validate_json(root: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "validate",
+            "--root",
+            str(root),
+            "--format",
+            "json",
+        ],
         cwd=REPO_ROOT,
         check=False,
         text=True,

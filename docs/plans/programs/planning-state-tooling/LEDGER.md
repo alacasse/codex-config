@@ -50,19 +50,19 @@ is planning-only; it does not implement code.
 | Finding | Status | Covered by | Next action | Notes |
 |---|---|---|---|---|
 | PST-1. Planning state is inferred from Markdown and filenames | Closed | `planning-state-readonly-core` | Use read-only diagnostics before broad planning tree scans | Slice 3 evidence is clean for `current` and `validate` against codex-config and Graphify planning roots. The implemented commands report active root/program `CURRENT.md` state and stale-context warnings without writes or SQLite. |
-| PST-2. Batch/artifact paths are manually allocated by agents | Candidate | None | Add tool-owned path allocation and artifact registration | Depends on PST-1 state discovery. |
-| PST-3. Cross-batch obligations are not first-class state | Candidate | None | Add obligation IDs, owners, and close conditions | Enables fourth-batch cleanup without archaeology. |
+| PST-2. Batch/artifact paths are manually allocated by agents | Queued | `planning-state-write-transitions` | Execute the queued runway from its first pending slice | Depends on PST-1 state discovery. |
+| PST-3. Cross-batch obligations are not first-class state | Queued | `planning-state-write-transitions` | Execute the queued runway from its first pending slice | Enables fourth-batch cleanup without archaeology. |
 | PST-4. Batch closeout lacks a bounded evidence-index contract | Candidate | None | Add `closeout.md` rendering and validation | Should stay compact and pointer-first. |
 | PST-5. Existing planning roots need migration without losing human readability | Candidate | None | Add migration inventory and state bootstrap | Pilot after read-only validation is reliable. |
 | PST-6. Operational queries are awkward from files alone | Deferred | None | Add optional SQLite projection and report commands | Do only after canonical state and rendering are stable. |
-| PST-7. Runner interoperability protocol is undefined | Candidate | None | Define planning-state command/file interop for the future Go runner | Depends on PST-1 and should inform PST-2/PST-3. Keep the runner core separate: planning-state exports facts and validation results; runners consume explicit inputs and write receipts/state. |
+| PST-7. Runner interoperability protocol is undefined | Queued | `planning-state-write-transitions` | Execute the queued runway from its first pending slice | Depends on PST-1 and should inform PST-2/PST-3. Keep the runner core separate: planning-state exports facts and validation results; runners consume explicit inputs and write receipts/state. |
 
 ## Batch Queue
 
 | Batch | Findings | Status | Why grouped | Depends on | Validation class | Dispatch | Spec |
 |---|---|---|---|---|---|---|---|
 | planning-state-readonly-core | PST-1 | Completed | Establishes active-state precedence, stale-context warnings, and the safe tool boundary before any state writes | None | Focused Python unit tests and dry-run CLI checks against codex-config fixtures and the Graphify planning-root fixture | `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/runway.md` |
-| planning-state-write-transitions | PST-2, PST-3, PST-7 | Candidate | Moves allocation, registration, selection, obligations, and runner-facing interop facts into commands | planning-state-readonly-core | Focused state/CLI tests, interop fixture tests, and Markdown round-trip checks | TBD | TBD |
+| planning-state-write-transitions | PST-2, PST-3, PST-7 | Queued | Moves allocation, registration, selection, obligations, and runner-facing interop facts into commands | planning-state-readonly-core | Focused state/CLI tests, interop fixture tests, and Markdown round-trip checks | `docs/plans/programs/planning-state-tooling/batches/planning-state-write-transitions/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-write-transitions/runway.md` |
 | planning-state-closeout-contract | PST-4 | Candidate | Makes completed-batch evidence bounded and validateable | planning-state-write-transitions | Focused rendering/validation tests | TBD | TBD |
 | planning-state-migration-pilot | PST-5 | Candidate | Bootstraps tool state from existing planning roots without hiding Markdown | planning-state-readonly-core; preferably planning-state-closeout-contract | Fixture migration tests and docs-only readback | TBD | TBD |
 | planning-state-sqlite-projection | PST-6 | Deferred | Adds fast operational reporting after canonical files are stable | planning-state-write-transitions; migration pilot evidence | SQLite rebuild/report tests | TBD | TBD |
@@ -85,6 +85,21 @@ Latest completed batch:
 
 Promoted to
 `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/dispatch.md`.
+
+## Queued Batch Brief
+
+Queued batch:
+
+- Batch: `planning-state-write-transitions`
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-write-transitions/dispatch.md`
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-write-transitions/runway.md`
+- Status: `Queued`
+- Notes: Defines command/file protocol, path allocation, artifact registration,
+  batch selection/queue transitions, and obligation validation without rendered
+  Markdown writes, SQLite, Graphify-specific branches, or runner imports of
+  planning-state internals.
 
 ## Recommended Work Order
 

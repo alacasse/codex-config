@@ -62,6 +62,8 @@ available as direct script subcommands:
 ```text
 python scripts/planning_state.py current --root <planning-root>
 python scripts/planning_state.py validate --root <planning-root>
+python scripts/planning_state.py current --root <planning-root> --format json
+python scripts/planning_state.py validate --root <planning-root> --format json
 ```
 
 Future write commands remain planned, not implemented:
@@ -93,6 +95,34 @@ searches. `current` reports the root/program active state and stale-context
 warnings; `validate` checks the same state without mutating Markdown, JSON,
 SQLite, or downstream project files.
 
+Text output remains the default human and agent-facing format. JSON output is
+an opt-in machine-readable protocol for runner adapters and fixtures. Consumers
+must treat the command invocation and written artifact files as the integration
+boundary; they should not import `scripts.planning_state` as a runtime library,
+scrape Markdown filenames, or depend on private Python helper names.
+
+The current JSON protocol is `planning-state-facts` version `1`. Its document
+contains:
+
+- `protocol`: name, version, and command.
+- `exit`: returned code, compact meaning, and exit-code semantics.
+- `root`: planning root facts and active program pointers.
+- `programs`: resolved program facts and artifact pointers.
+- `warnings`: stale context and redirect evidence.
+- `blockers`: fatal validation messages.
+- `validation_messages`: all warning and error validation messages.
+
+Exit code `0` means the command completed; for `validate`, it also means no
+blockers were found. Exit code `1` is used by `validate` when blockers were
+found. Exit code `2` means command usage or protocol negotiation failed.
+
+Future write-transition fixtures use explicit JSON objects rather than inferred
+Markdown filenames. Tool-owned state fixtures use
+`planning-state-tool-state` version `1` with a planning `root` and `programs`
+array. Transition receipt fixtures use
+`planning-state-transition-receipt` version `1` with `root`, `transition`,
+`status`, and structured `messages`.
+
 ## Runner Interoperability Boundary
 
 Planning-state tooling and the phase runner should remain separate but
@@ -104,7 +134,8 @@ interoperable.
   execute, persist receipts, transition state, and stop safely?"
 - The future Go runner should consume planning facts through a documented
   adapter or preflight protocol, not by reimplementing `codex-config` Markdown
-  heuristics or importing Python internals.
+  heuristics, inferring active state from Markdown filenames, or importing
+  Python internals.
 - The Python dogfooding runner and future Go runner should share golden
   Planning Artifact Layout v1 fixtures for active `CURRENT.md` precedence,
   redirects, stale historical files, selected/queued/active batch pointers, and
