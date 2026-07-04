@@ -18,6 +18,7 @@ PLANNING_STATE_PROTOCOL_NAME = "planning-state-facts"
 PLANNING_STATE_PROTOCOL_VERSION = 1
 STATE_FIXTURE_SCHEMA_NAME = "planning-state-tool-state"
 RECEIPT_FIXTURE_SCHEMA_NAME = "planning-state-transition-receipt"
+CLOSEOUT_EVIDENCE_INDEX_SCHEMA_NAME = "planning-state-closeout-evidence-index"
 SUPPORTED_SCHEMA_VERSION = 1
 ARTIFACT_REGISTRATION_PROTOCOL_NAME = "planning-state-artifact-registration"
 TRANSITION_RECEIPT_PROTOCOL_NAME = "planning-state-transition"
@@ -34,6 +35,37 @@ BATCH_LOCAL_ARTIFACTS = {
     "runway": "runway.md",
     "closeout": "closeout.md",
     "completed-slices": "completed-slices.md",
+}
+CLOSEOUT_REQUIRED_ARTIFACT_TYPES = {
+    "closeout",
+    "completed-slices",
+    "dispatch",
+    "runway",
+}
+CLOSEOUT_BANNED_SECTION_TERMS = {
+    "chat transcript",
+    "command transcript",
+    "debug log",
+    "full log",
+    "raw log",
+    "terminal transcript",
+    "transcript",
+}
+CLOSEOUT_MAX_SECTION_ITEMS = 20
+CLOSEOUT_MAX_SECTION_TEXT_CHARS = 1200
+CLOSEOUT_MAX_SUMMARY_TEXT_CHARS = CLOSEOUT_MAX_SECTION_TEXT_CHARS
+CLOSEOUT_MAX_SECTIONS = 8
+CLOSEOUT_MAX_VALIDATION_EVIDENCE_ITEMS = 8
+CLOSEOUT_MAX_REVIEW_EVIDENCE_ITEMS = 8
+CLOSEOUT_MAX_TRANSITION_RECEIPTS = 8
+CLOSEOUT_MAX_CLEANUP_RESIDUE_EVIDENCE_ITEMS = 8
+CLOSEOUT_MAX_COMMITS = 20
+CLOSEOUT_MAX_COMMIT_REF_CHARS = 80
+CLOSEOUT_MAX_ARTIFACT_PATH_CHARS = 512
+CLOSEOUT_EVIDENCE_ITEM_LIMITS = {
+    "validation_evidence": CLOSEOUT_MAX_VALIDATION_EVIDENCE_ITEMS,
+    "review_evidence": CLOSEOUT_MAX_REVIEW_EVIDENCE_ITEMS,
+    "transition_receipts": CLOSEOUT_MAX_TRANSITION_RECEIPTS,
 }
 
 
@@ -339,6 +371,52 @@ def validate_receipt_fixture_object(value: object) -> dict[str, Any]:
             _require_object(obligation, f"obligations[{index}]"),
             f"obligations[{index}]",
         )
+    return data
+
+
+def validate_closeout_evidence_index_object(
+    value: object,
+    *,
+    state_fixture: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Validate the bounded closeout evidence-index data contract."""
+
+    data = _require_object(value, "closeout evidence index")
+    _require_protocol(data, CLOSEOUT_EVIDENCE_INDEX_SCHEMA_NAME, "closeout evidence index")
+    root = _require_string(data, "root")
+    program = _require_string(data, "program")
+    batch_id = _require_string(data, "batch_id")
+    status = _require_string(data, "status")
+    if status not in {"closed", "completed"}:
+        raise ProtocolValidationError("status must be 'closed' or 'completed'")
+    fixture = (
+        validate_state_fixture_object(state_fixture)
+        if state_fixture is not None
+        else None
+    )
+    if fixture is not None:
+        _validate_closeout_fixture_binding(root, program, batch_id, fixture)
+    _validate_closeout_known_batch(batch_id, fixture)
+    fixture_program = (
+        _fixture_program_for_closeout(fixture, program)
+        if fixture is not None
+        else None
+    )
+    _validate_closeout_artifacts(data, batch_id, fixture_program)
+    _validate_commit_evidence(_require_object(data.get("commit_evidence"), "commit_evidence"))
+    _validate_closeout_evidence_items(
+        data, "validation_evidence", batch_id, fixture_program
+    )
+    _validate_closeout_evidence_items(data, "review_evidence", batch_id, fixture_program)
+    if "transition_receipts" in data:
+        _validate_closeout_evidence_items(
+            data, "transition_receipts", batch_id, fixture_program
+        )
+    _validate_closeout_obligations(data, batch_id, fixture)
+    _validate_cleanup_residue(
+        _require_object(data.get("cleanup_residue"), "cleanup_residue")
+    )
+    _validate_bounded_closeout_sections(data)
     return data
 
 
@@ -1219,6 +1297,378 @@ def _validate_obligation_object(data: dict[str, Any], context: str) -> None:
     if status not in {"open", "closed"}:
         raise ProtocolValidationError(f"{context}.status must be 'open' or 'closed'")
     _require_optional_string(data, "evidence_path")
+
+
+def _validate_closeout_known_batch(
+    batch_id: str,
+    state_fixture: dict[str, Any] | None,
+) -> None:
+    if state_fixture is None:
+        return
+    fixture = validate_state_fixture_object(state_fixture)
+    if batch_id not in _fixture_batch_ids(fixture):
+        raise ProtocolValidationError(f"unknown closeout batch_id: {batch_id}")
+
+
+def _validate_closeout_fixture_binding(
+    root: str,
+    program_slug: str,
+    batch_id: str,
+    state_fixture: dict[str, Any],
+) -> None:
+    fixture_root = _require_string(state_fixture, "root")
+    if root != fixture_root:
+        raise ProtocolValidationError(
+            f"closeout root must match state fixture root {fixture_root!r}"
+        )
+    program = _fixture_program_for_closeout(state_fixture, program_slug)
+    if batch_id not in _fixture_program_batch_ids(program):
+        if batch_id in _fixture_batch_ids(state_fixture):
+            raise ProtocolValidationError(
+                f"closeout program {program_slug!r} does not own batch_id {batch_id!r}"
+            )
+        raise ProtocolValidationError(f"unknown closeout batch_id: {batch_id}")
+
+
+def _fixture_program_for_closeout(
+    state_fixture: dict[str, Any],
+    program_slug: str,
+) -> dict[str, Any]:
+    programs = _require_array(state_fixture, "programs")
+    for index, program in enumerate(programs):
+        program_data = _require_object(program, f"programs[{index}]")
+        if program_data.get("slug") == program_slug:
+            return program_data
+    raise ProtocolValidationError(f"unknown closeout program: {program_slug}")
+
+
+def _validate_closeout_artifacts(
+    data: dict[str, Any],
+    batch_id: str,
+    fixture_program: dict[str, Any] | None,
+) -> None:
+    artifacts = _require_array(data, "artifacts")
+    artifacts_by_type: dict[str, dict[str, Any]] = {}
+    for index, artifact in enumerate(artifacts):
+        artifact_data = _validate_closeout_artifact_pointer(
+            artifact,
+            f"artifacts[{index}]",
+            batch_id=batch_id,
+            fixture_program=fixture_program,
+        )
+        artifact_type = artifact_data["type"]
+        if artifact_type in artifacts_by_type:
+            raise ProtocolValidationError(f"artifacts contains duplicate {artifact_type}")
+        artifacts_by_type[artifact_type] = artifact_data
+    missing = sorted(CLOSEOUT_REQUIRED_ARTIFACT_TYPES - artifacts_by_type.keys())
+    if missing:
+        raise ProtocolValidationError(
+            "closeout artifacts missing required pointers: " + ", ".join(missing)
+        )
+
+
+def _validate_closeout_artifact_pointer(
+    value: object,
+    context: str,
+    *,
+    batch_id: str,
+    fixture_program: dict[str, Any] | None,
+) -> dict[str, Any]:
+    artifact = _require_object(value, context)
+    artifact_type = _require_supported_artifact_type(artifact, "type")
+    artifact_batch = _require_string(artifact, "batch_id")
+    artifact_path = _require_string(artifact, "path")
+    _validate_bounded_closeout_artifact_path(artifact_path, f"{context}.path")
+    if artifact_batch != batch_id:
+        raise ProtocolValidationError(
+            f"{context}.batch_id must match closeout batch_id {batch_id!r}"
+        )
+    if fixture_program is not None and (
+        artifact_type,
+        artifact_batch,
+        artifact_path,
+    ) not in _fixture_program_artifact_keys(fixture_program):
+        raise ProtocolValidationError(
+            f"{context} must reference a registered artifact"
+        )
+    return artifact
+
+
+def _validate_commit_evidence(commit_evidence: dict[str, Any]) -> None:
+    commits = commit_evidence.get("commits")
+    commit_range = commit_evidence.get("range")
+    if commits is not None:
+        if not isinstance(commits, list) or not commits:
+            raise ProtocolValidationError("commit_evidence.commits must be a non-empty array")
+        if len(commits) > CLOSEOUT_MAX_COMMITS:
+            raise ProtocolValidationError(
+                "commit_evidence.commits exceeds bounded evidence item limit"
+            )
+        for index, commit in enumerate(commits):
+            _validate_bounded_commit_ref(
+                commit,
+                f"commit_evidence.commits[{index}]",
+            )
+            if not _looks_like_commit_hash(commit):
+                raise ProtocolValidationError(
+                    f"commit_evidence.commits[{index}] must be a commit hash"
+                )
+    if commit_range is not None:
+        range_data = _require_object(commit_range, "commit_evidence.range")
+        for key in ("from", "to"):
+            commit = range_data.get(key)
+            _validate_bounded_commit_ref(commit, f"commit_evidence.range.{key}")
+            if not _looks_like_commit_hash(commit):
+                raise ProtocolValidationError(
+                    f"commit_evidence.range.{key} must be a commit hash"
+                )
+    if not commits and commit_range is None:
+        raise ProtocolValidationError(
+            "commit_evidence must include commits or range"
+        )
+
+
+def _validate_closeout_evidence_items(
+    data: dict[str, Any],
+    key: str,
+    batch_id: str,
+    fixture_program: dict[str, Any] | None,
+) -> None:
+    items = _require_array(data, key)
+    if not items:
+        raise ProtocolValidationError(f"{key} must not be empty")
+    limit = CLOSEOUT_EVIDENCE_ITEM_LIMITS[key]
+    if len(items) > limit:
+        raise ProtocolValidationError(f"{key} exceeds bounded evidence item limit")
+    for index, item in enumerate(items):
+        item_data = _require_object(item, f"{key}[{index}]")
+        _validate_bounded_closeout_summary(
+            item_data.get("summary"),
+            f"{key}[{index}].summary",
+        )
+        artifact = _require_object(item_data.get("artifact"), f"{key}[{index}].artifact")
+        _validate_closeout_artifact_pointer(
+            artifact,
+            f"{key}[{index}].artifact",
+            batch_id=batch_id,
+            fixture_program=fixture_program,
+        )
+
+
+def _validate_closeout_obligations(
+    data: dict[str, Any],
+    batch_id: str,
+    state_fixture: dict[str, Any] | None,
+) -> None:
+    obligations = _require_object(data.get("obligations"), "obligations")
+    closed = _require_array(obligations, "closed")
+    open_obligations = _require_array(obligations, "open")
+    fixture_obligations = None
+    if state_fixture is not None:
+        fixture_obligations = {
+            _obligation_fact_key(_obligation_object(obligation))
+            for obligation in _obligations_from_fixture(state_fixture)
+        }
+    for collection_name, collection in (
+        ("closed", closed),
+        ("open", open_obligations),
+    ):
+        for index, obligation in enumerate(collection):
+            obligation_data = _require_object(
+                obligation,
+                f"obligations.{collection_name}[{index}]",
+            )
+            _validate_obligation_object(
+                obligation_data,
+                f"obligations.{collection_name}[{index}]",
+            )
+            if collection_name == "closed":
+                if obligation_data["status"] != "closed":
+                    raise ProtocolValidationError(
+                        f"obligations.closed[{index}].status must be 'closed'"
+                    )
+                evidence_path = obligation_data.get("evidence_path")
+                if not isinstance(evidence_path, str) or not evidence_path:
+                    raise ProtocolValidationError(
+                        f"obligations.closed[{index}].evidence_path must be a non-empty string"
+                    )
+            if collection_name == "open" and obligation_data["status"] != "open":
+                raise ProtocolValidationError(
+                    f"obligations.open[{index}].status must be 'open'"
+                )
+            if (
+                obligation_data["source_batch"] != batch_id
+                and obligation_data.get("target_batch") != batch_id
+            ):
+                raise ProtocolValidationError(
+                    f"obligations.{collection_name}[{index}] must reference {batch_id}"
+                )
+            if (
+                fixture_obligations is not None
+                and _obligation_fact_key(obligation_data) not in fixture_obligations
+            ):
+                raise ProtocolValidationError(
+                    f"obligations.{collection_name}[{index}] must match a state fixture obligation"
+                )
+
+
+def _validate_cleanup_residue(cleanup_residue: dict[str, Any]) -> None:
+    classification = _require_string(cleanup_residue, "classification")
+    if classification not in {"none", "intentional", "deferred"}:
+        raise ProtocolValidationError(
+            "cleanup_residue.classification must be 'none', 'intentional', or 'deferred'"
+        )
+    if "evidence" in cleanup_residue:
+        evidence = cleanup_residue["evidence"]
+        if not isinstance(evidence, list):
+            raise ProtocolValidationError("cleanup_residue.evidence must be an array")
+        if len(evidence) > CLOSEOUT_MAX_CLEANUP_RESIDUE_EVIDENCE_ITEMS:
+            raise ProtocolValidationError(
+                "cleanup_residue.evidence exceeds bounded evidence item limit"
+            )
+        for index, item in enumerate(evidence):
+            _validate_bounded_closeout_summary(
+                item,
+                f"cleanup_residue.evidence[{index}]",
+            )
+
+
+def _validate_bounded_closeout_summary(value: object, context: str) -> None:
+    if not isinstance(value, str) or not value:
+        raise ProtocolValidationError(f"{context} must be a non-empty string")
+    if len(value) > CLOSEOUT_MAX_SUMMARY_TEXT_CHARS:
+        raise ProtocolValidationError(f"{context} exceeds bounded evidence limit")
+    lowered = value.lower()
+    if "\n" in value or any(term in lowered for term in CLOSEOUT_BANNED_SECTION_TERMS):
+        raise ProtocolValidationError(f"{context} is transcript-like or unbounded")
+
+
+def _validate_bounded_commit_ref(value: object, context: str) -> None:
+    if not isinstance(value, str) or not value:
+        raise ProtocolValidationError(f"{context} must be a non-empty string")
+    if len(value) > CLOSEOUT_MAX_COMMIT_REF_CHARS:
+        raise ProtocolValidationError(f"{context} exceeds bounded evidence limit")
+    lowered = value.lower()
+    if "\n" in value or any(term in lowered for term in CLOSEOUT_BANNED_SECTION_TERMS):
+        raise ProtocolValidationError(f"{context} is transcript-like or unbounded")
+
+
+def _validate_bounded_closeout_artifact_path(value: object, context: str) -> None:
+    if not isinstance(value, str) or not value:
+        raise ProtocolValidationError(f"{context} must be a non-empty string")
+    if len(value) > CLOSEOUT_MAX_ARTIFACT_PATH_CHARS:
+        raise ProtocolValidationError(f"{context} exceeds bounded artifact path limit")
+    lowered = value.lower()
+    if "\n" in value or "\r" in value or any(
+        term in lowered for term in CLOSEOUT_BANNED_SECTION_TERMS
+    ):
+        raise ProtocolValidationError(f"{context} is transcript-like or unbounded")
+
+
+def _looks_like_commit_hash(value: object) -> bool:
+    return isinstance(value, str) and re.fullmatch(r"[0-9a-fA-F]{7,40}", value) is not None
+
+
+def _validate_bounded_closeout_sections(data: dict[str, Any]) -> None:
+    sections = data.get("sections", [])
+    if not isinstance(sections, list):
+        raise ProtocolValidationError("sections must be an array")
+    if len(sections) > CLOSEOUT_MAX_SECTIONS:
+        raise ProtocolValidationError("sections exceeds bounded evidence item limit")
+    for index, section in enumerate(sections):
+        section_data = _require_object(section, f"sections[{index}]")
+        title = _require_string(section_data, "title")
+        if len(title) > CLOSEOUT_MAX_SECTION_TEXT_CHARS:
+            raise ProtocolValidationError(
+                f"sections[{index}].title exceeds bounded evidence limit"
+            )
+        normalized_title = title.strip().lower()
+        if "\n" in title or any(
+            term in normalized_title for term in CLOSEOUT_BANNED_SECTION_TERMS
+        ):
+            raise ProtocolValidationError(
+                f"sections[{index}].title is transcript-like or unbounded"
+            )
+        items = _require_array(section_data, "items")
+        if len(items) > CLOSEOUT_MAX_SECTION_ITEMS:
+            raise ProtocolValidationError(
+                f"sections[{index}].items exceeds bounded evidence limit"
+            )
+        for item_index, item in enumerate(items):
+            if not isinstance(item, str) or not item:
+                raise ProtocolValidationError(
+                    f"sections[{index}].items[{item_index}] must be a non-empty string"
+                )
+            if len(item) > CLOSEOUT_MAX_SECTION_TEXT_CHARS:
+                raise ProtocolValidationError(
+                    f"sections[{index}].items[{item_index}] exceeds bounded evidence limit"
+                )
+            lowered = item.lower()
+            if "\n" in item or any(term in lowered for term in CLOSEOUT_BANNED_SECTION_TERMS):
+                raise ProtocolValidationError(
+                    f"sections[{index}].items[{item_index}] is transcript-like or unbounded"
+                )
+
+
+def _fixture_program_artifact_keys(program: dict[str, Any]) -> set[tuple[str, str, str]]:
+    keys: set[tuple[str, str, str]] = set()
+    artifacts = program.get("artifacts", [])
+    if not isinstance(artifacts, list):
+        return keys
+    for artifact in artifacts:
+        if not isinstance(artifact, dict):
+            continue
+        artifact_type = artifact.get("type")
+        batch_id = artifact.get("batch_id")
+        path = artifact.get("path")
+        if (
+            isinstance(artifact_type, str)
+            and isinstance(batch_id, str)
+            and isinstance(path, str)
+        ):
+            keys.add((artifact_type, batch_id, path))
+    return keys
+
+
+def _fixture_artifact_keys(data: dict[str, Any]) -> set[tuple[str, str, str]]:
+    keys: set[tuple[str, str, str]] = set()
+    programs = data.get("programs", [])
+    if not isinstance(programs, list):
+        return keys
+    for program in programs:
+        if not isinstance(program, dict):
+            continue
+        keys.update(_fixture_program_artifact_keys(program))
+    return keys
+
+
+def _fixture_program_batch_ids(program: dict[str, Any]) -> set[str]:
+    batch_ids: set[str] = set()
+    for key in ("selected_dispatch", "active_runway", "queued_batch", "latest_closeout"):
+        value = program.get(key)
+        if isinstance(value, str):
+            batch_id = _batch_id_from_path(value)
+            if batch_id:
+                batch_ids.add(batch_id)
+    artifacts = program.get("artifacts", [])
+    if not isinstance(artifacts, list):
+        return batch_ids
+    for artifact in artifacts:
+        if isinstance(artifact, dict) and isinstance(artifact.get("batch_id"), str):
+            batch_ids.add(artifact["batch_id"])
+    return batch_ids
+
+
+def _obligation_fact_key(data: dict[str, Any]) -> tuple[str, str | None, str, str | None, str | None, str, str | None]:
+    return (
+        str(data.get("id") or ""),
+        data.get("owner"),
+        str(data.get("source_batch") or ""),
+        data.get("target_batch"),
+        data.get("close_condition"),
+        str(data.get("status") or ""),
+        data.get("evidence_path"),
+    )
 
 
 def _obligations_from_fixture(

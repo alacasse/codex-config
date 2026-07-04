@@ -4,11 +4,20 @@ import subprocess
 import sys
 
 from scripts.planning_state import (
+    CLOSEOUT_MAX_ARTIFACT_PATH_CHARS,
+    CLOSEOUT_MAX_CLEANUP_RESIDUE_EVIDENCE_ITEMS,
+    CLOSEOUT_MAX_COMMITS,
+    CLOSEOUT_MAX_COMMIT_REF_CHARS,
+    CLOSEOUT_MAX_REVIEW_EVIDENCE_ITEMS,
+    CLOSEOUT_MAX_SECTIONS,
+    CLOSEOUT_MAX_TRANSITION_RECEIPTS,
+    CLOSEOUT_MAX_VALIDATION_EVIDENCE_ITEMS,
     ProtocolValidationError,
     format_current_state,
     format_protocol_report,
     format_validation_report,
     load_planning_state,
+    validate_closeout_evidence_index_object,
     validate_receipt_fixture_object,
     validate_state_fixture_object,
 )
@@ -575,6 +584,658 @@ def test_validate_state_file_reports_obligation_statuses_and_blockers(
         "missing_obligation_evidence",
         "orphaned_obligation",
     }
+
+
+def test_closeout_evidence_index_accepts_bounded_registered_evidence() -> None:
+    state_fixture = _closeout_state_fixture()
+    closeout = _closeout_evidence_index()
+
+    assert validate_closeout_evidence_index_object(
+        closeout,
+        state_fixture=state_fixture,
+    ) == closeout
+    assert closeout["artifacts"] == [
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": (
+                "docs/plans/programs/planning-state-tooling/batches/"
+                "planning-state-write-transitions/closeout.md"
+            ),
+            "type": "closeout",
+        },
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": (
+                "docs/plans/programs/planning-state-tooling/batches/"
+                "planning-state-write-transitions/completed-slices.md"
+            ),
+            "type": "completed-slices",
+        },
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": (
+                "docs/plans/programs/planning-state-tooling/batches/"
+                "planning-state-write-transitions/dispatch.md"
+            ),
+            "type": "dispatch",
+        },
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": (
+                "docs/plans/programs/planning-state-tooling/batches/"
+                "planning-state-write-transitions/runway.md"
+            ),
+            "type": "runway",
+        },
+    ]
+    assert closeout["obligations"]["closed"][0]["status"] == "closed"
+    assert closeout["obligations"]["open"][0]["status"] == "open"
+    assert closeout["obligations"]["open"][0]["target_batch"] == "next-batch"
+
+
+def test_closeout_evidence_index_rejects_missing_required_pointers() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["artifacts"] = [
+        artifact
+        for artifact in closeout["artifacts"]
+        if artifact["type"] != "completed-slices"
+    ]
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "missing required pointers: completed-slices" in str(error)
+    else:
+        raise AssertionError("expected missing completed-slices pointer to fail")
+
+
+def test_closeout_evidence_index_rejects_unknown_batch_ids() -> None:
+    closeout = _closeout_evidence_index(batch_id="unknown-batch")
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "unknown closeout batch_id: unknown-batch" in str(error)
+    else:
+        raise AssertionError("expected unknown closeout batch to fail")
+
+
+def test_closeout_evidence_index_rejects_mismatched_fixture_root() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["root"] = "my-docs/plans"
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "closeout root must match state fixture root 'docs/plans'" in str(error)
+    else:
+        raise AssertionError("expected mismatched fixture root to fail")
+
+
+def test_closeout_evidence_index_rejects_unknown_fixture_program() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["program"] = "unknown-program"
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "unknown closeout program: unknown-program" in str(error)
+    else:
+        raise AssertionError("expected unknown fixture program to fail")
+
+
+def test_closeout_evidence_index_rejects_mismatched_fixture_program() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["program"] = "architecture-program-runner"
+    state_fixture = _closeout_state_fixture()
+    state_fixture["programs"].append(
+        {
+            "slug": "architecture-program-runner",
+            "current": "docs/plans/programs/architecture-program-runner/CURRENT.md",
+            "ledger": "docs/plans/programs/architecture-program-runner/LEDGER.md",
+            "selected_dispatch": None,
+            "active_runway": None,
+            "queued_batch": None,
+            "latest_closeout": None,
+            "artifacts": [],
+        }
+    )
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=state_fixture,
+        )
+    except ProtocolValidationError as error:
+        assert (
+            "closeout program 'architecture-program-runner' does not own batch_id "
+            "'planning-state-write-transitions'"
+        ) in str(error)
+    else:
+        raise AssertionError("expected mismatched fixture program to fail")
+
+
+def test_closeout_evidence_index_rejects_cross_program_same_batch_artifacts() -> None:
+    closeout = _closeout_evidence_index()
+    state_fixture = _closeout_state_fixture()
+    closeout_artifact = closeout["artifacts"][0]
+    planning_program = state_fixture["programs"][0]
+    planning_program["artifacts"] = [
+        artifact
+        for artifact in planning_program["artifacts"]
+        if artifact != closeout_artifact
+    ]
+    state_fixture["programs"].append(
+        {
+            "slug": "architecture-program-runner",
+            "current": "docs/plans/programs/architecture-program-runner/CURRENT.md",
+            "ledger": "docs/plans/programs/architecture-program-runner/LEDGER.md",
+            "selected_dispatch": None,
+            "active_runway": None,
+            "queued_batch": None,
+            "latest_closeout": None,
+            "artifacts": [closeout_artifact],
+        }
+    )
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=state_fixture,
+        )
+    except ProtocolValidationError as error:
+        assert "artifacts[0] must reference a registered artifact" in str(error)
+    else:
+        raise AssertionError("expected cross-program artifact pointer to fail")
+
+
+def test_closeout_evidence_index_rejects_multiline_top_level_artifact_path() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["artifacts"][0]["path"] = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-write-transitions/closeout.md\npytest output"
+    )
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "artifacts[0].path is transcript-like or unbounded" in str(error)
+    else:
+        raise AssertionError("expected multiline artifact path to fail")
+
+
+def test_closeout_evidence_index_rejects_oversized_top_level_artifact_path() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["artifacts"][0]["path"] = "x" * (CLOSEOUT_MAX_ARTIFACT_PATH_CHARS + 1)
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "artifacts[0].path exceeds bounded artifact path limit" in str(error)
+    else:
+        raise AssertionError("expected oversized artifact path to fail")
+
+
+def test_closeout_evidence_index_rejects_multiline_evidence_artifact_path() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["validation_evidence"][0]["artifact"]["path"] = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-write-transitions/outputs/pytest.json\nraw output"
+    )
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "validation_evidence[0].artifact.path is transcript-like" in str(error)
+    else:
+        raise AssertionError("expected multiline evidence artifact path to fail")
+
+
+def test_closeout_evidence_index_rejects_oversized_evidence_artifact_path() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["review_evidence"][0]["artifact"]["path"] = (
+        "x" * (CLOSEOUT_MAX_ARTIFACT_PATH_CHARS + 1)
+    )
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "review_evidence[0].artifact.path exceeds bounded artifact path limit" in str(
+            error
+        )
+    else:
+        raise AssertionError("expected oversized evidence artifact path to fail")
+
+
+def test_closeout_evidence_index_rejects_fixture_registered_bad_artifact_path() -> None:
+    closeout = _closeout_evidence_index()
+    state_fixture = _closeout_state_fixture()
+    bad_path = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-write-transitions/closeout.md\ncommand transcript"
+    )
+    closeout["artifacts"][0]["path"] = bad_path
+    state_fixture["programs"][0]["artifacts"][0]["path"] = bad_path
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=state_fixture,
+        )
+    except ProtocolValidationError as error:
+        assert "artifacts[0].path is transcript-like or unbounded" in str(error)
+    else:
+        raise AssertionError("expected fixture-backed bad artifact path to fail")
+
+
+def test_closeout_evidence_index_rejects_fixture_registered_oversized_artifact_path() -> None:
+    closeout = _closeout_evidence_index()
+    state_fixture = _closeout_state_fixture()
+    bad_path = "x" * (CLOSEOUT_MAX_ARTIFACT_PATH_CHARS + 1)
+    closeout["validation_evidence"][0]["artifact"]["path"] = bad_path
+    state_fixture["programs"][0]["artifacts"][3]["path"] = bad_path
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=state_fixture,
+        )
+    except ProtocolValidationError as error:
+        assert "validation_evidence[0].artifact.path exceeds bounded artifact path limit" in str(
+            error
+        )
+    else:
+        raise AssertionError("expected fixture-backed oversized artifact path to fail")
+
+
+def test_closeout_evidence_index_rejects_oversized_commit_arrays() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["commit_evidence"]["commits"] = [
+        f"{index:07x}" for index in range(CLOSEOUT_MAX_COMMITS + 1)
+    ]
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "commit_evidence.commits exceeds bounded evidence item limit" in str(
+            error
+        )
+    else:
+        raise AssertionError("expected oversized commit array to fail")
+
+
+def test_closeout_evidence_index_rejects_multiline_commit_evidence() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["commit_evidence"]["commits"][0] = "abc1234\npytest output"
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "commit_evidence.commits[0] is transcript-like or unbounded" in str(
+            error
+        )
+    else:
+        raise AssertionError("expected multiline commit evidence to fail")
+
+
+def test_closeout_evidence_index_rejects_overlong_commit_hashes() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["commit_evidence"]["commits"][0] = (
+        "a" * (CLOSEOUT_MAX_COMMIT_REF_CHARS + 1)
+    )
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "commit_evidence.commits[0] exceeds bounded evidence limit" in str(error)
+    else:
+        raise AssertionError("expected overlong commit hash to fail")
+
+
+def test_closeout_evidence_index_rejects_transcript_like_commit_range() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["commit_evidence"] = {
+        "range": {
+            "from": "abc1234",
+            "to": "raw log copied into commit range",
+        }
+    }
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "commit_evidence.range.to is transcript-like or unbounded" in str(error)
+    else:
+        raise AssertionError("expected transcript-like commit range to fail")
+
+
+def test_closeout_evidence_index_rejects_overlong_commit_range() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["commit_evidence"] = {
+        "range": {
+            "from": "abc1234",
+            "to": "a" * (CLOSEOUT_MAX_COMMIT_REF_CHARS + 1),
+        }
+    }
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "commit_evidence.range.to exceeds bounded evidence limit" in str(error)
+    else:
+        raise AssertionError("expected overlong commit range to fail")
+
+
+def test_closeout_evidence_index_rejects_non_fixture_obligations() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["obligations"]["closed"][0] = {
+        **closeout["obligations"]["closed"][0],
+        "id": "PST-OBL-FABRICATED",
+    }
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "obligations.closed[0] must match a state fixture obligation" in str(error)
+    else:
+        raise AssertionError("expected non-fixture obligation to fail")
+
+
+def test_closeout_evidence_index_rejects_closed_obligation_without_evidence() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["obligations"]["closed"][0]["evidence_path"] = None
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "obligations.closed[0].evidence_path must be a non-empty string" in str(
+            error
+        )
+    else:
+        raise AssertionError("expected closed obligation without evidence to fail")
+
+
+def test_closeout_evidence_index_rejects_closed_obligation_in_open_list() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["obligations"]["open"][0] = dict(closeout["obligations"]["closed"][0])
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "obligations.open[0].status must be 'open'" in str(error)
+    else:
+        raise AssertionError("expected closed obligation in open list to fail")
+
+
+def test_closeout_evidence_index_rejects_transcript_like_sections() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["sections"].append(
+        {
+            "title": "Command Transcript",
+            "items": ["pytest output copied from the terminal"],
+        }
+    )
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "transcript-like or unbounded" in str(error)
+    else:
+        raise AssertionError("expected transcript-like section to fail")
+
+
+def test_closeout_evidence_index_rejects_non_exact_transcript_like_sections() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["sections"].append(
+        {
+            "title": "Command Transcript Excerpt",
+            "items": ["pytest output summary"],
+        }
+    )
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "transcript-like or unbounded" in str(error)
+    else:
+        raise AssertionError("expected non-exact transcript-like section to fail")
+
+
+def test_closeout_evidence_index_rejects_multiline_section_titles() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["sections"][0]["title"] = "Evidence Index\nRaw Output"
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "sections[0].title is transcript-like or unbounded" in str(error)
+    else:
+        raise AssertionError("expected multiline section title to fail")
+
+
+def test_closeout_evidence_index_rejects_multiline_section_items() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["sections"][0]["items"][0] = "validation started\nvalidation passed"
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "sections[0].items[0] is transcript-like or unbounded" in str(error)
+    else:
+        raise AssertionError("expected multiline section item to fail")
+
+
+def test_closeout_evidence_index_rejects_unbounded_log_sections() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["sections"].append(
+        {
+            "title": "Validation Evidence",
+            "items": [f"line {index}" for index in range(25)],
+        }
+    )
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "exceeds bounded evidence limit" in str(error)
+    else:
+        raise AssertionError("expected unbounded section to fail")
+
+
+def test_closeout_evidence_index_rejects_oversized_split_log_sections() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["sections"] = [
+        {
+            "title": f"Split Log Pointer {index}",
+            "items": [f"artifact pointer {index}"],
+        }
+        for index in range(CLOSEOUT_MAX_SECTIONS + 1)
+    ]
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "sections exceeds bounded evidence item limit" in str(error)
+    else:
+        raise AssertionError("expected oversized split-log sections to fail")
+
+
+def test_closeout_evidence_index_rejects_oversized_split_log_evidence_arrays() -> None:
+    limits = {
+        "validation_evidence": CLOSEOUT_MAX_VALIDATION_EVIDENCE_ITEMS,
+        "review_evidence": CLOSEOUT_MAX_REVIEW_EVIDENCE_ITEMS,
+        "transition_receipts": CLOSEOUT_MAX_TRANSITION_RECEIPTS,
+    }
+    for key, limit in limits.items():
+        closeout = _closeout_evidence_index()
+        template = dict(closeout[key][0])
+        closeout[key] = [
+            {
+                "artifact": template["artifact"],
+                "summary": f"split log artifact pointer {index}",
+            }
+            for index in range(limit + 1)
+        ]
+
+        try:
+            validate_closeout_evidence_index_object(
+                closeout,
+                state_fixture=_closeout_state_fixture(),
+            )
+        except ProtocolValidationError as error:
+            assert f"{key} exceeds bounded evidence item limit" in str(error)
+        else:
+            raise AssertionError(f"expected oversized {key} to fail")
+
+
+def test_closeout_evidence_index_rejects_transcript_like_validation_summary() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["validation_evidence"][0]["summary"] = "raw log copied into summary"
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "validation_evidence[0].summary is transcript-like or unbounded" in str(
+            error
+        )
+    else:
+        raise AssertionError("expected transcript-like validation summary to fail")
+
+
+def test_closeout_evidence_index_rejects_multiline_review_summary() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["review_evidence"][0]["summary"] = "review started\nreview passed"
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "review_evidence[0].summary is transcript-like or unbounded" in str(error)
+    else:
+        raise AssertionError("expected multiline review summary to fail")
+
+
+def test_closeout_evidence_index_rejects_long_transition_receipt_summary() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["transition_receipts"][0]["summary"] = "x" * 1201
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "transition_receipts[0].summary exceeds bounded evidence limit" in str(
+            error
+        )
+    else:
+        raise AssertionError("expected long transition receipt summary to fail")
+
+
+def test_closeout_evidence_index_rejects_transcript_like_cleanup_evidence() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["cleanup_residue"]["evidence"][0] = "command transcript copied here"
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "cleanup_residue.evidence[0] is transcript-like or unbounded" in str(error)
+    else:
+        raise AssertionError("expected transcript-like cleanup evidence to fail")
+
+
+def test_closeout_evidence_index_rejects_oversized_split_log_cleanup_evidence() -> None:
+    closeout = _closeout_evidence_index()
+    closeout["cleanup_residue"]["evidence"] = [
+        f"cleanup residue artifact pointer {index}"
+        for index in range(CLOSEOUT_MAX_CLEANUP_RESIDUE_EVIDENCE_ITEMS + 1)
+    ]
+
+    try:
+        validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=_closeout_state_fixture(),
+        )
+    except ProtocolValidationError as error:
+        assert "cleanup_residue.evidence exceeds bounded evidence item limit" in str(
+            error
+        )
+    else:
+        raise AssertionError("expected oversized cleanup residue evidence to fail")
 
 
 def test_validate_rejects_state_file_from_different_planning_root(
@@ -1917,6 +2578,159 @@ def _write_state_fixture(
         + "\n",
         encoding="utf-8",
     )
+
+
+def _closeout_state_fixture() -> dict[str, object]:
+    batch_id = "planning-state-write-transitions"
+    batch_root = f"docs/plans/programs/planning-state-tooling/batches/{batch_id}"
+    artifacts = [
+        {"batch_id": batch_id, "path": f"{batch_root}/closeout.md", "type": "closeout"},
+        {
+            "batch_id": batch_id,
+            "path": f"{batch_root}/completed-slices.md",
+            "type": "completed-slices",
+        },
+        {"batch_id": batch_id, "path": f"{batch_root}/dispatch.md", "type": "dispatch"},
+        {"batch_id": batch_id, "path": f"{batch_root}/outputs/pytest.json", "type": "output"},
+        {
+            "batch_id": batch_id,
+            "path": f"{batch_root}/receipts/queue-batch.json",
+            "type": "receipt",
+        },
+        {"batch_id": batch_id, "path": f"{batch_root}/runway.md", "type": "runway"},
+    ]
+    return {
+        "protocol": {
+            "name": "planning-state-tool-state",
+            "version": 1,
+        },
+        "root": "docs/plans",
+        "programs": [
+            {
+                "slug": "planning-state-tooling",
+                "current": "docs/plans/programs/planning-state-tooling/CURRENT.md",
+                "ledger": "docs/plans/programs/planning-state-tooling/LEDGER.md",
+                "selected_dispatch": None,
+                "active_runway": None,
+                "queued_batch": None,
+                "latest_closeout": f"{batch_root}/closeout.md",
+                "artifacts": artifacts,
+            }
+        ],
+        "obligations": [
+            {
+                "id": "PST-OBL-CLOSED",
+                "owner": "planning-state-tooling",
+                "source_batch": batch_id,
+                "target_batch": None,
+                "close_condition": "closeout evidence index exists",
+                "status": "closed",
+                "evidence_path": f"{batch_root}/closeout.md",
+            },
+            {
+                "id": "PST-OBL-OPEN",
+                "owner": "next-slice",
+                "source_batch": batch_id,
+                "target_batch": "next-batch",
+                "close_condition": None,
+                "status": "open",
+                "evidence_path": None,
+            },
+        ],
+    }
+
+
+def _closeout_evidence_index(
+    *,
+    batch_id: str = "planning-state-write-transitions",
+) -> dict[str, object]:
+    batch_root = f"docs/plans/programs/planning-state-tooling/batches/{batch_id}"
+    output_artifact = {
+        "batch_id": batch_id,
+        "path": f"{batch_root}/outputs/pytest.json",
+        "type": "output",
+    }
+    receipt_artifact = {
+        "batch_id": batch_id,
+        "path": f"{batch_root}/receipts/queue-batch.json",
+        "type": "receipt",
+    }
+    return {
+        "protocol": {
+            "name": "planning-state-closeout-evidence-index",
+            "version": 1,
+        },
+        "root": "docs/plans",
+        "program": "planning-state-tooling",
+        "batch_id": batch_id,
+        "status": "closed",
+        "artifacts": [
+            {"batch_id": batch_id, "path": f"{batch_root}/closeout.md", "type": "closeout"},
+            {
+                "batch_id": batch_id,
+                "path": f"{batch_root}/completed-slices.md",
+                "type": "completed-slices",
+            },
+            {"batch_id": batch_id, "path": f"{batch_root}/dispatch.md", "type": "dispatch"},
+            {"batch_id": batch_id, "path": f"{batch_root}/runway.md", "type": "runway"},
+        ],
+        "commit_evidence": {"commits": ["abc1234"]},
+        "validation_evidence": [
+            {
+                "artifact": output_artifact,
+                "summary": "focused pytest, ruff, and diff checks passed",
+            }
+        ],
+        "review_evidence": [
+            {
+                "artifact": receipt_artifact,
+                "summary": "reviewer marked the slice clean",
+            }
+        ],
+        "transition_receipts": [
+            {
+                "artifact": receipt_artifact,
+                "summary": "queue-batch receipt carried obligation facts",
+            }
+        ],
+        "obligations": {
+            "closed": [
+                {
+                    "id": "PST-OBL-CLOSED",
+                    "owner": "planning-state-tooling",
+                    "source_batch": batch_id,
+                    "target_batch": None,
+                    "close_condition": "closeout evidence index exists",
+                    "status": "closed",
+                    "evidence_path": f"{batch_root}/closeout.md",
+                }
+            ],
+            "open": [
+                {
+                    "id": "PST-OBL-OPEN",
+                    "owner": "next-slice",
+                    "source_batch": batch_id,
+                    "target_batch": "next-batch",
+                    "close_condition": None,
+                    "status": "open",
+                    "evidence_path": None,
+                }
+            ],
+        },
+        "cleanup_residue": {
+            "classification": "deferred",
+            "evidence": ["PST-OBL-OPEN remains assigned to next-batch"],
+        },
+        "sections": [
+            {
+                "title": "Evidence Index",
+                "items": [
+                    "Pointers are registered artifacts, not inferred historical filenames",
+                    "Validation and review evidence are summarized with artifact paths",
+                ],
+            }
+        ],
+    }
 
 
 def _write_root_current(root: Path, slug: str) -> None:
