@@ -125,7 +125,44 @@ def selected_feature_names(args: argparse.Namespace, manifest: dict[str, Any]) -
     if missing:
         known = ", ".join(sorted(available))
         raise InstallError(f"unknown feature(s): {', '.join(missing)}. Known: {known}")
-    return names
+    return expand_feature_dependencies(names, available)
+
+
+def expand_feature_dependencies(
+    names: list[str], available: dict[str, Any]
+) -> list[str]:
+    expanded: list[str] = []
+    visited: set[str] = set()
+    visiting: set[str] = set()
+
+    def visit(name: str) -> None:
+        if name in visited:
+            return
+        if name in visiting:
+            raise InstallError(f"circular feature dependency involving {name}")
+        feature = available[name]
+        raw_requires = feature.get("requires", [])
+        if not isinstance(raw_requires, list) or not all(
+            isinstance(item, str) for item in raw_requires
+        ):
+            raise InstallError(
+                f"feature {name} requires must be a list of feature names"
+            )
+        missing = [required for required in raw_requires if required not in available]
+        if missing:
+            raise InstallError(
+                f"feature {name} requires unknown feature(s): {', '.join(missing)}"
+            )
+        visiting.add(name)
+        for required in raw_requires:
+            visit(required)
+        visiting.remove(name)
+        visited.add(name)
+        expanded.append(name)
+
+    for name in names:
+        visit(name)
+    return expanded
 
 
 def state_path(codex_home: Path) -> Path:

@@ -3,6 +3,17 @@
 Resolve these values before creating or executing a spec:
 
 - `planning_location`: where local runway specs belong.
+- `planning_artifact_layout`: whether the project uses a flat local planning
+  location or Planning Artifact Layout v1.
+- `program_root`: durable workstream directory when the spec belongs to a
+  long-lived program.
+- `selected_batch_directory`: directory that should co-locate `dispatch.md`,
+  `runway.md`, `closeout.md`, and completed-slice archives, when available.
+- `program_archive_root`: where inactive planning docs for the current program
+  belong.
+- `run_artifact_root`: where runner-owned JSON state, receipts, manifests, and
+  telemetry belong.
+- `output_root`: where generated tool outputs belong.
 - `validation_profiles`: named validation profiles available in this repo.
 - `focused_validation_commands`: focused tests, linters, or checks.
 - `integration_harness`: project-specific sandbox, integration harness, or
@@ -20,6 +31,8 @@ Resolve these values before creating or executing a spec:
 Stop instead of guessing when:
 
 - no planning location is discoverable in `create-spec` mode
+- project instructions require Planning Artifact Layout v1 but the program root
+  or selected batch directory cannot be resolved for a selected batch
 - a spec references a validation profile not defined by the spec, repository
   instructions, or local overlay
 - a required harness command, output path, or summary artifact is named but not

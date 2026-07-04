@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+### Planning artifact layout
+
+Problem: durable planning state could accumulate in flat `plans/` or
+`planning/` directories, mixing ledgers, selected dispatch packets, Batch
+Runway specs, closeouts, runner JSON receipts, and generated outputs in ways
+that forced fresh agents to infer active state from filenames or memory.
+
+Decision: add a reusable `planning-artifacts` skill with Planning Artifact
+Layout v1. The convention requires each project to declare its planning root in
+repo instructions, a local overlay such as `AGENTS.md`, an active spec, or
+explicit user direction; then it defines program/workstream roots, program and
+batch `CURRENT.md` handoff files, co-located batch directories, runner artifact
+roots, generated-output roots, program-local archives, state vocabulary, naming
+rules, and active-first migration guidance for roots that already contain a live
+ledger plus substantial history. Wire `legacy-removal`,
+`architecture-program-runway`, and `batch-runway` to read and follow the
+convention when project instructions select it, while preserving existing
+project-specific layouts as explicit compatibility rules. The installer now
+expands manifest `requires` entries so installing one of those consumer features
+also installs the shared `planning-artifacts` skill.
+
+Expected effect: future workflow artifacts should have visible lineage from
+program ledger to dispatch packet to runway spec to closeout, while raw runner
+state and generated outputs stay outside durable planning docs.
+
 ### Agent completion notifications
 
 Problem: terminal-only Codex work on Linux has no built-in mobile handoff path

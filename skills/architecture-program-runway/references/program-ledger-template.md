@@ -43,6 +43,18 @@ deferred_legacy_followups: []
 - Current baseline: `<commit or date>`
 - Related ADRs/docs: `<paths>`
 
+## Planning Layout
+
+- Layout version: `Planning Artifact Layout v1` or `<project-specific value>`
+- Planning root: `<path>`
+- Program root: `<path>`
+- Program current file: `<path to CURRENT.md or None>`
+- Program archive root: `<path>`
+- Run artifact root: `<path>`
+- Output root: `<path>`
+- One-shot intake allowed: `<path or None>`
+- Compatibility exceptions: `<short note or None>`
+
 ## Findings Ledger
 
 | Finding | Status | Covered by | Next action | Notes |
@@ -66,6 +78,8 @@ For multi-batch programs, write the dispatch packet to a nearby file such as:
 
 - `dispatch/<batch-id>-selected-brief.md`
 - `dispatch/<batch-id>-dispatch.md`
+- `batches/<batch-id>-<batch-slug>/dispatch.md` when Planning Artifact Layout
+  v1 is active
 
 Then put that path in the Batch Queue `Dispatch` column instead of duplicating
 the full packet here.

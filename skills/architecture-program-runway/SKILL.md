@@ -9,6 +9,12 @@ Use this skill above `batch-runway`. This skill owns the program ledger,
 finding grouping, sequencing, and closeout reconciliation. `batch-runway` owns
 the concrete 3-5 slice execution spec and per-slice execution workflow.
 
+Use Planning Artifact Layout v1 when project instructions, local overlays, or
+active planning docs select it. Read `../planning-artifacts/SKILL.md` before
+creating or reorganizing program ledgers, selected dispatch packets, batch
+directories, run artifact locations, generated-output locations, archives, or
+`CURRENT.md` active-state files under that convention.
+
 ## Core Rule
 
 Do not turn a broad findings document into one giant batch. Preserve the
@@ -134,6 +140,8 @@ For a detailed reusable template, read
 Every program ledger should make these things visible:
 
 - Current direction and guardrails.
+- Planning root, program root, program archive root, run artifact root, and
+  output root when Planning Artifact Layout v1 is active.
 - Findings ledger with status, covered-by evidence, next action, and notes.
 - Batch queue with grouping rationale, dependencies, validation class, dispatch
   path, and spec path.
@@ -159,6 +167,16 @@ multi-batch programs, write a separate dispatch file near the ledger, such as
 `dispatch/<batch-id>-selected-brief.md` or
 `dispatch/<batch-id>-dispatch.md`, and link to it from the batch queue instead
 of duplicating the full content in the ledger.
+
+When Planning Artifact Layout v1 is active and one selected batch is known,
+prefer:
+
+```text
+<program-root>/batches/<batch-id>-<batch-slug>/dispatch.md
+```
+
+The corresponding Batch Runway spec should be
+`<program-root>/batches/<batch-id>-<batch-slug>/runway.md`.
 
 The brief should include:
 

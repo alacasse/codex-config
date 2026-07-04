@@ -9,6 +9,11 @@ Use this skill as discovery and scoping before concrete execution planning. It
 produces legacy findings, evidence, decisions, and optionally one selected
 dispatch packet.
 
+When project instructions, local overlays, or active planning docs select
+Planning Artifact Layout v1, read `../planning-artifacts/SKILL.md` before
+writing or reorganizing the legacy ledger, selected dispatch packet, runner
+artifacts, generated outputs, archives, or active-state files.
+
 Responsibility boundary:
 
 ```text
@@ -168,6 +173,23 @@ Write a durable Markdown ledger in the target repository's planning location.
 If no planning location is defined, ask or use the smallest repo-local location
 consistent with project instructions.
 
+Under Planning Artifact Layout v1, a legacy-removal effort that spans more than
+one finding, decision, or possible batch should own a program directory:
+
+```text
+<planning-root>/programs/<program-slug>/LEDGER.md
+```
+
+When one next batch is clear, put its selected dispatch packet under:
+
+```text
+<program-root>/batches/<batch-id>-<batch-slug>/dispatch.md
+```
+
+Do not create loose legacy ledgers or dispatch packets directly under generic
+`plans/` or `planning/` unless project instructions explicitly allow that
+layout.
+
 Do not paste long logs or raw transcripts. Link to artifacts or quote only the
 evidence needed to justify decisions.
 
@@ -188,6 +210,10 @@ Use this structure:
 - Current goal:
 - Source request or review:
 - Related plans/specs/ledgers:
+- Planning root:
+- Program root:
+- Run artifact root:
+- Output root:
 
 ## Scope boundary
 

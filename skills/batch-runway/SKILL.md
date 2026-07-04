@@ -45,6 +45,9 @@ Read only the reference files needed for the current mode. Do not load every
 reference file by default.
 
 - `references/project-values.md`: read before creating or executing a spec.
+- `../planning-artifacts/SKILL.md`: read when resolving a planning location,
+  creating a spec from a selected dispatch packet, reorganizing planning
+  artifacts, or when project instructions name Planning Artifact Layout v1.
 - `references/execute-slice-core-v1.md`: read for routine `execute-spec` slice
   execution. This is the hot-path projection of the full canonical contracts.
 - `references/execution-contract-v1.md`: read when creating a new spec, executing
@@ -184,7 +187,9 @@ In `create-spec` mode:
 1. Read `references/create-spec.md`.
 2. Read the current goal, existing local plans, recent commits, current ledger
    state, and last completed task enough to identify the next related work.
-3. Write one local plan file in the project planning location.
+3. Write one local plan file in the project planning location. If the project
+   uses Planning Artifact Layout v1 and a selected batch directory exists,
+   write the spec to that batch directory as `runway.md`.
 4. Pick 3-5 tightly related slices that can execute sequentially.
 5. Keep each slice independently testable and committable.
 6. Stop before coding.

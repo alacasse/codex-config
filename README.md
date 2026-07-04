@@ -80,6 +80,9 @@ Install one feature:
 ./install.sh --feature batch-runway
 ```
 
+Feature dependencies declared with `requires` in `codex-features.json` are
+installed first.
+
 Install every manifest entry:
 
 ```bash
@@ -143,6 +146,7 @@ Reusable skills.
 Examples:
 
 * batch-runway
+* planning-artifacts
 * planning workflows
 * review workflows
 * documentation workflows

@@ -13,6 +13,18 @@ Steps:
 6. Prefer `lean-runway` unless the work touches high-risk production behavior or
    subagent file access is unreliable.
 
+When the project uses Planning Artifact Layout v1, store the concrete spec at:
+
+```text
+<program-root>/batches/<batch-id>-<batch-slug>/runway.md
+```
+
+Keep the selected dispatch packet, runway spec, closeout report, and
+completed-slice archive co-located in that batch directory. Do not create a
+loose runway spec directly under generic `plans/` or `planning/` unless a
+project instruction, local overlay, or active compatibility exception explicitly
+allows it.
+
 When adjacent slices create and then consume a new seam, owner module, projection
 API, compatibility facade, or other shared boundary, make that handoff explicit
 in the spec. Name the single owner/API in the producing slice, require later

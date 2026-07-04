@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 import tomllib
 import unittest
+from argparse import Namespace
 from pathlib import Path
+
+from scripts import install_codex_config
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +35,48 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                         (REPO_ROOT / source).exists(),
                         f"missing manifest source: {source}",
                     )
+
+    def test_manifest_feature_requirements_are_valid(self) -> None:
+        manifest = self.load_manifest()
+        features = manifest["features"]
+
+        for feature_name, feature in features.items():
+            with self.subTest(feature=feature_name):
+                requirements = feature.get("requires", [])
+                self.assertIsInstance(requirements, list)
+                for requirement in requirements:
+                    self.assertIsInstance(requirement, str)
+                    self.assertIn(requirement, features)
+
+    def test_planning_artifact_consumers_install_shared_skill(self) -> None:
+        manifest = self.load_manifest()
+        features = manifest["features"]
+
+        for feature_name, feature in features.items():
+            uses_planning_artifacts = False
+            for link in feature["links"]:
+                source = REPO_ROOT / link["source"]
+                if not source.is_dir():
+                    continue
+                for skill_file in source.rglob("*.md"):
+                    if "../planning-artifacts/SKILL.md" in skill_file.read_text(
+                        encoding="utf-8"
+                    ):
+                        uses_planning_artifacts = True
+                        break
+                if uses_planning_artifacts:
+                    break
+            if uses_planning_artifacts:
+                with self.subTest(feature=feature_name):
+                    self.assertIn("planning-artifacts", feature.get("requires", []))
+
+    def test_single_feature_install_expands_planning_artifact_dependency(self) -> None:
+        manifest = self.load_manifest()
+        args = Namespace(feature=["batch-runway"], all_features=False)
+
+        selected = install_codex_config.selected_feature_names(args, manifest)
+
+        self.assertEqual(selected, ["planning-artifacts", "batch-runway"])
 
     def test_custom_agent_toml_files_are_valid(self) -> None:
         manifest = self.load_manifest()
