@@ -185,14 +185,20 @@ Keep live orchestration context small enough for long batches.
 In `create-spec` mode:
 
 1. Read `references/create-spec.md`.
-2. Read the current goal, existing local plans, recent commits, current ledger
-   state, and last completed task enough to identify the next related work.
-3. Write one local plan file in the project planning location. If the project
+2. If the project uses Planning Artifact Layout v1, read the root `CURRENT.md`
+   and relevant program `CURRENT.md` before historical local plans, recent
+   commits, generated reports, or broad source inspection.
+3. If a selected dispatch, active runway, or queued batch already exists, do not
+   select another batch. Report the queued/active path, or create the missing
+   `runway.md` from the selected dispatch when that is the requested action.
+4. If no batch is selected, read the relevant program ledger and only the source
+   packet named by the selected ledger row before writing the spec.
+5. Write one local plan file in the project planning location. If the project
    uses Planning Artifact Layout v1 and a selected batch directory exists,
    write the spec to that batch directory as `runway.md`.
-4. Pick 3-5 tightly related slices that can execute sequentially.
-5. Keep each slice independently testable and committable.
-6. Stop before coding.
+6. Pick 3-5 tightly related slices that can execute sequentially.
+7. Keep each slice independently testable and committable.
+8. Stop before coding.
 
 ## Execute-Spec Summary
 

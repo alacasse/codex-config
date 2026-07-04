@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Active-state batch planning fast path
+
+Problem: after Planning Artifact Layout v1 migration, a fresh batch-planning
+agent could still spend most of its context budget reading historical planning
+files, generated reports, source modules, old redirect ledgers, and recent
+commits before checking the active `CURRENT.md` handoff files.
+
+Decision: make active-state pickup a reusable workflow rule across
+`planning-artifacts`, `architecture-program-runway`, and Batch Runway
+`create-spec` guidance. For ledger-driven next-batch/spec requests under Layout
+v1, agents now read root and program `CURRENT.md` files first, honor existing
+selected dispatches, active runways, and queued batches before selecting more
+work, and broaden into ledgers or source packets only for a named unresolved
+question.
+
+Expected effect: future next-batch planning should usually need only the
+instructions, root active state, relevant program active state, one ledger, and
+one selected source packet instead of rediscovering active work from the whole
+planning tree.
+
 ### Cleanup residue closeout
 
 Problem: cleanup batches could leave test-only historical markers, migration

@@ -43,16 +43,50 @@ re-derive grouping from scratch after the ledger and batch queue exist.
 ## Required First Steps
 
 1. Read applicable repo instructions and local overlays.
-2. Read the findings, review, PRD, ADR, or planning document named by the user.
-3. Read active or recently completed related runway specs only enough to know
+2. If Planning Artifact Layout v1 is active and the request is about pickup,
+   current state, selecting the next batch, creating the next runway, or working
+   from a queued batch, use the active-state fast path below before reading raw
+   findings, historical plans, broad generated reports, or source files.
+3. Read the findings, review, PRD, ADR, selected dispatch packet, or planning
+   document needed for the chosen mode.
+4. Read active or recently completed related runway specs only enough to know
    what is already closed, prepared, or open.
-4. Check the worktree before editing planning files.
-5. Decide the mode: `intake-findings`, `group-batches`, `select-next-batch`,
+5. Check the worktree before editing planning files.
+6. Decide the mode: `intake-findings`, `group-batches`, `select-next-batch`,
    `create-next-runway`, `closeout-runway`, or `reprioritize`.
 
 If the planning location, active ledger, status vocabulary, or relationship to
 `batch-runway` is unclear, stop and ask for the missing value instead of
 creating a speculative plan.
+
+## Active-State Fast Path
+
+Use this path for normal ledger-driven "next batch", "create the next specs",
+"create the next runway", "work on the batch", and pickup requests when Planning
+Artifact Layout v1 is active.
+
+1. Read the root `CURRENT.md`.
+2. Read only the program `CURRENT.md` files listed by the root active state.
+3. If any relevant program has a selected dispatch, active runway, or queued
+   batch, stop selection. Report, create the missing concrete spec from that
+   dispatch, or execute the queued runway according to the user request.
+4. If no selected or queued batch exists, choose the relevant program from the
+   root active state and request language.
+5. Read that program's `LEDGER.md` and select exactly one next batch from its
+   active queue or explicitly deferred queue.
+6. Read only the source packet, finding note, or deepening note named by the
+   selected ledger row.
+7. Write or update the co-located batch directory for that one selected batch:
+   `dispatch.md` first, then `runway.md` only in `create-next-runway` mode.
+8. Update the program `CURRENT.md` and `LEDGER.md`, then stop before coding
+   unless the user explicitly asked to execute.
+
+Do not begin this mode with broad `find` or repository-wide `rg` scans over the
+planning tree, old flat dispatch/runway filenames, generated graph or report
+outputs, historical redirect ledgers, recent commits, or source modules. Those
+are escalation reads only after the active-state path is missing,
+contradictory, stale, or asks a specific unresolved question. If escalation is
+needed, state the question before continuing.
 
 ## Modes
 
@@ -243,15 +277,19 @@ logs, full review text, or implementation chronology into the program ledger.
 When creating the selected concrete batch:
 
 1. Load and follow `batch-runway` in create-spec mode.
-2. Start from the selected batch brief, not from the full raw findings source,
+2. If Planning Artifact Layout v1 is active, start from root and program
+   `CURRENT.md` files, then the selected dispatch packet. Do not reselect a
+   batch while a selected dispatch, active runway, or queued runway already
+   exists.
+3. Start from the selected batch brief, not from the full raw findings source,
    unless the brief is missing or stale.
-3. Create exactly one local runway spec unless the user explicitly asks for
+4. Create exactly one local runway spec unless the user explicitly asks for
    multiple.
-4. The generated spec must name which program findings it covers and which
+5. The generated spec must name which program findings it covers and which
    findings remain open.
-5. Keep execution contracts in `batch-runway`; do not duplicate full execution
+6. Keep execution contracts in `batch-runway`; do not duplicate full execution
    details in the program ledger.
-6. Stop before coding unless the user explicitly asked to execute.
+7. Stop before coding unless the user explicitly asked to execute.
 
 When a concrete runway closes, update the program ledger before planning the
 next batch. Preserve compact evidence and dispatch information; archive detailed

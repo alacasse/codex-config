@@ -5,12 +5,19 @@ Write one local plan file. Do not implement code.
 Steps:
 
 1. Read applicable project instructions and local overlays first.
-2. Inspect the current goal, existing local plans, recent commits, current ledger
-   state, and the last completed task enough to identify the next related work.
-3. Pick 3-5 tightly related slices that can execute sequentially.
-4. Keep each slice independently testable and committable.
-5. Store the spec in the project's local planning location.
-6. Prefer `lean-runway` unless the work touches high-risk production behavior or
+2. If the project uses Planning Artifact Layout v1, read the root `CURRENT.md`
+   and the relevant program `CURRENT.md` files before scanning historical local
+   plans, old dispatch/runway filenames, generated reports, recent commits, or
+   source modules.
+3. If a selected dispatch, active runway, or queued batch already exists, do not
+   select a second batch. Report or use that path according to the request.
+4. If no batch is selected, inspect only the relevant program ledger and the
+   source packet or finding note named by the selected ledger row before
+   broadening context.
+5. Pick 3-5 tightly related slices that can execute sequentially.
+6. Keep each slice independently testable and committable.
+7. Store the spec in the project's local planning location.
+8. Prefer `lean-runway` unless the work touches high-risk production behavior or
    subagent file access is unreliable.
 
 When the project uses Planning Artifact Layout v1, store the concrete spec at:
