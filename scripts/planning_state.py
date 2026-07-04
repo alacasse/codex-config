@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import argparse
 from dataclasses import dataclass
 from pathlib import Path
 import re
+import sys
 from typing import Iterable
 
 
@@ -98,7 +100,7 @@ def load_planning_state(root: str | Path) -> PlanningState:
         one_shot_intake=root_fields.get("one-shot intake"),
         program_archive_root=root_fields.get("program archive root"),
         active_programs=tuple(active_programs),
-        next_safe_action=_section_text(root_text, "Next Safe Action"),
+        next_safe_action=_next_safe_action(root_text, root_fields),
     )
 
     programs = tuple(_load_program(root_path, pointer) for pointer in active_programs)
@@ -130,9 +132,53 @@ def _load_program(root_path: Path, pointer: ArtifactPointer) -> ProgramState:
         latest_closeout=_artifact(("latest closeout path", "latest closeout"), fields, current_path, root_path),
         run_artifact_location=_artifact("run artifact location", fields, current_path, root_path),
         archive_location=_artifact("program archive location", fields, current_path, root_path),
-        next_safe_action=_section_text(text, "Next Safe Action"),
+        next_safe_action=_next_safe_action(text, fields),
         stop_conditions=tuple(_list_items(_section_text(text, "Stop Conditions") or "")),
     )
+
+
+def format_current_state(state: PlanningState) -> str:
+    """Return compact agent-facing current-state text."""
+
+    lines = [
+        "planning_state:",
+        f"  layout: {_display_value(state.root.layout)}",
+        f"  planning_root: {_display_value(state.root.planning_root)}",
+        f"  root: {state.root.root_path}",
+        f"  current: {state.root.current_path}",
+        f"  next_safe_action: {_display_value(state.root.next_safe_action)}",
+        "  active_programs:",
+    ]
+    if not state.programs:
+        lines.append("    []")
+    for program in state.programs:
+        lines.extend(_format_program(program))
+    lines.extend(_format_warnings(state.warnings, state.validation_messages))
+    lines.extend(_format_blockers(state.validation_messages))
+    return "\n".join(lines) + "\n"
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Read Planning Artifact Layout v1 state without writing files."
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    current_parser = subparsers.add_parser(
+        "current",
+        help="Report active planning state from CURRENT.md files.",
+    )
+    current_parser.add_argument(
+        "--root",
+        type=Path,
+        required=True,
+        help="Planning root containing CURRENT.md.",
+    )
+    args = parser.parse_args(argv)
+    if args.command == "current":
+        sys.stdout.write(format_current_state(load_planning_state(args.root)))
+        return 0
+    parser.error(f"unknown command: {args.command}")
+    return 2
 
 
 def _read_text(path: Path) -> str:
@@ -275,6 +321,55 @@ def _validation_messages(
             yield ValidationMessage("warning", "redirect_without_target", "redirect has no target path", redirect.source_path)
 
 
+def _format_program(program: ProgramState) -> list[str]:
+    return [
+        f"    - slug: {program.slug}",
+        f"      current: {program.current_path}",
+        f"      ledger: {_display_value(program.ledger.value)}",
+        f"      selected_dispatch: {_display_value(program.selected_dispatch.value)}",
+        f"      queued_batch: {_display_value(program.queued_batch.value)}",
+        f"      active_runway: {_display_value(program.active_runway.value)}",
+        f"      latest_closeout: {_display_value(program.latest_closeout.value)}",
+        f"      next_safe_action: {_display_value(program.next_safe_action)}",
+    ]
+
+
+def _format_warnings(
+    warnings: tuple[StateWarning, ...],
+    messages: tuple[ValidationMessage, ...],
+) -> list[str]:
+    lines = ["  warnings:"]
+    validation_warnings = [
+        message for message in messages if message.severity == "warning"
+    ]
+    if not warnings and not validation_warnings:
+        return [*lines, "    []"]
+    grouped: dict[str, list[StateWarning]] = {}
+    for warning in warnings:
+        grouped.setdefault(warning.code, []).append(warning)
+    for code, code_warnings in grouped.items():
+        first = code_warnings[0]
+        source = f" ({first.source_path})" if first.source_path else ""
+        count = len(code_warnings)
+        suffix = f"; {count} total" if count > 1 else ""
+        lines.append(f"    - {code}: {first.message}{source}{suffix}")
+    for message in validation_warnings:
+        source = f" ({message.source_path})" if message.source_path else ""
+        lines.append(f"    - {message.code}: {message.message}{source}")
+    return lines
+
+
+def _format_blockers(messages: tuple[ValidationMessage, ...]) -> list[str]:
+    lines = ["  blockers:"]
+    blockers = [message for message in messages if message.severity == "error"]
+    if not blockers:
+        return [*lines, "    []"]
+    for message in blockers:
+        source = f" ({message.source_path})" if message.source_path else ""
+        lines.append(f"    - {message.code}: {message.message}{source}")
+    return lines
+
+
 def _resolve_pointer(root_path: Path, value: str | None) -> Path:
     if value is None:
         return root_path
@@ -323,6 +418,10 @@ def _section_text(text: str, heading: str) -> str | None:
     return value or None
 
 
+def _next_safe_action(text: str, fields: dict[str, str]) -> str | None:
+    return _section_text(text, "Next Safe Action") or fields.get("next safe action")
+
+
 def _list_items(text: str) -> Iterable[str]:
     for line in text.splitlines():
         line = line.strip()
@@ -338,3 +437,11 @@ def _first_code_path_after(text: str, marker: str) -> str | None:
     if not match:
         return None
     return match.group(1)
+
+
+def _display_value(value: str | None) -> str:
+    return value if value is not None else "None"
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

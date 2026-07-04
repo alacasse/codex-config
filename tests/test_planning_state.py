@@ -1,6 +1,12 @@
 from pathlib import Path
+import subprocess
+import sys
 
-from scripts.planning_state import load_planning_state
+from scripts.planning_state import format_current_state, load_planning_state
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+PLANNING_STATE_SCRIPT = REPO_ROOT / "scripts" / "planning_state.py"
 
 
 def test_loads_codex_config_layout_v1_root_and_program_state(tmp_path: Path) -> None:
@@ -114,6 +120,92 @@ def test_reports_missing_program_current_without_scanning_historical_files(
     assert state.programs[0].slug == "missing-program"
     assert state.programs[0].active_runway.value is None
     assert "historical_batch_artifact" in {warning.code for warning in state.warnings}
+
+
+def test_formats_current_for_codex_config_programs_from_current_files(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    output = format_current_state(load_planning_state(root))
+
+    assert "layout: Planning Artifact Layout v1" in output
+    assert "planning_root: docs/plans/" in output
+    assert "slug: architecture-program-runner" in output
+    assert "slug: planning-state-tooling" in output
+    assert (
+        "queued_batch: docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-readonly-core/runway.md"
+    ) in output
+    assert "selected_dispatch: None" in output
+    assert "blockers:\n    []" in output
+
+
+def test_current_command_reports_graphify_current_without_historical_selection(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "my-docs" / "plans"
+    _write_graphify_fixture(root)
+
+    output = _run_current(root)
+
+    assert "planning_root: my-docs/plans/" in output
+    assert "slug: install-sandbox-test-quality-architecture" in output
+    assert "slug: install-sandbox-legacy-removal" in output
+    assert "queued_batch: None" in output
+    assert "active_runway: None" in output
+    assert "redirect_ledger:" in output
+    assert "historical_batch_artifact:" in output
+    assert "stale_pickup_contradiction:" in output
+
+
+def test_current_command_reports_missing_current_blocker_without_old_runway_pickup(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    root.mkdir(parents=True)
+    (root / "CURRENT.md").write_text(
+        """# Planning Current State
+
+- Layout: Planning Artifact Layout v1
+
+## Active Programs
+
+| Program | Current state |
+|---|---|
+| `missing-program` | `docs/plans/programs/missing-program/CURRENT.md` |
+""",
+        encoding="utf-8",
+    )
+    (root / "missing-program-runway.md").write_text("# Historical\n", encoding="utf-8")
+
+    output = _run_current(root)
+
+    assert "slug: missing-program" in output
+    assert "active_runway: None" in output
+    assert "blockers:" in output
+    assert "missing_program_current:" in output
+    assert "historical_batch_artifact:" in output
+
+
+def test_current_command_reports_validation_warnings(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    root.mkdir(parents=True)
+    (root / "CURRENT.md").write_text(
+        """# Planning Current State
+
+- Layout: Legacy Planning Layout
+""",
+        encoding="utf-8",
+    )
+
+    output = _run_current(root)
+
+    assert "warnings:" in output
+    assert "unknown_layout:" in output
+    assert "no_active_programs:" in output
+    assert "blockers:\n    []" in output
 
 
 def _write_codex_config_fixture(root: Path) -> None:
@@ -311,3 +403,14 @@ def _display_root(root: Path) -> str:
     if root.parent.name == "docs":
         return "docs/plans"
     return "my-docs/plans"
+
+
+def _run_current(root: Path) -> str:
+    result = subprocess.run(
+        [sys.executable, str(PLANNING_STATE_SCRIPT), "current", "--root", str(root)],
+        cwd=REPO_ROOT,
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    return result.stdout
