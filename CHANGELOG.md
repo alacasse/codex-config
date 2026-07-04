@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Planning-state obligations
+
+Problem: batch selection and queue receipts could carry artifact facts but not
+the cross-batch obligations that later closeout work must prove with bounded
+evidence.
+
+Decision: add first-class obligation records to explicit planning-state
+fixtures and diagnostics, including IDs, owners, source batches, target batches
+or close conditions, status, and evidence paths. `current` and `validate` can
+load obligations with `--state-file`, and transition receipts include the
+batch-relevant obligation facts.
+
+Expected effect: future runner preflight and closeout work can consume
+obligations from JSON protocol fields without parsing Markdown prose or
+inferring closure from historical logs.
+
 ### Planning-state batch transitions
 
 Problem: runners and agents could register dispatch/runway artifacts but had no

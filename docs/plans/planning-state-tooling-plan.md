@@ -64,6 +64,7 @@ python scripts/planning_state.py current --root <planning-root>
 python scripts/planning_state.py validate --root <planning-root>
 python scripts/planning_state.py current --root <planning-root> --format json
 python scripts/planning_state.py validate --root <planning-root> --format json
+python scripts/planning_state.py validate --root <planning-root> --state-file <state.json>
 ```
 
 The first write-transition helpers are path and fixture oriented. They do not
@@ -131,9 +132,11 @@ contains:
 - `exit`: returned code, compact meaning, and exit-code semantics.
 - `root`: planning root facts and active program pointers.
 - `programs`: resolved program facts and artifact pointers.
+- `obligations`: explicit obligation records loaded from `--state-file`, or an
+  empty array when no state fixture is supplied.
 - `warnings`: stale context and redirect evidence.
 - `blockers`: fatal validation messages.
-- `validation_messages`: all warning and error validation messages.
+- `validation_messages`: all info, warning, and error validation messages.
 
 Exit code `0` means the command completed; for `validate`, it also means no
 blockers were found. Exit code `1` is used by `validate` when blockers were
@@ -146,6 +149,16 @@ array. Transition receipt fixtures use
 `planning-state-transition-receipt` version `1` with `root`, `transition`,
 `status`, `program`, `batch_id`, `artifacts`, `warnings`, `blockers`, and
 structured `messages`.
+
+State fixtures may also include an `obligations` array. Each obligation has an
+`id`, `owner`, `source_batch`, optional `target_batch`, optional
+`close_condition`, `status`, and optional `evidence_path`. `validate` reports
+open and closed obligation facts when invoked with `--state-file`, and flags
+duplicate IDs, missing owners, missing target/close conditions, missing
+evidence for closed obligations, and source batches that are not registered in
+the state fixture. Transition receipts include the obligations for the selected
+or queued batch so closeout work can require bounded evidence without parsing
+Markdown prose.
 
 ## Runner Interoperability Boundary
 
@@ -162,9 +175,9 @@ interoperable.
   Python internals.
 - A runner preflight can consume `select-batch` or `queue-batch` by invoking the
   command with explicit `--state-file` and `--receipt-file` paths, then reading
-  only the JSON receipt status, artifacts, warnings, and blockers. The receipt
-  is the file protocol; private Python helpers and Markdown rendering are not
-  part of the runner boundary.
+  only the JSON receipt status, artifacts, obligations, warnings, and blockers.
+  The receipt is the file protocol; private Python helpers and Markdown
+  rendering are not part of the runner boundary.
 - The Python dogfooding runner and future Go runner should share golden
   Planning Artifact Layout v1 fixtures for active `CURRENT.md` precedence,
   redirects, stale historical files, selected/queued/active batch pointers, and

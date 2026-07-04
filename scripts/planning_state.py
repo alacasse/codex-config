@@ -68,6 +68,17 @@ class ValidationMessage:
 
 
 @dataclass(frozen=True)
+class ObligationRecord:
+    id: str
+    owner: str | None
+    source_batch: str
+    target_batch: str | None
+    close_condition: str | None
+    status: str
+    evidence_path: str | None
+
+
+@dataclass(frozen=True)
 class ProgramState:
     slug: str
     current_path: Path
@@ -101,6 +112,7 @@ class RootState:
 class PlanningState:
     root: RootState
     programs: tuple[ProgramState, ...]
+    obligations: tuple[ObligationRecord, ...] = ()
     redirects: tuple[RedirectEvidence, ...] = ()
     warnings: tuple[StateWarning, ...] = ()
     validation_messages: tuple[ValidationMessage, ...] = ()
@@ -110,7 +122,7 @@ class ProtocolValidationError(ValueError):
     """Raised when a machine-readable planning-state object is malformed."""
 
 
-def load_planning_state(root: str | Path) -> PlanningState:
+def load_planning_state(root: str | Path, state_file: str | Path | None = None) -> PlanningState:
     """Load Planning Artifact Layout v1 state without mutating files."""
 
     root_path = Path(root)
@@ -134,10 +146,19 @@ def load_planning_state(root: str | Path) -> PlanningState:
     programs = tuple(_load_program(root_path, pointer) for pointer in active_programs)
     redirects = tuple(_redirects(root_path))
     warnings = tuple(_warnings(root_path, root_state, programs, redirects))
-    validation_messages = tuple(_validation_messages(root_state, programs, redirects))
+    state_fixture = (
+        _load_state_fixture(Path(state_file), expected_root=_planning_root_prefix_for(root_state))
+        if state_file is not None
+        else None
+    )
+    obligations = tuple(_obligations_from_fixture(state_fixture))
+    validation_messages = tuple(
+        _validation_messages(root_state, programs, redirects, state_fixture)
+    )
     return PlanningState(
         root=root_state,
         programs=programs,
+        obligations=obligations,
         redirects=redirects,
         warnings=warnings,
         validation_messages=validation_messages,
@@ -181,6 +202,7 @@ def format_current_state(state: PlanningState) -> str:
         lines.append("    []")
     for program in state.programs:
         lines.extend(_format_program(program))
+    lines.extend(_format_obligations(state.obligations))
     lines.extend(_format_warnings(state.warnings, state.validation_messages))
     lines.extend(_format_blockers(state.validation_messages))
     return "\n".join(lines) + "\n"
@@ -217,6 +239,8 @@ def format_validation_report(state: PlanningState) -> str:
     lines.extend(_format_validation_messages(errors))
     lines.append("  warnings:")
     lines.extend(_format_validation_warnings(warnings))
+    lines.append("  obligations:")
+    lines.extend(_format_obligation_validation(state.obligations))
     return "\n".join(lines) + "\n"
 
 
@@ -267,6 +291,7 @@ def validate_state_fixture_object(value: object) -> dict[str, Any]:
             _require_supported_artifact_type(artifact_data, "type")
             _require_string(artifact_data, "batch_id")
             _require_string(artifact_data, "path")
+    _validate_fixture_obligation_schema(data)
     return data
 
 
@@ -306,6 +331,14 @@ def validate_receipt_fixture_object(value: object) -> dict[str, Any]:
             _require_string(message_data, "code")
             _require_string(message_data, "message")
             _require_optional_string(message_data, "source_path")
+    obligations = data.get("obligations", [])
+    if not isinstance(obligations, list):
+        raise ProtocolValidationError("obligations must be an array")
+    for index, obligation in enumerate(obligations):
+        _validate_obligation_object(
+            _require_object(obligation, f"obligations[{index}]"),
+            f"obligations[{index}]",
+        )
     return data
 
 
@@ -336,6 +369,11 @@ def main(argv: list[str] | None = None) -> int:
         default=PLANNING_STATE_PROTOCOL_VERSION,
         help="Machine-readable protocol version for --format json.",
     )
+    current_parser.add_argument(
+        "--state-file",
+        type=Path,
+        help="Optional explicit JSON state fixture with obligation records.",
+    )
     validate_parser = subparsers.add_parser(
         "validate",
         help="Validate active planning state without writing files.",
@@ -357,6 +395,11 @@ def main(argv: list[str] | None = None) -> int:
         type=int,
         default=PLANNING_STATE_PROTOCOL_VERSION,
         help="Machine-readable protocol version for --format json.",
+    )
+    validate_parser.add_argument(
+        "--state-file",
+        type=Path,
+        help="Optional explicit JSON state fixture with obligation records.",
     )
     allocate_parser = subparsers.add_parser(
         "allocate-batch",
@@ -414,7 +457,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "current":
-            state = load_planning_state(args.root)
+            state = load_planning_state(args.root, args.state_file)
             exit_code = 0
             if args.format == "json":
                 sys.stdout.write(
@@ -429,7 +472,7 @@ def main(argv: list[str] | None = None) -> int:
                 sys.stdout.write(format_current_state(state))
             return exit_code
         if args.command == "validate":
-            state = load_planning_state(args.root)
+            state = load_planning_state(args.root, args.state_file)
             exit_code = 1 if _has_validation_errors(state) else 0
             if args.format == "json":
                 sys.stdout.write(
@@ -545,7 +588,11 @@ def register_artifact(
         artifact_path=artifact_path,
         paths=paths,
     )
-    data = _load_state_fixture(state_file) if state_file is not None else None
+    data = (
+        _load_state_fixture(state_file, expected_root=_planning_root_prefix(state))
+        if state_file is not None
+        else None
+    )
     registration = {
         "type": artifact_type,
         "batch_id": batch_id,
@@ -590,7 +637,7 @@ def select_batch(
 
     program = _find_program(state, program_slug)
     paths = _canonical_batch_paths(state, program, batch_id)
-    data = _load_state_fixture(state_file)
+    data = _load_state_fixture(state_file, expected_root=_planning_root_prefix(state))
     messages: list[dict[str, str | None]] = []
     _validate_transition_artifact(
         state,
@@ -609,6 +656,8 @@ def select_batch(
         messages=messages,
     )
     _validate_batch_known_to_ledger(program, batch_id, messages)
+    _append_obligation_messages(data, messages)
+    obligations = _obligations_for_batch(data, batch_id)
     receipt = _transition_receipt(
         state,
         transition="select-batch",
@@ -621,6 +670,7 @@ def select_batch(
                 "path": dispatch_path,
             }
         ],
+        obligations=obligations,
         messages=messages,
     )
     if receipt["status"] == "applied":
@@ -644,7 +694,7 @@ def queue_batch(
 
     program = _find_program(state, program_slug)
     paths = _canonical_batch_paths(state, program, batch_id)
-    data = _load_state_fixture(state_file)
+    data = _load_state_fixture(state_file, expected_root=_planning_root_prefix(state))
     messages: list[dict[str, str | None]] = []
     for artifact_type, artifact_path in (
         ("dispatch", dispatch_path),
@@ -671,6 +721,8 @@ def queue_batch(
             messages=messages,
         )
     _validate_batch_known_to_ledger(program, batch_id, messages)
+    _append_obligation_messages(data, messages)
+    obligations = _obligations_for_batch(data, batch_id)
     receipt = _transition_receipt(
         state,
         transition="queue-batch",
@@ -688,6 +740,7 @@ def queue_batch(
                 "path": runway_path,
             },
         ],
+        obligations=obligations,
         messages=messages,
     )
     if receipt["status"] == "applied":
@@ -838,6 +891,7 @@ def _validation_messages(
     root_state: RootState,
     programs: tuple[ProgramState, ...],
     redirects: tuple[RedirectEvidence, ...],
+    state_fixture: dict[str, Any] | None,
 ) -> Iterable[ValidationMessage]:
     if not root_state.current_path.exists():
         yield ValidationMessage("error", "missing_root_current", "root CURRENT.md is missing", root_state.current_path)
@@ -854,6 +908,8 @@ def _validation_messages(
     for redirect in redirects:
         if not redirect.target_path:
             yield ValidationMessage("error", "redirect_without_target", "redirect has no target path", redirect.source_path)
+    if state_fixture is not None:
+        yield from _obligation_validation_messages(state_fixture)
 
 
 def _format_program(program: ProgramState) -> list[str]:
@@ -867,6 +923,24 @@ def _format_program(program: ProgramState) -> list[str]:
         f"      latest_closeout: {_display_value(program.latest_closeout.value)}",
         f"      next_safe_action: {_display_value(program.next_safe_action)}",
     ]
+
+
+def _format_obligations(obligations: tuple[ObligationRecord, ...]) -> list[str]:
+    lines = ["  obligations:"]
+    if not obligations:
+        return [*lines, "    []"]
+    for obligation in obligations:
+        target = obligation.target_batch or obligation.close_condition
+        evidence = _display_value(obligation.evidence_path)
+        lines.append(
+            "    - "
+            f"id: {obligation.id}; status: {obligation.status}; "
+            f"owner: {_display_value(obligation.owner)}; "
+            f"source_batch: {obligation.source_batch}; "
+            f"target_or_close_condition: {_display_value(target)}; "
+            f"evidence_path: {evidence}"
+        )
+    return lines
 
 
 def _format_warnings(
@@ -931,6 +1005,23 @@ def _format_validation_warnings(messages: list[ValidationMessage]) -> list[str]:
     return lines
 
 
+def _format_obligation_validation(obligations: tuple[ObligationRecord, ...]) -> list[str]:
+    if not obligations:
+        return ["    []"]
+    lines = []
+    for obligation in obligations:
+        target = obligation.target_batch or obligation.close_condition
+        lines.append(
+            "    - "
+            f"{obligation.status}: {obligation.id} "
+            f"(owner: {_display_value(obligation.owner)}, "
+            f"source_batch: {obligation.source_batch}, "
+            f"target_or_close_condition: {_display_value(target)}, "
+            f"evidence_path: {_display_value(obligation.evidence_path)})"
+        )
+    return lines
+
+
 def _protocol_document(
     state: PlanningState,
     *,
@@ -976,6 +1067,9 @@ def _protocol_document(
             "next_safe_action": state.root.next_safe_action,
         },
         "programs": [_program_object(program) for program in state.programs],
+        "obligations": [
+            _obligation_object(obligation) for obligation in state.obligations
+        ],
         "warnings": [
             _warning_object(warning) for warning in state.warnings
         ],
@@ -1011,6 +1105,18 @@ def _artifact_pointer_object(pointer: ArtifactPointer) -> dict[str, Any]:
         "value": pointer.value,
         "source_path": str(pointer.source_path),
         "exists": pointer.exists,
+    }
+
+
+def _obligation_object(obligation: ObligationRecord) -> dict[str, Any]:
+    return {
+        "id": obligation.id,
+        "owner": obligation.owner,
+        "source_batch": obligation.source_batch,
+        "target_batch": obligation.target_batch,
+        "close_condition": obligation.close_condition,
+        "status": obligation.status,
+        "evidence_path": obligation.evidence_path,
     }
 
 
@@ -1092,6 +1198,130 @@ def _require_supported_artifact_type(data: dict[str, Any], key: str) -> str:
     return _normalize_artifact_type(value)
 
 
+def _validate_fixture_obligation_schema(data: dict[str, Any]) -> None:
+    obligations = data.get("obligations", [])
+    if not isinstance(obligations, list):
+        raise ProtocolValidationError("obligations must be an array")
+    for index, obligation in enumerate(obligations):
+        _validate_obligation_object(
+            _require_object(obligation, f"obligations[{index}]"),
+            f"obligations[{index}]",
+        )
+
+
+def _validate_obligation_object(data: dict[str, Any], context: str) -> None:
+    _require_string(data, "id")
+    _require_optional_string(data, "owner")
+    _require_string(data, "source_batch")
+    _require_optional_string(data, "target_batch")
+    _require_optional_string(data, "close_condition")
+    status = _require_string(data, "status")
+    if status not in {"open", "closed"}:
+        raise ProtocolValidationError(f"{context}.status must be 'open' or 'closed'")
+    _require_optional_string(data, "evidence_path")
+
+
+def _obligations_from_fixture(
+    state_fixture: dict[str, Any] | None,
+) -> Iterable[ObligationRecord]:
+    if state_fixture is None:
+        return
+    obligations = state_fixture.get("obligations", [])
+    if not isinstance(obligations, list):
+        return
+    for obligation in obligations:
+        if not isinstance(obligation, dict):
+            continue
+        yield ObligationRecord(
+            id=str(obligation.get("id") or ""),
+            owner=obligation.get("owner"),
+            source_batch=str(obligation.get("source_batch") or ""),
+            target_batch=obligation.get("target_batch"),
+            close_condition=obligation.get("close_condition"),
+            status=str(obligation.get("status") or ""),
+            evidence_path=obligation.get("evidence_path"),
+        )
+
+
+def _obligation_validation_messages(
+    state_fixture: dict[str, Any],
+) -> Iterable[ValidationMessage]:
+    known_batches = _fixture_batch_ids(state_fixture)
+    seen_ids: set[str] = set()
+    duplicate_ids: set[str] = set()
+    for obligation in _obligations_from_fixture(state_fixture):
+        if obligation.id in seen_ids and obligation.id not in duplicate_ids:
+            duplicate_ids.add(obligation.id)
+            yield ValidationMessage(
+                "error",
+                "duplicate_obligation_id",
+                f"obligation {obligation.id} is defined more than once",
+            )
+        seen_ids.add(obligation.id)
+        if not obligation.owner:
+            yield ValidationMessage(
+                "error",
+                "missing_obligation_owner",
+                f"obligation {obligation.id} has no owner",
+            )
+        if not obligation.target_batch and not obligation.close_condition:
+            yield ValidationMessage(
+                "error",
+                "missing_obligation_close_condition",
+                f"obligation {obligation.id} has no target batch or close condition",
+            )
+        if obligation.status == "closed" and not obligation.evidence_path:
+            yield ValidationMessage(
+                "error",
+                "missing_obligation_evidence",
+                f"closed obligation {obligation.id} has no evidence path",
+            )
+        if obligation.source_batch not in known_batches:
+            yield ValidationMessage(
+                "error",
+                "orphaned_obligation",
+                f"obligation {obligation.id} source batch is not registered",
+            )
+        yield ValidationMessage(
+            "info",
+            f"{obligation.status}_obligation",
+            f"obligation {obligation.id} is {obligation.status}",
+        )
+
+
+def _fixture_batch_ids(state_fixture: dict[str, Any]) -> set[str]:
+    batch_ids: set[str] = set()
+    programs = state_fixture.get("programs", [])
+    if not isinstance(programs, list):
+        return batch_ids
+    for program in programs:
+        if not isinstance(program, dict):
+            continue
+        for key in ("selected_dispatch", "active_runway", "queued_batch"):
+            value = program.get(key)
+            if isinstance(value, str):
+                batch_id = _batch_id_from_path(value)
+                if batch_id:
+                    batch_ids.add(batch_id)
+        artifacts = program.get("artifacts", [])
+        if not isinstance(artifacts, list):
+            continue
+        for artifact in artifacts:
+            if isinstance(artifact, dict) and isinstance(artifact.get("batch_id"), str):
+                batch_ids.add(artifact["batch_id"])
+    return batch_ids
+
+
+def _batch_id_from_path(value: str) -> str | None:
+    parts = PurePosixPath(value).parts
+    if "batches" not in parts:
+        return None
+    index = parts.index("batches") + 1
+    if index >= len(parts):
+        return None
+    return parts[index]
+
+
 def _normalize_artifact_type(value: str) -> str:
     artifact_type = value.strip()
     if artifact_type not in SUPPORTED_ARTIFACT_TYPES:
@@ -1131,7 +1361,11 @@ def _canonical_batch_paths(
 
 
 def _planning_root_prefix(state: PlanningState) -> str:
-    root = (state.root.planning_root or "").strip().rstrip("/")
+    return _planning_root_prefix_for(state.root)
+
+
+def _planning_root_prefix_for(root_state: RootState) -> str:
+    root = (root_state.planning_root or "").strip().rstrip("/")
     if not root:
         raise ProtocolValidationError("planning root is missing")
     _safe_relative_path(root, "planning root")
@@ -1192,7 +1426,7 @@ def _validate_batch_not_exists(state: PlanningState, batch_directory: str) -> No
         raise ProtocolValidationError(f"batch directory already exists: {batch_directory}")
 
 
-def _load_state_fixture(path: Path | None) -> dict[str, Any]:
+def _load_state_fixture(path: Path | None, *, expected_root: str) -> dict[str, Any]:
     if path is None:
         raise ProtocolValidationError("state-file is required")
     try:
@@ -1201,7 +1435,22 @@ def _load_state_fixture(path: Path | None) -> dict[str, Any]:
         raise ProtocolValidationError(f"state-file is missing: {path}") from error
     except json.JSONDecodeError as error:
         raise ProtocolValidationError(f"state-file is not valid JSON: {path}") from error
-    return validate_state_fixture_object(data)
+    data = validate_state_fixture_object(data)
+    _validate_state_fixture_root(data, expected_root=expected_root)
+    return data
+
+
+def _validate_state_fixture_root(
+    data: dict[str, Any],
+    *,
+    expected_root: str,
+) -> None:
+    fixture_root = data["root"].strip().rstrip("/")
+    if fixture_root != expected_root:
+        raise ProtocolValidationError(
+            "state-file root does not match planning root: "
+            f"{fixture_root} != {expected_root}"
+        )
 
 
 def _write_state_fixture(path: Path | None, data: dict[str, Any]) -> None:
@@ -1466,6 +1715,31 @@ def _validate_batch_known_to_ledger(
         )
 
 
+def _append_obligation_messages(
+    data: dict[str, Any],
+    messages: list[dict[str, str | None]],
+) -> None:
+    for message in _obligation_validation_messages(data):
+        _append_message(
+            messages,
+            severity=message.severity,
+            code=message.code,
+            message=message.message,
+            source_path=message.source_path,
+        )
+
+
+def _obligations_for_batch(
+    data: dict[str, Any],
+    batch_id: str,
+) -> list[dict[str, str | None]]:
+    obligations = []
+    for obligation in _obligations_from_fixture(data):
+        if obligation.source_batch == batch_id or obligation.target_batch == batch_id:
+            obligations.append(_obligation_object(obligation))
+    return obligations
+
+
 def _transition_receipt(
     state: PlanningState,
     *,
@@ -1473,6 +1747,7 @@ def _transition_receipt(
     program: str,
     batch_id: str,
     artifacts: list[dict[str, str]],
+    obligations: list[dict[str, str | None]],
     messages: list[dict[str, str | None]],
 ) -> dict[str, Any]:
     blockers = [message for message in messages if message["severity"] == "error"]
@@ -1489,6 +1764,7 @@ def _transition_receipt(
         "program": program,
         "batch_id": batch_id,
         "artifacts": artifacts,
+        "obligations": obligations,
         "warnings": warnings,
         "blockers": blockers,
         "messages": messages,

@@ -440,6 +440,158 @@ def test_receipt_fixture_schema_rejects_malformed_objects() -> None:
         raise AssertionError("expected malformed receipt fixture to fail")
 
 
+def test_state_fixture_schema_accepts_first_class_obligations() -> None:
+    valid_state = {
+        "protocol": {
+            "name": "planning-state-tool-state",
+            "version": 1,
+        },
+        "root": "docs/plans",
+        "programs": [
+            {
+                "slug": "planning-state-tooling",
+                "current": "docs/plans/programs/planning-state-tooling/CURRENT.md",
+                "ledger": "docs/plans/programs/planning-state-tooling/LEDGER.md",
+                "selected_dispatch": None,
+                "active_runway": None,
+                "queued_batch": None,
+                "latest_closeout": None,
+                "artifacts": [
+                    {
+                        "batch_id": "planning-state-write-transitions",
+                        "path": (
+                            "docs/plans/programs/planning-state-tooling/batches/"
+                            "planning-state-write-transitions/runway.md"
+                        ),
+                        "type": "runway",
+                    }
+                ],
+            }
+        ],
+        "obligations": [
+            {
+                "id": "PST-OBL-001",
+                "owner": "next-closeout-slice",
+                "source_batch": "planning-state-write-transitions",
+                "target_batch": None,
+                "close_condition": "closeout records bounded evidence",
+                "status": "open",
+                "evidence_path": None,
+            }
+        ],
+    }
+
+    assert validate_state_fixture_object(valid_state) == valid_state
+    malformed_state = {
+        **valid_state,
+        "obligations": [{**valid_state["obligations"][0], "status": "pending"}],
+    }
+    try:
+        validate_state_fixture_object(malformed_state)
+    except ProtocolValidationError as error:
+        assert "status must be 'open' or 'closed'" in str(error)
+    else:
+        raise AssertionError("expected malformed obligation to fail")
+
+
+def test_validate_state_file_reports_obligation_statuses_and_blockers(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    _write_transition_batch(root)
+    state_file = tmp_path / "state.json"
+    _write_state_fixture(
+        state_file,
+        artifacts=[
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": (
+                    "docs/plans/programs/planning-state-tooling/batches/"
+                    "planning-state-write-transitions/runway.md"
+                ),
+                "type": "runway",
+            }
+        ],
+        obligations=[
+            {
+                "id": "PST-OBL-001",
+                "owner": "next-closeout-slice",
+                "source_batch": "planning-state-write-transitions",
+                "target_batch": None,
+                "close_condition": "closeout records bounded evidence",
+                "status": "open",
+                "evidence_path": None,
+            },
+            {
+                "id": "PST-OBL-002",
+                "owner": "runner-interop",
+                "source_batch": "planning-state-write-transitions",
+                "target_batch": "planning-state-closeout-contract",
+                "close_condition": None,
+                "status": "closed",
+                "evidence_path": (
+                    "docs/plans/programs/planning-state-tooling/notes/"
+                    "runner-interop-obligation.md"
+                ),
+            },
+            {
+                "id": "PST-OBL-002",
+                "owner": None,
+                "source_batch": "missing-batch",
+                "target_batch": None,
+                "close_condition": None,
+                "status": "closed",
+                "evidence_path": None,
+            },
+        ],
+    )
+
+    text_result = _run_validate(root, "--state-file", str(state_file))
+    json_result = _run_validate_json(root, "--state-file", str(state_file))
+    payload = json.loads(json_result.stdout)
+
+    assert text_result.returncode == 1
+    assert "open: PST-OBL-001" in text_result.stdout
+    assert "closed: PST-OBL-002" in text_result.stdout
+    assert json_result.returncode == 1
+    assert [obligation["id"] for obligation in payload["obligations"]] == [
+        "PST-OBL-001",
+        "PST-OBL-002",
+        "PST-OBL-002",
+    ]
+    assert {message["code"] for message in payload["validation_messages"]} >= {
+        "open_obligation",
+        "closed_obligation",
+        "duplicate_obligation_id",
+        "missing_obligation_owner",
+        "missing_obligation_close_condition",
+        "missing_obligation_evidence",
+        "orphaned_obligation",
+    }
+
+
+def test_validate_rejects_state_file_from_different_planning_root(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "foreign-state.json"
+    _write_state_fixture(state_file, root_value="my-docs/plans")
+
+    result = _run_validate(root, "--state-file", str(state_file))
+
+    assert result.returncode == 2
+    assert "state-file root does not match planning root" in result.stderr
+    assert "my-docs/plans != docs/plans" in result.stderr
+
+
 def test_allocate_batch_command_reports_canonical_layout_v1_paths(
     tmp_path: Path,
 ) -> None:
@@ -914,6 +1066,135 @@ def test_queue_batch_requires_selected_registered_dispatch_and_runway(
     assert receipt["transition"] == "queue-batch"
     assert state["programs"][0]["selected_dispatch"] is None
     assert state["programs"][0]["queued_batch"] == runway
+
+
+def test_queue_batch_receipt_includes_runner_consumable_obligations(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    batch_root = _write_transition_batch(root)
+    state_file = tmp_path / "state.json"
+    receipt_file = tmp_path / "queue-receipt.json"
+    dispatch = f"{batch_root}/dispatch.md"
+    runway = f"{batch_root}/runway.md"
+    _write_state_fixture(
+        state_file,
+        selected_dispatch=dispatch,
+        artifacts=[
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": dispatch,
+                "type": "dispatch",
+            },
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": runway,
+                "type": "runway",
+            },
+        ],
+        obligations=[
+            {
+                "id": "PST-OBL-QUEUE-001",
+                "owner": "closeout-slice",
+                "source_batch": "planning-state-write-transitions",
+                "target_batch": None,
+                "close_condition": "closeout evidence index records receipt path",
+                "status": "open",
+                "evidence_path": None,
+            }
+        ],
+    )
+
+    result = _run_queue_batch(root, state_file, receipt_file)
+    receipt = json.loads(receipt_file.read_text(encoding="utf-8"))
+
+    assert result.returncode == 0
+    assert receipt["status"] == "applied"
+    assert receipt["obligations"] == [
+        {
+            "close_condition": "closeout evidence index records receipt path",
+            "evidence_path": None,
+            "id": "PST-OBL-QUEUE-001",
+            "owner": "closeout-slice",
+            "source_batch": "planning-state-write-transitions",
+            "status": "open",
+            "target_batch": None,
+        }
+    ]
+    assert {
+        "protocol",
+        "root",
+        "transition",
+        "status",
+        "program",
+        "batch_id",
+        "artifacts",
+        "obligations",
+        "warnings",
+        "blockers",
+        "messages",
+    } <= receipt.keys()
+
+
+def test_queue_batch_rejects_foreign_state_file_before_mutation(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    batch_root = _write_transition_batch(root)
+    state_file = tmp_path / "foreign-state.json"
+    receipt_file = tmp_path / "queue-receipt.json"
+    dispatch = f"{batch_root}/dispatch.md"
+    runway = f"{batch_root}/runway.md"
+    _write_state_fixture(
+        state_file,
+        root_value="foreign/plans",
+        selected_dispatch=dispatch,
+        artifacts=[
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": dispatch,
+                "type": "dispatch",
+            },
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": runway,
+                "type": "runway",
+            },
+        ],
+        obligations=[
+            {
+                "id": "FOREIGN-OBL-001",
+                "owner": "foreign-runner",
+                "source_batch": "planning-state-write-transitions",
+                "target_batch": None,
+                "close_condition": "foreign closeout",
+                "status": "open",
+                "evidence_path": None,
+            }
+        ],
+    )
+    before = state_file.read_text(encoding="utf-8")
+
+    result = _run_queue_batch(root, state_file, receipt_file)
+
+    assert result.returncode == 2
+    assert "state-file root does not match planning root" in result.stderr
+    assert state_file.read_text(encoding="utf-8") == before
+    assert not receipt_file.exists()
 
 
 def test_queue_batch_rejects_bypass_missing_and_stale_selected_dispatches(
@@ -1419,9 +1700,16 @@ def _run_current_json(root: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-def _run_validate(root: Path) -> subprocess.CompletedProcess[str]:
+def _run_validate(root: Path, *extra_args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(PLANNING_STATE_SCRIPT), "validate", "--root", str(root)],
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "validate",
+            "--root",
+            str(root),
+            *extra_args,
+        ],
         cwd=REPO_ROOT,
         check=False,
         text=True,
@@ -1429,7 +1717,7 @@ def _run_validate(root: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-def _run_validate_json(root: Path) -> subprocess.CompletedProcess[str]:
+def _run_validate_json(root: Path, *extra_args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
             sys.executable,
@@ -1439,6 +1727,7 @@ def _run_validate_json(root: Path) -> subprocess.CompletedProcess[str]:
             str(root),
             "--format",
             "json",
+            *extra_args,
         ],
         cwd=REPO_ROOT,
         check=False,
@@ -1589,7 +1878,9 @@ def _write_transition_batch(
 def _write_state_fixture(
     path: Path,
     *,
+    root_value: str = "docs/plans",
     artifacts: list[dict[str, str]] | None = None,
+    obligations: list[dict[str, str | None]] | None = None,
     selected_dispatch: str | None = None,
     active_runway: str | None = None,
     queued_batch: str | None = None,
@@ -1601,7 +1892,7 @@ def _write_state_fixture(
                     "name": "planning-state-tool-state",
                     "version": 1,
                 },
-                "root": "docs/plans",
+                "root": root_value,
                 "programs": [
                     {
                         "slug": "planning-state-tooling",
@@ -1618,6 +1909,7 @@ def _write_state_fixture(
                         "artifacts": artifacts or [],
                     }
                 ],
+                "obligations": obligations or [],
             },
             indent=2,
             sort_keys=True,
