@@ -140,7 +140,7 @@ orchestration_anomalies: []
 | 1. Define read-only state model | `c7dc8ec` | success | `python -m pytest tests/test_planning_state.py -q`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean |
 | 2. Add `planning-state current` | `0136de5` | success | `python -m pytest tests/test_planning_state.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py current --root /home/alacasse/projects/graphify/my-docs/plans`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean after warning-output fix |
 | 3. Add `planning-state validate` | `a1c5ee9` | success | `python -m pytest tests/test_planning_state.py -q`; `python scripts/planning_state.py validate --root docs/plans`; `python scripts/planning_state.py validate --root /home/alacasse/projects/graphify/my-docs/plans`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean |
-| 4. Document read-only workflow | Slice 4 commit | success | final command matrix for tests, current/validate on codex-config and Graphify roots, `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`, `git diff --check`; reviewer clean after changelog and completed-batch wording fix |
+| 4. Document read-only workflow | `c40d12e` | success | final command matrix for tests, current/validate on codex-config and Graphify roots, `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`, `git diff --check`; reviewer clean after changelog and completed-batch wording fix |
 
 ## Slice 1. Define Read-Only State Model
 
