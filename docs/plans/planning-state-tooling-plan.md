@@ -19,10 +19,16 @@ Layout v1.
 - GitHub issue #10: generic phase-runner product idea.
 - GitHub issue #12: phase-runner repo split and dogfooding boundary.
 - Planning Artifact Layout v1 in `skills/planning-artifacts/SKILL.md`.
+- Planning-state tooling ledger:
+  `docs/plans/programs/planning-state-tooling/LEDGER.md`.
 - Architecture Program Runway guidance in
   `skills/architecture-program-runway/SKILL.md`.
 - Current runner state, receipt, artifact, telemetry, and input-inventory owners
   under `scripts/architecture_program_runner*.py`.
+- First real active-state fixture: Graphify local planning root at
+  `/home/alacasse/projects/graphify/my-docs/plans/`, where root/program
+  `CURRENT.md` files are authoritative while old flat files, redirect ledgers,
+  and stale pickup notes remain as compatibility context.
 
 ## Source-Of-Truth Model
 
@@ -96,12 +102,14 @@ The tool should not own:
 
 Migrate active pickup safety before historical neatness.
 
-1. Add read-only validation over existing Layout v1 files.
+1. Add read-only validation over the Graphify active-state fixture and the
+   codex-config Layout v1 plus redirect compatibility fixture.
 2. Bootstrap tool state from existing `CURRENT.md` files and program ledgers.
 3. Render `CURRENT.md` from tool state, then validate round trips.
 4. Move batch selection and artifact registration behind tool commands.
 5. Add cross-batch obligations and closeout evidence checks.
-6. Pilot on `docs/plans/` first, then one Graphify planning root.
+6. Pilot write transitions on `docs/plans/` only after the read-only Graphify
+   fixture proves active-state precedence and stale-context warnings.
 7. Add SQLite reporting only after state and rendering are stable.
 
 Existing Markdown-only workflows must keep working during migration. A project
@@ -148,6 +156,11 @@ Runway specs, closeout decisions, full prompts, long logs, or transcripts.
   actions.
 - A fresh agent can run one command to validate whether state, `CURRENT.md`,
   ledgers, batch directories, and runner artifacts agree.
+- For the Graphify fixture, active state resolves from root/program
+  `CURRENT.md` files and warns about stale pickup notes or historical flat files
+  without treating them as selected work.
+- For the codex-config fixture, active state resolves from `docs/plans/CURRENT.md`
+  and old flat ledger paths are treated as redirects, not active sources.
 - Batch and artifact paths are allocated or checked by code.
 - Cross-batch obligations cannot disappear into old closeout prose.
 - Completed batches have bounded closeout evidence indexes.

@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Planning CURRENT.md migration
+
+Problem: `codex-config` had adopted Planning Artifact Layout v1 in reusable
+workflow guidance, but its own active planning docs still relied on flat ledger
+filenames and inline dispatch drafts for pickup.
+
+Decision: add root and program `CURRENT.md` handoff files under `docs/plans/`,
+move active ledgers into program-local `LEDGER.md` files, leave compact
+redirects at the old flat paths, and promote the planning-state read-only core
+dispatch into a co-located batch directory.
+
+Expected effect: future agents can resolve active work from `CURRENT.md` first,
+then read one program ledger or selected dispatch without scanning old flat
+plans or archive files.
+
 ### Active-state batch planning fast path
 
 Problem: after Planning Artifact Layout v1 migration, a fresh batch-planning

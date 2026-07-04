@@ -140,7 +140,7 @@ Goal: make the generic **Interface** visible without moving code to a new repo.
 
 3. **Planning Root Cleanup**
 
-   - Files: `docs/plans/codex-config-architecture-program-runner-findings.md`,
+   - Files: `docs/plans/programs/architecture-program-runner/LEDGER.md`,
      `docs/plans/`, `docs/plans/archive/`, ADR 0001.
    - Problem: a new public repo would inherit current planning-location churn.
    - Solution: close APR-22 before extraction.

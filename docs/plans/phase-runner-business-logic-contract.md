@@ -16,7 +16,7 @@ Current behavior evidence:
 
 - Glossary and concept boundaries: `CONTEXT.md`
 - Active program ledger:
-  `docs/plans/codex-config-architecture-program-runner-findings.md`
+  `docs/plans/programs/architecture-program-runner/LEDGER.md`
 - Generic workflow boundary:
   `docs/plans/generic-phase-runner-workflow-contract.md`
 - Repo split decision:
@@ -379,7 +379,7 @@ Validation ladder for the first implementation runway:
 - Focused target contract tests for each PBC group.
 - Existing focused runner tests in `tests/test_architecture_program_runner*.py`.
 - Dry-run smoke against
-  `docs/plans/codex-config-architecture-program-runner-findings.md`.
+  `docs/plans/programs/architecture-program-runner/LEDGER.md`.
 - `UV_CACHE_DIR=/tmp/codex-config-uv-cache uvx ruff check scripts tests`
   while the source remains Python.
 - `git diff --check`.
