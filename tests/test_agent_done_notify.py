@@ -102,12 +102,42 @@ class AgentDoneNotifyTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0)
         self.assertEqual(completed.stdout, "")
 
+    def test_config_file_can_supply_ntfy_topic(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "agent-notifications.json"
+            config_path.write_text(
+                json.dumps({"ntfy_topic": "codex-private-topic", "ntfy_server": "https://ntfy.example"}),
+                encoding="utf-8",
+            )
+
+            with (
+                mock.patch.dict(
+                    self.module.os.environ,
+                    {"CODEX_AGENT_NOTIFY_CONFIG": str(config_path)},
+                    clear=False,
+                ),
+                mock.patch.object(self.module.urllib.request, "urlopen") as urlopen,
+            ):
+                urlopen.return_value.__enter__.return_value = object()
+                sent = self.module.post_ntfy(
+                    self.module.Notification("title", "body", "white_check_mark", "default"),
+                    self.module.load_config(),
+                )
+
+        self.assertTrue(sent)
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.full_url, "https://ntfy.example/codex-private-topic")
+
     def test_manifest_feature_is_opt_in(self) -> None:
         manifest = json.loads((REPO_ROOT / "codex-features.json").read_text(encoding="utf-8"))
         feature = manifest["features"]["agent-notifications"]
 
         self.assertIs(feature["default_enabled"], False)
         self.assertEqual(feature["version"], "1.0.0")
+        self.assertIn(
+            {"source": "hooks/agent_done_hooks.json", "target": "hooks.json"},
+            feature["links"],
+        )
 
 
 if __name__ == "__main__":

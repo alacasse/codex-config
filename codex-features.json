@@ -121,6 +121,10 @@
           "target": "hooks/agent_done_notify.py"
         },
         {
+          "source": "hooks/agent_done_hooks.json",
+          "target": "hooks.json"
+        },
+        {
           "source": "hooks/agent_done_hooks.example.json",
           "target": "hooks/agent_done_hooks.example.json"
         },

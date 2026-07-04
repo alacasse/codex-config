@@ -27,12 +27,28 @@ Install the script:
 ./install.sh --feature agent-notifications
 ```
 
-Add the hook registration from `~/.codex/hooks/agent_done_hooks.example.json`
-to your global `~/.codex/hooks.json`, or merge the two event entries into an
-existing global hooks file. Review and trust the hook with `/hooks` in Codex.
+This feature installs `~/.codex/hooks.json` as a symlink to the repo-owned
+`hooks/agent_done_hooks.json`. Review and trust the hook with `/hooks` in
+Codex after installing.
+
+If you already have an unmanaged `~/.codex/hooks.json`, the installer stops
+instead of overwriting it. In that case, merge the event entries from
+`~/.codex/hooks/agent_done_hooks.example.json` into the existing file.
 
 Configure one backend with environment variables. Do not commit tokens or
 topics if they identify a private notification channel.
+
+You can also use an untracked local config file at
+`~/.codex/agent-notifications.json`. Environment variables override config file
+values.
+
+```json
+{
+  "ntfy_topic": "codex-long-random-private-topic",
+  "ntfy_server": "https://ntfy.sh",
+  "priority": "default"
+}
+```
 
 ### ntfy
 

@@ -19,6 +19,7 @@ from typing import Any
 MAX_MESSAGE_CHARS = 1400
 MAX_LAST_MESSAGE_CHARS = 420
 DEFAULT_NTFY_SERVER = "https://ntfy.sh"
+DEFAULT_CONFIG_PATH = Path("~/.codex/agent-notifications.json").expanduser()
 
 
 @dataclass(frozen=True)
@@ -37,6 +38,21 @@ class Notification:
     message: str
     tags: str
     priority: str
+
+
+def load_config() -> dict[str, str]:
+    path = Path(os.environ.get("CODEX_AGENT_NOTIFY_CONFIG", str(DEFAULT_CONFIG_PATH))).expanduser()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return {str(key): str(value) for key, value in data.items() if value is not None}
+
+
+def config_value(config: dict[str, str], env_name: str, config_name: str) -> str | None:
+    return os.environ.get(env_name) or config.get(config_name)
 
 
 def run_git(cwd: Path, args: list[str]) -> str | None:
@@ -108,6 +124,7 @@ def add_line(lines: list[str], label: str, value: object) -> None:
 
 
 def build_notification(payload: dict[str, Any]) -> Notification:
+    config = load_config()
     cwd = Path(str(payload.get("cwd") or os.getcwd())).expanduser()
     git = git_context(cwd)
     event = str(payload.get("hook_event_name") or "Codex")
@@ -151,15 +168,18 @@ def build_notification(payload: dict[str, Any]) -> Notification:
         title=title,
         message=message,
         tags="white_check_mark" if not is_subagent else "robot",
-        priority=os.environ.get("CODEX_AGENT_NOTIFY_PRIORITY", "default"),
+        priority=config_value(config, "CODEX_AGENT_NOTIFY_PRIORITY", "priority") or "default",
     )
 
 
-def post_ntfy(notification: Notification) -> bool:
-    topic_url = os.environ.get("CODEX_AGENT_NOTIFY_NTFY_URL")
-    topic = os.environ.get("CODEX_AGENT_NOTIFY_NTFY_TOPIC")
+def post_ntfy(notification: Notification, config: dict[str, str]) -> bool:
+    topic_url = config_value(config, "CODEX_AGENT_NOTIFY_NTFY_URL", "ntfy_url")
+    topic = config_value(config, "CODEX_AGENT_NOTIFY_NTFY_TOPIC", "ntfy_topic")
     if not topic_url and topic:
-        server = os.environ.get("CODEX_AGENT_NOTIFY_NTFY_SERVER", DEFAULT_NTFY_SERVER).rstrip("/")
+        server = (
+            config_value(config, "CODEX_AGENT_NOTIFY_NTFY_SERVER", "ntfy_server")
+            or DEFAULT_NTFY_SERVER
+        ).rstrip("/")
         topic_url = f"{server}/{urllib.parse.quote(topic)}"
     if not topic_url:
         return False
@@ -174,7 +194,7 @@ def post_ntfy(notification: Notification) -> bool:
             "Priority": notification.priority,
         },
     )
-    token = os.environ.get("CODEX_AGENT_NOTIFY_NTFY_TOKEN")
+    token = config_value(config, "CODEX_AGENT_NOTIFY_NTFY_TOKEN", "ntfy_token")
     if token:
         request.add_header("Authorization", f"Bearer {token}")
 
@@ -182,9 +202,9 @@ def post_ntfy(notification: Notification) -> bool:
         return True
 
 
-def post_pushover(notification: Notification) -> bool:
-    token = os.environ.get("CODEX_AGENT_NOTIFY_PUSHOVER_TOKEN")
-    user = os.environ.get("CODEX_AGENT_NOTIFY_PUSHOVER_USER")
+def post_pushover(notification: Notification, config: dict[str, str]) -> bool:
+    token = config_value(config, "CODEX_AGENT_NOTIFY_PUSHOVER_TOKEN", "pushover_token")
+    user = config_value(config, "CODEX_AGENT_NOTIFY_PUSHOVER_USER", "pushover_user")
     if not token or not user:
         return False
 
@@ -205,8 +225,8 @@ def post_pushover(notification: Notification) -> bool:
         return True
 
 
-def post_apprise(notification: Notification) -> bool:
-    target = os.environ.get("CODEX_AGENT_NOTIFY_APPRISE_URL")
+def post_apprise(notification: Notification, config: dict[str, str]) -> bool:
+    target = config_value(config, "CODEX_AGENT_NOTIFY_APPRISE_URL", "apprise_url")
     if not target:
         return False
     completed = subprocess.run(
@@ -220,16 +240,17 @@ def post_apprise(notification: Notification) -> bool:
 
 
 def notify(notification: Notification) -> None:
+    config = load_config()
     errors: list[str] = []
     for sender in (post_ntfy, post_pushover, post_apprise):
         try:
-            if sender(notification):
+            if sender(notification, config):
                 return
         except Exception as exc:  # noqa: BLE001 - notification hooks must not break Codex.
             errors.append(f"{sender.__name__}: {exc}")
 
     if errors:
-        log_path = Path(os.environ.get("CODEX_AGENT_NOTIFY_LOG", "/tmp/codex-agent-notify.log"))
+        log_path = Path(config_value(config, "CODEX_AGENT_NOTIFY_LOG", "log") or "/tmp/codex-agent-notify.log")
         try:
             with log_path.open("a", encoding="utf-8") as handle:
                 handle.write("\n".join(errors) + "\n")
