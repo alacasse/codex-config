@@ -20,6 +20,7 @@ STATE_FIXTURE_SCHEMA_NAME = "planning-state-tool-state"
 RECEIPT_FIXTURE_SCHEMA_NAME = "planning-state-transition-receipt"
 SUPPORTED_SCHEMA_VERSION = 1
 ARTIFACT_REGISTRATION_PROTOCOL_NAME = "planning-state-artifact-registration"
+TRANSITION_RECEIPT_PROTOCOL_NAME = "planning-state-transition"
 SUPPORTED_ARTIFACT_TYPES = {
     "dispatch",
     "runway",
@@ -277,13 +278,34 @@ def validate_receipt_fixture_object(value: object) -> dict[str, Any]:
     _require_string(data, "root")
     _require_string(data, "transition")
     _require_string(data, "status")
+    _require_optional_string(data, "program")
+    _require_optional_string(data, "batch_id")
+    artifacts = data.get("artifacts", [])
+    if not isinstance(artifacts, list):
+        raise ProtocolValidationError("artifacts must be an array")
+    for index, artifact in enumerate(artifacts):
+        artifact_data = _require_object(artifact, f"artifacts[{index}]")
+        _require_supported_artifact_type(artifact_data, "type")
+        _require_string(artifact_data, "batch_id")
+        _require_string(artifact_data, "path")
+    warnings = data.get("warnings", [])
+    if not isinstance(warnings, list):
+        raise ProtocolValidationError("warnings must be an array")
+    blockers = data.get("blockers", [])
+    if not isinstance(blockers, list):
+        raise ProtocolValidationError("blockers must be an array")
     messages = _require_array(data, "messages")
-    for index, message in enumerate(messages):
-        message_data = _require_object(message, f"messages[{index}]")
-        _require_string(message_data, "severity")
-        _require_string(message_data, "code")
-        _require_string(message_data, "message")
-        _require_optional_string(message_data, "source_path")
+    for collection_name, collection in (
+        ("messages", messages),
+        ("warnings", warnings),
+        ("blockers", blockers),
+    ):
+        for index, message in enumerate(collection):
+            message_data = _require_object(message, f"{collection_name}[{index}]")
+            _require_string(message_data, "severity")
+            _require_string(message_data, "code")
+            _require_string(message_data, "message")
+            _require_optional_string(message_data, "source_path")
     return data
 
 
@@ -368,6 +390,27 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Validate and print registration facts without writing state.",
     )
+    select_parser = subparsers.add_parser(
+        "select-batch",
+        help="Select a registered dispatch in explicit planning-state JSON.",
+    )
+    select_parser.add_argument("--root", type=Path, required=True)
+    select_parser.add_argument("--program", required=True)
+    select_parser.add_argument("--batch-id", required=True)
+    select_parser.add_argument("--dispatch", required=True)
+    select_parser.add_argument("--state-file", type=Path, required=True)
+    select_parser.add_argument("--receipt-file", type=Path)
+    queue_parser = subparsers.add_parser(
+        "queue-batch",
+        help="Queue a registered runway in explicit planning-state JSON.",
+    )
+    queue_parser.add_argument("--root", type=Path, required=True)
+    queue_parser.add_argument("--program", required=True)
+    queue_parser.add_argument("--batch-id", required=True)
+    queue_parser.add_argument("--dispatch", required=True)
+    queue_parser.add_argument("--runway", required=True)
+    queue_parser.add_argument("--state-file", type=Path, required=True)
+    queue_parser.add_argument("--receipt-file", type=Path)
     args = parser.parse_args(argv)
     try:
         if args.command == "current":
@@ -422,6 +465,31 @@ def main(argv: list[str] | None = None) -> int:
             )
             sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
             return 0
+        if args.command == "select-batch":
+            state = load_planning_state(args.root)
+            document = select_batch(
+                state,
+                program_slug=args.program,
+                batch_id=args.batch_id,
+                dispatch_path=args.dispatch,
+                state_file=args.state_file,
+                receipt_file=args.receipt_file,
+            )
+            sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
+            return 0 if document["status"] == "applied" else 1
+        if args.command == "queue-batch":
+            state = load_planning_state(args.root)
+            document = queue_batch(
+                state,
+                program_slug=args.program,
+                batch_id=args.batch_id,
+                dispatch_path=args.dispatch,
+                runway_path=args.runway,
+                state_file=args.state_file,
+                receipt_file=args.receipt_file,
+            )
+            sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
+            return 0 if document["status"] == "applied" else 1
     except ProtocolValidationError as error:
         parser.exit(2, f"{parser.prog}: error: {error}\n")
     parser.error(f"unknown command: {args.command}")
@@ -507,6 +575,127 @@ def register_artifact(
         "artifact": registration,
         "would_write_state_file": str(state_file) if state_file and not dry_run else None,
     }
+
+
+def select_batch(
+    state: PlanningState,
+    *,
+    program_slug: str,
+    batch_id: str,
+    dispatch_path: str,
+    state_file: Path,
+    receipt_file: Path | None,
+) -> dict[str, Any]:
+    """Select a registered dispatch in an explicit state fixture."""
+
+    program = _find_program(state, program_slug)
+    paths = _canonical_batch_paths(state, program, batch_id)
+    data = _load_state_fixture(state_file)
+    messages: list[dict[str, str | None]] = []
+    _validate_transition_artifact(
+        state,
+        artifact_type="dispatch",
+        artifact_path=dispatch_path,
+        paths=paths,
+        messages=messages,
+    )
+    program_data = _fixture_program(data, program.slug)
+    _validate_no_active_transition_state(program, program_data, messages)
+    _validate_registered_artifact(
+        program_data,
+        artifact_type="dispatch",
+        batch_id=batch_id,
+        artifact_path=dispatch_path,
+        messages=messages,
+    )
+    _validate_batch_known_to_ledger(program, batch_id, messages)
+    receipt = _transition_receipt(
+        state,
+        transition="select-batch",
+        program=program.slug,
+        batch_id=batch_id,
+        artifacts=[
+            {
+                "type": "dispatch",
+                "batch_id": batch_id,
+                "path": dispatch_path,
+            }
+        ],
+        messages=messages,
+    )
+    if receipt["status"] == "applied":
+        program_data["selected_dispatch"] = dispatch_path
+        _write_state_fixture(state_file, data)
+    _write_receipt_fixture(receipt_file, receipt)
+    return receipt
+
+
+def queue_batch(
+    state: PlanningState,
+    *,
+    program_slug: str,
+    batch_id: str,
+    dispatch_path: str,
+    runway_path: str,
+    state_file: Path,
+    receipt_file: Path | None,
+) -> dict[str, Any]:
+    """Queue a registered runway in an explicit state fixture."""
+
+    program = _find_program(state, program_slug)
+    paths = _canonical_batch_paths(state, program, batch_id)
+    data = _load_state_fixture(state_file)
+    messages: list[dict[str, str | None]] = []
+    for artifact_type, artifact_path in (
+        ("dispatch", dispatch_path),
+        ("runway", runway_path),
+    ):
+        _validate_transition_artifact(
+            state,
+            artifact_type=artifact_type,
+            artifact_path=artifact_path,
+            paths=paths,
+            messages=messages,
+        )
+    program_data = _fixture_program(data, program.slug)
+    _validate_queue_transition_state(program, program_data, dispatch_path, messages)
+    for artifact_type, artifact_path in (
+        ("dispatch", dispatch_path),
+        ("runway", runway_path),
+    ):
+        _validate_registered_artifact(
+            program_data,
+            artifact_type=artifact_type,
+            batch_id=batch_id,
+            artifact_path=artifact_path,
+            messages=messages,
+        )
+    _validate_batch_known_to_ledger(program, batch_id, messages)
+    receipt = _transition_receipt(
+        state,
+        transition="queue-batch",
+        program=program.slug,
+        batch_id=batch_id,
+        artifacts=[
+            {
+                "type": "dispatch",
+                "batch_id": batch_id,
+                "path": dispatch_path,
+            },
+            {
+                "type": "runway",
+                "batch_id": batch_id,
+                "path": runway_path,
+            },
+        ],
+        messages=messages,
+    )
+    if receipt["status"] == "applied":
+        program_data["selected_dispatch"] = None
+        program_data["queued_batch"] = runway_path
+        _write_state_fixture(state_file, data)
+    _write_receipt_fixture(receipt_file, receipt)
+    return receipt
 
 
 def _read_text(path: Path) -> str:
@@ -1021,6 +1210,12 @@ def _write_state_fixture(path: Path | None, data: dict[str, Any]) -> None:
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def _write_receipt_fixture(path: Path | None, data: dict[str, Any]) -> None:
+    if path is None:
+        return
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def _register_artifact_in_fixture(
     data: dict[str, Any],
     *,
@@ -1053,6 +1248,271 @@ def _register_artifact_in_fixture(
         if artifact_data.get("path") == registration["path"]:
             raise ProtocolValidationError("artifact path collides with existing registration")
     artifacts.append(registration)
+
+
+def _fixture_program(data: dict[str, Any], program_slug: str) -> dict[str, Any]:
+    programs = _require_array(data, "programs")
+    program_data = next(
+        (
+            _require_object(program, "program")
+            for program in programs
+            if isinstance(program, dict) and program.get("slug") == program_slug
+        ),
+        None,
+    )
+    if program_data is None:
+        raise ProtocolValidationError(f"program root is missing: {program_slug}")
+    return program_data
+
+
+def _validate_transition_artifact(
+    state: PlanningState,
+    *,
+    artifact_type: str,
+    artifact_path: str,
+    paths: dict[str, str],
+    messages: list[dict[str, str | None]],
+) -> None:
+    try:
+        _validate_registered_path(
+            state,
+            artifact_type=artifact_type,
+            artifact_path=artifact_path,
+            paths=paths,
+        )
+    except ProtocolValidationError as error:
+        _append_message(
+            messages,
+            severity="error",
+            code="invalid_artifact_path",
+            message=str(error),
+            source_path=artifact_path,
+        )
+        return
+    if not _resolve_pointer(state.root.root_path, artifact_path).exists():
+        _append_message(
+            messages,
+            severity="error",
+            code=f"missing_{artifact_type}",
+            message=f"{artifact_path} is missing",
+            source_path=artifact_path,
+        )
+
+
+def _validate_no_active_transition_state(
+    program: ProgramState,
+    program_data: dict[str, Any],
+    messages: list[dict[str, str | None]],
+) -> None:
+    if _fixture_active_values(program_data):
+        _append_message(
+            messages,
+            severity="error",
+            code="fixture_active_state_conflict",
+            message=(
+                "state fixture already selects a dispatch, active runway, "
+                "or queued batch"
+            ),
+            source_path=program_data.get("current"),
+        )
+    if any(
+        pointer.value is not None
+        for pointer in (
+            program.selected_dispatch,
+            program.active_runway,
+            program.queued_batch,
+        )
+    ):
+        _append_message(
+            messages,
+            severity="error",
+            code="markdown_active_state_conflict",
+            message=(
+                "CURRENT.md already selects a dispatch, active runway, "
+                "or queued batch"
+            ),
+            source_path=str(program.current_path),
+        )
+
+
+def _validate_queue_transition_state(
+    program: ProgramState,
+    program_data: dict[str, Any],
+    dispatch_path: str,
+    messages: list[dict[str, str | None]],
+) -> None:
+    active_runway = program_data.get("active_runway")
+    queued_batch = program_data.get("queued_batch")
+    selected_dispatch = program_data.get("selected_dispatch")
+    if active_runway or queued_batch:
+        _append_message(
+            messages,
+            severity="error",
+            code="fixture_active_state_conflict",
+            message="state fixture already has an active runway or queued batch",
+            source_path=program_data.get("current"),
+        )
+    if selected_dispatch != dispatch_path:
+        _append_message(
+            messages,
+            severity="error",
+            code="stale_selected_dispatch",
+            message=(
+                "state fixture selected dispatch does not match the queued "
+                "dispatch"
+            ),
+            source_path=selected_dispatch,
+        )
+    if (
+        program.active_runway.value is not None
+        or program.queued_batch.value is not None
+    ):
+        _append_message(
+            messages,
+            severity="error",
+            code="markdown_active_state_conflict",
+            message="CURRENT.md already has an active runway or queued batch",
+            source_path=str(program.current_path),
+        )
+    if (
+        program.selected_dispatch.value is not None
+        and program.selected_dispatch.value != dispatch_path
+    ):
+        _append_message(
+            messages,
+            severity="error",
+            code="markdown_selected_dispatch_conflict",
+            message="CURRENT.md selected dispatch does not match the queued dispatch",
+            source_path=str(program.current_path),
+        )
+
+
+def _fixture_active_values(program_data: dict[str, Any]) -> list[Any]:
+    return [
+        program_data.get(key)
+        for key in ("selected_dispatch", "active_runway", "queued_batch")
+        if program_data.get(key) is not None
+    ]
+
+
+def _validate_registered_artifact(
+    program_data: dict[str, Any],
+    *,
+    artifact_type: str,
+    batch_id: str,
+    artifact_path: str,
+    messages: list[dict[str, str | None]],
+) -> None:
+    artifacts = program_data.get("artifacts", [])
+    if not isinstance(artifacts, list):
+        _append_message(
+            messages,
+            severity="error",
+            code="invalid_state_fixture",
+            message="artifacts must be an array",
+            source_path=program_data.get("current"),
+        )
+        return
+    for artifact in artifacts:
+        if not isinstance(artifact, dict):
+            continue
+        if (
+            artifact.get("type") == artifact_type
+            and artifact.get("batch_id") == batch_id
+            and artifact.get("path") == artifact_path
+        ):
+            return
+    _append_message(
+        messages,
+        severity="error",
+        code=f"unregistered_{artifact_type}",
+        message=f"{artifact_type} is not registered for {batch_id}",
+        source_path=artifact_path,
+    )
+
+
+def _validate_batch_known_to_ledger(
+    program: ProgramState,
+    batch_id: str,
+    messages: list[dict[str, str | None]],
+) -> None:
+    if program.ledger.value is None or program.ledger.exists is False:
+        return
+    ledger_root = program.current_path.parent.parent.parent
+    ledger_text = _read_text(_resolve_pointer(ledger_root, program.ledger.value))
+    batch_rows = [
+        line
+        for line in ledger_text.splitlines()
+        if line.lstrip().startswith("|") and "/batches/" in line
+    ]
+    known_batch_ids: set[str] = set()
+    for row in batch_rows:
+        for code_value in re.findall(r"`([^`]+)`", row):
+            path = PurePosixPath(code_value)
+            parts = path.parts
+            if "batches" not in parts:
+                continue
+            batch_index = parts.index("batches") + 1
+            if batch_index >= len(parts):
+                continue
+            known_batch_ids.add(parts[batch_index])
+    if batch_rows and batch_id not in known_batch_ids:
+        _append_message(
+            messages,
+            severity="error",
+            code="unknown_ledger_batch",
+            message=f"{batch_id} does not match a known program ledger batch row",
+            source_path=program.ledger.value,
+        )
+
+
+def _transition_receipt(
+    state: PlanningState,
+    *,
+    transition: str,
+    program: str,
+    batch_id: str,
+    artifacts: list[dict[str, str]],
+    messages: list[dict[str, str | None]],
+) -> dict[str, Any]:
+    blockers = [message for message in messages if message["severity"] == "error"]
+    warnings = [message for message in messages if message["severity"] == "warning"]
+    receipt = {
+        "protocol": {
+            "name": RECEIPT_FIXTURE_SCHEMA_NAME,
+            "version": SUPPORTED_SCHEMA_VERSION,
+            "transition_protocol": TRANSITION_RECEIPT_PROTOCOL_NAME,
+        },
+        "root": _planning_root_prefix(state),
+        "transition": transition,
+        "status": "rejected" if blockers else "applied",
+        "program": program,
+        "batch_id": batch_id,
+        "artifacts": artifacts,
+        "warnings": warnings,
+        "blockers": blockers,
+        "messages": messages,
+    }
+    validate_receipt_fixture_object(receipt)
+    return receipt
+
+
+def _append_message(
+    messages: list[dict[str, str | None]],
+    *,
+    severity: str,
+    code: str,
+    message: str,
+    source_path: object | None,
+) -> None:
+    messages.append(
+        {
+            "severity": severity,
+            "code": code,
+            "message": message,
+            "source_path": str(source_path) if source_path is not None else None,
+        }
+    )
 
 
 def _has_validation_errors(state: PlanningState) -> bool:

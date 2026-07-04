@@ -782,6 +782,278 @@ def test_register_artifact_rejects_unsupported_type_and_unsafe_paths(
     assert "dispatch must be co-located at" in wrong_batch_dir.stderr
 
 
+def test_select_batch_updates_explicit_state_and_writes_receipt(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    batch_root = _write_transition_batch(root)
+    state_file = tmp_path / "state.json"
+    receipt_file = tmp_path / "select-receipt.json"
+    dispatch = f"{batch_root}/dispatch.md"
+    _write_state_fixture(
+        state_file,
+        artifacts=[
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": dispatch,
+                "type": "dispatch",
+            }
+        ],
+    )
+
+    result = _run_select_batch(root, state_file, receipt_file)
+    payload = json.loads(result.stdout)
+    state = json.loads(state_file.read_text(encoding="utf-8"))
+    receipt = json.loads(receipt_file.read_text(encoding="utf-8"))
+
+    assert result.returncode == 0
+    assert payload["status"] == "applied"
+    assert payload["transition"] == "select-batch"
+    assert payload["program"] == "planning-state-tooling"
+    assert payload["batch_id"] == "planning-state-write-transitions"
+    assert payload["artifacts"] == [
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": dispatch,
+            "type": "dispatch",
+        }
+    ]
+    assert payload["warnings"] == []
+    assert payload["blockers"] == []
+    assert state["programs"][0]["selected_dispatch"] == dispatch
+    assert receipt == payload
+
+
+def test_select_batch_rejects_active_conflicts_before_state_mutation(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    batch_root = _write_transition_batch(root)
+    state_file = tmp_path / "state.json"
+    receipt_file = tmp_path / "select-receipt.json"
+    dispatch = f"{batch_root}/dispatch.md"
+    _write_state_fixture(
+        state_file,
+        selected_dispatch="docs/plans/programs/planning-state-tooling/batches/old/dispatch.md",
+        artifacts=[
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": dispatch,
+                "type": "dispatch",
+            }
+        ],
+    )
+
+    result = _run_select_batch(root, state_file, receipt_file)
+    state = json.loads(state_file.read_text(encoding="utf-8"))
+    receipt = json.loads(receipt_file.read_text(encoding="utf-8"))
+
+    assert result.returncode == 1
+    assert state["programs"][0]["selected_dispatch"] == (
+        "docs/plans/programs/planning-state-tooling/batches/old/dispatch.md"
+    )
+    assert receipt["status"] == "rejected"
+    assert [blocker["code"] for blocker in receipt["blockers"]] == [
+        "fixture_active_state_conflict"
+    ]
+
+
+def test_queue_batch_requires_selected_registered_dispatch_and_runway(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    batch_root = _write_transition_batch(root)
+    state_file = tmp_path / "state.json"
+    receipt_file = tmp_path / "queue-receipt.json"
+    dispatch = f"{batch_root}/dispatch.md"
+    runway = f"{batch_root}/runway.md"
+    _write_state_fixture(
+        state_file,
+        selected_dispatch=dispatch,
+        artifacts=[
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": dispatch,
+                "type": "dispatch",
+            },
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": runway,
+                "type": "runway",
+            },
+        ],
+    )
+
+    result = _run_queue_batch(root, state_file, receipt_file)
+    state = json.loads(state_file.read_text(encoding="utf-8"))
+    receipt = json.loads(receipt_file.read_text(encoding="utf-8"))
+
+    assert result.returncode == 0
+    assert receipt["status"] == "applied"
+    assert receipt["transition"] == "queue-batch"
+    assert state["programs"][0]["selected_dispatch"] is None
+    assert state["programs"][0]["queued_batch"] == runway
+
+
+def test_queue_batch_rejects_bypass_missing_and_stale_selected_dispatches(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    batch_root = _write_transition_batch(root, write_runway=False)
+    state_file = tmp_path / "state.json"
+    receipt_file = tmp_path / "queue-receipt.json"
+    dispatch = f"{batch_root}/dispatch.md"
+    _write_state_fixture(
+        state_file,
+        selected_dispatch="docs/plans/programs/planning-state-tooling/batches/old/dispatch.md",
+        artifacts=[
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": dispatch,
+                "type": "dispatch",
+            }
+        ],
+    )
+
+    result = _run_queue_batch(root, state_file, receipt_file)
+    receipt = json.loads(receipt_file.read_text(encoding="utf-8"))
+
+    assert result.returncode == 1
+    assert {blocker["code"] for blocker in receipt["blockers"]} == {
+        "missing_runway",
+        "stale_selected_dispatch",
+        "unregistered_runway",
+    }
+
+
+def test_transition_commands_reject_cross_program_paths_and_unknown_ledger_rows(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    wrong_dispatch = (
+        "docs/plans/programs/architecture-program-runner/batches/"
+        "planning-state-write-transitions/dispatch.md"
+    )
+    _write_transition_batch(
+        root,
+        program="architecture-program-runner",
+    )
+    state_file = tmp_path / "state.json"
+    receipt_file = tmp_path / "select-receipt.json"
+    _write_state_fixture(
+        state_file,
+        artifacts=[
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": wrong_dispatch,
+                "type": "dispatch",
+            }
+        ],
+    )
+    (root / "programs" / "planning-state-tooling" / "LEDGER.md").write_text(
+        """# Ledger
+
+| Batch | Status |
+|---|---|
+| `docs/plans/programs/planning-state-tooling/batches/other-batch/runway.md` | Pending |
+""",
+        encoding="utf-8",
+    )
+
+    result = _run_select_batch(
+        root,
+        state_file,
+        receipt_file,
+        dispatch=wrong_dispatch,
+    )
+    receipt = json.loads(receipt_file.read_text(encoding="utf-8"))
+
+    assert result.returncode == 1
+    assert {blocker["code"] for blocker in receipt["blockers"]} == {
+        "invalid_artifact_path",
+        "unknown_ledger_batch",
+    }
+
+
+def test_transition_ledger_validation_rejects_similarly_named_batches(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    batch_root = _write_transition_batch(root)
+    state_file = tmp_path / "state.json"
+    receipt_file = tmp_path / "select-receipt.json"
+    dispatch = f"{batch_root}/dispatch.md"
+    _write_state_fixture(
+        state_file,
+        artifacts=[
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": dispatch,
+                "type": "dispatch",
+            }
+        ],
+    )
+    (root / "programs" / "planning-state-tooling" / "LEDGER.md").write_text(
+        """# Ledger
+
+| Batch | Status |
+|---|---|
+| `docs/plans/programs/planning-state-tooling/batches/planning-state-write-transitions-extra/runway.md` | Pending |
+""",
+        encoding="utf-8",
+    )
+
+    result = _run_select_batch(root, state_file, receipt_file)
+    receipt = json.loads(receipt_file.read_text(encoding="utf-8"))
+
+    assert result.returncode == 1
+    assert [blocker["code"] for blocker in receipt["blockers"]] == [
+        "unknown_ledger_batch"
+    ]
+
+
 def test_validate_command_passes_for_current_codex_fixture(tmp_path: Path) -> None:
     root = tmp_path / "docs" / "plans"
     _write_codex_config_fixture(root)
@@ -851,6 +1123,26 @@ def test_validate_reports_invalid_queued_runway_path_as_fatal(
 
     assert result.returncode == 1
     assert "invalid_queued_runway_path:" in result.stdout
+
+
+def test_validate_reports_markdown_active_state_conflict_without_json_state(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    batch_root = _write_transition_batch(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        selected=f"{batch_root}/dispatch.md",
+        queued=f"{batch_root}/runway.md",
+        latest="None",
+    )
+
+    result = _run_validate(root)
+
+    assert result.returncode == 1
+    assert "multiple_active_artifacts:" in result.stdout
 
 
 def test_validate_reports_redirect_without_target_as_fatal(tmp_path: Path) -> None:
@@ -1208,10 +1500,99 @@ def _run_register_artifact(
     )
 
 
+def _run_select_batch(
+    root: Path,
+    state_file: Path,
+    receipt_file: Path,
+    *,
+    dispatch: str | None = None,
+) -> subprocess.CompletedProcess[str]:
+    batch_root = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-write-transitions"
+    )
+    return subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "select-batch",
+            "--root",
+            str(root),
+            "--program",
+            "planning-state-tooling",
+            "--batch-id",
+            "planning-state-write-transitions",
+            "--dispatch",
+            dispatch or f"{batch_root}/dispatch.md",
+            "--state-file",
+            str(state_file),
+            "--receipt-file",
+            str(receipt_file),
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+
+def _run_queue_batch(
+    root: Path,
+    state_file: Path,
+    receipt_file: Path,
+) -> subprocess.CompletedProcess[str]:
+    batch_root = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-write-transitions"
+    )
+    return subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "queue-batch",
+            "--root",
+            str(root),
+            "--program",
+            "planning-state-tooling",
+            "--batch-id",
+            "planning-state-write-transitions",
+            "--dispatch",
+            f"{batch_root}/dispatch.md",
+            "--runway",
+            f"{batch_root}/runway.md",
+            "--state-file",
+            str(state_file),
+            "--receipt-file",
+            str(receipt_file),
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+
+def _write_transition_batch(
+    root: Path,
+    *,
+    program: str = "planning-state-tooling",
+    write_runway: bool = True,
+) -> str:
+    batch_root = root / "programs" / program / "batches" / "planning-state-write-transitions"
+    batch_root.mkdir(parents=True)
+    (batch_root / "dispatch.md").write_text("# Dispatch\n", encoding="utf-8")
+    if write_runway:
+        (batch_root / "runway.md").write_text("# Runway\n", encoding="utf-8")
+    return f"docs/plans/programs/{program}/batches/planning-state-write-transitions"
+
+
 def _write_state_fixture(
     path: Path,
     *,
     artifacts: list[dict[str, str]] | None = None,
+    selected_dispatch: str | None = None,
+    active_runway: str | None = None,
+    queued_batch: str | None = None,
 ) -> None:
     path.write_text(
         json.dumps(
@@ -1230,9 +1611,9 @@ def _write_state_fixture(
                         "ledger": (
                             "docs/plans/programs/planning-state-tooling/LEDGER.md"
                         ),
-                        "selected_dispatch": None,
-                        "active_runway": None,
-                        "queued_batch": None,
+                        "selected_dispatch": selected_dispatch,
+                        "active_runway": active_runway,
+                        "queued_batch": queued_batch,
                         "latest_closeout": None,
                         "artifacts": artifacts or [],
                     }

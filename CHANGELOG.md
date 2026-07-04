@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Planning-state batch transitions
+
+Problem: runners and agents could register dispatch/runway artifacts but had no
+explicit command/file protocol for selecting a dispatch or queueing a runway
+without editing Markdown.
+
+Decision: add `planning_state select-batch` and `queue-batch` helpers that
+validate explicit state fixtures, registered artifacts, same-batch paths, active
+state conflicts, and optional ledger batch rows before writing state and JSON
+transition receipts.
+
+Expected effect: future runner preflight can consume transition receipts as an
+explicit file protocol while existing `current` and `validate` diagnostics stay
+read-only and Markdown-compatible.
+
 ### Planning-state artifact registration
 
 Problem: agents still had to hand-allocate Layout v1 batch paths and could not

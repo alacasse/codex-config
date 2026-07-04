@@ -72,6 +72,8 @@ render or rewrite Markdown:
 ```text
 python scripts/planning_state.py allocate-batch --root <planning-root> --program <slug> --batch-id <batch-id>
 python scripts/planning_state.py register-artifact --root <planning-root> --program <slug> --batch-id <batch-id> --type <dispatch|runway|closeout|completed-slices|receipt|output> --path <path> [--state-file <state.json>] [--dry-run]
+python scripts/planning_state.py select-batch --root <planning-root> --program <slug> --batch-id <batch-id> --dispatch <dispatch.md> --state-file <state.json> [--receipt-file <receipt.json>]
+python scripts/planning_state.py queue-batch --root <planning-root> --program <slug> --batch-id <batch-id> --dispatch <dispatch.md> --runway <runway.md> --state-file <state.json> [--receipt-file <receipt.json>]
 ```
 
 `allocate-batch` returns the canonical Layout v1 co-located batch directory and
@@ -81,11 +83,18 @@ validates ownership, co-location, collisions, path escapes, absolute paths, and
 supported artifact types. Without `--state-file`, or with `--dry-run`, it emits
 the same registration facts without writing a fixture.
 
+`select-batch` and `queue-batch` mutate only an explicit JSON state file and
+optionally write an explicit transition receipt. They validate registered
+dispatch/runway artifacts, same-batch co-location, existing artifact files,
+single active state per program, and known ledger batch rows when the ledger has
+batch rows. A rejected transition leaves the state file unchanged and returns a
+receipt with structured blockers; an applied transition writes the new
+selected/queued state and the same receipt shape.
+
 Future write commands remain planned, not implemented:
 
 ```text
 planning-state create-program <slug> --title "<title>"
-planning-state select-batch <program> <batch-id>
 planning-state close-batch <batch-id> --status completed
 planning-state render-current
 planning-state render-ledger
@@ -135,7 +144,8 @@ Markdown filenames. Tool-owned state fixtures use
 `planning-state-tool-state` version `1` with a planning `root` and `programs`
 array. Transition receipt fixtures use
 `planning-state-transition-receipt` version `1` with `root`, `transition`,
-`status`, and structured `messages`.
+`status`, `program`, `batch_id`, `artifacts`, `warnings`, `blockers`, and
+structured `messages`.
 
 ## Runner Interoperability Boundary
 
@@ -150,6 +160,11 @@ interoperable.
   adapter or preflight protocol, not by reimplementing `codex-config` Markdown
   heuristics, inferring active state from Markdown filenames, or importing
   Python internals.
+- A runner preflight can consume `select-batch` or `queue-batch` by invoking the
+  command with explicit `--state-file` and `--receipt-file` paths, then reading
+  only the JSON receipt status, artifacts, warnings, and blockers. The receipt
+  is the file protocol; private Python helpers and Markdown rendering are not
+  part of the runner boundary.
 - The Python dogfooding runner and future Go runner should share golden
   Planning Artifact Layout v1 fixtures for active `CURRENT.md` precedence,
   redirects, stale historical files, selected/queued/active batch pointers, and
