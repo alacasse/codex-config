@@ -66,23 +66,6 @@ class AgentDoneNotifyTests(unittest.TestCase):
         self.assertIn("host: devbox", notification.message)
         self.assertIn("last: Finished validation", notification.message)
 
-    def test_subagent_notification_contains_agent_context(self) -> None:
-        payload = {
-            "hook_event_name": "SubagentStop",
-            "cwd": "/work/graphify",
-            "agent_type": "runway_reviewer",
-            "agent_id": "agent-1234567890abcdef",
-            "last_assistant_message": "No blocking findings.",
-        }
-
-        with mock.patch.object(self.module, "run_git", side_effect=self.fake_run_git):
-            notification = self.module.build_notification(payload)
-
-        self.assertEqual(notification.title, "Codex subagent done graphify (feature/hooks)")
-        self.assertIn("agent: runway_reviewer", notification.message)
-        self.assertIn("agent_id: agent-123456", notification.message)
-        self.assertEqual(notification.tags, "robot")
-
     def test_hook_exits_quietly_without_configured_backend(self) -> None:
         payload = {
             "hook_event_name": "Stop",
@@ -138,6 +121,11 @@ class AgentDoneNotifyTests(unittest.TestCase):
             {"source": "hooks/agent_done_hooks.json", "target": "hooks.json"},
             feature["links"],
         )
+
+    def test_installed_hook_config_only_registers_principal_agent_stop(self) -> None:
+        config = json.loads((REPO_ROOT / "hooks" / "agent_done_hooks.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(set(config["hooks"]), {"Stop"})
 
 
 if __name__ == "__main__":

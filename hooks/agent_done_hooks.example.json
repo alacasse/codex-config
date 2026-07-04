@@ -10,17 +10,6 @@
           }
         ]
       }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 ~/.codex/hooks/agent_done_notify.py",
-            "timeout": 10
-          }
-        ]
-      }
     ]
   }
 }

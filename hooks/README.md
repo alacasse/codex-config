@@ -2,14 +2,15 @@
 
 ## Agent completion notifications
 
-`agent_done_notify.py` sends a compact notification when a Codex `Stop` or
-`SubagentStop` hook fires. The script reads Codex hook JSON from stdin and
-derives the active project from the hook `cwd`, so it works even when installed
-as a symlink from this repo into a different project's Codex session.
+`agent_done_notify.py` sends a compact notification when the principal Codex
+agent finishes a turn and the `Stop` hook fires. The script reads Codex hook
+JSON from stdin and derives the active project from the hook `cwd`, so it works
+even when installed as a symlink from this repo into a different project's Codex
+session.
 
 The alert includes:
 
-- hook event (`Stop` or `SubagentStop`)
+- hook event (`Stop`)
 - project/repository name
 - branch and short commit
 - dirty tracked/untracked file count
@@ -17,8 +18,7 @@ The alert includes:
 - host name
 - model and permission mode
 - short session and turn ids
-- subagent type/id for `SubagentStop`
-- final assistant/subagent message excerpt
+- final assistant message excerpt
 - UTC timestamp
 
 Install the script:

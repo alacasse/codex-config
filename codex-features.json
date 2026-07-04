@@ -113,7 +113,7 @@
     },
     "agent-notifications": {
       "version": "1.0.0",
-      "description": "Opt-in Codex Stop/SubagentStop phone notification hook script and registration example.",
+      "description": "Opt-in Codex Stop phone notification hook script and registration example.",
       "default_enabled": false,
       "links": [
         {

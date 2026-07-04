@@ -6,20 +6,19 @@
 
 Problem: terminal-only Codex work on Linux has no built-in mobile handoff path
 when the Codex App host/mobile remote setup is unavailable, and generic alerts
-do not say which project, branch, subagent, or final result needs attention.
+do not say which project, branch, or final result needs attention.
 
-Decision: add an opt-in `agent-notifications` feature with a `Stop` and
-`SubagentStop` hook script, repo-owned global hook registration, example merge
-snippet, and setup notes for ntfy, Pushover, or Apprise. The script reads Codex
-hook JSON from stdin, derives project context from the session `cwd`, and keeps
+Decision: add an opt-in `agent-notifications` feature with a principal-agent
+`Stop` hook script, repo-owned global hook registration, example merge snippet,
+and setup notes for ntfy, Pushover, or Apprise. The script reads Codex hook JSON
+from stdin, derives project context from the session `cwd`, and keeps
 notification tokens and private topics in environment variables instead of repo
-files.
+files. Subagent completion hooks are intentionally not registered.
 
 Expected effect: future Codex sessions can send phone-friendly completion
-alerts that include project, branch, dirty count, cwd, host, model, session,
-turn, subagent, and final-message context without making this repo own the
-entire global `~/.codex/hooks.json` unless the user explicitly installs the
-opt-in feature.
+alerts for the principal agent that include project, branch, dirty count, cwd,
+host, model, session, turn, and final-message context without sending separate
+subagent completion noise.
 
 ### Default subagent delegation permission
 
