@@ -94,8 +94,9 @@ Use `execute-slice-core-v1.md` for the normal version of this loop.
     - local import topology changed: `import_topology_reviewer`
     - legacy or compatibility cleanup: `dead-surface-audit`
     - test-retained topology, absence/importability/topology tests, aliases,
-      wrappers, facades, compatibility surfaces, or cleanup-candidate
-      inventories kept alive by tests: `dead-surface-audit`
+      wrappers, facades, compatibility surfaces, cleanup residues,
+      historical-evidence markers, or cleanup-candidate inventories kept alive
+      by tests: `dead-surface-audit`
     Contract, validation, and security concerns are non-registered review
     lenses handled by the final `runway_reviewer`, not spawnable specialist
     reviewers. Keep specialist outputs compact. Support reviewers must not spawn
@@ -129,6 +130,8 @@ After the last completed slice:
 1. Run the spec's final validation.
 2. Run any project-required graph or index refresh after code changes.
 3. Report completed commits, validation results, skipped slices, remaining risks,
-   `orchestration_anomalies`, and expanded final `Convergence Assessment`.
+   cleanup residues classified as removed, kept with reason, or deferred with a
+   removal condition, `orchestration_anomalies`, and expanded final
+   `Convergence Assessment`.
 4. If final validation uses a project-specific integration harness, read the
    required summary artifact before reporting the final harness result.

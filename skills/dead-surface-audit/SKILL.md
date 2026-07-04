@@ -21,7 +21,7 @@ Record which surfaces are truly supported externally. Treat repo-local tests as 
 
 List files, Modules, functions, classes, aliases, exported names, and invocation paths under review.
 
-Prioritize surfaces with names or comments like `compatibility`, `facade`, `legacy`, `deprecated`, `wrapper`, `alias`, `re-export`, `root topology`, or old domain vocabulary. Also inspect tiny helpers, aggregate modules, and root files that only import from owner packages.
+Prioritize surfaces with names or comments like `compatibility`, `facade`, `legacy`, `deprecated`, `wrapper`, `alias`, `re-export`, `root topology`, `historical evidence`, `cleanup residue`, or old domain vocabulary. Also inspect tiny helpers, aggregate modules, and root files that only import from owner packages.
 
 ### 3. Split Caller Evidence
 
@@ -67,6 +67,10 @@ Use these statuses:
 - `human-contract-decision`: evidence suggests external compatibility may matter, but support is undocumented or ambiguous
 
 Do not keep compatibility just because a test asserts it. Require a named caller, document, invocation path, generated artifact, or explicit ADR.
+For test-only cleanup residues or historical-evidence markers, require a named
+reason when suggesting `keep` or `keep-thin-entrypoint`. Require a removal
+condition or follow-up decision owner when suggesting temporary or deferred
+retention such as `migrate-tests-first` or `human-contract-decision`.
 
 ## Report Format
 

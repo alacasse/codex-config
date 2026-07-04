@@ -214,8 +214,8 @@ In `execute-spec` mode:
    needed, read `references/execute-recovery-v1.md`.
 8. After the last slice, read `references/finalize-batch-v1.md`, run final
    validation and project-required index refresh,
-   then report commits, validation, skipped slices, remaining risks,
-   `orchestration_anomalies`, and expanded convergence.
+   then report commits, validation, skipped slices, remaining risks, cleanup
+   residues, `orchestration_anomalies`, and expanded convergence.
 
 ## Stop Conditions
 

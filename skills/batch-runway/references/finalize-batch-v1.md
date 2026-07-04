@@ -22,6 +22,8 @@ Report:
 - skipped slices
 - remaining risks
 - compatibility paths that remain
+- cleanup residues classified as removed, kept with reason, or deferred with a
+  removal condition
 - audit artifacts or summary paths
 - `orchestration_anomalies`
 - final inspection commands
@@ -61,6 +63,9 @@ Use the expanded convergence template for final batch reports:
 ### Temporary compatibility paths
 - ...
 
+### Cleanup residues
+- ...
+
 ### Blockers
 - ...
 
@@ -83,4 +88,6 @@ Use the expanded convergence template for final batch reports:
 - Do not mark completion forecastable while scope is still expanding.
 - Do not say work is almost done unless remaining work is bounded, known,
   explicitly enumerated, and supported by the latest convergence evidence.
+- Do not report cleanup residue as merely historical or harmless when it lacks a
+  concrete reason, removal condition, or follow-up owner.
 - Forecast remaining work in bounded slices, not calendar time.

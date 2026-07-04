@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Cleanup residue closeout
+
+Problem: cleanup batches could leave test-only historical markers, migration
+guards, old-vocabulary taxonomy, aliases, facades, or temporary scaffolding in
+an ambiguous state when they were not obviously production compatibility paths.
+
+Decision: add a generic cleanup-residue rule to `legacy-removal`,
+`dead-surface-audit`, and Batch Runway reporting/review guidance. Residue must
+now be removed, kept with a named reason, or deferred with a removal condition
+and follow-up owner; final Batch Runway reports include cleanup residue
+classification alongside remaining compatibility paths.
+
+Expected effect: future agents should notice temporary cleanup aids before
+closeout and avoid letting transitional test or taxonomy markers become
+permanent by accident.
+
 ### Planning artifact layout
 
 Problem: durable planning state could accumulate in flat `plans/` or

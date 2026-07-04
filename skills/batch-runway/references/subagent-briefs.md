@@ -45,6 +45,7 @@ Slice anchor: <heading text or line number>.
 Diff basis: <commit hash or task-scoped worktree diff paths>.
 Inspect only the task-scoped diff and relevant files.
 Check scope, acceptance criteria, validation evidence, dirty-file leakage, and behavior preservation.
+Flag new or remaining cleanup residue that lacks a concrete reason, removal condition, or follow-up owner.
 Classify review lenses before the verdict and include `lenses_applied`.
 Include compact specialist-review findings already gathered by the coordinator.
 Batch Runway reference, if needed: <absolute path to relevant reference file>.
@@ -91,7 +92,8 @@ fallback from legitimate optional third-party dependency imports. A local import
 topology change alone should not trigger broader legacy-management review.
 
 Use `dead-surface-audit` only when legacy, compatibility, cleanup-candidate,
-test-retention, absence/importability/topology-test, alias, wrapper, facade, or
+cleanup-residue, historical-evidence marker, test-retention,
+absence/importability/topology-test, alias, wrapper, facade, or
 migration-retention evidence suggests a surface may be kept alive by tests or
 compatibility logic.
 
@@ -103,6 +105,12 @@ list of unsupported candidates to remain forever.
 Tests that only assert absence, import topology, alias identity, facade shape,
 or wrapper retention are suspicious unless they protect a documented external
 contract.
+
+Cleanup residues such as test-only compatibility markers, historical-evidence
+buckets, migration guards, old-vocabulary taxonomy, aliases, facades, or
+temporary scaffolding must be removed, kept with a named reason, or deferred
+with a removal condition. Reviewers should treat unclassified residue as a
+finding, not as harmless historical context.
 
 ## Support-Only Custom Agents
 

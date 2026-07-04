@@ -155,6 +155,7 @@ Slice anchor: <heading text or line number>.
 Diff basis: <commit hash or task-scoped worktree diff paths>.
 Inspect only the task-scoped diff and relevant files.
 Check scope, acceptance criteria, validation evidence, dirty-file leakage, and behavior preservation.
+Flag new or remaining cleanup residue that lacks a concrete reason, removal condition, or follow-up owner.
 Classify review lenses before the verdict and include `lenses_applied`.
 Include compact specialist-review findings already gathered by the coordinator.
 Return YAML only, including `diff_basis`. Do not modify files.
@@ -182,6 +183,11 @@ Use `import_topology_reviewer` for project-local import fallback, direct-script
 entrypoint, `sys.path` manipulation, alternate local import, or topology-only
 test changes. Do not use it for ordinary optional third-party dependency imports
 unless they obscure project-local topology ambiguity.
+
+Use `dead-surface-audit` when legacy, compatibility, cleanup-residue,
+historical-evidence marker, alias, wrapper, facade, migration-retention, or
+test-only topology evidence suggests a surface may be kept alive by tests or
+compatibility logic.
 
 ## Support Investigation Handoff
 

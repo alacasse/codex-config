@@ -46,14 +46,19 @@ orchestrate workers/reviewers.
 - Prefer failing loudly over silently supporting obsolete internal behavior.
 - Make tests describe the canonical model instead of protecting obsolete
   behavior.
+- Classify cleanup residues instead of letting them become invisible
+  compatibility.
 - Keep durable records compact and actionable.
 - Do not collapse unrelated legacy findings into one batch.
 - Do not load auxiliary skills unless they materially improve the decision.
 
-A concrete reason for keeping compatibility must name at least one external
-caller, public API contract, documented migration requirement, production
-compatibility constraint, still-valid test requirement, explicit user
-instruction, or temporary transition period with a removal condition.
+A cleanup residue is a test-only compatibility marker, historical-evidence
+bucket, migration guard, old-vocabulary taxonomy, alias, facade, or temporary
+scaffold left behind during or after a refactor. A concrete reason for keeping
+compatibility or cleanup residue must name at least one external caller, public
+API contract, documented migration requirement, production compatibility
+constraint, still-valid test requirement, explicit user instruction, or
+temporary transition period with a removal condition.
 
 ## Workflow
 
@@ -66,10 +71,11 @@ instruction, or temporary transition period with a removal condition.
    `dead-surface-audit` only when test-retained liveness or import-topology
    evidence would materially improve the decision.
 4. Classify legacy patterns: shim, alias, fallback, dual path, legacy test,
-   stale name, obsolete entrypoint, transitional wrapper, obsolete doc, or
-   another explicit pattern.
-5. Decide compatibility item by item. `keep` and `defer` require named reasons;
-   `remove` requires evidence that the behavior is obsolete or internal.
+   stale name, obsolete entrypoint, transitional wrapper, obsolete doc, cleanup
+   residue, or another explicit pattern.
+5. Decide compatibility and cleanup residue item by item. `keep` and `defer`
+   require named reasons; `defer` also requires a removal condition; `remove`
+   requires evidence that the behavior is obsolete or internal.
 6. Group findings into batch candidates only far enough to expose scope,
    sequencing, risk, validation class, and likely slice shape.
 7. Create the selected dispatch packet only when one next batch is clear.
@@ -257,6 +263,16 @@ Use this structure:
 | <symbol/path/behavior> | remove/keep/defer | concrete reason | external caller/public contract/test/user requirement/none |
 | <ambiguous surface> | defer | possible external compatibility but no clear contract | human-contract-decision/open question |
 
+## Cleanup residue decisions
+
+Use this section when a refactor introduced or left behind test-only
+compatibility markers, historical-evidence buckets, migration guards,
+old-vocabulary taxonomy, aliases, facades, or temporary scaffolding.
+
+| Item | Decision | Reason | Removal condition |
+| --- | --- | --- | --- |
+| <marker/path/test taxonomy> | remove-now/keep-with-reason/defer-with-removal-condition | concrete reason | required for every deferred residue |
+
 ## Batch candidates
 
 | Batch ID | Goal | Included findings | Deferred findings | Validation class | Risk | Suggested slice shape |
@@ -292,6 +308,10 @@ When concrete implementation work closes, update each finding as:
 - Deferred: intentionally left for a later batch
 - Superseded: made irrelevant by another accepted change
 - Blocked: cannot proceed without a named decision or dependency
+
+Do not mark a legacy-removal finding `Closed` while unclassified cleanup
+residue remains. Remove it, keep it with a named reason, or defer it with a
+removal condition and follow-up owner.
 ```
 
 ## Relationship To Other Runway Skills

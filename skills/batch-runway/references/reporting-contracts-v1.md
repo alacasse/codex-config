@@ -63,6 +63,9 @@ Expanded output format:
 ### Temporary compatibility paths
 - ...
 
+### Cleanup residues
+- ...
+
 ### Blockers
 - ...
 
@@ -105,9 +108,10 @@ Forecastability rules:
 - Forecast remaining work in bounded slices, not calendar time.
 - Do not say or imply that work is almost done unless remaining work is
   explicitly enumerated, no major new unknowns were introduced in the latest
-  slice, temporary compatibility logic is removed or intentionally documented,
-  follow-up work is separated from blocking work, and the next slice is expected
-  to close known items rather than discover new ones.
+  slice, temporary compatibility logic and cleanup residues are removed or
+  intentionally documented with removal conditions, follow-up work is separated
+  from blocking work, and the next slice is expected to close known items rather
+  than discover new ones.
 
 ## Compact Report Contract v1
 
@@ -164,6 +168,12 @@ applicable review lenses:
 - `compatibility_or_legacy_cleanup`
 - `validation_or_reporting_change`
 - `docs_only_change`
+
+The `compatibility_or_legacy_cleanup` lens includes newly introduced or
+remaining cleanup residues such as test-only compatibility markers,
+historical-evidence buckets, migration guards, old-vocabulary taxonomy, aliases,
+facades, and temporary scaffolding. Reviewers should flag residue that lacks a
+concrete reason or deferred removal condition.
 
 If the coordinator ran triggered specialist support reviews, include their
 compact findings in the final reviewer report. Specialist reviewers do not
@@ -248,6 +258,7 @@ Permanent:
 - unresolved risks
 - ADR-worthy decisions
 - compatibility paths that remain after the batch
+- cleanup residues deferred with removal conditions
 
 Batch-scoped:
 
@@ -258,6 +269,7 @@ Batch-scoped:
 - unresolved review or validation findings
 - current convergence phase and next proof
 - unresolved orchestration anomalies that may affect remaining execution
+- cleanup residues that still need remove/keep/defer classification
 
 Slice-scoped:
 
