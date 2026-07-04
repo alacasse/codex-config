@@ -66,12 +66,26 @@ python scripts/planning_state.py current --root <planning-root> --format json
 python scripts/planning_state.py validate --root <planning-root> --format json
 ```
 
+The first write-transition helpers are path and fixture oriented. They do not
+render or rewrite Markdown:
+
+```text
+python scripts/planning_state.py allocate-batch --root <planning-root> --program <slug> --batch-id <batch-id>
+python scripts/planning_state.py register-artifact --root <planning-root> --program <slug> --batch-id <batch-id> --type <dispatch|runway|closeout|completed-slices|receipt|output> --path <path> [--state-file <state.json>] [--dry-run]
+```
+
+`allocate-batch` returns the canonical Layout v1 co-located batch directory and
+Markdown artifact paths under
+`<planning-root>/programs/<program>/batches/<batch-id>/`. `register-artifact`
+validates ownership, co-location, collisions, path escapes, absolute paths, and
+supported artifact types. Without `--state-file`, or with `--dry-run`, it emits
+the same registration facts without writing a fixture.
+
 Future write commands remain planned, not implemented:
 
 ```text
 planning-state create-program <slug> --title "<title>"
 planning-state select-batch <program> <batch-id>
-planning-state register-artifact --type <dispatch|runway|closeout|receipt|output> --path <path>
 planning-state close-batch <batch-id> --status completed
 planning-state render-current
 planning-state render-ledger

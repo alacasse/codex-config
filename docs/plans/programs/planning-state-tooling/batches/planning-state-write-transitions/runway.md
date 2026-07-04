@@ -137,7 +137,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 2. Add path allocation and artifact registration | Pending |  |  |  | Agents can ask the tool for canonical batch/artifact paths instead of hand-allocating them. |  |
 | 3. Add batch selection and queue transitions | Pending |  |  |  | Selection/queue commands validate active-state conflicts before writing transition receipts. |  |
 | 4. Add obligation tracking and interop validation | Pending |  |  |  | Obligations have IDs, owners, close conditions, and runner-facing validation output. |  |
 
@@ -149,7 +148,8 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
-| 1. Define protocol and state schema | Slice 1 commit | success | `python -m pytest tests/test_planning_state.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans --format json`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer approved after wrapped-field fix |
+| 1. Define protocol and state schema | `bb4b61c` | success | `python -m pytest tests/test_planning_state.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans --format json`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer approved after wrapped-field fix |
+| 2. Add path allocation and artifact registration | Slice 2 commit | success | `python -m pytest tests/test_planning_state.py -q`; `python scripts/planning_state.py validate --root docs/plans`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean after path-component validation fix |
 
 ## Slice 1. Define Protocol And State Schema
 

@@ -440,6 +440,348 @@ def test_receipt_fixture_schema_rejects_malformed_objects() -> None:
         raise AssertionError("expected malformed receipt fixture to fail")
 
 
+def test_allocate_batch_command_reports_canonical_layout_v1_paths(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "allocate-batch",
+            "--root",
+            str(root),
+            "--program",
+            "planning-state-tooling",
+            "--batch-id",
+            "planning-state-write-transitions",
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["batch_directory"] == (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-write-transitions"
+    )
+    assert payload["artifacts"] == {
+        "closeout": (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-write-transitions/closeout.md"
+        ),
+        "completed-slices": (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-write-transitions/completed-slices.md"
+        ),
+        "dispatch": (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-write-transitions/dispatch.md"
+        ),
+        "runway": (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-write-transitions/runway.md"
+        ),
+    }
+
+
+def test_allocate_batch_command_rejects_existing_batch_directory(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "allocate-batch",
+            "--root",
+            str(root),
+            "--program",
+            "planning-state-tooling",
+            "--batch-id",
+            "planning-state-readonly-core",
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 2
+    assert "batch directory already exists:" in result.stderr
+
+
+def test_allocate_batch_command_rejects_malformed_planning_roots(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    (root / "CURRENT.md").write_text(
+        (root / "CURRENT.md")
+        .read_text(encoding="utf-8")
+        .replace("Planning root: `docs/plans/`", "Planning root: `/tmp/plans/`"),
+        encoding="utf-8",
+    )
+    absolute = _run_allocate_batch(root, "planning-state-tooling")
+    (root / "CURRENT.md").write_text(
+        (root / "CURRENT.md")
+        .read_text(encoding="utf-8")
+        .replace("Planning root: `/tmp/plans/`", "Planning root: `docs/../plans/`"),
+        encoding="utf-8",
+    )
+    escaped = _run_allocate_batch(root, "planning-state-tooling")
+
+    assert absolute.returncode == 2
+    assert "planning root must be relative" in absolute.stderr
+    assert escaped.returncode == 2
+    assert "planning root must not contain dot segments" in escaped.stderr
+
+
+def test_allocate_batch_command_rejects_malformed_program_slugs(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    current = root / "programs" / "planning-state-tooling" / "CURRENT.md"
+    current.write_text(
+        current.read_text(encoding="utf-8").replace(
+            "Program slug: `planning-state-tooling`",
+            "Program slug: `planning/state-tooling`",
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run_allocate_batch(root, "planning/state-tooling")
+
+    assert result.returncode == 2
+    assert "program slug must be a single path segment" in result.stderr
+
+
+def test_register_artifact_dry_run_is_usable_without_state_file(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    result = _run_register_artifact(
+        root,
+        "dispatch",
+        (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-write-transitions/dispatch.md"
+        ),
+        "--dry-run",
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["status"] == "dry-run"
+    assert payload["artifact"] == {
+        "batch_id": "planning-state-write-transitions",
+        "path": (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-write-transitions/dispatch.md"
+        ),
+        "type": "dispatch",
+    }
+
+
+def test_register_artifact_dry_run_supports_all_artifact_types(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    batch_root = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-write-transitions"
+    )
+    paths = {
+        "closeout": f"{batch_root}/closeout.md",
+        "completed-slices": f"{batch_root}/completed-slices.md",
+        "dispatch": f"{batch_root}/dispatch.md",
+        "output": f"{batch_root}/outputs/summary.json",
+        "receipt": f"{batch_root}/receipts/receipt.json",
+        "runway": f"{batch_root}/runway.md",
+    }
+
+    results = {
+        artifact_type: _run_register_artifact(root, artifact_type, path)
+        for artifact_type, path in paths.items()
+    }
+
+    assert {artifact_type: result.returncode for artifact_type, result in results.items()} == {
+        "closeout": 0,
+        "completed-slices": 0,
+        "dispatch": 0,
+        "output": 0,
+        "receipt": 0,
+        "runway": 0,
+    }
+    assert {
+        artifact_type: json.loads(result.stdout)["artifact"]["path"]
+        for artifact_type, result in results.items()
+    } == paths
+
+
+def test_register_artifact_updates_explicit_state_fixture(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "state.json"
+    _write_state_fixture(state_file)
+
+    result = _run_register_artifact(
+        root,
+        "runway",
+        (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-write-transitions/runway.md"
+        ),
+        "--state-file",
+        str(state_file),
+    )
+    payload = json.loads(result.stdout)
+    state = json.loads(state_file.read_text(encoding="utf-8"))
+
+    assert result.returncode == 0
+    assert payload["status"] == "registered"
+    assert state["programs"][0]["artifacts"] == [
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": (
+                "docs/plans/programs/planning-state-tooling/batches/"
+                "planning-state-write-transitions/runway.md"
+            ),
+            "type": "runway",
+        }
+    ]
+
+
+def test_register_artifact_rejects_missing_program_root(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "register-artifact",
+            "--root",
+            str(root),
+            "--program",
+            "missing-program",
+            "--batch-id",
+            "planning-state-write-transitions",
+            "--type",
+            "dispatch",
+            "--path",
+            (
+                "docs/plans/programs/missing-program/batches/"
+                "planning-state-write-transitions/dispatch.md"
+            ),
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 2
+    assert "program root is missing: missing-program" in result.stderr
+
+
+def test_register_artifact_rejects_collisions(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "state.json"
+    _write_state_fixture(
+        state_file,
+        artifacts=[
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": (
+                    "docs/plans/programs/planning-state-tooling/batches/"
+                    "planning-state-write-transitions/dispatch.md"
+                ),
+                "type": "dispatch",
+            }
+        ],
+    )
+
+    result = _run_register_artifact(
+        root,
+        "dispatch",
+        (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-write-transitions/dispatch.md"
+        ),
+        "--state-file",
+        str(state_file),
+    )
+
+    assert result.returncode == 2
+    assert "artifact is already registered" in result.stderr
+
+
+def test_register_artifact_rejects_unsupported_type_and_unsafe_paths(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    unsupported = _run_register_artifact(
+        root,
+        "summary",
+        (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-write-transitions/summary.md"
+        ),
+    )
+    outside_root = _run_register_artifact(
+        root,
+        "dispatch",
+        "tmp/dispatch.md",
+    )
+    escaped = _run_register_artifact(
+        root,
+        "dispatch",
+        "docs/plans/../dispatch.md",
+    )
+    absolute = _run_register_artifact(
+        root,
+        "dispatch",
+        str(tmp_path / "dispatch.md"),
+    )
+    wrong_batch_dir = _run_register_artifact(
+        root,
+        "dispatch",
+        (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "other-batch/dispatch.md"
+        ),
+    )
+
+    assert unsupported.returncode == 2
+    assert "unsupported artifact type: summary" in unsupported.stderr
+    assert outside_root.returncode == 2
+    assert "artifact path must be under the planning root" in outside_root.stderr
+    assert escaped.returncode == 2
+    assert "artifact path must not escape the planning root" in escaped.stderr
+    assert absolute.returncode == 2
+    assert "artifact path must be relative to the workspace" in absolute.stderr
+    assert wrong_batch_dir.returncode == 2
+    assert "dispatch must be co-located at" in wrong_batch_dir.stderr
+
+
 def test_validate_command_passes_for_current_codex_fixture(tmp_path: Path) -> None:
     root = tmp_path / "docs" / "plans"
     _write_codex_config_fixture(root)
@@ -810,6 +1152,97 @@ def _run_validate_json(root: Path) -> subprocess.CompletedProcess[str]:
         check=False,
         text=True,
         capture_output=True,
+    )
+
+
+def _run_allocate_batch(
+    root: Path,
+    program: str,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "allocate-batch",
+            "--root",
+            str(root),
+            "--program",
+            program,
+            "--batch-id",
+            "planning-state-write-transitions",
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+
+def _run_register_artifact(
+    root: Path,
+    artifact_type: str,
+    artifact_path: str,
+    *extra_args: str,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "register-artifact",
+            "--root",
+            str(root),
+            "--program",
+            "planning-state-tooling",
+            "--batch-id",
+            "planning-state-write-transitions",
+            "--type",
+            artifact_type,
+            "--path",
+            artifact_path,
+            *extra_args,
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+
+def _write_state_fixture(
+    path: Path,
+    *,
+    artifacts: list[dict[str, str]] | None = None,
+) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "protocol": {
+                    "name": "planning-state-tool-state",
+                    "version": 1,
+                },
+                "root": "docs/plans",
+                "programs": [
+                    {
+                        "slug": "planning-state-tooling",
+                        "current": (
+                            "docs/plans/programs/planning-state-tooling/CURRENT.md"
+                        ),
+                        "ledger": (
+                            "docs/plans/programs/planning-state-tooling/LEDGER.md"
+                        ),
+                        "selected_dispatch": None,
+                        "active_runway": None,
+                        "queued_batch": None,
+                        "latest_closeout": None,
+                        "artifacts": artifacts or [],
+                    }
+                ],
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
     )
 
 

@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state artifact registration
+
+Problem: agents still had to hand-allocate Layout v1 batch paths and could not
+validate artifact registration facts before state-transition rendering exists.
+
+Decision: add `planning_state allocate-batch` and `register-artifact` helpers
+that compute canonical co-located batch artifact paths, validate registration
+paths, and optionally write explicit JSON state fixtures without touching live
+planning Markdown.
+
+Expected effect: future write-transition slices can use deterministic path
+facts for dispatch, runway, closeout, completed-slices, receipt, and output
+artifacts while preserving existing `current` and `validate` behavior.
+
 ### Planning-state facts protocol
 
 Problem: future runner adapters needed stable planning-state facts without

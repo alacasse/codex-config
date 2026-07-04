@@ -6,6 +6,7 @@ import argparse
 from dataclasses import dataclass
 import json
 from pathlib import Path
+from pathlib import PurePosixPath
 import re
 import sys
 from typing import Any, Iterable
@@ -18,6 +19,21 @@ PLANNING_STATE_PROTOCOL_VERSION = 1
 STATE_FIXTURE_SCHEMA_NAME = "planning-state-tool-state"
 RECEIPT_FIXTURE_SCHEMA_NAME = "planning-state-transition-receipt"
 SUPPORTED_SCHEMA_VERSION = 1
+ARTIFACT_REGISTRATION_PROTOCOL_NAME = "planning-state-artifact-registration"
+SUPPORTED_ARTIFACT_TYPES = {
+    "dispatch",
+    "runway",
+    "closeout",
+    "completed-slices",
+    "receipt",
+    "output",
+}
+BATCH_LOCAL_ARTIFACTS = {
+    "dispatch": "dispatch.md",
+    "runway": "runway.md",
+    "closeout": "closeout.md",
+    "completed-slices": "completed-slices.md",
+}
 
 
 @dataclass(frozen=True)
@@ -239,6 +255,17 @@ def validate_state_fixture_object(value: object) -> dict[str, Any]:
         _require_optional_string(program_data, "active_runway")
         _require_optional_string(program_data, "queued_batch")
         _require_optional_string(program_data, "latest_closeout")
+        artifacts = program_data.get("artifacts", [])
+        if not isinstance(artifacts, list):
+            raise ProtocolValidationError("artifacts must be an array")
+        for artifact_index, artifact in enumerate(artifacts):
+            artifact_data = _require_object(
+                artifact,
+                f"programs[{index}].artifacts[{artifact_index}]",
+            )
+            _require_supported_artifact_type(artifact_data, "type")
+            _require_string(artifact_data, "batch_id")
+            _require_string(artifact_data, "path")
     return data
 
 
@@ -309,6 +336,38 @@ def main(argv: list[str] | None = None) -> int:
         default=PLANNING_STATE_PROTOCOL_VERSION,
         help="Machine-readable protocol version for --format json.",
     )
+    allocate_parser = subparsers.add_parser(
+        "allocate-batch",
+        help="Compute canonical Layout v1 paths for a program batch.",
+    )
+    allocate_parser.add_argument("--root", type=Path, required=True)
+    allocate_parser.add_argument("--program", required=True)
+    allocate_parser.add_argument("--batch-id", required=True)
+    allocate_parser.add_argument(
+        "--format",
+        choices=("json",),
+        default="json",
+        help="Output format. Only json is currently supported.",
+    )
+    register_parser = subparsers.add_parser(
+        "register-artifact",
+        help="Validate and register a planning artifact path.",
+    )
+    register_parser.add_argument("--root", type=Path, required=True)
+    register_parser.add_argument("--program", required=True)
+    register_parser.add_argument("--batch-id", required=True)
+    register_parser.add_argument("--type", required=True)
+    register_parser.add_argument("--path", required=True)
+    register_parser.add_argument(
+        "--state-file",
+        type=Path,
+        help="Explicit JSON state fixture to update. Omit for dry-run output.",
+    )
+    register_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate and print registration facts without writing state.",
+    )
     args = parser.parse_args(argv)
     try:
         if args.command == "current":
@@ -341,10 +400,113 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 sys.stdout.write(format_validation_report(state))
             return exit_code
+        if args.command == "allocate-batch":
+            state = load_planning_state(args.root)
+            document = allocate_batch_paths(
+                state,
+                program_slug=args.program,
+                batch_id=args.batch_id,
+            )
+            sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
+            return 0
+        if args.command == "register-artifact":
+            state = load_planning_state(args.root)
+            document = register_artifact(
+                state,
+                program_slug=args.program,
+                batch_id=args.batch_id,
+                artifact_type=args.type,
+                artifact_path=args.path,
+                state_file=args.state_file,
+                dry_run=args.dry_run,
+            )
+            sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
+            return 0
     except ProtocolValidationError as error:
         parser.exit(2, f"{parser.prog}: error: {error}\n")
     parser.error(f"unknown command: {args.command}")
     return 2
+
+
+def allocate_batch_paths(
+    state: PlanningState,
+    *,
+    program_slug: str,
+    batch_id: str,
+) -> dict[str, Any]:
+    """Return canonical Layout v1 paths without creating directories."""
+
+    program = _find_program(state, program_slug)
+    paths = _canonical_batch_paths(state, program, batch_id)
+    _validate_batch_not_exists(state, paths["batch_directory"])
+    return {
+        "protocol": {
+            "name": ARTIFACT_REGISTRATION_PROTOCOL_NAME,
+            "version": SUPPORTED_SCHEMA_VERSION,
+            "command": "allocate-batch",
+        },
+        "root": _planning_root_prefix(state),
+        "program": program.slug,
+        "batch_id": batch_id,
+        "batch_directory": paths["batch_directory"],
+        "artifacts": {
+            artifact_type: paths[artifact_type]
+            for artifact_type in BATCH_LOCAL_ARTIFACTS
+        },
+    }
+
+
+def register_artifact(
+    state: PlanningState,
+    *,
+    program_slug: str,
+    batch_id: str,
+    artifact_type: str,
+    artifact_path: str,
+    state_file: Path | None,
+    dry_run: bool,
+) -> dict[str, Any]:
+    """Validate and optionally record a planning artifact in a state fixture."""
+
+    artifact_type = _normalize_artifact_type(artifact_type)
+    program = _find_program(state, program_slug)
+    paths = _canonical_batch_paths(state, program, batch_id)
+    _validate_registered_path(
+        state,
+        artifact_type=artifact_type,
+        artifact_path=artifact_path,
+        paths=paths,
+    )
+    data = _load_state_fixture(state_file) if state_file is not None else None
+    registration = {
+        "type": artifact_type,
+        "batch_id": batch_id,
+        "path": artifact_path,
+    }
+    status = "dry-run"
+    if data is not None:
+        _register_artifact_in_fixture(
+            data,
+            program_slug=program.slug,
+            registration=registration,
+        )
+        if not dry_run:
+            _write_state_fixture(state_file, data)
+            status = "registered"
+    return {
+        "protocol": {
+            "name": ARTIFACT_REGISTRATION_PROTOCOL_NAME,
+            "version": SUPPORTED_SCHEMA_VERSION,
+            "command": "register-artifact",
+        },
+        "status": status,
+        "root": _planning_root_prefix(state),
+        "program": program.slug,
+        "batch_id": batch_id,
+        "batch_directory": paths["batch_directory"],
+        "artifact": registration,
+        "would_write_state_file": str(state_file) if state_file and not dry_run else None,
+    }
 
 
 def _read_text(path: Path) -> str:
@@ -734,6 +896,163 @@ def _require_optional_string(data: dict[str, Any], key: str) -> str | None:
     if not isinstance(value, str):
         raise ProtocolValidationError(f"{key} must be a string or null")
     return value
+
+
+def _require_supported_artifact_type(data: dict[str, Any], key: str) -> str:
+    value = _require_string(data, key)
+    return _normalize_artifact_type(value)
+
+
+def _normalize_artifact_type(value: str) -> str:
+    artifact_type = value.strip()
+    if artifact_type not in SUPPORTED_ARTIFACT_TYPES:
+        raise ProtocolValidationError(f"unsupported artifact type: {value}")
+    return artifact_type
+
+
+def _find_program(state: PlanningState, slug: str) -> ProgramState:
+    for program in state.programs:
+        if program.slug == slug:
+            if not program.current_path.exists():
+                raise ProtocolValidationError(f"program root is missing: {slug}")
+            _safe_path_segment(program.slug, "program slug")
+            return program
+    raise ProtocolValidationError(f"program root is missing: {slug}")
+
+
+def _canonical_batch_paths(
+    state: PlanningState,
+    program: ProgramState,
+    batch_id: str,
+) -> dict[str, str]:
+    if not batch_id or "/" in batch_id or "\\" in batch_id or batch_id in {".", ".."}:
+        raise ProtocolValidationError("batch-id must be a single path segment")
+    if ".." in Path(batch_id).parts:
+        raise ProtocolValidationError("batch-id must not escape the batch directory")
+    root = _planning_root_prefix(state)
+    batch_directory = f"{root}/programs/{program.slug}/batches/{batch_id}"
+    paths = {"batch_directory": batch_directory}
+    paths.update(
+        {
+            artifact_type: f"{batch_directory}/{filename}"
+            for artifact_type, filename in BATCH_LOCAL_ARTIFACTS.items()
+        }
+    )
+    return paths
+
+
+def _planning_root_prefix(state: PlanningState) -> str:
+    root = (state.root.planning_root or "").strip().rstrip("/")
+    if not root:
+        raise ProtocolValidationError("planning root is missing")
+    _safe_relative_path(root, "planning root")
+    return root
+
+
+def _safe_path_segment(value: str, label: str) -> str:
+    if (
+        not value
+        or "/" in value
+        or "\\" in value
+        or value in {".", ".."}
+    ):
+        raise ProtocolValidationError(f"{label} must be a single path segment")
+    return value
+
+
+def _safe_relative_path(value: str, label: str) -> str:
+    if "\\" in value:
+        raise ProtocolValidationError(f"{label} must use relative POSIX paths")
+    path = PurePosixPath(value)
+    if path.is_absolute():
+        raise ProtocolValidationError(f"{label} must be relative")
+    if any(part in {"", ".", ".."} for part in path.parts):
+        raise ProtocolValidationError(f"{label} must not contain dot segments")
+    return value
+
+
+def _validate_registered_path(
+    state: PlanningState,
+    *,
+    artifact_type: str,
+    artifact_path: str,
+    paths: dict[str, str],
+) -> None:
+    path = Path(artifact_path)
+    if path.is_absolute():
+        raise ProtocolValidationError("artifact path must be relative to the workspace")
+    if ".." in path.parts:
+        raise ProtocolValidationError("artifact path must not escape the planning root")
+    planning_root = _planning_root_prefix(state)
+    if path.parts[: len(Path(planning_root).parts)] != Path(planning_root).parts:
+        raise ProtocolValidationError("artifact path must be under the planning root")
+    if artifact_type in BATCH_LOCAL_ARTIFACTS and artifact_path != paths[artifact_type]:
+        raise ProtocolValidationError(
+            f"{artifact_type} must be co-located at {paths[artifact_type]}"
+        )
+    batch_directory = Path(paths["batch_directory"])
+    if (
+        artifact_type not in BATCH_LOCAL_ARTIFACTS
+        and path.parts[: len(batch_directory.parts)] != batch_directory.parts
+    ):
+        raise ProtocolValidationError("artifact path must be co-located with the batch")
+
+
+def _validate_batch_not_exists(state: PlanningState, batch_directory: str) -> None:
+    if _resolve_pointer(state.root.root_path, batch_directory).exists():
+        raise ProtocolValidationError(f"batch directory already exists: {batch_directory}")
+
+
+def _load_state_fixture(path: Path | None) -> dict[str, Any]:
+    if path is None:
+        raise ProtocolValidationError("state-file is required")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as error:
+        raise ProtocolValidationError(f"state-file is missing: {path}") from error
+    except json.JSONDecodeError as error:
+        raise ProtocolValidationError(f"state-file is not valid JSON: {path}") from error
+    return validate_state_fixture_object(data)
+
+
+def _write_state_fixture(path: Path | None, data: dict[str, Any]) -> None:
+    if path is None:
+        raise ProtocolValidationError("state-file is required")
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _register_artifact_in_fixture(
+    data: dict[str, Any],
+    *,
+    program_slug: str,
+    registration: dict[str, str],
+) -> None:
+    programs = _require_array(data, "programs")
+    program_data = next(
+        (
+            _require_object(program, "program")
+            for program in programs
+            if isinstance(program, dict) and program.get("slug") == program_slug
+        ),
+        None,
+    )
+    if program_data is None:
+        raise ProtocolValidationError(f"program root is missing: {program_slug}")
+    artifacts = program_data.setdefault("artifacts", [])
+    if not isinstance(artifacts, list):
+        raise ProtocolValidationError("artifacts must be an array")
+    for artifact in artifacts:
+        artifact_data = _require_object(artifact, "artifact")
+        if (
+            artifact_data.get("batch_id") == registration["batch_id"]
+            and artifact_data.get("type") == registration["type"]
+        ):
+            if artifact_data.get("path") == registration["path"]:
+                raise ProtocolValidationError("artifact is already registered")
+            raise ProtocolValidationError("artifact registration collides with existing path")
+        if artifact_data.get("path") == registration["path"]:
+            raise ProtocolValidationError("artifact path collides with existing registration")
+    artifacts.append(registration)
 
 
 def _has_validation_errors(state: PlanningState) -> bool:
