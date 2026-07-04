@@ -1,0 +1,313 @@
+from pathlib import Path
+
+from scripts.planning_state import load_planning_state
+
+
+def test_loads_codex_config_layout_v1_root_and_program_state(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    state = load_planning_state(root)
+
+    assert state.root.layout == "Planning Artifact Layout v1"
+    assert state.root.planning_root == "docs/plans/"
+    assert [program.slug for program in state.programs] == [
+        "architecture-program-runner",
+        "planning-state-tooling",
+    ]
+    planning_program = state.programs[1]
+    assert planning_program.ledger.value == (
+        "docs/plans/programs/planning-state-tooling/LEDGER.md"
+    )
+    assert planning_program.queued_batch.value == (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-readonly-core/runway.md"
+    )
+    assert planning_program.queued_batch.exists is True
+    assert planning_program.selected_dispatch.value is None
+    assert planning_program.next_safe_action is not None
+
+
+def test_loads_graphify_style_layout_v1_program_state(tmp_path: Path) -> None:
+    root = tmp_path / "my-docs" / "plans"
+    _write_graphify_fixture(root)
+
+    state = load_planning_state(root)
+
+    assert state.root.planning_root == "my-docs/plans/"
+    assert state.root.one_shot_intake == "my-docs/plans/intake/"
+    assert [program.slug for program in state.programs] == [
+        "install-sandbox-test-quality-architecture",
+        "install-sandbox-legacy-removal",
+    ]
+    tqa_program = state.programs[0]
+    assert tqa_program.latest_closeout.value == (
+        "my-docs/plans/programs/install-sandbox-test-quality-architecture/"
+        "batches/tqa-b11-target-selection-diagnostic-wording/runway.md"
+    )
+    assert tqa_program.run_artifact_location.value == (
+        "my-docs/runs/batch-runway/install-sandbox-test-quality-architecture/"
+    )
+    assert tqa_program.queued_batch.value is None
+
+
+def test_redirect_ledgers_are_evidence_not_active_sources(tmp_path: Path) -> None:
+    root = tmp_path / "my-docs" / "plans"
+    _write_graphify_fixture(root)
+
+    state = load_planning_state(root)
+
+    redirect_paths = {redirect.source_path.name for redirect in state.redirects}
+    assert redirect_paths == {
+        "install-sandbox-legacy-removal-ledger.md",
+        "install-sandbox-test-quality-architecture-ledger.md",
+    }
+    assert {
+        warning.code for warning in state.warnings if warning.source_path is not None
+    } >= {"redirect_ledger"}
+    assert all(
+        program.ledger.source_path.name == "CURRENT.md" for program in state.programs
+    )
+
+
+def test_historical_batch_artifacts_warn_without_overriding_current_state(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "my-docs" / "plans"
+    _write_graphify_fixture(root)
+
+    state = load_planning_state(root)
+
+    warning_codes = {warning.code for warning in state.warnings}
+    assert "historical_batch_artifact" in warning_codes
+    assert "stale_pickup_note" in warning_codes
+    assert "stale_pickup_contradiction" in warning_codes
+    assert all(program.queued_batch.value is None for program in state.programs)
+    assert all(program.active_runway.value is None for program in state.programs)
+
+
+def test_reports_missing_program_current_without_scanning_historical_files(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    root.mkdir(parents=True)
+    (root / "CURRENT.md").write_text(
+        """# Planning Current State
+
+- Layout: Planning Artifact Layout v1
+
+## Active Programs
+
+| Program | Current state |
+|---|---|
+| `missing-program` | `docs/plans/programs/missing-program/CURRENT.md` |
+""",
+        encoding="utf-8",
+    )
+    (root / "missing-program-runway.md").write_text("# Historical\n", encoding="utf-8")
+
+    state = load_planning_state(root)
+
+    assert [message.code for message in state.validation_messages] == [
+        "missing_program_current"
+    ]
+    assert state.programs[0].slug == "missing-program"
+    assert state.programs[0].active_runway.value is None
+    assert "historical_batch_artifact" in {warning.code for warning in state.warnings}
+
+
+def _write_codex_config_fixture(root: Path) -> None:
+    (root / "programs" / "architecture-program-runner").mkdir(parents=True)
+    (root / "programs" / "planning-state-tooling" / "batches" / "planning-state-readonly-core").mkdir(
+        parents=True
+    )
+    (root / "CURRENT.md").write_text(
+        """# Planning Current State
+
+## Layout
+
+- Layout: Planning Artifact Layout v1
+- Planning root: `docs/plans/`
+- Run artifact root: `<program-root>/architecture-program-runs/`
+- Output root: `None selected`
+- One-shot intake: `None`
+- Program archive root: `docs/plans/archive/`
+
+## Active Programs
+
+| Program | Current state |
+|---|---|
+| `architecture-program-runner` | `docs/plans/programs/architecture-program-runner/CURRENT.md` |
+| `planning-state-tooling` | `docs/plans/programs/planning-state-tooling/CURRENT.md` |
+
+## Next Safe Action
+
+Use the relevant program `CURRENT.md` before reading ledgers.
+""",
+        encoding="utf-8",
+    )
+    _write_program_current(
+        root,
+        "architecture-program-runner",
+        queued="None",
+        latest="None",
+    )
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued=(
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-readonly-core/runway.md"
+        ),
+        latest="None",
+    )
+    (root / "programs" / "architecture-program-runner" / "LEDGER.md").write_text(
+        "# Ledger\n",
+        encoding="utf-8",
+    )
+    (root / "programs" / "planning-state-tooling" / "LEDGER.md").write_text(
+        "# Ledger\n",
+        encoding="utf-8",
+    )
+    (
+        root
+        / "programs"
+        / "planning-state-tooling"
+        / "batches"
+        / "planning-state-readonly-core"
+        / "runway.md"
+    ).write_text("# Runway\n", encoding="utf-8")
+
+
+def _write_graphify_fixture(root: Path) -> None:
+    tqa = "install-sandbox-test-quality-architecture"
+    legacy = "install-sandbox-legacy-removal"
+    (root / "programs" / tqa / "batches" / "tqa-b11-target-selection-diagnostic-wording").mkdir(
+        parents=True
+    )
+    (root / "programs" / legacy).mkdir(parents=True)
+    (root / "dispatch").mkdir()
+    (root / "CURRENT.md").write_text(
+        """# Planning Current State
+
+Layout: Planning Artifact Layout v1
+
+## Roots
+
+- Deepest local root: `my-docs/`
+- Planning root: `my-docs/plans/`
+- Run artifact root: `my-docs/runs/`
+- Output root: `my-docs/outputs/`
+- One-shot intake: `my-docs/plans/intake/`
+
+## Active Programs
+
+| Program | Current file |
+| --- | --- |
+| `install-sandbox-test-quality-architecture` | `my-docs/plans/programs/install-sandbox-test-quality-architecture/CURRENT.md` |
+| `install-sandbox-legacy-removal` | `my-docs/plans/programs/install-sandbox-legacy-removal/CURRENT.md` |
+
+## Migration State
+
+Pickup note:
+`my-docs/plans/planning-layout-migration-pickup.md`
+
+Next safe action: select a new batch only from the relevant program `CURRENT.md`.
+""",
+        encoding="utf-8",
+    )
+    _write_program_current(
+        root,
+        tqa,
+        queued="None",
+        latest=(
+            "my-docs/plans/programs/install-sandbox-test-quality-architecture/"
+            "batches/tqa-b11-target-selection-diagnostic-wording/runway.md"
+        ),
+        run_artifact="my-docs/runs/batch-runway/install-sandbox-test-quality-architecture/",
+    )
+    _write_program_current(
+        root,
+        legacy,
+        queued="None",
+        latest="my-docs/plans/install-sandbox-install-target-catalog-concrete-type-runway.md",
+        run_artifact="my-docs/runs/batch-runway/install-sandbox-legacy-removal/",
+    )
+    (root / "programs" / tqa / "LEDGER.md").write_text("# Ledger\n", encoding="utf-8")
+    (root / "programs" / legacy / "LEDGER.md").write_text("# Ledger\n", encoding="utf-8")
+    (root / "programs" / tqa / "batches" / "tqa-b11-target-selection-diagnostic-wording" / "runway.md").write_text(
+        "# Closeout evidence\n",
+        encoding="utf-8",
+    )
+    (root / "planning-layout-migration-pickup.md").write_text("# Pickup\n", encoding="utf-8")
+    (root / "install-sandbox-install-target-catalog-concrete-type-runway.md").write_text(
+        "# Historical runway\n",
+        encoding="utf-8",
+    )
+    (root / "dispatch" / "install-target-catalog-concrete-type-dispatch.md").write_text(
+        "# Historical dispatch\n",
+        encoding="utf-8",
+    )
+    _write_redirect(root, legacy)
+    _write_redirect(root, tqa)
+
+
+def _write_program_current(
+    root: Path,
+    slug: str,
+    *,
+    queued: str,
+    latest: str,
+    run_artifact: str = "None selected",
+) -> None:
+    (root / "programs" / slug / "CURRENT.md").write_text(
+        f"""# {slug} Current State
+
+Program slug: `{slug}`
+
+Purpose: fixture program.
+
+## Active State
+
+- Current ledger:
+  `{_display_root(root)}/programs/{slug}/LEDGER.md`
+- Selected dispatch path: `None selected`
+- Active Batch Runway spec path: `None selected`
+- Queued batch path or ID: `{queued}`
+- Latest closeout:
+  `{latest}`
+- Run artifact location:
+  `{run_artifact}`
+- Program archive location:
+  `{_display_root(root)}/programs/{slug}/archive/`
+
+## Next Safe Action
+
+Use the current ledger only.
+
+## Stop Conditions
+
+- Stop on fixture contradiction.
+""",
+        encoding="utf-8",
+    )
+
+
+def _write_redirect(root: Path, slug: str) -> None:
+    (root / f"{slug}-ledger.md").write_text(
+        f"""# Redirect: {slug} Ledger
+
+New path:
+`my-docs/plans/programs/{slug}/LEDGER.md`
+
+Program current state:
+`my-docs/plans/programs/{slug}/CURRENT.md`
+""",
+        encoding="utf-8",
+    )
+
+
+def _display_root(root: Path) -> str:
+    if root.parent.name == "docs":
+        return "docs/plans"
+    return "my-docs/plans"
