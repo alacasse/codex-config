@@ -128,7 +128,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 3. Add `planning-state validate` | pending | | | | Document fallback workflow | Detects missing current files, bad redirects, selected batch directory problems, and stale active-state contradictions. |
 | 4. Document read-only workflow | pending | | | | Final validation and closeout | Updates repo guidance without introducing write transitions or SQLite. |
 
 ## Orchestration Anomalies
@@ -141,6 +140,7 @@ orchestration_anomalies: []
 |---|---|---|---|
 | 1. Define read-only state model | Slice 1 commit | success | `python -m pytest tests/test_planning_state.py -q`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean |
 | 2. Add `planning-state current` | Slice 2 commit | success | `python -m pytest tests/test_planning_state.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py current --root /home/alacasse/projects/graphify/my-docs/plans`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean after warning-output fix |
+| 3. Add `planning-state validate` | Slice 3 commit | success | `python -m pytest tests/test_planning_state.py -q`; `python scripts/planning_state.py validate --root docs/plans`; `python scripts/planning_state.py validate --root /home/alacasse/projects/graphify/my-docs/plans`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean |
 
 ## Slice 1. Define Read-Only State Model
 

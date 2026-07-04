@@ -2,7 +2,11 @@ from pathlib import Path
 import subprocess
 import sys
 
-from scripts.planning_state import format_current_state, load_planning_state
+from scripts.planning_state import (
+    format_current_state,
+    format_validation_report,
+    load_planning_state,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -208,6 +212,124 @@ def test_current_command_reports_validation_warnings(tmp_path: Path) -> None:
     assert "blockers:\n    []" in output
 
 
+def test_validate_command_passes_for_current_codex_fixture(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    result = _run_validate(root)
+
+    assert result.returncode == 0
+    assert "status: passed" in result.stdout
+    assert "errors:\n    []" in result.stdout
+
+
+def test_validate_reports_missing_root_current_as_fatal(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    root.mkdir(parents=True)
+
+    result = _run_validate(root)
+
+    assert result.returncode == 1
+    assert "missing_root_current:" in result.stdout
+
+
+def test_validate_reports_missing_listed_program_current_as_fatal(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    root.mkdir(parents=True)
+    _write_root_current(root, "missing-program")
+
+    result = _run_validate(root)
+
+    assert result.returncode == 1
+    assert "missing_program_current:" in result.stdout
+
+
+def test_validate_reports_invalid_selected_dispatch_path_as_fatal(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        selected="docs/plans/programs/planning-state-tooling/batches/missing/dispatch.md",
+        queued="None",
+        latest="None",
+    )
+
+    result = _run_validate(root)
+
+    assert result.returncode == 1
+    assert "invalid_selected_dispatch_path:" in result.stdout
+
+
+def test_validate_reports_invalid_queued_runway_path_as_fatal(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="docs/plans/programs/planning-state-tooling/batches/missing/runway.md",
+        latest="None",
+    )
+
+    result = _run_validate(root)
+
+    assert result.returncode == 1
+    assert "invalid_queued_runway_path:" in result.stdout
+
+
+def test_validate_reports_redirect_without_target_as_fatal(tmp_path: Path) -> None:
+    root = tmp_path / "my-docs" / "plans"
+    _write_graphify_fixture(root)
+    (root / "install-sandbox-legacy-removal-ledger.md").write_text(
+        "# Redirect: Legacy Removal Ledger\n",
+        encoding="utf-8",
+    )
+
+    result = _run_validate(root)
+
+    assert result.returncode == 1
+    assert "redirect_without_target:" in result.stdout
+
+
+def test_validate_keeps_stale_pickup_notes_warning_only(tmp_path: Path) -> None:
+    root = tmp_path / "my-docs" / "plans"
+    _write_graphify_fixture(root)
+
+    result = _run_validate(root)
+
+    assert result.returncode == 0
+    assert "status: passed" in result.stdout
+    assert "errors:\n    []" in result.stdout
+    assert "stale_pickup_note:" in result.stdout
+    assert "historical_batch_artifact:" in result.stdout
+    assert "2 total" in result.stdout
+
+
+def test_validation_report_keeps_warnings_nonfatal(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    root.mkdir(parents=True)
+    (root / "CURRENT.md").write_text(
+        """# Planning Current State
+
+- Layout: Legacy Planning Layout
+""",
+        encoding="utf-8",
+    )
+
+    report = format_validation_report(load_planning_state(root))
+
+    assert "status: passed" in report
+    assert "errors:\n    []" in report
+    assert "unknown_layout:" in report
+    assert "no_active_programs:" in report
+
+
 def _write_codex_config_fixture(root: Path) -> None:
     (root / "programs" / "architecture-program-runner").mkdir(parents=True)
     (root / "programs" / "planning-state-tooling" / "batches" / "planning-state-readonly-core").mkdir(
@@ -350,6 +472,7 @@ def _write_program_current(
     *,
     queued: str,
     latest: str,
+    selected: str = "None selected",
     run_artifact: str = "None selected",
 ) -> None:
     (root / "programs" / slug / "CURRENT.md").write_text(
@@ -363,7 +486,7 @@ Purpose: fixture program.
 
 - Current ledger:
   `{_display_root(root)}/programs/{slug}/LEDGER.md`
-- Selected dispatch path: `None selected`
+- Selected dispatch path: `{selected}`
 - Active Batch Runway spec path: `None selected`
 - Queued batch path or ID: `{queued}`
 - Latest closeout:
@@ -414,3 +537,29 @@ def _run_current(root: Path) -> str:
         capture_output=True,
     )
     return result.stdout
+
+
+def _run_validate(root: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(PLANNING_STATE_SCRIPT), "validate", "--root", str(root)],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+
+def _write_root_current(root: Path, slug: str) -> None:
+    (root / "CURRENT.md").write_text(
+        f"""# Planning Current State
+
+- Layout: Planning Artifact Layout v1
+
+## Active Programs
+
+| Program | Current state |
+|---|---|
+| `{slug}` | `docs/plans/programs/{slug}/CURRENT.md` |
+""",
+        encoding="utf-8",
+    )

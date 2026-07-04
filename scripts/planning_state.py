@@ -158,6 +158,40 @@ def format_current_state(state: PlanningState) -> str:
     return "\n".join(lines) + "\n"
 
 
+def format_validation_report(state: PlanningState) -> str:
+    """Return a compact validation report for Planning Artifact Layout v1 state."""
+
+    errors = [
+        message for message in state.validation_messages if message.severity == "error"
+    ]
+    warnings = [
+        *(
+            ValidationMessage(
+                "warning",
+                warning.code,
+                warning.message,
+                warning.source_path,
+            )
+            for warning in state.warnings
+        ),
+        *(
+            message
+            for message in state.validation_messages
+            if message.severity == "warning"
+        ),
+    ]
+    lines = [
+        "planning_state_validation:",
+        f"  root: {state.root.root_path}",
+        f"  status: {'failed' if errors else 'passed'}",
+        "  errors:",
+    ]
+    lines.extend(_format_validation_messages(errors))
+    lines.append("  warnings:")
+    lines.extend(_format_validation_warnings(warnings))
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Read Planning Artifact Layout v1 state without writing files."
@@ -173,10 +207,24 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
         help="Planning root containing CURRENT.md.",
     )
+    validate_parser = subparsers.add_parser(
+        "validate",
+        help="Validate active planning state without writing files.",
+    )
+    validate_parser.add_argument(
+        "--root",
+        type=Path,
+        required=True,
+        help="Planning root containing CURRENT.md.",
+    )
     args = parser.parse_args(argv)
     if args.command == "current":
         sys.stdout.write(format_current_state(load_planning_state(args.root)))
         return 0
+    if args.command == "validate":
+        state = load_planning_state(args.root)
+        sys.stdout.write(format_validation_report(state))
+        return 1 if _has_validation_errors(state) else 0
     parser.error(f"unknown command: {args.command}")
     return 2
 
@@ -316,9 +364,10 @@ def _validation_messages(
             yield ValidationMessage("error", "missing_program_current", f"{pointer.value} is missing", root_state.current_path)
         if program.ledger.value and program.ledger.exists is False:
             yield ValidationMessage("error", "missing_program_ledger", f"{program.ledger.value} is missing", program.current_path)
+        yield from _program_active_state_messages(program)
     for redirect in redirects:
         if not redirect.target_path:
-            yield ValidationMessage("warning", "redirect_without_target", "redirect has no target path", redirect.source_path)
+            yield ValidationMessage("error", "redirect_without_target", "redirect has no target path", redirect.source_path)
 
 
 def _format_program(program: ProgramState) -> list[str]:
@@ -368,6 +417,78 @@ def _format_blockers(messages: tuple[ValidationMessage, ...]) -> list[str]:
         source = f" ({message.source_path})" if message.source_path else ""
         lines.append(f"    - {message.code}: {message.message}{source}")
     return lines
+
+
+def _format_validation_messages(messages: list[ValidationMessage]) -> list[str]:
+    if not messages:
+        return ["    []"]
+    lines = []
+    for message in messages:
+        source = f" ({message.source_path})" if message.source_path else ""
+        lines.append(f"    - {message.code}: {message.message}{source}")
+    return lines
+
+
+def _format_validation_warnings(messages: list[ValidationMessage]) -> list[str]:
+    if not messages:
+        return ["    []"]
+    grouped: dict[str, list[ValidationMessage]] = {}
+    for message in messages:
+        grouped.setdefault(message.code, []).append(message)
+    lines = []
+    for code, code_messages in grouped.items():
+        first = code_messages[0]
+        source = f" ({first.source_path})" if first.source_path else ""
+        count = len(code_messages)
+        suffix = f"; {count} total" if count > 1 else ""
+        lines.append(f"    - {code}: {first.message}{source}{suffix}")
+    return lines
+
+
+def _has_validation_errors(state: PlanningState) -> bool:
+    return any(message.severity == "error" for message in state.validation_messages)
+
+
+def _program_active_state_messages(program: ProgramState) -> Iterable[ValidationMessage]:
+    active_pointers = (
+        program.selected_dispatch,
+        program.active_runway,
+        program.queued_batch,
+    )
+    active_values = [pointer for pointer in active_pointers if pointer.value is not None]
+    if len(active_values) > 1:
+        yield ValidationMessage(
+            "error",
+            "multiple_active_artifacts",
+            "program CURRENT.md selects more than one dispatch, runway, or queued batch",
+            program.current_path,
+        )
+    yield from _required_existing_pointer(
+        program.selected_dispatch,
+        "invalid_selected_dispatch_path",
+    )
+    yield from _required_existing_pointer(
+        program.active_runway,
+        "invalid_active_runway_path",
+    )
+    yield from _required_existing_pointer(
+        program.queued_batch,
+        "invalid_queued_runway_path",
+    )
+
+
+def _required_existing_pointer(
+    pointer: ArtifactPointer,
+    code: str,
+) -> Iterable[ValidationMessage]:
+    if pointer.value is None or pointer.exists is not False:
+        return
+    yield ValidationMessage(
+        "error",
+        code,
+        f"{pointer.value} is missing",
+        pointer.source_path,
+    )
 
 
 def _resolve_pointer(root_path: Path, value: str | None) -> Path:
