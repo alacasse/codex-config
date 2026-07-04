@@ -20,6 +20,18 @@ Active planning:
 - `generic-phase-runner-workflow-contract.md`: generic workflow boundary and
   current runner mapping.
 
+Read-only diagnostics:
+
+- When Layout v1 active-state files exist, run diagnostics before broad planning
+  tree scans or historical filename searches:
+  `python scripts/planning_state.py current --root docs/plans` and
+  `python scripts/planning_state.py validate --root docs/plans`.
+- Treat root and program `CURRENT.md` files as active pickup state. Redirects,
+  archives, and old flat files are compatibility or historical evidence unless
+  the current files point to them.
+- The diagnostics are read-only. Markdown and JSON remain canonical planning
+  state; SQLite remains deferred and rebuildable if added later.
+
 Compatibility redirects:
 
 - `codex-config-architecture-program-runner-findings.md`

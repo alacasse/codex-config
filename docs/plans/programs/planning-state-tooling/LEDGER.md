@@ -39,14 +39,14 @@ is planning-only; it does not implement code.
 - Program archive root: `docs/plans/archive/`
 - Run artifact root: not selected for this planning-only ledger.
 - Output root: not selected for this planning-only ledger.
-- Selected batch directory:
+- Latest completed batch directory:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/`
 
 ## Findings Ledger
 
 | Finding | Status | Covered by | Next action | Notes |
 |---|---|---|---|---|
-| PST-1. Planning state is inferred from Markdown and filenames | Ready | None | Build read-only `planning-state current` and `planning-state validate` | Use Graphify as the first real fixture: active state exists in root/program `CURRENT.md` files, while old flat files and one pickup note remain as stale compatibility context. Start with discovery and validation only; no writes, no SQLite. |
+| PST-1. Planning state is inferred from Markdown and filenames | Closed | `planning-state-readonly-core` | Use read-only diagnostics before broad planning tree scans | Slice 3 evidence is clean for `current` and `validate` against codex-config and Graphify planning roots. The implemented commands report active root/program `CURRENT.md` state and stale-context warnings without writes or SQLite. |
 | PST-2. Batch/artifact paths are manually allocated by agents | Candidate | None | Add tool-owned path allocation and artifact registration | Depends on PST-1 state discovery. |
 | PST-3. Cross-batch obligations are not first-class state | Candidate | None | Add obligation IDs, owners, and close conditions | Enables fourth-batch cleanup without archaeology. |
 | PST-4. Batch closeout lacks a bounded evidence-index contract | Candidate | None | Add `closeout.md` rendering and validation | Should stay compact and pointer-first. |
@@ -57,41 +57,40 @@ is planning-only; it does not implement code.
 
 | Batch | Findings | Status | Why grouped | Depends on | Validation class | Dispatch | Spec |
 |---|---|---|---|---|---|---|---|
-| planning-state-readonly-core | PST-1 | Selected | Establishes active-state precedence, stale-context warnings, and the safe tool boundary before any state writes | None | Focused Python unit tests and dry-run CLI checks against codex-config fixtures and the Graphify planning-root fixture | `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/dispatch.md` | TBD at `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/runway.md` |
+| planning-state-readonly-core | PST-1 | Completed | Establishes active-state precedence, stale-context warnings, and the safe tool boundary before any state writes | None | Focused Python unit tests and dry-run CLI checks against codex-config fixtures and the Graphify planning-root fixture | `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/runway.md` |
 | planning-state-write-transitions | PST-2, PST-3 | Candidate | Moves allocation, registration, selection, and obligations into commands | planning-state-readonly-core | Focused state/CLI tests plus Markdown round-trip checks | TBD | TBD |
 | planning-state-closeout-contract | PST-4 | Candidate | Makes completed-batch evidence bounded and validateable | planning-state-write-transitions | Focused rendering/validation tests | TBD | TBD |
 | planning-state-migration-pilot | PST-5 | Candidate | Bootstraps tool state from existing planning roots without hiding Markdown | planning-state-readonly-core; preferably planning-state-closeout-contract | Fixture migration tests and docs-only readback | TBD | TBD |
 | planning-state-sqlite-projection | PST-6 | Deferred | Adds fast operational reporting after canonical files are stable | planning-state-write-transitions; migration pilot evidence | SQLite rebuild/report tests | TBD | TBD |
 
-## Selected Batch Brief
+## Latest Batch Brief
 
-Current dispatch:
+Latest completed batch:
 
 - Batch: `planning-state-readonly-core`
 - Dispatch:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/dispatch.md`
-- Status: `Selected`
-- Notes: Create the Batch Runway spec from the selected dispatch before
-  implementing write transitions.
+- Status: `Completed`
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/runway.md`
+- Notes: Read-only `current` and `validate` diagnostics are available. Write
+  transitions, artifact registration, closeout validation, migration, and
+  SQLite remain deferred to later rows.
 
-### Selected Dispatch Packet
+### Dispatch Packet
 
 Promoted to
 `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/dispatch.md`.
 
 ## Recommended Work Order
 
-1. `planning-state-readonly-core`: prove the tool can answer and validate
-   current state without mutating anything, using Graphify as the first
-   active-state fixture and codex-config as the Layout v1 plus redirect
-   compatibility fixture.
-2. `planning-state-write-transitions`: move selection, path allocation,
+1. `planning-state-write-transitions`: move selection, path allocation,
    registration, and cross-batch obligations behind commands.
-3. `planning-state-closeout-contract`: render and validate bounded closeout
+2. `planning-state-closeout-contract`: render and validate bounded closeout
    evidence indexes.
-4. `planning-state-migration-pilot`: bootstrap state from existing `docs/plans/`
+3. `planning-state-migration-pilot`: bootstrap state from existing `docs/plans/`
    and one Graphify planning root.
-5. `planning-state-sqlite-projection`: add rebuildable operational reporting
+4. `planning-state-sqlite-projection`: add rebuildable operational reporting
    only after canonical state is stable.
 
 ## Closeout Rules

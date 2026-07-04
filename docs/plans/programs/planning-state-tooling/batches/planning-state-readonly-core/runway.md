@@ -128,7 +128,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 4. Document read-only workflow | pending | | | | Final validation and closeout | Updates repo guidance without introducing write transitions or SQLite. |
 
 ## Orchestration Anomalies
 
@@ -138,9 +137,10 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
-| 1. Define read-only state model | Slice 1 commit | success | `python -m pytest tests/test_planning_state.py -q`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean |
-| 2. Add `planning-state current` | Slice 2 commit | success | `python -m pytest tests/test_planning_state.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py current --root /home/alacasse/projects/graphify/my-docs/plans`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean after warning-output fix |
-| 3. Add `planning-state validate` | Slice 3 commit | success | `python -m pytest tests/test_planning_state.py -q`; `python scripts/planning_state.py validate --root docs/plans`; `python scripts/planning_state.py validate --root /home/alacasse/projects/graphify/my-docs/plans`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean |
+| 1. Define read-only state model | `c7dc8ec` | success | `python -m pytest tests/test_planning_state.py -q`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean |
+| 2. Add `planning-state current` | `0136de5` | success | `python -m pytest tests/test_planning_state.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py current --root /home/alacasse/projects/graphify/my-docs/plans`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean after warning-output fix |
+| 3. Add `planning-state validate` | `a1c5ee9` | success | `python -m pytest tests/test_planning_state.py -q`; `python scripts/planning_state.py validate --root docs/plans`; `python scripts/planning_state.py validate --root /home/alacasse/projects/graphify/my-docs/plans`; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`; `git diff --check`; reviewer clean |
+| 4. Document read-only workflow | Slice 4 commit | success | final command matrix for tests, current/validate on codex-config and Graphify roots, `uvx ruff check scripts/planning_state.py tests/test_planning_state.py`, `git diff --check`; reviewer clean after changelog and completed-batch wording fix |
 
 ## Slice 1. Define Read-Only State Model
 

@@ -6,25 +6,29 @@
 - Purpose: add tool-owned planning-state diagnostics and later state
   transitions while keeping Markdown and JSON canonical.
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
-- Selected dispatch path:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/dispatch.md`
+- Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID: `None`
 - Latest closeout path: `None`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
-## Selected Batch
+## Latest Completed Batch
 
 - Batch: `planning-state-readonly-core`
-- Status: selected for Batch Runway spec creation; execution has not started.
-- Runway path to create:
+- Status: completed; read-only diagnostics are available.
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/dispatch.md`
+- Runway:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/runway.md`
 
 ## Next Safe Action
 
-Create the `planning-state-readonly-core` Batch Runway spec from the selected
-dispatch. Do not implement code during spec creation.
+Use `python scripts/planning_state.py current --root docs/plans` and
+`python scripts/planning_state.py validate --root docs/plans` before broad
+planning tree scans. When the user asks for the next planning-state batch,
+create or select a new Batch Runway spec for `planning-state-write-transitions`
+rather than implementing write behavior directly.
 
 ## Stop Conditions
 

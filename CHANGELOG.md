@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state read-only diagnostics
+
+Problem: agents still had to infer active planning state from `CURRENT.md`
+files, ledgers, redirects, and historical filenames before deciding what work
+was actually selected or safe.
+
+Decision: add the read-only `planning_state` `current` and `validate` workflow
+for Layout v1 planning roots, keeping Markdown and JSON canonical while leaving
+write transitions and SQLite deferred.
+
+Expected effect: future agents can run compact diagnostics before broad
+planning-tree scans and see active programs, next safe actions, stale-context
+warnings, and validation errors without mutating planning artifacts.
+
 ### Planning CURRENT.md migration
 
 Problem: `codex-config` had adopted Planning Artifact Layout v1 in reusable

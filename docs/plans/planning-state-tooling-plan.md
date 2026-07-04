@@ -50,11 +50,17 @@ mutation.
 
 ## Model-Facing Command Surface
 
-The first useful tool should be intentionally small:
+The first useful tool is intentionally small. The read-only commands are
+available as direct script subcommands:
 
 ```text
-planning-state current
-planning-state validate
+python scripts/planning_state.py current --root <planning-root>
+python scripts/planning_state.py validate --root <planning-root>
+```
+
+Future write commands remain planned, not implemented:
+
+```text
 planning-state create-program <slug> --title "<title>"
 planning-state select-batch <program> <batch-id>
 planning-state register-artifact --type <dispatch|runway|closeout|receipt|output> --path <path>
@@ -69,11 +75,17 @@ should preserve these behaviors:
 - Resolve active programs, selected batch, queued runway, latest closeout, and
   allowed next actions.
 - Validate that active Markdown files and tool-owned JSON state agree.
-- Allocate or validate canonical batch/artifact paths.
-- Register artifacts without agents hand-editing state tables.
-- Close a batch only when closeout evidence and required obligations are
+- Later, allocate or validate canonical batch/artifact paths.
+- Later, register artifacts without agents hand-editing state tables.
+- Later, close a batch only when closeout evidence and required obligations are
   reconciled.
-- Render compact Markdown views for humans and future agents.
+- Later, render compact Markdown views for humans and future agents.
+
+When a planning root has Layout v1 `CURRENT.md` files, agents should run the
+read-only diagnostics before broad planning tree scans or historical filename
+searches. `current` reports the root/program active state and stale-context
+warnings; `validate` checks the same state without mutating Markdown, JSON,
+SQLite, or downstream project files.
 
 ## State Boundaries
 
@@ -102,8 +114,9 @@ The tool should not own:
 
 Migrate active pickup safety before historical neatness.
 
-1. Add read-only validation over the Graphify active-state fixture and the
-   codex-config Layout v1 plus redirect compatibility fixture.
+1. Use read-only `current` and `validate` diagnostics over the Graphify
+   active-state fixture and the codex-config Layout v1 plus redirect
+   compatibility fixture.
 2. Bootstrap tool state from existing `CURRENT.md` files and program ledgers.
 3. Render `CURRENT.md` from tool state, then validate round trips.
 4. Move batch selection and artifact registration behind tool commands.
