@@ -25,6 +25,17 @@ queued batch, active runway, blockers, warnings, and project policy.
 program selection, grouping, sequencing, queue state, selected dispatch packets,
 handoff to `batch-runway`, and closeout reconciliation.
 
+For program history/reporting questions not answered by the active-state
+diagnostic, read `../planning-state/references/projection-reporting.md` and use
+policy-compatible `report-projection` output before broad historical planning
+scans. This applies to pending-batch inventory, missing closeout evidence,
+batch evidence, runner summary, and bounded backlog/history reports when
+`projection_usage` and `projection_rebuild_authority` permit it. Missing,
+blocked, stale, or policy-incompatible projection reports are explicit blockers,
+warnings, or fallback decisions; projection output is read-only planning-state
+context and must not select batches, replace program ledgers or selected
+dispatch packets, or close findings.
+
 ## Core Rule
 
 Do not turn a broad findings document into one giant batch. Preserve the
@@ -58,12 +69,16 @@ re-derive grouping from scratch after the ledger and batch queue exist.
    working from a queued batch, use `planning-state` current/validate
    diagnostics and then the active-state fast path below before broader
    exploration.
-3. Read the findings, review, PRD, ADR, selected dispatch packet, or planning
+3. If the request is about program history/reporting, pending-batch inventory,
+   missing closeout evidence, runner summaries, or bounded backlog/history
+   reports, use planning-state projection-reporting guidance and
+   policy-compatible `report-projection` output before broad historical scans.
+4. Read the findings, review, PRD, ADR, selected dispatch packet, or planning
    document needed for the chosen mode.
-4. Read active or recently completed related runway specs only enough to know
+5. Read active or recently completed related runway specs only enough to know
    what is already closed, prepared, or open.
-5. Check the worktree before editing planning files.
-6. Decide the mode: `intake-findings`, `group-batches`, `select-next-batch`,
+6. Check the worktree before editing planning files.
+7. Decide the mode: `intake-findings`, `group-batches`, `select-next-batch`,
    `create-next-runway`, `closeout-runway`, or `reprioritize`.
 
 If the planning location, active ledger, status vocabulary, or relationship to

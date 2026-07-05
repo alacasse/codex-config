@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Architecture-program projection report routing
+
+Problem: Architecture Program Runway used planning-state diagnostics for active
+state, but program history/reporting and runner-summary questions could still
+fall back to broad historical scans before checking projection policy.
+
+Decision: route supported Architecture Program history/reporting questions
+through planning-state projection-reporting guidance and policy-compatible
+`report-projection` output while preserving program ledger, selected dispatch,
+grouping, sequencing, and closeout ownership.
+
+Expected effect: Architecture Program agents keep active-state pickup
+SQLite-free and treat missing, blocked, stale, or policy-incompatible
+projection reports as explicit blockers, warnings, or fallback decisions.
+
 ### Batch-runway projection report routing
 
 Problem: Batch Runway used the shared planning-state diagnostic for active

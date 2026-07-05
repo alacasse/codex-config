@@ -8,6 +8,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+def version_tuple(version: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in version.split("."))
+
+
 class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
     def read(self, relative_path: str) -> str:
         return (REPO_ROOT / relative_path).read_text(encoding="utf-8")
@@ -57,6 +61,65 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         self.assertIn(
             "planning-state",
             manifest["features"]["batch-runway"].get("requires", []),
+        )
+
+    def test_architecture_program_routes_supported_reports_through_projection_guidance(
+        self,
+    ) -> None:
+        surfaces = [
+            "skills/architecture-program-runway/references/program-ledger-template.md",
+            "skills/architecture-program-runway/references/goal-runner-v1.md",
+            "skills/architecture-program-runway/references/local-runner-v1.md",
+        ]
+
+        entrypoint = self.read("skills/architecture-program-runway/SKILL.md")
+        self.assertIn("../planning-state/references/projection-reporting.md", entrypoint)
+        self.assertNotIn(
+            "../../planning-state/references/projection-reporting.md",
+            entrypoint,
+        )
+
+        for surface in surfaces:
+            with self.subTest(surface=surface):
+                text = self.read(surface)
+                self.assertIn(
+                    "../../planning-state/references/projection-reporting.md",
+                    text,
+                )
+                self.assertNotIn(
+                    "`../planning-state/references/projection-reporting.md",
+                    text,
+                )
+                self.assertIn("report-projection", text)
+                self.assertIn("projection_usage", text)
+                self.assertIn("projection_rebuild_authority", text)
+                self.assertIn("broad historical", text)
+                self.assertIn("scans", text)
+
+    def test_architecture_program_keeps_authority_over_program_state(self) -> None:
+        entrypoint = self.read("skills/architecture-program-runway/SKILL.md")
+
+        self.assertIn("Planning State Diagnostic", entrypoint)
+        self.assertIn("current", entrypoint)
+        self.assertIn("validate", entrypoint)
+        self.assertIn("must not select batches", entrypoint)
+        self.assertIn("replace program ledgers or selected", entrypoint)
+        self.assertIn("close findings", entrypoint)
+
+    def test_architecture_program_feature_depends_on_planning_state(self) -> None:
+        manifest = json.loads(
+            (REPO_ROOT / "codex-features.json").read_text(encoding="utf-8")
+        )
+
+        self.assertIn(
+            "planning-state",
+            manifest["features"]["architecture-program-runway"].get("requires", []),
+        )
+        self.assertGreaterEqual(
+            version_tuple(
+                manifest["features"]["architecture-program-runway"]["version"]
+            ),
+            version_tuple("1.1.2"),
         )
 
 

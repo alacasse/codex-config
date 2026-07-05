@@ -40,25 +40,34 @@ For each batch until `max_batches` is reached:
 
 1. Read applicable repo instructions and local overlays.
 2. Read `program_ledger`.
-3. Read active or recently completed related runway specs only enough to know
+3. For runner-summary, pending-batch inventory, missing closeout evidence, or
+   bounded backlog/history questions, read
+   `../../planning-state/references/projection-reporting.md` and use
+   policy-compatible `report-projection` output before broad historical scans
+   when `projection_usage` and `projection_rebuild_authority` allow it. Treat
+   missing, blocked, stale, or policy-incompatible projection reports as
+   explicit blockers, warnings, or fallback decisions; do not let projection
+   reports select batches, replace the program ledger or selected dispatch
+   packet, or close findings.
+4. Read active or recently completed related runway specs only enough to know
    what is already closed, prepared, or open.
-4. Check the worktree and preserve unrelated dirty files.
-5. Use `select-next-batch` to choose exactly one next executable batch or
+5. Check the worktree and preserve unrelated dirty files.
+6. Use `select-next-batch` to choose exactly one next executable batch or
    confirm the selected dispatch packet is still ready.
-6. Create or refresh the selected batch dispatch packet if it is missing,
+7. Create or refresh the selected batch dispatch packet if it is missing,
    stale, contradicted by evidence, or too broad for a fresh spec-creation
    agent.
-7. Use `create-next-runway` to create exactly one concrete Batch Runway spec
+8. Use `create-next-runway` to create exactly one concrete Batch Runway spec
    from the selected dispatch packet.
-8. If `execute_batches=false`, stop after spec creation, update runner telemetry,
+9. If `execute_batches=false`, stop after spec creation, update runner telemetry,
    and report the next command/prompt to execute the spec.
-9. If `execute_batches=true`, follow `batch-runway` in `execute-spec` mode for
+10. If `execute_batches=true`, follow `batch-runway` in `execute-spec` mode for
    the selected spec. Keep implementation delegated to `runway_worker` and
    review delegated to `runway_reviewer`.
-10. After execution, use `closeout-runway` to reconcile completed evidence into
+11. After execution, use `closeout-runway` to reconcile completed evidence into
     the program ledger.
-11. Write or update one compact goal-run evaluation receipt.
-12. Reassess remaining findings only enough to choose whether a next batch is
+12. Write or update one compact goal-run evaluation receipt.
+13. Reassess remaining findings only enough to choose whether a next batch is
     ready. Do not start the next batch if `max_batches` has been reached.
 
 ## Completion Criteria

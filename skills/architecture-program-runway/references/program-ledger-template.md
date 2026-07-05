@@ -192,6 +192,16 @@ so the program ledger stays readable.
   grouping, queue state, selected dispatch packets, and closeout reconciliation
   remain owned by `architecture-program-runway`; placement remains owned by
   `planning-artifacts`.
+- For program history/reporting, pending-batch inventory, missing closeout
+  evidence, runner summaries, or bounded backlog/history reports, read
+  `../../planning-state/references/projection-reporting.md` and use
+  policy-compatible `report-projection` output before broad historical planning
+  scans when `projection_usage` and `projection_rebuild_authority` allow it.
+  Missing, blocked, stale, or policy-incompatible projection reports must be
+  recorded as explicit blockers, warnings, or fallback decisions.
+- Projection reports are read-only planning-state context. They do not select
+  architecture batches, replace the program ledger or selected dispatch packet,
+  or close findings.
 - Create or update a selected batch brief before invoking `batch-runway`
   create-spec from a broad program ledger.
 - Future fresh spec-creation agents should consume the selected batch brief and
@@ -228,13 +238,18 @@ After a concrete runway finishes:
 1. If Planning Artifact Layout v1 is active, run or consume `planning-state`
    current/validate diagnostics for the planning root before expanding to older
    plans or generated outputs.
-2. Read the completed slice archive, commits, validation notes, and review
+2. For missing closeout evidence, batch evidence, runner-summary, or bounded
+   history/reporting questions, follow planning-state projection-reporting
+   guidance and use policy-compatible `report-projection` output before broad
+   historical scans; treat projection blockers as explicit closeout blockers,
+   warnings, or fallback decisions.
+3. Read the completed slice archive, commits, validation notes, and review
    result.
-3. For each covered finding, decide: `Closed`, `Prepared`, `Open`, `Split`, or
+4. For each covered finding, decide: `Closed`, `Prepared`, `Open`, `Split`, or
    `Superseded`.
-4. Update `Covered by` with spec path and commit evidence.
-5. Update the batch queue row to `Completed` or explain remaining work.
-6. Select or refresh the next `Ready` batch only if evidence supports it.
-7. If a runner drove the work, add a compact goal-run evaluation receipt.
-8. For active legacy-removal runways, record removed surfaces, deferred
+5. Update `Covered by` with spec path and commit evidence.
+6. Update the batch queue row to `Completed` or explain remaining work.
+7. Select or refresh the next `Ready` batch only if evidence supports it.
+8. If a runner drove the work, add a compact goal-run evaluation receipt.
+9. For active legacy-removal runways, record removed surfaces, deferred
    surfaces, temporary migration guards that remain, and required follow-up.
