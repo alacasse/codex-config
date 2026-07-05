@@ -133,19 +133,26 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 1. Define migration bootstrap contract | Pending | | | | | |
 | 2. Add explicit bootstrap state generation | Pending | | | | | |
 | 3. Validate migrated state fixtures | Pending | | | | | |
 | 4. Document migration pilot handoff | Pending | | | | | |
 
 ## Orchestration Anomalies
 
-orchestration_anomalies: []
+orchestration_anomalies:
+  - slice: 1
+    severity: low
+    category: validation_escalation
+    observed: "`uvx ruff check` could not resolve PyPI inside the sandbox until rerun with approved network access."
+    impact: "No validation gap remained; ruff passed after approval."
+    action_taken: "Recorded the approval-dependent validation path for the slice receipt."
+    follow_up: "None unless repeated uncached ruff fetches become noisy."
 
 ## Completed Slice Archive
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
+| 1. Define migration bootstrap contract | this commit | Added the Layout v1 bootstrap contract metadata for `planning-state-tool-state` version 1, tightened validation to require the complete contract field/code sets, and documented which Markdown facts remain human-owned versus safe JSON state. | Validation: `python -m pytest tests/test_planning_state.py -q` (102 passed), `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check scripts/planning_state.py tests/test_planning_state.py` (passed with existing `/usr/bin/python3.14` symlink warning after approved network access), `git diff --check` (passed). Review: `runway_reviewer` approved the recovered diff against `HEAD 6a7f8fc` scoped to `CHANGELOG.md`, `docs/plans/planning-state-tooling-plan.md`, `scripts/planning_state.py`, and `tests/test_planning_state.py`. |
 
 ## Slice 1. Define Migration Bootstrap Contract
 

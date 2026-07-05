@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Planning-state migration bootstrap contract
+
+Problem: future bootstrap work needed an explicit boundary for which Layout v1
+Markdown facts can become JSON state and which stale planning files remain only
+compatibility evidence.
+
+Decision: extend `planning-state-tool-state` version `1` with optional
+bootstrap contract metadata that keeps root/program `CURRENT.md` active-first,
+allows registered artifact and obligation facts in JSON, and forbids Markdown
+writes from bootstrap fixtures.
+
+Expected effect: migration generation can target a stable v1 fixture contract
+without inferring queued batches from historical flat files or rewriting live
+planning Markdown.
+
 ### Planning-state closeout workflow
 
 Problem: future agents could validate or render closeout artifacts without a

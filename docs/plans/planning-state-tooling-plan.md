@@ -173,6 +173,18 @@ array. Transition receipt fixtures use
 `status`, `program`, `batch_id`, `artifacts`, `warnings`, `blockers`, and
 structured `messages`.
 
+Migration/bootstrap fixtures may include a `bootstrap` contract object while
+remaining `planning-state-tool-state` version `1`. The bootstrap source is
+Layout v1 Markdown, and selection precedence is root/program `CURRENT.md`
+active-first. JSON state may safely carry `root`, program slugs, program
+`CURRENT.md` paths, ledgers, selected/active/queued batch pointers, latest
+closeout pointers, registered artifact facts, and obligations. Markdown remains
+the owned surface for human-readable `CURRENT.md`, `LEDGER.md`, `dispatch.md`,
+`runway.md`, `closeout.md`, and `completed-slices.md` content. Redirect
+ledgers, stale pickup notes, and historical flat batch files are compatibility
+evidence and warnings; they must not become selected, active, or queued JSON
+state.
+
 State fixtures may also include an `obligations` array. Each obligation has an
 `id`, `owner`, `source_batch`, optional `target_batch`, optional
 `close_condition`, `status`, and optional `evidence_path`. `validate` reports

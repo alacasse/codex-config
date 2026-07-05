@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from pathlib import PurePosixPath
 import re
 import subprocess
 import sys
@@ -419,6 +420,232 @@ def test_state_fixture_schema_rejects_malformed_objects() -> None:
         assert "state fixture.protocol.name" in str(error)
     else:
         raise AssertionError("expected malformed state fixture to fail")
+
+
+def test_state_fixture_schema_accepts_layout_v1_bootstrap_contract() -> None:
+    batch_id = "planning-state-migration-pilot"
+    batch_root = f"docs/plans/programs/planning-state-tooling/batches/{batch_id}"
+    valid_state = {
+        "protocol": {
+            "name": "planning-state-tool-state",
+            "version": 1,
+        },
+        "root": "docs/plans",
+        "bootstrap": _bootstrap_contract(),
+        "programs": [
+            {
+                "slug": "planning-state-tooling",
+                "current": "docs/plans/programs/planning-state-tooling/CURRENT.md",
+                "ledger": "docs/plans/programs/planning-state-tooling/LEDGER.md",
+                "selected_dispatch": None,
+                "active_runway": None,
+                "queued_batch": f"{batch_root}/runway.md",
+                "latest_closeout": (
+                    "docs/plans/programs/planning-state-tooling/batches/"
+                    "planning-state-closeout-contract/closeout.md"
+                ),
+                "artifacts": [
+                    {
+                        "batch_id": batch_id,
+                        "path": f"{batch_root}/dispatch.md",
+                        "type": "dispatch",
+                    },
+                    {
+                        "batch_id": batch_id,
+                        "path": f"{batch_root}/runway.md",
+                        "type": "runway",
+                    },
+                    {
+                        "batch_id": "planning-state-closeout-contract",
+                        "path": (
+                            "docs/plans/programs/planning-state-tooling/batches/"
+                            "planning-state-closeout-contract/closeout.md"
+                        ),
+                        "type": "closeout",
+                    },
+                ],
+            }
+        ],
+    }
+
+    assert validate_state_fixture_object(valid_state) == valid_state
+    assert valid_state["bootstrap"]["writes_markdown"] is False
+    assert "programs.queued_batch" in valid_state["bootstrap"]["json_state_fields"]
+    assert "program.runway" in valid_state["bootstrap"]["markdown_owned"]
+    assert "redirect_ledger" in valid_state["bootstrap"]["compatibility_evidence"]
+
+
+def test_state_fixture_schema_rejects_bootstrap_markdown_writes() -> None:
+    state = {
+        "protocol": {
+            "name": "planning-state-tool-state",
+            "version": 1,
+        },
+        "root": "docs/plans",
+        "bootstrap": {**_bootstrap_contract(), "writes_markdown": True},
+        "programs": [],
+    }
+
+    try:
+        validate_state_fixture_object(state)
+    except ProtocolValidationError as error:
+        assert "bootstrap.writes_markdown must be false" in str(error)
+    else:
+        raise AssertionError("expected bootstrap Markdown writes to fail")
+
+
+def test_state_fixture_schema_rejects_bootstrap_historical_active_fields() -> None:
+    state = {
+        "protocol": {
+            "name": "planning-state-tool-state",
+            "version": 1,
+        },
+        "root": "docs/plans",
+        "bootstrap": {
+            **_bootstrap_contract(),
+            "json_state_fields": [
+                *_bootstrap_contract()["json_state_fields"],
+                "historical_flat_runway",
+            ],
+        },
+        "programs": [],
+    }
+
+    try:
+        validate_state_fixture_object(state)
+    except ProtocolValidationError as error:
+        assert (
+            "json_state_fields[10] is not a supported bootstrap fact: "
+            "historical_flat_runway"
+        ) in str(error)
+    else:
+        raise AssertionError("expected historical active-field bootstrap to fail")
+
+
+def test_state_fixture_schema_rejects_incomplete_bootstrap_sets() -> None:
+    state = {
+        "protocol": {
+            "name": "planning-state-tool-state",
+            "version": 1,
+        },
+        "root": "docs/plans",
+        "bootstrap": {
+            **_bootstrap_contract(),
+            "compatibility_evidence": ["redirect_ledger"],
+        },
+        "programs": [],
+    }
+
+    try:
+        validate_state_fixture_object(state)
+    except ProtocolValidationError as error:
+        assert (
+            "compatibility_evidence must exactly match the bootstrap contract"
+        ) in str(error)
+        assert "historical_batch_artifact" in str(error)
+    else:
+        raise AssertionError("expected incomplete bootstrap set to fail")
+
+
+def test_bootstrap_contract_represents_codex_config_active_queue(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    batch_id = "planning-state-migration-pilot"
+    batch_root = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        f"{batch_id}"
+    )
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued=f"{batch_root}/runway.md",
+        latest=(
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-closeout-contract/closeout.md"
+        ),
+    )
+    (root / "programs" / "planning-state-tooling" / "batches" / batch_id).mkdir(
+        parents=True
+    )
+    (
+        root
+        / "programs"
+        / "planning-state-tooling"
+        / "batches"
+        / batch_id
+        / "dispatch.md"
+    ).write_text("# Dispatch\n", encoding="utf-8")
+    (
+        root
+        / "programs"
+        / "planning-state-tooling"
+        / "batches"
+        / batch_id
+        / "runway.md"
+    ).write_text("# Runway\n", encoding="utf-8")
+
+    state = load_planning_state(root)
+    planning_program = next(
+        program for program in state.programs if program.slug == "planning-state-tooling"
+    )
+    fixture = _bootstrap_state_from_program(
+        root_value="docs/plans",
+        program_slug=planning_program.slug,
+        current=planning_program.current_path,
+        ledger=planning_program.ledger.value,
+        queued_batch=planning_program.queued_batch.value,
+        latest_closeout=planning_program.latest_closeout.value,
+        artifacts=[
+            {"batch_id": batch_id, "path": f"{batch_root}/dispatch.md", "type": "dispatch"},
+            {"batch_id": batch_id, "path": f"{batch_root}/runway.md", "type": "runway"},
+            {
+                "batch_id": "planning-state-closeout-contract",
+                "path": planning_program.latest_closeout.value,
+                "type": "closeout",
+            },
+        ],
+    )
+
+    assert validate_state_fixture_object(fixture) == fixture
+    assert planning_program.queued_batch.value == f"{batch_root}/runway.md"
+    assert _warning_codes(state) == set()
+
+
+def test_bootstrap_contract_represents_graphify_compatibility_evidence(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "my-docs" / "plans"
+    _write_graphify_fixture(root)
+
+    state = load_planning_state(root)
+    tqa_program = state.programs[0]
+    fixture = _bootstrap_state_from_program(
+        root_value="my-docs/plans",
+        program_slug=tqa_program.slug,
+        current=tqa_program.current_path,
+        ledger=tqa_program.ledger.value,
+        queued_batch=tqa_program.queued_batch.value,
+        latest_closeout=tqa_program.latest_closeout.value,
+        artifacts=[
+            {
+                "batch_id": "tqa-b11-target-selection-diagnostic-wording",
+                "path": tqa_program.latest_closeout.value,
+                "type": "runway",
+            }
+        ],
+    )
+
+    assert validate_state_fixture_object(fixture) == fixture
+    assert tqa_program.queued_batch.value is None
+    assert tqa_program.active_runway.value is None
+    assert _warning_codes(state) >= {
+        "redirect_ledger",
+        "historical_batch_artifact",
+        "stale_pickup_note",
+        "stale_pickup_contradiction",
+    }
 
 
 def test_receipt_fixture_schema_rejects_malformed_objects() -> None:
@@ -3131,6 +3358,92 @@ def _write_state_fixture(
         + "\n",
         encoding="utf-8",
     )
+
+
+def _bootstrap_state_from_program(
+    *,
+    root_value: str,
+    program_slug: str,
+    current: Path,
+    ledger: str | None,
+    queued_batch: str | None,
+    latest_closeout: str | None,
+    artifacts: list[dict[str, str | None]],
+) -> dict[str, object]:
+    return {
+        "protocol": {
+            "name": "planning-state-tool-state",
+            "version": 1,
+        },
+        "root": root_value,
+        "bootstrap": _bootstrap_contract(),
+        "programs": [
+            {
+                "slug": program_slug,
+                "current": _fixture_path(current, root_value),
+                "ledger": ledger,
+                "selected_dispatch": None,
+                "active_runway": None,
+                "queued_batch": queued_batch,
+                "latest_closeout": latest_closeout,
+                "artifacts": artifacts,
+            }
+        ],
+    }
+
+
+def _fixture_path(path: Path, root_value: str) -> str:
+    marker = Path(root_value).parts
+    parts = path.parts
+    for index in range(0, len(parts) - len(marker) + 1):
+        if parts[index : index + len(marker)] == marker:
+            return str(PurePosixPath(*parts[index:]))
+    return path.as_posix()
+
+
+def _warning_codes(state) -> set[str]:
+    return {warning.code for warning in state.warnings}
+
+
+def _bootstrap_contract() -> dict[str, object]:
+    return {
+        "source": "layout-v1-markdown",
+        "selection_precedence": "root/program CURRENT.md active-first",
+        "writes_markdown": False,
+        "markdown_owned": [
+            "root.current",
+            "program.current",
+            "program.ledger",
+            "program.dispatch",
+            "program.runway",
+            "program.closeout",
+            "program.completed_slices",
+        ],
+        "json_state_fields": [
+            "root",
+            "programs.slug",
+            "programs.current",
+            "programs.ledger",
+            "programs.selected_dispatch",
+            "programs.active_runway",
+            "programs.queued_batch",
+            "programs.latest_closeout",
+            "programs.artifacts",
+            "obligations",
+        ],
+        "registered_artifact_types": [
+            "dispatch",
+            "runway",
+            "closeout",
+            "completed-slices",
+        ],
+        "compatibility_evidence": [
+            "redirect_ledger",
+            "historical_batch_artifact",
+            "stale_pickup_note",
+            "stale_pickup_contradiction",
+        ],
+    }
 
 
 def _closeout_state_fixture() -> dict[str, object]:

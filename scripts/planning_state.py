@@ -24,6 +24,8 @@ ARTIFACT_REGISTRATION_PROTOCOL_NAME = "planning-state-artifact-registration"
 TRANSITION_RECEIPT_PROTOCOL_NAME = "planning-state-transition"
 CLOSEOUT_VALIDATION_PROTOCOL_NAME = "planning-state-closeout-validation"
 CLOSEOUT_RENDERING_PROTOCOL_NAME = "planning-state-closeout-rendering"
+BOOTSTRAP_SOURCE_MARKDOWN_LAYOUT_V1 = "layout-v1-markdown"
+BOOTSTRAP_SELECTION_PRECEDENCE = "root/program CURRENT.md active-first"
 SUPPORTED_ARTIFACT_TYPES = {
     "dispatch",
     "runway",
@@ -37,6 +39,33 @@ BATCH_LOCAL_ARTIFACTS = {
     "runway": "runway.md",
     "closeout": "closeout.md",
     "completed-slices": "completed-slices.md",
+}
+BOOTSTRAP_MARKDOWN_OWNED_FIELDS = {
+    "root.current",
+    "program.current",
+    "program.ledger",
+    "program.dispatch",
+    "program.runway",
+    "program.closeout",
+    "program.completed_slices",
+}
+BOOTSTRAP_JSON_STATE_FIELDS = {
+    "root",
+    "programs.slug",
+    "programs.current",
+    "programs.ledger",
+    "programs.selected_dispatch",
+    "programs.active_runway",
+    "programs.queued_batch",
+    "programs.latest_closeout",
+    "programs.artifacts",
+    "obligations",
+}
+BOOTSTRAP_COMPATIBILITY_EVIDENCE_CODES = {
+    "redirect_ledger",
+    "historical_batch_artifact",
+    "stale_pickup_note",
+    "stale_pickup_contradiction",
 }
 CLOSEOUT_REQUIRED_ARTIFACT_TYPES = {
     "closeout",
@@ -326,6 +355,7 @@ def validate_state_fixture_object(value: object) -> dict[str, Any]:
             _require_string(artifact_data, "batch_id")
             _require_string(artifact_data, "path")
     _validate_fixture_obligation_schema(data)
+    _validate_bootstrap_contract_schema(data)
     return data
 
 
@@ -1810,6 +1840,82 @@ def _validate_fixture_obligation_schema(data: dict[str, Any]) -> None:
             _require_object(obligation, f"obligations[{index}]"),
             f"obligations[{index}]",
         )
+
+
+def _validate_bootstrap_contract_schema(data: dict[str, Any]) -> None:
+    contract = data.get("bootstrap")
+    if contract is None:
+        return
+    contract_data = _require_object(contract, "bootstrap")
+    source = _require_string(contract_data, "source")
+    if source != BOOTSTRAP_SOURCE_MARKDOWN_LAYOUT_V1:
+        raise ProtocolValidationError(
+            f"bootstrap.source must be {BOOTSTRAP_SOURCE_MARKDOWN_LAYOUT_V1!r}"
+        )
+    precedence = _require_string(contract_data, "selection_precedence")
+    if precedence != BOOTSTRAP_SELECTION_PRECEDENCE:
+        raise ProtocolValidationError(
+            "bootstrap.selection_precedence must be "
+            f"{BOOTSTRAP_SELECTION_PRECEDENCE!r}"
+        )
+    if contract_data.get("writes_markdown") is not False:
+        raise ProtocolValidationError("bootstrap.writes_markdown must be false")
+    _require_exact_string_set(
+        contract_data,
+        "markdown_owned",
+        BOOTSTRAP_MARKDOWN_OWNED_FIELDS,
+    )
+    _require_exact_string_set(
+        contract_data,
+        "json_state_fields",
+        BOOTSTRAP_JSON_STATE_FIELDS,
+    )
+    _require_exact_string_set(
+        contract_data,
+        "registered_artifact_types",
+        set(BATCH_LOCAL_ARTIFACTS),
+    )
+    _require_exact_string_set(
+        contract_data,
+        "compatibility_evidence",
+        BOOTSTRAP_COMPATIBILITY_EVIDENCE_CODES,
+    )
+
+
+def _require_exact_string_set(
+    data: dict[str, Any],
+    field_name: str,
+    expected_values: set[str],
+) -> list[str]:
+    values = _require_array(data, field_name)
+    if not values:
+        raise ProtocolValidationError(f"{field_name} must be a non-empty array")
+    seen_values: set[str] = set()
+    for index, value in enumerate(values):
+        if not isinstance(value, str) or not value:
+            raise ProtocolValidationError(
+                f"{field_name}[{index}] must be a non-empty string"
+            )
+        if value not in expected_values:
+            raise ProtocolValidationError(
+                f"{field_name}[{index}] is not a supported bootstrap fact: {value}"
+            )
+        seen_values.add(value)
+    missing = sorted(expected_values - seen_values)
+    extra = sorted(seen_values - expected_values)
+    if missing or extra or len(values) != len(seen_values):
+        details = []
+        if missing:
+            details.append("missing: " + ", ".join(missing))
+        if extra:
+            details.append("extra: " + ", ".join(extra))
+        if len(values) != len(seen_values):
+            details.append("duplicates are not allowed")
+        raise ProtocolValidationError(
+            f"{field_name} must exactly match the bootstrap contract"
+            f" ({'; '.join(details)})"
+        )
+    return values
 
 
 def _validate_obligation_object(data: dict[str, Any], context: str) -> None:
