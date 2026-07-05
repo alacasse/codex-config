@@ -43,6 +43,12 @@ UPDATE_AUTHORITIES = {
     "command",
     "read-only",
 }
+PROJECT_POLICY_REQUIREMENTS = {
+    "none",
+    "state-file",
+    "projection",
+    "all",
+}
 STATE_FILE_PATH_POLICIES = {"committed", "external", "ignored-local"}
 PROJECTION_PATH_POLICIES = {"committed", "external", "ignored-local"}
 BOOTSTRAP_SOURCE_MARKDOWN_LAYOUT_V1 = "layout-v1-markdown"
@@ -163,6 +169,20 @@ class ObligationRecord:
 
 
 @dataclass(frozen=True)
+class ProjectPolicy:
+    planning_root: str
+    run_artifact_root: str | None
+    output_root: str | None
+    state_file_policy: str
+    state_file_path: str | None
+    projection_policy: str
+    projection_path: str | None
+    update_authority: str
+    committed_projection_exception: str | None
+    source_path: Path
+
+
+@dataclass(frozen=True)
 class ProgramState:
     slug: str
     current_path: Path
@@ -196,6 +216,7 @@ class RootState:
 class PlanningState:
     root: RootState
     programs: tuple[ProgramState, ...]
+    project_policy: ProjectPolicy | None = None
     obligations: tuple[ObligationRecord, ...] = ()
     redirects: tuple[RedirectEvidence, ...] = ()
     warnings: tuple[StateWarning, ...] = ()
@@ -206,10 +227,20 @@ class ProtocolValidationError(ValueError):
     """Raised when a machine-readable planning-state object is malformed."""
 
 
-def load_planning_state(root: str | Path, state_file: str | Path | None = None) -> PlanningState:
+def load_planning_state(
+    root: str | Path,
+    state_file: str | Path | None = None,
+    *,
+    require_project_policy: str = "none",
+) -> PlanningState:
     """Load Planning Artifact Layout v1 state without mutating files."""
 
     root_path = Path(root)
+    state_fixture_path = Path(state_file) if state_file is not None else None
+    if require_project_policy not in PROJECT_POLICY_REQUIREMENTS:
+        raise ProtocolValidationError(
+            f"unsupported project policy requirement: {require_project_policy}"
+        )
     root_current = root_path / "CURRENT.md"
     root_text = _read_text(root_current)
     root_fields = _field_map(root_text)
@@ -228,20 +259,47 @@ def load_planning_state(root: str | Path, state_file: str | Path | None = None) 
     )
 
     programs = tuple(_load_program(root_path, pointer) for pointer in active_programs)
+    policy, policy_messages = _resolve_project_policy(
+        root_state,
+        root_fields,
+        programs,
+        state_fixture=None,
+    )
     redirects = tuple(_redirects(root_path))
     warnings = tuple(_warnings(root_path, root_state, programs, redirects))
     state_fixture = (
-        _load_state_fixture(Path(state_file), expected_root=_planning_root_prefix_for(root_state))
-        if state_file is not None
+        _load_state_fixture(
+            state_fixture_path,
+            expected_root=_planning_root_prefix_for(root_state),
+            allow_malformed_project_policy=True,
+        )
+        if state_fixture_path is not None
         else None
     )
+    if state_fixture is not None:
+        policy, policy_messages = _resolve_project_policy(
+            root_state,
+            root_fields,
+            programs,
+            state_fixture=state_fixture,
+            state_fixture_path=state_fixture_path,
+        )
     obligations = tuple(_obligations_from_fixture(state_fixture))
     validation_messages = tuple(
-        _validation_messages(root_state, programs, redirects, state_fixture)
+        _validation_messages(
+            root_state,
+            programs,
+            redirects,
+            state_fixture,
+            policy,
+            policy_messages,
+            require_project_policy=require_project_policy,
+        )
     )
     return PlanningState(
         root=root_state,
         programs=programs,
+        project_policy=policy,
         obligations=obligations,
         redirects=redirects,
         warnings=warnings,
@@ -286,6 +344,7 @@ def format_current_state(state: PlanningState) -> str:
         lines.append("    []")
     for program in state.programs:
         lines.extend(_format_program(program))
+    lines.extend(_format_project_policy(state.project_policy))
     lines.extend(_format_obligations(state.obligations))
     lines.extend(_format_warnings(state.warnings, state.validation_messages))
     lines.extend(_format_blockers(state.validation_messages))
@@ -318,8 +377,13 @@ def format_validation_report(state: PlanningState) -> str:
         "planning_state_validation:",
         f"  root: {state.root.root_path}",
         f"  status: {'failed' if errors else 'passed'}",
+        "  project_policy:",
         "  errors:",
     ]
+    if state.project_policy is None:
+        lines.insert(-1, "    []")
+    else:
+        lines[-1:-1] = _format_project_policy_body(state.project_policy)
     lines.extend(_format_validation_messages(errors))
     lines.append("  warnings:")
     lines.extend(_format_validation_warnings(warnings))
@@ -539,6 +603,12 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         help="Optional explicit JSON state fixture with obligation records.",
     )
+    current_parser.add_argument(
+        "--require-project-policy",
+        choices=tuple(sorted(PROJECT_POLICY_REQUIREMENTS)),
+        default="none",
+        help="Report blockers as if a durable state/projection write is being preflighted.",
+    )
     validate_parser = subparsers.add_parser(
         "validate",
         help="Validate active planning state without writing files.",
@@ -565,6 +635,12 @@ def main(argv: list[str] | None = None) -> int:
         "--state-file",
         type=Path,
         help="Optional explicit JSON state fixture with obligation records.",
+    )
+    validate_parser.add_argument(
+        "--require-project-policy",
+        choices=tuple(sorted(PROJECT_POLICY_REQUIREMENTS)),
+        default="none",
+        help="Require declared policy for a durable state/projection preflight.",
     )
     bootstrap_parser = subparsers.add_parser(
         "bootstrap-state",
@@ -675,7 +751,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "current":
-            state = load_planning_state(args.root, args.state_file)
+            state = load_planning_state(
+                args.root,
+                args.state_file,
+                require_project_policy=args.require_project_policy,
+            )
             exit_code = 0
             if args.format == "json":
                 sys.stdout.write(
@@ -690,7 +770,11 @@ def main(argv: list[str] | None = None) -> int:
                 sys.stdout.write(format_current_state(state))
             return exit_code
         if args.command == "validate":
-            state = load_planning_state(args.root, args.state_file)
+            state = load_planning_state(
+                args.root,
+                args.state_file,
+                require_project_policy=args.require_project_policy,
+            )
             exit_code = 1 if _has_validation_errors(state) else 0
             if args.format == "json":
                 sys.stdout.write(
@@ -1608,11 +1692,208 @@ def _warnings(
         )
 
 
+def _resolve_project_policy(
+    root_state: RootState,
+    root_fields: dict[str, str],
+    programs: tuple[ProgramState, ...],
+    *,
+    state_fixture: dict[str, Any] | None,
+    state_fixture_path: Path | None = None,
+) -> tuple[ProjectPolicy | None, tuple[ValidationMessage, ...]]:
+    if state_fixture is not None and state_fixture.get("project_policy") is not None:
+        source_path = state_fixture_path or root_state.current_path
+        try:
+            policy_data = validate_project_policy_object(state_fixture["project_policy"])
+            _validate_project_policy_object(
+                policy_data,
+                "project_policy",
+                expected_root=_planning_root_prefix_for(root_state),
+            )
+        except ProtocolValidationError as error:
+            return None, (
+                ValidationMessage(
+                    "error",
+                    "malformed_project_policy",
+                    str(error),
+                    source_path,
+                ),
+            )
+        return _project_policy_from_data(policy_data, source_path), ()
+
+    candidates: list[tuple[dict[str, str], Path]] = [(root_fields, root_state.current_path)]
+    for program in programs:
+        if program.current_path.exists():
+            candidates.append((_field_map(_read_text(program.current_path)), program.current_path))
+    candidates.extend(_project_instruction_policy_candidates(root_state))
+    candidates.extend(_active_spec_policy_candidates(root_state, programs))
+
+    messages: list[ValidationMessage] = []
+    for fields, source_path in candidates:
+        if not _has_project_policy_fields(fields):
+            continue
+        try:
+            return _project_policy_from_fields(
+                fields,
+                source_path,
+                expected_root=_planning_root_prefix_for(root_state),
+            ), ()
+        except ProtocolValidationError as error:
+            return None, (
+                ValidationMessage(
+                    "error",
+                    "malformed_project_policy",
+                    str(error),
+                    source_path,
+                ),
+            )
+    return None, tuple(messages)
+
+
+def _project_instruction_policy_candidates(
+    root_state: RootState,
+) -> list[tuple[dict[str, str], Path]]:
+    root_path = root_state.root_path
+    project_roots = []
+    if len(root_path.parents) >= 2:
+        project_roots.append(root_path.parents[1])
+    if root_path.parent not in project_roots:
+        project_roots.append(root_path.parent)
+    candidates: list[tuple[dict[str, str], Path]] = []
+    seen: set[Path] = set()
+    for project_root in project_roots:
+        for instruction_path in (
+            project_root / "AGENTS.md",
+            project_root / ".codex" / "AGENTS.md",
+        ):
+            if instruction_path in seen or not instruction_path.exists():
+                continue
+            seen.add(instruction_path)
+            candidates.append((_field_map(_read_text(instruction_path)), instruction_path))
+    return candidates
+
+
+def _active_spec_policy_candidates(
+    root_state: RootState,
+    programs: tuple[ProgramState, ...],
+) -> list[tuple[dict[str, str], Path]]:
+    candidates: list[tuple[dict[str, str], Path]] = []
+    seen: set[Path] = set()
+    for program in programs:
+        policy_candidate_values = (
+            program.active_runway.value,
+            _active_spec_queued_batch_value(root_state, program),
+            program.selected_dispatch.value,
+        )
+        for value in policy_candidate_values:
+            if value is None:
+                continue
+            path = _resolve_pointer(root_state.root_path, value)
+            if path in seen or not path.exists() or path.suffix != ".md":
+                continue
+            seen.add(path)
+            candidates.append((_field_map(_read_text(path)), path))
+    return candidates
+
+
+def _active_spec_queued_batch_value(
+    root_state: RootState,
+    program: ProgramState,
+) -> str | None:
+    try:
+        return _migrated_queued_batch_value(root_state, program)
+    except ProtocolValidationError:
+        return None
+
+
+def _has_project_policy_fields(fields: dict[str, str]) -> bool:
+    return any(
+        field in fields
+        for field in (
+            "state file policy",
+            "state_file_policy",
+            "projection policy",
+            "projection_policy",
+            "state file path",
+            "state_file_path",
+            "projection path",
+            "projection_path",
+            "update authority",
+            "update_authority",
+        )
+    )
+
+
+def _project_policy_from_fields(
+    fields: dict[str, str],
+    source_path: Path,
+    *,
+    expected_root: str,
+) -> ProjectPolicy:
+    data = {
+        "planning_root": _policy_field(fields, "planning root", "planning_root"),
+        "run_artifact_root": _policy_none_to_null(
+            _policy_field(fields, "run artifact root", "run_artifact_root")
+        ),
+        "output_root": _policy_none_to_null(_policy_field(fields, "output root", "output_root")),
+        "state_file_policy": _policy_field(fields, "state file policy", "state_file_policy"),
+        "state_file_path": _policy_none_to_null(
+            _policy_field(fields, "state file path", "state_file_path")
+        ),
+        "projection_policy": _policy_field(fields, "projection policy", "projection_policy"),
+        "projection_path": _policy_none_to_null(
+            _policy_field(fields, "projection path", "projection_path")
+        ),
+        "update_authority": _policy_field(fields, "update authority", "update_authority"),
+    }
+    committed_exception = _policy_none_to_null(
+        _policy_field(
+            fields,
+            "committed projection exception",
+            "committed_projection_exception",
+        )
+    )
+    if committed_exception is not None:
+        data["committed_projection_exception"] = committed_exception
+    validate_project_policy_object(data)
+    _validate_project_policy_object(data, "project_policy", expected_root=expected_root)
+    return _project_policy_from_data(data, source_path)
+
+
+def _project_policy_from_data(
+    data: dict[str, Any],
+    source_path: Path,
+) -> ProjectPolicy:
+    return ProjectPolicy(
+        planning_root=data["planning_root"],
+        run_artifact_root=data.get("run_artifact_root"),
+        output_root=data.get("output_root"),
+        state_file_policy=data["state_file_policy"],
+        state_file_path=data.get("state_file_path"),
+        projection_policy=data["projection_policy"],
+        projection_path=data.get("projection_path"),
+        update_authority=data["update_authority"],
+        committed_projection_exception=data.get("committed_projection_exception"),
+        source_path=source_path,
+    )
+
+
+def _policy_field(fields: dict[str, str], *keys: str) -> str | None:
+    return next((fields[key] for key in keys if key in fields), None)
+
+
+def _policy_none_to_null(value: str | None) -> str | None:
+    return _none_to_null(value)
+
+
 def _validation_messages(
     root_state: RootState,
     programs: tuple[ProgramState, ...],
     redirects: tuple[RedirectEvidence, ...],
     state_fixture: dict[str, Any] | None,
+    project_policy: ProjectPolicy | None,
+    project_policy_messages: tuple[ValidationMessage, ...],
+    *,
+    require_project_policy: str,
 ) -> Iterable[ValidationMessage]:
     if not root_state.current_path.exists():
         yield ValidationMessage("error", "missing_root_current", "root CURRENT.md is missing", root_state.current_path)
@@ -1629,9 +1910,54 @@ def _validation_messages(
     for redirect in redirects:
         if not redirect.target_path:
             yield ValidationMessage("error", "redirect_without_target", "redirect has no target path", redirect.source_path)
+    yield from project_policy_messages
+    yield from _project_policy_requirement_messages(
+        root_state,
+        project_policy,
+        project_policy_messages,
+        require_project_policy,
+    )
     if state_fixture is not None:
         yield from _state_fixture_validation_messages(root_state, programs, state_fixture)
         yield from _obligation_validation_messages(state_fixture)
+
+
+def _project_policy_requirement_messages(
+    root_state: RootState,
+    project_policy: ProjectPolicy | None,
+    project_policy_messages: tuple[ValidationMessage, ...],
+    require_project_policy: str,
+) -> Iterable[ValidationMessage]:
+    if require_project_policy == "none":
+        return
+    if project_policy_messages:
+        return
+    if project_policy is None:
+        yield ValidationMessage(
+            "error",
+            "missing_project_policy",
+            f"project policy is required before durable {require_project_policy} writes",
+            root_state.current_path,
+        )
+        return
+    if require_project_policy in {"state-file", "all"} and (
+        project_policy.state_file_policy in {"generated-only", "none"}
+    ):
+        yield ValidationMessage(
+            "error",
+            "state_file_policy_not_durable",
+            f"state-file policy {project_policy.state_file_policy!r} has no durable target",
+            project_policy.source_path,
+        )
+    if require_project_policy in {"projection", "all"} and (
+        project_policy.projection_policy in {"generated-only", "none"}
+    ):
+        yield ValidationMessage(
+            "error",
+            "projection_policy_not_durable",
+            f"projection policy {project_policy.projection_policy!r} has no durable target",
+            project_policy.source_path,
+        )
 
 
 def _format_program(program: ProgramState) -> list[str]:
@@ -1644,6 +1970,27 @@ def _format_program(program: ProgramState) -> list[str]:
         f"      active_runway: {_display_value(program.active_runway.value)}",
         f"      latest_closeout: {_display_value(program.latest_closeout.value)}",
         f"      next_safe_action: {_display_value(program.next_safe_action)}",
+    ]
+
+
+def _format_project_policy(policy: ProjectPolicy | None) -> list[str]:
+    lines = ["  project_policy:"]
+    if policy is None:
+        return [*lines, "    []"]
+    return [*lines, *_format_project_policy_body(policy)]
+
+
+def _format_project_policy_body(policy: ProjectPolicy) -> list[str]:
+    return [
+        f"    source: {policy.source_path}",
+        f"    planning_root: {policy.planning_root}",
+        f"    run_artifact_root: {_display_value(policy.run_artifact_root)}",
+        f"    output_root: {_display_value(policy.output_root)}",
+        f"    state_file_policy: {policy.state_file_policy}",
+        f"    state_file_path: {_display_value(policy.state_file_path)}",
+        f"    projection_policy: {policy.projection_policy}",
+        f"    projection_path: {_display_value(policy.projection_path)}",
+        f"    update_authority: {policy.update_authority}",
     ]
 
 
@@ -1789,6 +2136,7 @@ def _protocol_document(
             "next_safe_action": state.root.next_safe_action,
         },
         "programs": [_program_object(program) for program in state.programs],
+        "project_policy": _project_policy_object(state.project_policy),
         "obligations": [
             _obligation_object(obligation) for obligation in state.obligations
         ],
@@ -1818,6 +2166,23 @@ def _program_object(program: ProgramState) -> dict[str, Any]:
         "archive_location": _artifact_pointer_object(program.archive_location),
         "next_safe_action": program.next_safe_action,
         "stop_conditions": list(program.stop_conditions),
+    }
+
+
+def _project_policy_object(policy: ProjectPolicy | None) -> dict[str, Any] | None:
+    if policy is None:
+        return None
+    return {
+        "planning_root": policy.planning_root,
+        "run_artifact_root": policy.run_artifact_root,
+        "output_root": policy.output_root,
+        "state_file_policy": policy.state_file_policy,
+        "state_file_path": policy.state_file_path,
+        "projection_policy": policy.projection_policy,
+        "projection_path": policy.projection_path,
+        "update_authority": policy.update_authority,
+        "committed_projection_exception": policy.committed_projection_exception,
+        "source_path": str(policy.source_path),
     }
 
 
@@ -3365,7 +3730,12 @@ def _validate_batch_not_exists(state: PlanningState, batch_directory: str) -> No
         raise ProtocolValidationError(f"batch directory already exists: {batch_directory}")
 
 
-def _load_state_fixture(path: Path | None, *, expected_root: str) -> dict[str, Any]:
+def _load_state_fixture(
+    path: Path | None,
+    *,
+    expected_root: str,
+    allow_malformed_project_policy: bool = False,
+) -> dict[str, Any]:
     if path is None:
         raise ProtocolValidationError("state-file is required")
     try:
@@ -3374,7 +3744,12 @@ def _load_state_fixture(path: Path | None, *, expected_root: str) -> dict[str, A
         raise ProtocolValidationError(f"state-file is missing: {path}") from error
     except json.JSONDecodeError as error:
         raise ProtocolValidationError(f"state-file is not valid JSON: {path}") from error
-    data = validate_state_fixture_object(data)
+    if allow_malformed_project_policy and "project_policy" in data:
+        validation_data = dict(data)
+        validation_data.pop("project_policy")
+        validate_state_fixture_object(validation_data)
+    else:
+        data = validate_state_fixture_object(data)
     _validate_state_fixture_root(data, expected_root=expected_root)
     return data
 

@@ -263,6 +263,364 @@ def test_current_json_protocol_reports_root_program_warning_and_exit_facts(
     assert all("severity" in message for message in payload["validation_messages"])
 
 
+def test_current_text_reports_declared_project_policy(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _append_root_project_policy(
+        root,
+        state_file_policy="committed",
+        state_file_path="docs/plans/state/planning-state.json",
+        projection_policy="generated-only",
+        projection_path=None,
+    )
+
+    output = _run_current(root)
+
+    assert "project_policy:" in output
+    assert f"source: {root / 'CURRENT.md'}" in output
+    assert "state_file_policy: committed" in output
+    assert "state_file_path: docs/plans/state/planning-state.json" in output
+    assert "projection_policy: generated-only" in output
+
+
+def test_current_json_reports_project_policy_with_stable_keys(tmp_path: Path) -> None:
+    root = tmp_path / "my-docs" / "plans"
+    _write_graphify_fixture(root)
+    _append_root_project_policy(
+        root,
+        planning_root="my-docs/plans/",
+        run_artifact_root="my-docs/runs/",
+        output_root="my-docs/outputs/",
+        state_file_policy="ignored-local",
+        state_file_path="my-docs/runs/planning-state/state.json",
+        projection_policy="ignored-local",
+        projection_path="my-docs/outputs/planning-state/planning-state.sqlite",
+        update_authority="ask-first",
+    )
+
+    result = _run_current_json(root)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["project_policy"] == {
+        "planning_root": "my-docs/plans/",
+        "run_artifact_root": "my-docs/runs/",
+        "output_root": "my-docs/outputs/",
+        "state_file_policy": "ignored-local",
+        "state_file_path": "my-docs/runs/planning-state/state.json",
+        "projection_policy": "ignored-local",
+        "projection_path": "my-docs/outputs/planning-state/planning-state.sqlite",
+        "update_authority": "ask-first",
+        "committed_projection_exception": None,
+        "source_path": str(root / "CURRENT.md"),
+    }
+    assert payload["blockers"] == []
+
+
+def test_validate_read_only_does_not_require_project_policy(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    result = _run_validate_json(root)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["project_policy"] is None
+    assert payload["blockers"] == []
+    assert "missing_project_policy" not in {
+        message["code"] for message in payload["validation_messages"]
+    }
+
+
+def test_validate_can_require_project_policy_for_durable_write_preflight(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    result = _run_validate_json(root, "--require-project-policy", "state-file")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert payload["blockers"] == [
+        {
+            "severity": "error",
+            "code": "missing_project_policy",
+            "message": (
+                "project policy is required before durable state-file writes"
+            ),
+            "source_path": str(root / "CURRENT.md"),
+        }
+    ]
+
+
+def test_validate_discovers_project_policy_from_project_instructions(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    instructions_path = tmp_path / "AGENTS.md"
+    _append_project_policy(
+        instructions_path,
+        state_file_policy="committed",
+        state_file_path="docs/plans/state/planning-state.json",
+        projection_policy="generated-only",
+        projection_path=None,
+    )
+
+    result = _run_validate_json(root, "--require-project-policy", "state-file")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["project_policy"]["source_path"] == str(instructions_path)
+    assert payload["project_policy"]["state_file_policy"] == "committed"
+    assert payload["blockers"] == []
+
+
+def test_validate_discovers_project_policy_from_active_spec(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    active_spec = (
+        root
+        / "programs"
+        / "planning-state-tooling"
+        / "batches"
+        / "planning-state-readonly-core"
+        / "runway.md"
+    )
+    _append_project_policy(
+        active_spec,
+        state_file_policy="committed",
+        state_file_path="docs/plans/state/planning-state.json",
+        projection_policy="generated-only",
+        projection_path=None,
+    )
+
+    result = _run_validate_json(root, "--require-project-policy", "state-file")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["project_policy"]["source_path"] == str(active_spec)
+    assert payload["project_policy"]["state_file_policy"] == "committed"
+    assert payload["blockers"] == []
+
+
+def test_validate_discovers_project_policy_from_id_only_queued_batch_spec(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    batch_id = "planning-state-write-transitions"
+    _write_transition_batch(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued=batch_id,
+        latest="None",
+    )
+    active_spec = (
+        root
+        / "programs"
+        / "planning-state-tooling"
+        / "batches"
+        / batch_id
+        / "runway.md"
+    )
+    _append_project_policy(
+        active_spec,
+        state_file_policy="committed",
+        state_file_path="docs/plans/state/planning-state.json",
+        projection_policy="generated-only",
+        projection_path=None,
+    )
+
+    result = _run_validate_json(root, "--require-project-policy", "state-file")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["project_policy"]["source_path"] == str(active_spec)
+    assert payload["project_policy"]["state_file_path"] == (
+        "docs/plans/state/planning-state.json"
+    )
+    planning_program = next(
+        program for program in payload["programs"] if program["slug"] == "planning-state-tooling"
+    )
+    assert planning_program["queued_batch"]["value"] == batch_id
+    assert payload["blockers"] == []
+
+
+def test_malformed_root_policy_blocks_lower_precedence_instruction_policy(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _append_root_project_policy(
+        root,
+        state_file_policy="repository-default",
+        projection_policy="none",
+        projection_path=None,
+    )
+    instructions_path = tmp_path / "AGENTS.md"
+    _append_project_policy(
+        instructions_path,
+        state_file_policy="committed",
+        state_file_path="docs/plans/state/planning-state.json",
+        projection_policy="generated-only",
+        projection_path=None,
+    )
+
+    result = _run_validate_json(root, "--require-project-policy", "state-file")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert payload["project_policy"] is None
+    assert payload["blockers"] == [
+        {
+            "severity": "error",
+            "code": "malformed_project_policy",
+            "message": (
+                "project_policy.state_file_policy is unsupported: "
+                "repository-default"
+            ),
+            "source_path": str(root / "CURRENT.md"),
+        }
+    ]
+
+
+def test_malformed_program_policy_blocks_lower_precedence_active_spec_policy(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    program_current = root / "programs" / "planning-state-tooling" / "CURRENT.md"
+    _append_project_policy(
+        program_current,
+        state_file_policy="repository-default",
+        projection_policy="none",
+        projection_path=None,
+    )
+    active_spec = (
+        root
+        / "programs"
+        / "planning-state-tooling"
+        / "batches"
+        / "planning-state-readonly-core"
+        / "runway.md"
+    )
+    _append_project_policy(
+        active_spec,
+        state_file_policy="committed",
+        state_file_path="docs/plans/state/planning-state.json",
+        projection_policy="generated-only",
+        projection_path=None,
+    )
+
+    result = _run_validate_json(root, "--require-project-policy", "state-file")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert payload["project_policy"] is None
+    assert payload["blockers"] == [
+        {
+            "severity": "error",
+            "code": "malformed_project_policy",
+            "message": (
+                "project_policy.state_file_policy is unsupported: "
+                "repository-default"
+            ),
+            "source_path": str(program_current),
+        }
+    ]
+
+
+def test_validate_reports_state_fixture_project_policy_source_path(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "planning-state.json"
+    _write_policy_state_fixture(
+        state_file,
+        project_policy=_project_policy(
+            state_file_policy="committed",
+            state_file_path="docs/plans/state/planning-state.json",
+            projection_policy="generated-only",
+            projection_path=None,
+        ),
+    )
+
+    result = _run_validate_json(
+        root,
+        "--state-file",
+        str(state_file),
+        "--require-project-policy",
+        "state-file",
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["project_policy"]["source_path"] == str(state_file)
+    assert payload["project_policy"]["state_file_policy"] == "committed"
+    assert payload["blockers"] == []
+
+
+def test_malformed_state_fixture_project_policy_reports_fixture_path(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "planning-state.json"
+    _write_policy_state_fixture(
+        state_file,
+        project_policy=_project_policy(state_file_policy="repository-default"),
+    )
+
+    result = _run_validate_json(root, "--state-file", str(state_file))
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert payload["project_policy"] is None
+    assert payload["blockers"] == [
+        {
+            "severity": "error",
+            "code": "malformed_project_policy",
+            "message": (
+                "project_policy.state_file_policy is unsupported: "
+                "repository-default"
+            ),
+            "source_path": str(state_file),
+        }
+    ]
+
+
+def test_malformed_project_policy_has_stable_diagnostic(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _append_root_project_policy(
+        root,
+        state_file_policy="repository-default",
+        projection_policy="none",
+        projection_path=None,
+    )
+
+    result = _run_validate_json(root)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert payload["project_policy"] is None
+    assert payload["blockers"] == [
+        {
+            "severity": "error",
+            "code": "malformed_project_policy",
+            "message": (
+                "project_policy.state_file_policy is unsupported: "
+                "repository-default"
+            ),
+            "source_path": str(root / "CURRENT.md"),
+        }
+    ]
+
+
 def test_json_protocol_normalizes_wrapped_live_style_fields(tmp_path: Path) -> None:
     root = tmp_path / "docs" / "plans"
     _write_codex_config_fixture(root)
@@ -3502,6 +3860,29 @@ def test_validate_reports_invalid_queued_runway_path_as_fatal(
     assert "invalid_queued_runway_path:" in result.stdout
 
 
+def test_validate_json_preserves_invalid_queued_runway_path_blocker(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="docs/plans/programs/planning-state-tooling/not-batches/missing/runway.md",
+        latest="None",
+    )
+
+    result = _run_validate_json(root, "--require-project-policy", "state-file")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert payload["protocol"]["command"] == "validate"
+    assert payload["exit"]["code"] == 1
+    assert {
+        message["code"] for message in payload["blockers"]
+    } >= {"invalid_queued_runway_path", "missing_project_policy"}
+
+
 def test_validate_reports_markdown_active_state_conflict_without_json_state(
     tmp_path: Path,
 ) -> None:
@@ -3765,6 +4146,92 @@ def _display_root(root: Path) -> str:
     if root.parent.name == "docs":
         return "docs/plans"
     return "my-docs/plans"
+
+
+def _append_root_project_policy(
+    root: Path,
+    *,
+    planning_root: str = "docs/plans/",
+    run_artifact_root: str | None = "docs/plans/runs/",
+    output_root: str | None = "docs/plans/outputs/",
+    state_file_policy: str,
+    state_file_path: str | None = None,
+    projection_policy: str,
+    projection_path: str | None = None,
+    update_authority: str = "command",
+) -> None:
+    _append_project_policy(
+        root / "CURRENT.md",
+        planning_root=planning_root,
+        run_artifact_root=run_artifact_root,
+        output_root=output_root,
+        state_file_policy=state_file_policy,
+        state_file_path=state_file_path,
+        projection_policy=projection_policy,
+        projection_path=projection_path,
+        update_authority=update_authority,
+    )
+
+
+def _append_project_policy(
+    path: Path,
+    *,
+    planning_root: str = "docs/plans/",
+    run_artifact_root: str | None = "docs/plans/runs/",
+    output_root: str | None = "docs/plans/outputs/",
+    state_file_policy: str,
+    state_file_path: str | None = None,
+    projection_policy: str,
+    projection_path: str | None = None,
+    update_authority: str = "command",
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        path.write_text("# Project Instructions\n", encoding="utf-8")
+    lines = [
+        "",
+        "## Project State Policy",
+        "",
+        f"- Planning root: `{planning_root}`",
+        f"- Run artifact root: `{_markdown_value(run_artifact_root)}`",
+        f"- Output root: `{_markdown_value(output_root)}`",
+        f"- State file policy: `{state_file_policy}`",
+        f"- State file path: `{_markdown_value(state_file_path)}`",
+        f"- Projection policy: `{projection_policy}`",
+        f"- Projection path: `{_markdown_value(projection_path)}`",
+        f"- Update authority: `{update_authority}`",
+        "",
+    ]
+    with path.open("a", encoding="utf-8") as current:
+        current.write("\n".join(lines))
+
+
+def _markdown_value(value: str | None) -> str:
+    return value if value is not None else "None"
+
+
+def _write_policy_state_fixture(
+    path: Path,
+    *,
+    project_policy: dict[str, str | None],
+) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "protocol": {
+                    "name": "planning-state-tool-state",
+                    "version": 1,
+                },
+                "root": "docs/plans",
+                "project_policy": project_policy,
+                "programs": [],
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def _run_current(root: Path, *extra_args: str) -> str:

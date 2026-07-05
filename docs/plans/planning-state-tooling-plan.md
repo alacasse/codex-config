@@ -70,6 +70,7 @@ python scripts/planning_state.py validate --root <planning-root>
 python scripts/planning_state.py current --root <planning-root> --format json
 python scripts/planning_state.py validate --root <planning-root> --format json
 python scripts/planning_state.py validate --root <planning-root> --state-file <state.json>
+python scripts/planning_state.py validate --root <planning-root> --require-project-policy <state-file|projection|all>
 ```
 
 The first write-transition helpers are path and fixture oriented. They do not
@@ -160,6 +161,8 @@ contains:
 - `exit`: returned code, compact meaning, and exit-code semantics.
 - `root`: planning root facts and active program pointers.
 - `programs`: resolved program facts and artifact pointers.
+- `project_policy`: resolved project-owned state/projection policy facts, or
+  `null` when no policy is declared for read-only Markdown checks.
 - `obligations`: explicit obligation records loaded from `--state-file`, or an
   empty array when no state fixture is supplied.
 - `warnings`: stale context and redirect evidence.
@@ -235,7 +238,10 @@ Read-only commands such as `current` and `validate` should continue to work for
 Markdown-only projects. Commands that write durable JSON state or projections
 must require compatible project policy. When policy is missing, stdout and
 caller-provided temporary proof output remain valid, but durable writes should
-stop with a stable blocker.
+stop with a stable blocker. Read-only `validate` can preflight that boundary
+with `--require-project-policy state-file`, `projection`, or `all`, which
+reports missing or incompatible durable policy without writing state or
+projection data.
 
 The contract is a discovery contract, not a default layout. Reusable workflow
 code must resolve these facts from the current project context and must not

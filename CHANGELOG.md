@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state project policy reporting
+
+Problem: read-only planning-state reports could validate Layout v1 Markdown but
+did not expose the project-owned state/projection policy that future durable
+state and projection writes must honor.
+
+Decision: have `current` and `validate` resolve declared project policy into
+text and JSON output, and add a read-only `--require-project-policy` preflight
+for durable state-file or projection checks.
+
+Expected effect: runner and workflow adapters can inspect stable policy facts
+and missing/malformed policy blockers before implementing durable writes,
+without forcing Markdown-only projects to declare state files.
+
 ### Planning-state project policy contract
 
 Problem: future durable JSON state and projection work needed a reusable policy
