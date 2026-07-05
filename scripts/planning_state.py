@@ -47,6 +47,18 @@ PROJECTION_POLICIES = {
     "none",
 }
 COMMITTED_PROJECTION_POLICY = "committed"
+PROJECTION_USAGES = {
+    "caller-directed",
+    "disabled",
+    "expected",
+    "optional",
+}
+PROJECTION_REBUILD_AUTHORITIES = {
+    "ask-first",
+    "command",
+    "external-owner",
+    "no-rebuild",
+}
 UPDATE_AUTHORITIES = {
     "ask-first",
     "command",
@@ -257,6 +269,8 @@ class ProjectPolicy:
     state_file_path: str | None
     projection_policy: str
     projection_path: str | None
+    projection_usage: str
+    projection_rebuild_authority: str
     update_authority: str
     committed_projection_exception: str | None
     source_path: Path
@@ -2262,6 +2276,10 @@ def _has_project_policy_fields(fields: dict[str, str]) -> bool:
             "state_file_policy",
             "projection policy",
             "projection_policy",
+            "projection usage",
+            "projection_usage",
+            "projection rebuild authority",
+            "projection_rebuild_authority",
             "state file path",
             "state_file_path",
             "projection path",
@@ -2292,6 +2310,12 @@ def _project_policy_from_fields(
         "projection_path": _policy_none_to_null(
             _policy_field(fields, "projection path", "projection_path")
         ),
+        "projection_usage": _policy_field(fields, "projection usage", "projection_usage"),
+        "projection_rebuild_authority": _policy_field(
+            fields,
+            "projection rebuild authority",
+            "projection_rebuild_authority",
+        ),
         "update_authority": _policy_field(fields, "update authority", "update_authority"),
     }
     committed_exception = _policy_none_to_null(
@@ -2320,10 +2344,48 @@ def _project_policy_from_data(
         state_file_path=data.get("state_file_path"),
         projection_policy=data["projection_policy"],
         projection_path=data.get("projection_path"),
+        projection_usage=_projection_usage_from_data(data),
+        projection_rebuild_authority=_projection_rebuild_authority_from_data(data),
         update_authority=data["update_authority"],
         committed_projection_exception=data.get("committed_projection_exception"),
         source_path=source_path,
     )
+
+
+def _projection_usage_from_data(data: dict[str, Any]) -> str:
+    value = data.get("projection_usage")
+    if value is not None:
+        return value
+    return _default_projection_usage(data["projection_policy"])
+
+
+def _projection_rebuild_authority_from_data(data: dict[str, Any]) -> str:
+    value = data.get("projection_rebuild_authority")
+    if value is not None:
+        return value
+    return _default_projection_rebuild_authority(
+        data["projection_policy"],
+        data["update_authority"],
+    )
+
+
+def _default_projection_usage(projection_policy: str) -> str:
+    if projection_policy == "none":
+        return "disabled"
+    return "caller-directed"
+
+
+def _default_projection_rebuild_authority(
+    projection_policy: str,
+    update_authority: str,
+) -> str:
+    if projection_policy == "none":
+        return "no-rebuild"
+    if projection_policy == "external":
+        return "external-owner"
+    if update_authority in {"ask-first", "command"}:
+        return update_authority
+    return "no-rebuild"
 
 
 def _policy_field(fields: dict[str, str], *keys: str) -> str | None:
@@ -2439,6 +2501,8 @@ def _format_project_policy_body(policy: ProjectPolicy) -> list[str]:
         f"    state_file_path: {_display_value(policy.state_file_path)}",
         f"    projection_policy: {policy.projection_policy}",
         f"    projection_path: {_display_value(policy.projection_path)}",
+        f"    projection_usage: {policy.projection_usage}",
+        f"    projection_rebuild_authority: {policy.projection_rebuild_authority}",
         f"    update_authority: {policy.update_authority}",
     ]
 
@@ -2629,6 +2693,8 @@ def _project_policy_object(policy: ProjectPolicy | None) -> dict[str, Any] | Non
         "state_file_path": policy.state_file_path,
         "projection_policy": policy.projection_policy,
         "projection_path": policy.projection_path,
+        "projection_usage": policy.projection_usage,
+        "projection_rebuild_authority": policy.projection_rebuild_authority,
         "update_authority": policy.update_authority,
         "committed_projection_exception": policy.committed_projection_exception,
         "source_path": str(policy.source_path),
@@ -2865,6 +2931,69 @@ def _validate_project_policy_object(
     if update_authority not in UPDATE_AUTHORITIES:
         raise ProtocolValidationError(
             f"{context}.update_authority is unsupported: {update_authority}"
+        )
+    projection_usage = _optional_string_with_default(
+        data,
+        "projection_usage",
+        _default_projection_usage(projection_policy),
+    )
+    if projection_usage not in PROJECTION_USAGES:
+        raise ProtocolValidationError(
+            f"{context}.projection_usage is unsupported: {projection_usage}"
+        )
+    projection_rebuild_authority = _optional_string_with_default(
+        data,
+        "projection_rebuild_authority",
+        _default_projection_rebuild_authority(projection_policy, update_authority),
+    )
+    if projection_rebuild_authority not in PROJECTION_REBUILD_AUTHORITIES:
+        raise ProtocolValidationError(
+            f"{context}.projection_rebuild_authority is unsupported: "
+            f"{projection_rebuild_authority}"
+        )
+    _validate_projection_usage_policy(
+        context,
+        projection_policy=projection_policy,
+        projection_usage=projection_usage,
+        projection_rebuild_authority=projection_rebuild_authority,
+    )
+
+
+def _optional_string_with_default(
+    data: dict[str, Any],
+    field_name: str,
+    default: str,
+) -> str:
+    value = _require_optional_string(data, field_name)
+    return default if value is None else value
+
+
+def _validate_projection_usage_policy(
+    context: str,
+    *,
+    projection_policy: str,
+    projection_usage: str,
+    projection_rebuild_authority: str,
+) -> None:
+    if projection_usage == "disabled" and projection_rebuild_authority != "no-rebuild":
+        raise ProtocolValidationError(
+            f"{context}.projection_rebuild_authority must be 'no-rebuild' when "
+            "projection_usage is 'disabled'"
+        )
+    if projection_usage != "disabled" and projection_policy == "none":
+        raise ProtocolValidationError(
+            f"{context}.projection_usage must be 'disabled' when projection_policy is "
+            "'none'"
+        )
+    if projection_policy == "external" and projection_rebuild_authority != "external-owner":
+        raise ProtocolValidationError(
+            f"{context}.projection_rebuild_authority must be 'external-owner' when "
+            "projection_policy is 'external'"
+        )
+    if projection_rebuild_authority == "external-owner" and projection_policy != "external":
+        raise ProtocolValidationError(
+            f"{context}.projection_rebuild_authority 'external-owner' requires "
+            "projection_policy 'external'"
         )
 
 

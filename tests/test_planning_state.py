@@ -286,6 +286,8 @@ def test_current_text_reports_declared_project_policy(tmp_path: Path) -> None:
     assert "state_file_policy: committed" in output
     assert "state_file_path: docs/plans/state/planning-state.json" in output
     assert "projection_policy: generated-only" in output
+    assert "projection_usage: caller-directed" in output
+    assert "projection_rebuild_authority: command" in output
 
 
 def test_current_json_reports_project_policy_with_stable_keys(tmp_path: Path) -> None:
@@ -315,6 +317,8 @@ def test_current_json_reports_project_policy_with_stable_keys(tmp_path: Path) ->
         "state_file_path": "my-docs/runs/planning-state/state.json",
         "projection_policy": "ignored-local",
         "projection_path": "my-docs/outputs/planning-state/planning-state.sqlite",
+        "projection_usage": "caller-directed",
+        "projection_rebuild_authority": "ask-first",
         "update_authority": "ask-first",
         "committed_projection_exception": None,
         "source_path": str(root / "CURRENT.md"),
@@ -946,6 +950,8 @@ def test_project_policy_contract_represents_external_generated_and_none() -> Non
         state_file_path="/var/lib/planning-state/project.json",
         projection_policy="external",
         projection_path="/var/lib/planning-state/project.sqlite",
+        projection_usage="expected",
+        projection_rebuild_authority="external-owner",
         update_authority="read-only",
     )
     generated_only_policy = _project_policy(
@@ -953,6 +959,8 @@ def test_project_policy_contract_represents_external_generated_and_none() -> Non
         state_file_path=None,
         projection_policy="generated-only",
         projection_path=None,
+        projection_usage="expected",
+        projection_rebuild_authority="command",
         update_authority="command",
     )
     no_durable_policy = _project_policy(
@@ -960,12 +968,52 @@ def test_project_policy_contract_represents_external_generated_and_none() -> Non
         state_file_path=None,
         projection_policy="none",
         projection_path=None,
+        projection_usage="disabled",
+        projection_rebuild_authority="no-rebuild",
         update_authority="read-only",
     )
 
     assert validate_project_policy_object(external_policy) == external_policy
     assert validate_project_policy_object(generated_only_policy) == generated_only_policy
     assert validate_project_policy_object(no_durable_policy) == no_durable_policy
+
+
+def test_project_policy_contract_represents_projection_usage_independent_from_targets() -> None:
+    generated_only_reports = _project_policy(
+        projection_policy="generated-only",
+        projection_path=None,
+        projection_usage="expected",
+        projection_rebuild_authority="command",
+    )
+    ignored_local_optional_reports = _project_policy(
+        projection_policy="ignored-local",
+        projection_path="docs/plans/outputs/planning-state.sqlite",
+        projection_usage="optional",
+        projection_rebuild_authority="ask-first",
+        update_authority="ask-first",
+    )
+    external_owner_reports = _project_policy(
+        projection_policy="external",
+        projection_path="/var/lib/planning-state/project.sqlite",
+        projection_usage="expected",
+        projection_rebuild_authority="external-owner",
+        update_authority="read-only",
+    )
+    no_reports = _project_policy(
+        projection_policy="none",
+        projection_path=None,
+        projection_usage="disabled",
+        projection_rebuild_authority="no-rebuild",
+        update_authority="read-only",
+    )
+
+    assert validate_project_policy_object(generated_only_reports) == generated_only_reports
+    assert (
+        validate_project_policy_object(ignored_local_optional_reports)
+        == ignored_local_optional_reports
+    )
+    assert validate_project_policy_object(external_owner_reports) == external_owner_reports
+    assert validate_project_policy_object(no_reports) == no_reports
 
 
 def test_project_policy_contract_rejects_missing_and_unsupported_values() -> None:
@@ -994,6 +1042,56 @@ def test_project_policy_contract_rejects_missing_and_unsupported_values() -> Non
         assert "state_file_policy is unsupported: repository-default" in str(error)
     else:
         raise AssertionError("expected unsupported state-file policy to fail")
+
+
+def test_project_policy_contract_rejects_invalid_projection_usage_combinations() -> None:
+    disabled_with_rebuild = _project_policy(
+        projection_policy="generated-only",
+        projection_usage="disabled",
+        projection_rebuild_authority="command",
+    )
+    none_with_reports = _project_policy(
+        projection_policy="none",
+        projection_usage="caller-directed",
+        projection_rebuild_authority="no-rebuild",
+    )
+    external_with_command_rebuild = _project_policy(
+        projection_policy="external",
+        projection_path="/var/lib/planning-state/project.sqlite",
+        projection_usage="expected",
+        projection_rebuild_authority="command",
+    )
+    generated_only_with_external_owner = _project_policy(
+        projection_policy="generated-only",
+        projection_usage="expected",
+        projection_rebuild_authority="external-owner",
+    )
+
+    cases = (
+        (
+            disabled_with_rebuild,
+            "projection_rebuild_authority must be 'no-rebuild'",
+        ),
+        (
+            none_with_reports,
+            "projection_usage must be 'disabled'",
+        ),
+        (
+            external_with_command_rebuild,
+            "projection_rebuild_authority must be 'external-owner'",
+        ),
+        (
+            generated_only_with_external_owner,
+            "projection_rebuild_authority 'external-owner' requires",
+        ),
+    )
+    for policy, expected_message in cases:
+        try:
+            validate_project_policy_object(policy)
+        except ProtocolValidationError as error:
+            assert expected_message in str(error)
+        else:
+            raise AssertionError(f"expected policy to fail: {expected_message}")
 
 
 def test_project_policy_contract_rejects_empty_string_paths() -> None:
@@ -5464,6 +5562,8 @@ def _append_root_project_policy(
     state_file_path: str | None = None,
     projection_policy: str,
     projection_path: str | None = None,
+    projection_usage: str | None = None,
+    projection_rebuild_authority: str | None = None,
     update_authority: str = "command",
     committed_projection_exception: str | None = None,
 ) -> None:
@@ -5476,6 +5576,8 @@ def _append_root_project_policy(
         state_file_path=state_file_path,
         projection_policy=projection_policy,
         projection_path=projection_path,
+        projection_usage=projection_usage,
+        projection_rebuild_authority=projection_rebuild_authority,
         update_authority=update_authority,
         committed_projection_exception=committed_projection_exception,
     )
@@ -5491,6 +5593,8 @@ def _append_project_policy(
     state_file_path: str | None = None,
     projection_policy: str,
     projection_path: str | None = None,
+    projection_usage: str | None = None,
+    projection_rebuild_authority: str | None = None,
     update_authority: str = "command",
     committed_projection_exception: str | None = None,
 ) -> None:
@@ -5508,6 +5612,19 @@ def _append_project_policy(
         f"- State file path: `{_markdown_value(state_file_path)}`",
         f"- Projection policy: `{projection_policy}`",
         f"- Projection path: `{_markdown_value(projection_path)}`",
+        *(
+            [f"- Projection usage: `{projection_usage}`"]
+            if projection_usage is not None
+            else []
+        ),
+        *(
+            [
+                "- Projection rebuild authority: "
+                f"`{projection_rebuild_authority}`"
+            ]
+            if projection_rebuild_authority is not None
+            else []
+        ),
         f"- Update authority: `{update_authority}`",
         *(
             [
@@ -6108,6 +6225,8 @@ def _project_policy(
     state_file_path: str | None = None,
     projection_policy: str = "generated-only",
     projection_path: str | None = None,
+    projection_usage: str | None = None,
+    projection_rebuild_authority: str | None = None,
     update_authority: str = "command",
     committed_projection_exception: str | None = None,
 ) -> dict[str, str | None]:
@@ -6121,6 +6240,10 @@ def _project_policy(
         "projection_path": projection_path,
         "update_authority": update_authority,
     }
+    if projection_usage is not None:
+        policy["projection_usage"] = projection_usage
+    if projection_rebuild_authority is not None:
+        policy["projection_rebuild_authority"] = projection_rebuild_authority
     if committed_projection_exception is not None:
         policy["committed_projection_exception"] = committed_projection_exception
     return policy

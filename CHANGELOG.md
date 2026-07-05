@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Planning-state projection usage policy
+
+Problem: project policy could say where a projection database may be written,
+but not whether projection reports are expected or who may rebuild them.
+
+Decision: add `projection_usage` and `projection_rebuild_authority` to
+planning-state policy parsing, validation, and current/validate output while
+preserving old policy blocks through conservative defaults.
+
+Expected effect: agents can distinguish disabled, caller-directed, optional,
+and expected projection reports without treating projection target paths as
+usage guidance.
+
 ### Ledger pickup before knowledge graphs
 
 Problem: in projects that also have a knowledge graph, agents could treat a
