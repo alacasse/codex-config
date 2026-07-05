@@ -14,11 +14,30 @@ Planning Artifact Layout v1, read `../planning-artifacts/SKILL.md` before
 writing or reorganizing the legacy ledger, selected dispatch packet, runner
 artifacts, generated outputs, archives, or active-state files.
 
+Use `../planning-state/SKILL.md` before creating, consuming, validating, or
+reorganizing Layout v1 legacy-removal ledgers, selected dispatch packets, or
+active planning state. Run the Planning State Diagnostic hot path with the
+project's resolved planning root:
+
+```bash
+python scripts/planning_state.py current --root <planning-root>
+python scripts/planning_state.py validate --root <planning-root>
+```
+
+Carry forward only compact handoff facts such as selected paths, queued batch,
+blockers, redirect warnings, and next safe action. Planning-state diagnostics
+do not decide the old model, canonical model, evidence value, compatibility
+decision, cleanup-residue classification, or whether legacy code is kept or
+removed.
+
 Responsibility boundary:
 
 ```text
 legacy-removal
   owns: ledger, scope, canonical model, compatibility decisions, batch candidates, selected dispatch packet
+
+planning-state
+  owns: current/validate diagnostics, active-state handoff facts, target-policy status, optional projection/report commands
 
 dead-surface-audit
   owns: evidence about surfaces kept alive by tests, import topology, aliases, facades, wrappers, or old module shape
@@ -64,6 +83,9 @@ temporary transition period with a removal condition.
 
 1. Read applicable repository instructions, local overlays, domain docs, ADRs,
    existing plans, and public compatibility commitments.
+   If Planning Artifact Layout v1 is active, use `planning-state` `current` and
+   `validate` diagnostics before reading active ledgers or selected dispatch
+   state as authoritative.
 2. Define the old model and candidate canonical model. If either is unclear,
    record the uncertainty instead of deleting or preserving by default.
 3. Inventory evidence across code, tests, docs, configs, generated artifacts,
@@ -195,6 +217,18 @@ When one next batch is clear, put its selected dispatch packet under:
 Do not create loose legacy ledgers or dispatch packets directly under generic
 `plans/` or `planning/` unless project instructions explicitly allow that
 layout.
+
+Before consuming or updating Layout v1 ledger or dispatch state, use
+`planning-state` diagnostics to confirm the current root, program, queued batch,
+selected dispatch, blockers, redirects, and safe next action. Treat those
+diagnostics as active-state intake only; keep legacy-removal findings and
+compatibility decisions evidence-based.
+
+Read `planning-state` target-policy or projection guidance only when the task
+needs durable JSON state, generated state fixtures, SQLite projections,
+generated projection reports, or target-policy proof. Ordinary Markdown ledger
+or dispatch work should not invent durable state locations, generated outputs,
+projection databases, cache paths, or downstream project defaults.
 
 Do not paste long logs or raw transcripts. Link to artifacts or quote only the
 evidence needed to justify decisions.

@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Legacy-removal planning-state diagnostics
+
+Problem: Legacy Removal could start Layout v1 ledger or selected-dispatch work
+from active files or historical planning docs without first using the shared
+planning-state diagnostic interface.
+
+Decision: route Layout v1 legacy ledger and dispatch intake through
+`planning-state` current/validate diagnostics while preserving Legacy Removal
+ownership of old/canonical model definition, evidence inventory, compatibility
+decisions, cleanup-residue classification, and handoff to Architecture Program
+Runway or Batch Runway.
+
+Expected effect: fresh legacy-removal agents start from validated
+planning-state facts before Layout v1 ledger work, and use target-policy or
+projection guidance only when durable/generated state or reports are needed.
+
 ### Architecture-program planning-state diagnostics
 
 Problem: Architecture Program Runway could start Layout v1 pickup or closeout
