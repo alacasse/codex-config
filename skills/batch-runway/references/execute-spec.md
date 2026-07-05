@@ -19,6 +19,14 @@ for compatibility questions, non-routine execution, recovery, and finalization.
    runways, blockers, and target policy only after that diagnostic handoff.
    Batch Runway still owns execution orchestration, pending-row selection,
    validation profile handling, subagent routing, ledger updates, and commits.
+   When execution needs pending-batch inventory, missing closeout evidence,
+   batch evidence, runner summaries, or bounded backlog/history reports beyond
+   the active diagnostic, read
+   `../../planning-state/references/projection-reporting.md` and use
+   policy-compatible `report-projection` command output before broad historical
+   scans. Missing or incompatible `projection_usage` or
+   `projection_rebuild_authority` is a bounded blocker or explicit fallback
+   decision, not permission for silent Markdown archaeology.
 4. For routine slices, read `execute-slice-core-v1.md` and only the selected
    validation profile file.
 5. Read the full Batch Runway reference files named by the spec only when the

@@ -11,7 +11,13 @@ for final batch reporting.
 3. If final validation uses a project-specific integration harness, use an
    explicit fresh output path when the harness writes artifacts.
 4. Read the required summary artifact before reporting the final harness result.
-5. Report skipped validation clearly when a command cannot run.
+5. For missing closeout evidence, batch evidence, runner summaries, or bounded
+   history/reporting checks, read
+   `../../planning-state/references/projection-reporting.md` and use
+   policy-compatible `report-projection` command output before broad historical
+   scans. Stop on missing or incompatible `projection_usage` or
+   `projection_rebuild_authority`, or record an explicit fallback decision.
+6. Report skipped validation clearly when a command cannot run.
 
 ## Final Report
 

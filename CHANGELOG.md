@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Batch-runway projection report routing
+
+Problem: Batch Runway used the shared planning-state diagnostic for active
+pickup, but history/reporting questions could still fall back to broad
+historical scans without first checking projection policy.
+
+Decision: route supported Batch Runway history/reporting questions through
+planning-state projection-reporting guidance and policy-compatible
+`report-projection` output while keeping create-spec and execute-spec pickup on
+`current` and `validate`.
+
+Expected effect: Batch Runway agents keep active pickup SQLite-free and stop or
+record an explicit fallback when projection policy is missing or incompatible.
+
 ### Planning-state projection routing guidance
 
 Problem: the planning-state skill documented projection commands, but did not
