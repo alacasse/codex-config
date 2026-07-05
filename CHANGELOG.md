@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Planning-state SQLite projection contract
+
+Problem: SQLite projection work needed a stable, bounded contract before adding
+commands that rebuild or query a database.
+
+Decision: define the projection schema metadata, source identity, stale-database
+blocker code, allowed report facts, and bounded row validation without selecting
+or writing a durable database location.
+
+Expected effect: later projection rebuild/report slices can validate generated
+SQLite content against canonical Markdown/JSON state without storing Markdown,
+prompts, transcripts, or long logs in the projection.
+
 ### Planning-state write-target policy enforcement
 
 Problem: planning-state write helpers accepted explicit JSON state targets

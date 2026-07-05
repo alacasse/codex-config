@@ -21,7 +21,9 @@ PLANNING_STATE_PROTOCOL_VERSION = 1
 STATE_FIXTURE_SCHEMA_NAME = "planning-state-tool-state"
 RECEIPT_FIXTURE_SCHEMA_NAME = "planning-state-transition-receipt"
 CLOSEOUT_EVIDENCE_INDEX_SCHEMA_NAME = "planning-state-closeout-evidence-index"
+PROJECTION_SCHEMA_NAME = "planning-state-sqlite-projection"
 SUPPORTED_SCHEMA_VERSION = 1
+PROJECTION_SCHEMA_VERSION = 1
 ARTIFACT_REGISTRATION_PROTOCOL_NAME = "planning-state-artifact-registration"
 TRANSITION_RECEIPT_PROTOCOL_NAME = "planning-state-transition"
 CLOSEOUT_VALIDATION_PROTOCOL_NAME = "planning-state-closeout-validation"
@@ -127,6 +129,69 @@ CLOSEOUT_EVIDENCE_ITEM_LIMITS = {
     "review_evidence": CLOSEOUT_MAX_REVIEW_EVIDENCE_ITEMS,
     "transition_receipts": CLOSEOUT_MAX_TRANSITION_RECEIPTS,
 }
+PROJECTION_SCHEMA_TABLES = {
+    "projection_metadata",
+    "source_artifacts",
+    "report_facts",
+}
+PROJECTION_REPORT_FACT_TYPES = {
+    "artifact_pointer",
+    "batch_evidence_lookup",
+    "closeout_evidence_status",
+    "obligation",
+    "pending_batch",
+    "runner_summary",
+}
+PROJECTION_REPORT_FACT_FIELDS = {
+    "artifact_type",
+    "batch_id",
+    "close_condition",
+    "code",
+    "count",
+    "duration_ms",
+    "evidence_path",
+    "fact_type",
+    "finished_at",
+    "message",
+    "obligation_id",
+    "owner",
+    "path",
+    "phase",
+    "program",
+    "root",
+    "run_id",
+    "severity",
+    "source_batch",
+    "started_at",
+    "status",
+    "summary",
+    "target_batch",
+    "value",
+}
+PROJECTION_FORBIDDEN_FACT_FIELDS = {
+    "body",
+    "content",
+    "log",
+    "markdown",
+    "prompt",
+    "raw_log",
+    "text",
+    "transcript",
+}
+PROJECTION_BANNED_TEXT_TERMS = {
+    *CLOSEOUT_BANNED_SECTION_TERMS,
+    "chat history",
+    "command output",
+    "developer message",
+    "full markdown",
+    "ignore previous instructions",
+    "instructions:",
+    "prompt:",
+    "raw telemetry",
+    "system prompt",
+    "you are chatgpt",
+}
+PROJECTION_MAX_TEXT_CHARS = CLOSEOUT_MAX_SUMMARY_TEXT_CHARS
 
 
 @dataclass(frozen=True)
@@ -571,6 +636,67 @@ def validate_closeout_evidence_index_object(
     )
     _validate_bounded_closeout_sections(data)
     return data
+
+
+def validate_projection_contract_object(value: object) -> dict[str, Any]:
+    """Validate the bounded SQLite projection contract fixture."""
+
+    data = _require_object(value, "projection contract")
+    _require_protocol(data, PROJECTION_SCHEMA_NAME, "projection contract")
+    metadata = _require_object(data.get("metadata"), "metadata")
+    schema_version = metadata.get("schema_version")
+    if schema_version != PROJECTION_SCHEMA_VERSION:
+        raise ProtocolValidationError(
+            f"metadata.schema_version must be {PROJECTION_SCHEMA_VERSION}"
+        )
+    planning_root = _require_string(metadata, "planning_root")
+    _validate_projection_text(_require_string(metadata, "build_command"), "build_command")
+    _validate_projection_text(_require_string(metadata, "built_at"), "built_at")
+    _require_exact_string_set(metadata, "tables", PROJECTION_SCHEMA_TABLES)
+    source_identity = _require_object(metadata.get("source_identity"), "source_identity")
+    _validate_projection_source_identity(source_identity, "source_identity")
+    if source_identity["planning_root"] != planning_root:
+        raise ProtocolValidationError(
+            "metadata.planning_root must match "
+            "metadata.source_identity.planning_root"
+        )
+    state_fixture_identity = metadata.get("state_fixture_identity")
+    if state_fixture_identity is not None:
+        _validate_projection_source_artifact(
+            _require_object(state_fixture_identity, "state_fixture_identity"),
+            "state_fixture_identity",
+        )
+    _require_exact_string_set(
+        data,
+        "allowed_report_fact_types",
+        PROJECTION_REPORT_FACT_TYPES,
+    )
+    report_facts = _require_array(data, "report_facts")
+    for index, fact in enumerate(report_facts):
+        _validate_projection_report_fact(
+            _require_object(fact, f"report_facts[{index}]"),
+            f"report_facts[{index}]",
+        )
+    return data
+
+
+def projection_staleness_blockers(
+    projection_metadata: dict[str, Any],
+    expected_source_identity: dict[str, Any],
+) -> tuple[ValidationMessage, ...]:
+    """Return stable blockers when projection source metadata is stale."""
+
+    actual = projection_metadata.get("source_identity")
+    if actual == expected_source_identity:
+        return ()
+    return (
+        ValidationMessage(
+            "error",
+            "projection_database_stale",
+            "projection database source identity does not match current planning state",
+            None,
+        ),
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -2544,6 +2670,82 @@ def _validate_obligation_object(data: dict[str, Any], context: str) -> None:
             f"invalid_obligation_record: {context}.status must be 'open' or 'closed'"
         )
     _require_optional_string(data, "evidence_path")
+
+
+def _validate_projection_source_identity(
+    data: dict[str, Any],
+    context: str,
+) -> None:
+    _require_string(data, "planning_root")
+    sources = _require_array(data, "sources")
+    if not sources:
+        raise ProtocolValidationError(f"{context}.sources must be a non-empty array")
+    for index, source in enumerate(sources):
+        _validate_projection_source_artifact(
+            _require_object(source, f"{context}.sources[{index}]"),
+            f"{context}.sources[{index}]",
+        )
+
+
+def _validate_projection_source_artifact(
+    data: dict[str, Any],
+    context: str,
+) -> None:
+    _validate_projection_text(_require_string(data, "kind"), f"{context}.kind")
+    _validate_projection_text(_require_string(data, "path"), f"{context}.path")
+    sha256 = _require_optional_string(data, "sha256")
+    mtime_ns = data.get("mtime_ns")
+    if sha256 is not None:
+        if re.fullmatch(r"[0-9a-f]{64}", sha256) is None:
+            raise ProtocolValidationError(f"{context}.sha256 must be a hex sha256")
+    if mtime_ns is not None and (
+        not isinstance(mtime_ns, int) or isinstance(mtime_ns, bool) or mtime_ns < 0
+    ):
+        raise ProtocolValidationError(f"{context}.mtime_ns must be a non-negative integer")
+    if sha256 is None and mtime_ns is None:
+        raise ProtocolValidationError(f"{context} must include sha256 or mtime_ns")
+
+
+def _validate_projection_report_fact(
+    data: dict[str, Any],
+    context: str,
+) -> None:
+    fact_type = _require_string(data, "fact_type")
+    if fact_type not in PROJECTION_REPORT_FACT_TYPES:
+        raise ProtocolValidationError(f"{context}.fact_type is unsupported: {fact_type}")
+    for key, value in data.items():
+        if key in PROJECTION_FORBIDDEN_FACT_FIELDS:
+            raise ProtocolValidationError(f"{context}.{key} is canonical or unbounded")
+        if key not in PROJECTION_REPORT_FACT_FIELDS:
+            raise ProtocolValidationError(f"{context}.{key} is not a projection fact field")
+        _validate_projection_scalar(value, f"{context}.{key}")
+
+
+def _validate_projection_scalar(value: object, context: str) -> None:
+    if value is None:
+        return
+    if isinstance(value, bool):
+        raise ProtocolValidationError(f"{context} must be a bounded scalar")
+    if isinstance(value, int):
+        if value < 0:
+            raise ProtocolValidationError(f"{context} must be non-negative")
+        return
+    if isinstance(value, str):
+        _validate_projection_text(value, context)
+        return
+    raise ProtocolValidationError(f"{context} must be a bounded scalar")
+
+
+def _validate_projection_text(value: object, context: str) -> None:
+    if not isinstance(value, str) or not value:
+        raise ProtocolValidationError(f"{context} must be a non-empty string")
+    if len(value) > PROJECTION_MAX_TEXT_CHARS:
+        raise ProtocolValidationError(f"{context} exceeds bounded projection text limit")
+    lowered = value.lower()
+    if "\n" in value or "\r" in value or any(
+        term in lowered for term in PROJECTION_BANNED_TEXT_TERMS
+    ):
+        raise ProtocolValidationError(f"{context} is canonical or unbounded")
 
 
 def _validate_closeout_known_batch(
