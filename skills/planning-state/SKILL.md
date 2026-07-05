@@ -70,6 +70,8 @@ project-specific behavior.
   using generated projection reports.
 - `references/closeout-evidence.md`: read before collecting or validating
   closeout evidence for completed batches.
+- `references/runner-artifacts.md`: read before projecting runner artifact or
+  runner artifact manifest inputs.
 
 ## Write Boundaries
 

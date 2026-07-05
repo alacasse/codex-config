@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state projection and closeout references
+
+Problem: the planning-state skill pointed agents at optional projection and
+closeout workflows, but the detailed guidance for report sequencing, closeout
+evidence, and runner-artifact inputs was missing.
+
+Decision: add focused references for projection reports, pointer-first closeout
+evidence, and optional runner artifacts, and route the entrypoint to load them
+only when those workflows are requested.
+
+Expected effect: agents can use report commands and closeout checks without
+querying SQLite directly, requiring runner data for ordinary reports, or
+embedding long logs and downstream project paths in reusable workflow guidance.
+
 ### Planning-state fixture and target-policy references
 
 Problem: the new planning-state skill named state-fixture and target-policy
