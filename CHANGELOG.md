@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Architecture-program planning-state diagnostics
+
+Problem: Architecture Program Runway could start Layout v1 pickup or closeout
+from active files, historical plans, or generated outputs without first using
+the shared planning-state diagnostic interface.
+
+Decision: route Layout v1 active-state pickup and closeout evidence through
+`planning-state` current/validate diagnostics while preserving Architecture
+Program ownership of program selection, grouping, queue state, dispatch packets,
+handoff to Batch Runway, and closeout reconciliation.
+
+Expected effect: fresh architecture-program agents start from validated
+planning-state facts before broader planning reads without moving placement
+policy out of `planning-artifacts` or embedding downstream project defaults.
+
 ### Batch-runway planning-state diagnostics
 
 Problem: Batch Runway could consume Layout v1 active-state files, selected

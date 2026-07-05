@@ -184,6 +184,14 @@ so the program ledger stays readable.
 
 - Create one concrete Batch Runway spec at a time unless explicitly asked for
   multiple.
+- When Planning Artifact Layout v1 is active, use `planning-state`
+  current/validate diagnostics before consuming active-state files, selected
+  dispatches, queued batches, active runways, blockers, closeout evidence, or
+  target policy.
+- Treat Planning State Diagnostic output as operational facts only. Program
+  grouping, queue state, selected dispatch packets, and closeout reconciliation
+  remain owned by `architecture-program-runway`; placement remains owned by
+  `planning-artifacts`.
 - Create or update a selected batch brief before invoking `batch-runway`
   create-spec from a broad program ledger.
 - Future fresh spec-creation agents should consume the selected batch brief and
@@ -217,13 +225,16 @@ so the program ledger stays readable.
 
 After a concrete runway finishes:
 
-1. Read the completed slice archive, commits, validation notes, and review
+1. If Planning Artifact Layout v1 is active, run or consume `planning-state`
+   current/validate diagnostics for the planning root before expanding to older
+   plans or generated outputs.
+2. Read the completed slice archive, commits, validation notes, and review
    result.
-2. For each covered finding, decide: `Closed`, `Prepared`, `Open`, `Split`, or
+3. For each covered finding, decide: `Closed`, `Prepared`, `Open`, `Split`, or
    `Superseded`.
-3. Update `Covered by` with spec path and commit evidence.
-4. Update the batch queue row to `Completed` or explain remaining work.
-5. Select or refresh the next `Ready` batch only if evidence supports it.
-6. If a runner drove the work, add a compact goal-run evaluation receipt.
-7. For active legacy-removal runways, record removed surfaces, deferred
+4. Update `Covered by` with spec path and commit evidence.
+5. Update the batch queue row to `Completed` or explain remaining work.
+6. Select or refresh the next `Ready` batch only if evidence supports it.
+7. If a runner drove the work, add a compact goal-run evaluation receipt.
+8. For active legacy-removal runways, record removed surfaces, deferred
    surfaces, temporary migration guards that remain, and required follow-up.
