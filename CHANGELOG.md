@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state fixture and target-policy references
+
+Problem: the new planning-state skill named state-fixture and target-policy
+surfaces, but agents still had to infer command sequencing and safe write
+targets from CLI behavior.
+
+Decision: add focused planning-state references for JSON fixtures, transition
+receipts, and policy-driven target selection across stdout, `/tmp`,
+generated-only, committed, ignored-local, external, and none policies.
+
+Expected effect: agents can load the extra guidance only when they need
+fixtures or target decisions, while reusable workflow code continues to resolve
+project policy instead of hard-coding a downstream planning layout.
+
 ### Planning-state skill entrypoint
 
 Problem: agents had planning-state commands and Layout v1 conventions, but no

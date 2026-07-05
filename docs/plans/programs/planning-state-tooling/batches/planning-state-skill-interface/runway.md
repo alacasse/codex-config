@@ -148,7 +148,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 2. Add state-fixture and target-policy references | pending | | | | Prove durable target choices are explicit and project-policy driven. | |
 | 3. Add projection, closeout, and runner-artifact references | pending | | | | Prove optional reporting and evidence workflows are discoverable without bloating the entrypoint. | |
 | 4. Wire install metadata and close findings | pending | | | | Prove the feature installs, validation smokes pass, and PST-9 through PST-11 can close. | |
 
@@ -161,6 +160,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1. Create planning-state skill entrypoint | this commit | Added `skills/planning-state/SKILL.md` with the read-only diagnostic hot path, command-boundary guardrails, Layout v1 delegation, policy refusal rules, and future reference pointers. | Validation: `current`, `validate`, hard-code grep, `git diff --check`; review: clean `runway_reviewer` result. |
+| 2. Add state-fixture and target-policy references | this commit | Added focused references for JSON state fixtures, transition receipts, and policy-driven target selection across stdout, `/tmp`, generated-only, committed, ignored-local, external, and none policies. | Validation: temp `bootstrap-state`, temp `validate --state-file`, expected durable-policy refusal for generated-only `--require-project-policy all`, hard-code grep, `git diff --check`; review: clean `runway_reviewer` result. |
 
 ## Slice 1. Create Planning-State Skill Entrypoint
 

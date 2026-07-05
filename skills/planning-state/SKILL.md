@@ -56,14 +56,16 @@ this skill.
 
 ## Progressive Disclosure
 
-Read only the reference needed for the current task. Later slices add these
-references; until then, treat missing files as unavailable optional guidance,
-not permission to invent project-specific behavior.
+Read only the reference needed for the current task. Treat missing optional
+reference files as unavailable guidance, not permission to invent
+project-specific behavior.
 
 - `references/state-fixtures.md`: read before creating or updating sample state
-  fixtures or bootstrap examples.
+  fixtures, bootstrap examples, transition receipts, or fixture-consuming
+  command examples.
 - `references/target-policy.md`: read before writing JSON state, rebuilding a
-  SQLite projection, or choosing persistent state/projection targets.
+  SQLite projection, choosing persistent state/projection targets, or proving
+  a generated-only workflow with stdout or `/tmp`.
 - `references/projection-reporting.md`: read before rebuilding projections or
   using generated projection reports.
 - `references/closeout-evidence.md`: read before collecting or validating
