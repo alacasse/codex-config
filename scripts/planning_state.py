@@ -23,6 +23,7 @@ SUPPORTED_SCHEMA_VERSION = 1
 ARTIFACT_REGISTRATION_PROTOCOL_NAME = "planning-state-artifact-registration"
 TRANSITION_RECEIPT_PROTOCOL_NAME = "planning-state-transition"
 CLOSEOUT_VALIDATION_PROTOCOL_NAME = "planning-state-closeout-validation"
+CLOSEOUT_RENDERING_PROTOCOL_NAME = "planning-state-closeout-rendering"
 SUPPORTED_ARTIFACT_TYPES = {
     "dispatch",
     "runway",
@@ -567,6 +568,30 @@ def main(argv: list[str] | None = None) -> int:
     closeout_parser.add_argument("--batch-id", required=True)
     closeout_parser.add_argument("--closeout", required=True)
     closeout_parser.add_argument("--state-file", type=Path, required=True)
+    render_closeout_parser = subparsers.add_parser(
+        "render-closeout",
+        help="Render a bounded registered closeout evidence index.",
+    )
+    render_closeout_parser.add_argument("--root", type=Path, required=True)
+    render_closeout_parser.add_argument("--program", required=True)
+    render_closeout_parser.add_argument("--batch-id", required=True)
+    render_closeout_parser.add_argument("--state-file", type=Path, required=True)
+    render_closeout_parser.add_argument("--completed-slices-summary", required=True)
+    render_closeout_parser.add_argument("--validation-artifact", required=True)
+    render_closeout_parser.add_argument("--validation-summary", required=True)
+    render_closeout_parser.add_argument("--review-artifact", required=True)
+    render_closeout_parser.add_argument("--review-summary", required=True)
+    render_closeout_parser.add_argument("--cleanup-classification", required=True)
+    render_closeout_parser.add_argument("--cleanup-evidence", action="append", default=[])
+    render_closeout_parser.add_argument("--commit", action="append", default=[])
+    render_closeout_parser.add_argument("--commit-range-from")
+    render_closeout_parser.add_argument("--commit-range-to")
+    render_closeout_parser.add_argument("--transition-receipt-artifact", action="append", default=[])
+    render_closeout_parser.add_argument("--transition-receipt-summary", action="append", default=[])
+    render_closeout_parser.add_argument(
+        "--target",
+        help="Registered closeout.md path to write. Omit to render Markdown to stdout.",
+    )
     args = parser.parse_args(argv)
     try:
         if args.command == "current":
@@ -657,6 +682,33 @@ def main(argv: list[str] | None = None) -> int:
             )
             sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
             return 0 if document["status"] == "passed" else 1
+        if args.command == "render-closeout":
+            state = load_planning_state(args.root)
+            document = render_closeout(
+                state,
+                program_slug=args.program,
+                batch_id=args.batch_id,
+                state_file=args.state_file,
+                completed_slices_summary=args.completed_slices_summary,
+                validation_artifact_path=args.validation_artifact,
+                validation_summary=args.validation_summary,
+                review_artifact_path=args.review_artifact,
+                review_summary=args.review_summary,
+                cleanup_classification=args.cleanup_classification,
+                cleanup_evidence=args.cleanup_evidence,
+                commits=args.commit,
+                commit_range_from=args.commit_range_from,
+                commit_range_to=args.commit_range_to,
+                transition_receipt_artifacts=args.transition_receipt_artifact,
+                transition_receipt_summaries=args.transition_receipt_summary,
+                target_path=args.target,
+            )
+            markdown = document.pop("markdown")
+            if args.target is None:
+                sys.stdout.write(markdown)
+            else:
+                sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
+            return 0
     except ProtocolValidationError as error:
         parser.exit(2, f"{parser.prog}: error: {error}\n")
     parser.error(f"unknown command: {args.command}")
@@ -959,6 +1011,347 @@ def validate_closeout(
         "messages": messages,
     }
     return result
+
+
+def render_closeout(
+    state: PlanningState,
+    *,
+    program_slug: str,
+    batch_id: str,
+    state_file: Path,
+    completed_slices_summary: str,
+    validation_artifact_path: str,
+    validation_summary: str,
+    review_artifact_path: str,
+    review_summary: str,
+    cleanup_classification: str,
+    cleanup_evidence: list[str],
+    commits: list[str],
+    commit_range_from: str | None,
+    commit_range_to: str | None,
+    transition_receipt_artifacts: list[str],
+    transition_receipt_summaries: list[str],
+    target_path: str | None,
+) -> dict[str, Any]:
+    """Render a bounded closeout evidence index from explicit inputs."""
+
+    program = _find_program(state, program_slug)
+    paths = _canonical_batch_paths(state, program, batch_id)
+    data = _load_state_fixture(state_file, expected_root=_planning_root_prefix(state))
+    program_data = _fixture_program(data, program.slug)
+    closeout_path = _registered_artifact_path(
+        program_data,
+        artifact_type="closeout",
+        batch_id=batch_id,
+    )
+    if closeout_path is None:
+        raise ProtocolValidationError(f"closeout is not registered for {batch_id}")
+    _validate_registered_path(
+        state,
+        artifact_type="closeout",
+        artifact_path=closeout_path,
+        paths=paths,
+    )
+    if target_path is not None and target_path != closeout_path:
+        raise ProtocolValidationError(
+            f"target path must be registered closeout path: {closeout_path}"
+        )
+    transition_receipts = _render_closeout_evidence_items(
+        state,
+        program_data,
+        batch_id=batch_id,
+        paths=paths,
+        artifact_type="receipt",
+        artifact_paths=transition_receipt_artifacts,
+        summaries=transition_receipt_summaries,
+        field_name="transition-receipt",
+    )
+    closeout = _render_closeout_index(
+        state,
+        program=program.slug,
+        batch_id=batch_id,
+        state_fixture=data,
+        closeout_path=closeout_path,
+        completed_slices_summary=completed_slices_summary,
+        validation_artifact_path=validation_artifact_path,
+        validation_summary=validation_summary,
+        review_artifact_path=review_artifact_path,
+        review_summary=review_summary,
+        cleanup_classification=cleanup_classification,
+        cleanup_evidence=cleanup_evidence,
+        commits=commits,
+        commit_range_from=commit_range_from,
+        commit_range_to=commit_range_to,
+        transition_receipts=transition_receipts,
+    )
+    validate_closeout_evidence_index_object(
+        closeout,
+        state_fixture=data,
+        planning_state=state,
+        paths=paths,
+    )
+    markdown = _format_closeout_markdown(closeout)
+    if target_path is not None:
+        target = _resolve_pointer(state.root.root_path, target_path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(markdown, encoding="utf-8")
+    return {
+        "protocol": {
+            "name": CLOSEOUT_RENDERING_PROTOCOL_NAME,
+            "version": SUPPORTED_SCHEMA_VERSION,
+            "command": "render-closeout",
+        },
+        "root": _planning_root_prefix(state),
+        "status": "rendered",
+        "program": program.slug,
+        "batch_id": batch_id,
+        "closeout": closeout_path,
+        "target": target_path,
+        "markdown": markdown,
+    }
+
+
+def _render_closeout_index(
+    state: PlanningState,
+    *,
+    program: str,
+    batch_id: str,
+    state_fixture: dict[str, Any],
+    closeout_path: str,
+    completed_slices_summary: str,
+    validation_artifact_path: str,
+    validation_summary: str,
+    review_artifact_path: str,
+    review_summary: str,
+    cleanup_classification: str,
+    cleanup_evidence: list[str],
+    commits: list[str],
+    commit_range_from: str | None,
+    commit_range_to: str | None,
+    transition_receipts: list[dict[str, Any]],
+) -> dict[str, Any]:
+    program_data = _fixture_program(state_fixture, program)
+    artifacts = _render_required_closeout_artifacts(program_data, batch_id)
+    validation_artifact = _registered_evidence_artifact(
+        state,
+        program_data,
+        batch_id=batch_id,
+        artifact_path=validation_artifact_path,
+        paths=_canonical_batch_paths(state, _find_program(state, program), batch_id),
+    )
+    review_artifact = _registered_evidence_artifact(
+        state,
+        program_data,
+        batch_id=batch_id,
+        artifact_path=review_artifact_path,
+        paths=_canonical_batch_paths(state, _find_program(state, program), batch_id),
+    )
+    closeout = {
+        "protocol": {
+            "name": CLOSEOUT_EVIDENCE_INDEX_SCHEMA_NAME,
+            "version": SUPPORTED_SCHEMA_VERSION,
+        },
+        "root": _planning_root_prefix(state),
+        "program": program,
+        "batch_id": batch_id,
+        "status": "closed",
+        "artifacts": artifacts,
+        "commit_evidence": _render_commit_evidence(
+            commits,
+            commit_range_from,
+            commit_range_to,
+        ),
+        "validation_evidence": [
+            {
+                "artifact": validation_artifact,
+                "summary": validation_summary,
+            }
+        ],
+        "review_evidence": [
+            {
+                "artifact": review_artifact,
+                "summary": review_summary,
+            }
+        ],
+        "obligations": _render_obligations(state_fixture, batch_id),
+        "cleanup_residue": {
+            "classification": cleanup_classification,
+            "evidence": cleanup_evidence,
+        },
+        "sections": [
+            {
+                "title": "Completed Slices",
+                "items": [completed_slices_summary],
+            }
+        ],
+    }
+    if transition_receipts:
+        closeout["transition_receipts"] = transition_receipts
+    _validate_rendered_closeout_path(closeout, closeout_path)
+    return closeout
+
+
+def _render_required_closeout_artifacts(
+    program_data: dict[str, Any],
+    batch_id: str,
+) -> list[dict[str, str]]:
+    artifacts = []
+    for artifact_type in ("closeout", "completed-slices", "dispatch", "runway"):
+        path = _registered_artifact_path(
+            program_data,
+            artifact_type=artifact_type,
+            batch_id=batch_id,
+        )
+        if path is None:
+            raise ProtocolValidationError(
+                f"{artifact_type} is not registered for {batch_id}"
+            )
+        artifacts.append(
+            {
+                "batch_id": batch_id,
+                "path": path,
+                "type": artifact_type,
+            }
+        )
+    return artifacts
+
+
+def _registered_evidence_artifact(
+    state: PlanningState,
+    program_data: dict[str, Any],
+    *,
+    batch_id: str,
+    artifact_path: str,
+    paths: dict[str, str],
+) -> dict[str, str]:
+    artifacts = program_data.get("artifacts", [])
+    if not isinstance(artifacts, list):
+        raise ProtocolValidationError("artifacts must be an array")
+    for artifact in artifacts:
+        if not isinstance(artifact, dict):
+            continue
+        if artifact.get("batch_id") != batch_id or artifact.get("path") != artifact_path:
+            continue
+        artifact_type = _normalize_artifact_type(str(artifact.get("type") or ""))
+        _validate_registered_path(
+            state,
+            artifact_type=artifact_type,
+            artifact_path=artifact_path,
+            paths=paths,
+        )
+        return {
+            "batch_id": batch_id,
+            "path": artifact_path,
+            "type": artifact_type,
+        }
+    raise ProtocolValidationError(f"artifact is not registered for {batch_id}: {artifact_path}")
+
+
+def _render_commit_evidence(
+    commits: list[str],
+    commit_range_from: str | None,
+    commit_range_to: str | None,
+) -> dict[str, Any]:
+    has_range = commit_range_from is not None or commit_range_to is not None
+    if commits and has_range:
+        raise ProtocolValidationError("commit evidence must use commits or range, not both")
+    if commits:
+        return {"commits": commits}
+    if has_range:
+        if commit_range_from is None or commit_range_to is None:
+            raise ProtocolValidationError("commit range requires from and to values")
+        return {"range": {"from": commit_range_from, "to": commit_range_to}}
+    raise ProtocolValidationError("commit evidence is required")
+
+
+def _render_obligations(
+    state_fixture: dict[str, Any],
+    batch_id: str,
+) -> dict[str, list[dict[str, str | None]]]:
+    rendered = {"closed": [], "open": []}
+    for obligation in _obligations_from_fixture(state_fixture):
+        if obligation.source_batch != batch_id and obligation.target_batch != batch_id:
+            continue
+        key = "closed" if obligation.status == "closed" else "open"
+        rendered[key].append(_obligation_object(obligation))
+    return rendered
+
+
+def _render_closeout_evidence_items(
+    state: PlanningState,
+    program_data: dict[str, Any],
+    *,
+    batch_id: str,
+    paths: dict[str, str],
+    artifact_type: str,
+    artifact_paths: list[str],
+    summaries: list[str],
+    field_name: str,
+) -> list[dict[str, Any]]:
+    if len(artifact_paths) != len(summaries):
+        raise ProtocolValidationError(
+            f"{field_name} artifacts and summaries must have the same count"
+        )
+    items = []
+    for artifact_path, summary in zip(artifact_paths, summaries, strict=True):
+        artifact = _registered_evidence_artifact(
+            state,
+            program_data,
+            batch_id=batch_id,
+            artifact_path=artifact_path,
+            paths=paths,
+        )
+        if artifact["type"] != artifact_type:
+            raise ProtocolValidationError(
+                f"{field_name} artifact must be registered as {artifact_type}"
+            )
+        items.append({"artifact": artifact, "summary": summary})
+    return items
+
+
+def _registered_artifact_path(
+    program_data: dict[str, Any],
+    *,
+    artifact_type: str,
+    batch_id: str,
+) -> str | None:
+    artifacts = program_data.get("artifacts", [])
+    if not isinstance(artifacts, list):
+        raise ProtocolValidationError("artifacts must be an array")
+    for artifact in artifacts:
+        if not isinstance(artifact, dict):
+            continue
+        if artifact.get("type") == artifact_type and artifact.get("batch_id") == batch_id:
+            path = artifact.get("path")
+            if isinstance(path, str):
+                return path
+    return None
+
+
+def _validate_rendered_closeout_path(
+    closeout: dict[str, Any],
+    closeout_path: str,
+) -> None:
+    artifacts = _closeout_artifacts_by_type(closeout)
+    closeout_artifact = artifacts.get("closeout")
+    if closeout_artifact is None or closeout_artifact.get("path") != closeout_path:
+        raise ProtocolValidationError("rendered closeout path does not match registration")
+
+
+def _format_closeout_markdown(closeout: dict[str, Any]) -> str:
+    lines = [
+        f"# Closeout: {closeout['batch_id']}",
+        "",
+        f"- Program: `{closeout['program']}`",
+        f"- Status: `{closeout['status']}`",
+        "- Evidence index: fenced JSON below",
+        "",
+        "```json",
+        json.dumps(closeout, indent=2, sort_keys=True),
+        "```",
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def _read_text(path: Path) -> str:

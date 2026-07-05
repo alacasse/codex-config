@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state closeout rendering
+
+Problem: closeout evidence indexes could be validated but still had to be
+handwritten, which made required pointers and obligation evidence easy to miss.
+
+Decision: add `planning_state render-closeout` to build bounded `closeout.md`
+Markdown from explicit registered artifacts, evidence summaries, commits,
+obligation facts, and cleanup classification. The command prints to stdout by
+default and writes only to the registered batch closeout path when `--target`
+is supplied.
+
+Expected effect: runners and agents can produce compact closeout evidence
+without transcript dumps or live planning-state mutation.
+
 ### Planning-state closeout validation
 
 Problem: completed batches had a closeout evidence-index contract but no

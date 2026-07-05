@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -1544,6 +1545,86 @@ def test_validate_closeout_command_collects_multiple_invalid_artifact_pointers(
     )
 
 
+def test_render_closeout_command_outputs_stable_pointer_first_markdown(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+
+    result = _run_render_closeout(root, state_file)
+    closeout = _json_from_markdown(result.stdout)
+
+    assert result.returncode == 0
+    assert result.stdout.startswith("# Closeout: planning-state-write-transitions\n")
+    assert "pytest output copied from the terminal" not in result.stdout
+    assert closeout["artifacts"][0] == {
+        "batch_id": "planning-state-write-transitions",
+        "path": closeout_path,
+        "type": "closeout",
+    }
+    assert closeout["sections"] == [
+        {
+            "items": ["completed-slices.md summarizes all completed slices"],
+            "title": "Completed Slices",
+        }
+    ]
+    assert closeout["validation_evidence"][0]["artifact"]["path"].endswith(
+        "/outputs/pytest.json"
+    )
+    assert closeout["review_evidence"][0]["artifact"]["path"].endswith(
+        "/receipts/queue-batch.json"
+    )
+
+
+def test_render_closeout_command_writes_only_registered_closeout_path(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+    target = root / Path(closeout_path).relative_to("docs/plans")
+    target.unlink()
+
+    result = _run_render_closeout(root, state_file, "--target", closeout_path)
+    validate_result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["status"] == "rendered"
+    assert payload["target"] == closeout_path
+    assert target.exists()
+    assert validate_result.returncode == 0
+    assert json.loads(validate_result.stdout)["status"] == "passed"
+
+
+def test_render_closeout_command_rejects_unregistered_target_path(
+    tmp_path: Path,
+) -> None:
+    root, state_file, _closeout_path = _write_closeout_validation_fixture(tmp_path)
+    bad_target = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-write-transitions/outputs/closeout.md"
+    )
+
+    result = _run_render_closeout(root, state_file, "--target", bad_target)
+
+    assert result.returncode == 2
+    assert "target path must be registered closeout path" in result.stderr
+
+
+def test_render_closeout_command_rejects_missing_closed_obligation_evidence(
+    tmp_path: Path,
+) -> None:
+    root, state_file, _closeout_path = _write_closeout_validation_fixture(tmp_path)
+    state_fixture = _closeout_state_fixture()
+    state_fixture["obligations"][0]["evidence_path"] = None
+    state_file.write_text(json.dumps(state_fixture), encoding="utf-8")
+
+    result = _run_render_closeout(root, state_file)
+
+    assert result.returncode == 2
+    assert "obligations.closed[0].evidence_path must be a non-empty string" in (
+        result.stderr
+    )
+
+
 def test_validate_closeout_command_rejects_registered_wrong_batch_transition_receipt(
     tmp_path: Path,
 ) -> None:
@@ -2887,6 +2968,67 @@ def _run_validate_closeout(
         text=True,
         capture_output=True,
     )
+
+
+def _run_render_closeout(
+    root: Path,
+    state_file: Path,
+    *extra_args: str,
+) -> subprocess.CompletedProcess[str]:
+    batch_root = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-write-transitions"
+    )
+    return subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "render-closeout",
+            "--root",
+            str(root),
+            "--program",
+            "planning-state-tooling",
+            "--batch-id",
+            "planning-state-write-transitions",
+            "--state-file",
+            str(state_file),
+            "--completed-slices-summary",
+            "completed-slices.md summarizes all completed slices",
+            "--validation-artifact",
+            f"{batch_root}/outputs/pytest.json",
+            "--validation-summary",
+            "focused pytest, ruff, and diff checks passed",
+            "--review-artifact",
+            f"{batch_root}/receipts/queue-batch.json",
+            "--review-summary",
+            "reviewer marked the slice clean",
+            "--cleanup-classification",
+            "deferred",
+            "--cleanup-evidence",
+            "PST-OBL-OPEN remains assigned to next-batch",
+            "--commit",
+            "abc1234",
+            "--transition-receipt-artifact",
+            f"{batch_root}/receipts/queue-batch.json",
+            "--transition-receipt-summary",
+            "queue-batch receipt carried obligation facts",
+            *extra_args,
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+
+def _json_from_markdown(markdown: str) -> dict[str, object]:
+    match = re.search(r"```json\s*\n(.*?)\n```", markdown, flags=re.DOTALL)
+    if match is None:
+        raise AssertionError("missing JSON fence")
+    data = json.loads(match.group(1))
+    if not isinstance(data, dict):
+        raise AssertionError("JSON fence is not an object")
+    return data
 
 
 def _write_transition_batch(
