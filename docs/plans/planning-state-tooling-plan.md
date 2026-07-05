@@ -71,6 +71,7 @@ python scripts/planning_state.py current --root <planning-root> --format json
 python scripts/planning_state.py validate --root <planning-root> --format json
 python scripts/planning_state.py validate --root <planning-root> --state-file <state.json>
 python scripts/planning_state.py validate --root <planning-root> --require-project-policy <state-file|projection|all>
+python scripts/planning_state.py validate --root <planning-root> --projection-target <planning-state.sqlite>
 ```
 
 The first write-transition helpers are path and fixture oriented. They do not
@@ -241,7 +242,11 @@ caller-provided temporary proof output remain valid, but durable writes should
 stop with a stable blocker. Read-only `validate` can preflight that boundary
 with `--require-project-policy state-file`, `projection`, or `all`, which
 reports missing or incompatible durable policy without writing state or
-projection data.
+projection data. `--projection-target` checks a concrete future projection
+target before the SQLite rebuild command exists; stdout and explicit `/tmp`
+proof targets remain valid for generated-only or missing policy, while
+committed, ignored-local, and external targets must match the declared project
+policy path.
 
 The contract is a discovery contract, not a default layout. Reusable workflow
 code must resolve these facts from the current project context and must not

@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+from dataclasses import replace
 import json
 from pathlib import Path
 from pathlib import PurePosixPath
 import re
 import sys
+import tempfile
 from typing import Any, Iterable
 
 
@@ -609,6 +611,11 @@ def main(argv: list[str] | None = None) -> int:
         default="none",
         help="Report blockers as if a durable state/projection write is being preflighted.",
     )
+    current_parser.add_argument(
+        "--projection-target",
+        type=Path,
+        help="Optional projection target to preflight without writing projection data.",
+    )
     validate_parser = subparsers.add_parser(
         "validate",
         help="Validate active planning state without writing files.",
@@ -641,6 +648,11 @@ def main(argv: list[str] | None = None) -> int:
         choices=tuple(sorted(PROJECT_POLICY_REQUIREMENTS)),
         default="none",
         help="Require declared policy for a durable state/projection preflight.",
+    )
+    validate_parser.add_argument(
+        "--projection-target",
+        type=Path,
+        help="Optional projection target to preflight without writing projection data.",
     )
     bootstrap_parser = subparsers.add_parser(
         "bootstrap-state",
@@ -756,6 +768,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.state_file,
                 require_project_policy=args.require_project_policy,
             )
+            state = _state_with_projection_preflight(state, args.projection_target)
             exit_code = 0
             if args.format == "json":
                 sys.stdout.write(
@@ -775,6 +788,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.state_file,
                 require_project_policy=args.require_project_policy,
             )
+            state = _state_with_projection_preflight(state, args.projection_target)
             exit_code = 1 if _has_validation_errors(state) else 0
             if args.format == "json":
                 sys.stdout.write(
@@ -942,6 +956,13 @@ def register_artifact(
         if state_file is not None
         else None
     )
+    if data is not None:
+        _validate_state_file_target_policy(
+            state,
+            state_file,
+            state_fixture=data,
+            operation="register-artifact --state-file",
+        )
     registration = {
         "type": artifact_type,
         "batch_id": batch_id,
@@ -998,6 +1019,11 @@ def bootstrap_state(
     validate_state_fixture_object(document)
     if state_file is not None:
         _validate_bootstrap_state_target(state, state_file)
+        _validate_state_file_target_policy(
+            state,
+            state_file,
+            operation="bootstrap-state --state-file",
+        )
         _write_state_fixture(state_file, document)
     return document
 
@@ -1016,6 +1042,12 @@ def select_batch(
     program = _find_program(state, program_slug)
     paths = _canonical_batch_paths(state, program, batch_id)
     data = _load_state_fixture(state_file, expected_root=_planning_root_prefix(state))
+    _validate_state_file_target_policy(
+        state,
+        state_file,
+        state_fixture=data,
+        operation="select-batch --state-file",
+    )
     messages: list[dict[str, str | None]] = []
     _validate_transition_artifact(
         state,
@@ -1073,6 +1105,12 @@ def queue_batch(
     program = _find_program(state, program_slug)
     paths = _canonical_batch_paths(state, program, batch_id)
     data = _load_state_fixture(state_file, expected_root=_planning_root_prefix(state))
+    _validate_state_file_target_policy(
+        state,
+        state_file,
+        state_fixture=data,
+        operation="queue-batch --state-file",
+    )
     messages: list[dict[str, str | None]] = []
     for artifact_type, artifact_path in (
         ("dispatch", dispatch_path),
@@ -1142,6 +1180,12 @@ def validate_closeout(
     program = _find_program(state, program_slug)
     paths = _canonical_batch_paths(state, program, batch_id)
     data = _load_state_fixture(state_file, expected_root=_planning_root_prefix(state))
+    _validate_state_file_target_policy(
+        state,
+        state_file,
+        state_fixture=data,
+        operation="validate-closeout --state-file",
+    )
     messages: list[dict[str, str | None]] = []
     _validate_closeout_path(
         state,
@@ -1240,6 +1284,12 @@ def render_closeout(
     program = _find_program(state, program_slug)
     paths = _canonical_batch_paths(state, program, batch_id)
     data = _load_state_fixture(state_file, expected_root=_planning_root_prefix(state))
+    _validate_state_file_target_policy(
+        state,
+        state_file,
+        state_fixture=data,
+        operation="render-closeout --state-file",
+    )
     program_data = _fixture_program(data, program.slug)
     closeout_path = _registered_artifact_path(
         program_data,
@@ -3276,6 +3326,187 @@ def _format_bootstrap_blockers(messages: list[ValidationMessage]) -> str:
     return f"bootstrap blocked by existing active-state contradictions: {details}"
 
 
+def _validate_state_file_target_policy(
+    state: PlanningState,
+    target: Path | None,
+    *,
+    state_fixture: dict[str, Any] | None = None,
+    operation: str,
+) -> None:
+    if target is None:
+        return
+    policy = _effective_project_policy(state, state_fixture, target)
+    _validate_policy_target(
+        state,
+        target,
+        target_kind="state-file",
+        policy=policy,
+        policy_value=policy.state_file_policy if policy is not None else "missing",
+        policy_path=policy.state_file_path if policy is not None else None,
+        source_path=policy.source_path if policy is not None else state.root.current_path,
+        operation=operation,
+    )
+
+
+def _validate_projection_preflight_target(
+    state: PlanningState,
+    target: Path | None,
+) -> None:
+    if target is None:
+        return
+    policy = state.project_policy
+    _validate_policy_target(
+        state,
+        target,
+        target_kind="projection",
+        policy=policy,
+        policy_value=policy.projection_policy if policy is not None else "missing",
+        policy_path=policy.projection_path if policy is not None else None,
+        source_path=policy.source_path if policy is not None else state.root.current_path,
+        operation="projection target preflight",
+    )
+
+
+def _state_with_projection_preflight(
+    state: PlanningState,
+    target: Path | None,
+) -> PlanningState:
+    messages = tuple(_projection_preflight_messages(state, target))
+    if not messages:
+        return state
+    return replace(
+        state,
+        validation_messages=(*state.validation_messages, *messages),
+    )
+
+
+def _projection_preflight_messages(
+    state: PlanningState,
+    target: Path | None,
+) -> Iterable[ValidationMessage]:
+    if target is None:
+        return
+    try:
+        _validate_projection_preflight_target(state, target)
+    except ProtocolValidationError as error:
+        yield ValidationMessage(
+            "error",
+            "projection_target_policy_conflict",
+            str(error),
+            target,
+        )
+
+
+def _effective_project_policy(
+    state: PlanningState,
+    state_fixture: dict[str, Any] | None,
+    state_fixture_path: Path,
+) -> ProjectPolicy | None:
+    if state_fixture is not None and state_fixture.get("project_policy") is not None:
+        return _project_policy_from_data(state_fixture["project_policy"], state_fixture_path)
+    return state.project_policy
+
+
+def _validate_policy_target(
+    state: PlanningState,
+    target: Path,
+    *,
+    target_kind: str,
+    policy: ProjectPolicy | None,
+    policy_value: str,
+    policy_path: str | None,
+    source_path: Path,
+    operation: str,
+) -> None:
+    if _is_explicit_temp_proof_target(state, target):
+        return
+    if policy is None:
+        raise ProtocolValidationError(
+            _policy_target_error(
+                target_kind,
+                target,
+                policy_value="missing",
+                source_path=source_path,
+                operation=operation,
+                expected=(
+                    "declare project policy in the planning root, project "
+                    "instructions, active spec, or state fixture; use stdout or "
+                    "/tmp proof output for generated-only checks"
+                ),
+            )
+        )
+    if policy_value in {"generated-only", "none"}:
+        raise ProtocolValidationError(
+            _policy_target_error(
+                target_kind,
+                target,
+                policy_value=policy_value,
+                source_path=source_path,
+                operation=operation,
+                expected=(
+                    f"{target_kind} path is not declared by policy; use stdout "
+                    "or /tmp proof output"
+                ),
+            )
+        )
+    if not policy_path:
+        raise ProtocolValidationError(
+            _policy_target_error(
+                target_kind,
+                target,
+                policy_value=policy_value,
+                source_path=source_path,
+                operation=operation,
+                expected=f"declare {target_kind} path in project policy",
+            )
+        )
+    expected_target = _resolve_policy_target(state, policy_path)
+    actual_target = _resolve_policy_target(state, str(target))
+    if actual_target != expected_target:
+        raise ProtocolValidationError(
+            _policy_target_error(
+                target_kind,
+                target,
+                policy_value=policy_value,
+                source_path=source_path,
+                operation=operation,
+                expected=f"expected target from project policy: {policy_path}",
+            )
+        )
+
+
+def _policy_target_error(
+    target_kind: str,
+    target: Path,
+    *,
+    policy_value: str,
+    source_path: Path,
+    operation: str,
+    expected: str,
+) -> str:
+    return (
+        f"{operation} target {target} conflicts with {target_kind} policy "
+        f"{policy_value!r}; expected source of project value: {source_path}; "
+        f"{expected}"
+    )
+
+
+def _resolve_policy_target(state: PlanningState, value: str) -> Path:
+    return _resolve_pointer(state.root.root_path, value).resolve()
+
+
+def _is_explicit_temp_proof_target(state: PlanningState, target: Path) -> bool:
+    try:
+        resolved_target = target.resolve()
+        planning_root = state.root.root_path.resolve()
+        temp_root = Path(tempfile.gettempdir()).resolve()
+    except OSError:
+        return False
+    if resolved_target == planning_root or planning_root in resolved_target.parents:
+        return False
+    return resolved_target == temp_root or temp_root in resolved_target.parents
+
+
 def _validate_bootstrap_state_target(state: PlanningState, target: Path) -> None:
     if ".." in target.parts:
         raise ProtocolValidationError("state-file target must not contain dot segments")
@@ -3286,7 +3517,11 @@ def _validate_bootstrap_state_target(state: PlanningState, target: Path) -> None
         raise ProtocolValidationError(f"state-file parent is missing: {target_parent}")
     planning_root = state.root.root_path.resolve()
     resolved_target = (target_parent / target.name).resolve()
-    if resolved_target == planning_root or planning_root in resolved_target.parents:
+    policy = state.project_policy
+    if (
+        policy is None
+        and (resolved_target == planning_root or planning_root in resolved_target.parents)
+    ):
         raise ProtocolValidationError(
             "state-file target must not be inside the planning root"
         )

@@ -141,7 +141,7 @@ Dirty-file constraints:
 |---|---|---|---|---|---|---|
 | 1. Define project policy contract | Closed | This commit | `python -m pytest tests/test_planning_state.py -q` passed (124 passed); ruff passed with existing `/usr/bin/python3.14` warning; `git diff --check` passed. | `runway_reviewer` clean after root/policy and empty-path fix loops. | Policy vocabulary and discovery contract are documented and fixture-tested. |
 | 2. Report and validate project policy | Closed | This commit | `python -m pytest tests/test_planning_state.py -q` passed (137 passed); current/validate text and JSON checks passed with existing redirect warnings only; ruff passed with existing `/usr/bin/python3.14` warning; `git diff --check` passed. | `runway_reviewer` clean after discovery, source-path, queued-ID, malformed-precedence, and malformed-queued-batch fix loops. | `current`/`validate` expose project policy and stable blockers/warnings. |
-| 3. Enforce state and projection target policy | Pending |  |  | Write/preflight commands refuse durable targets not allowed by policy. |  |
+| 3. Enforce state and projection target policy | Closed | This commit | `python -m pytest tests/test_planning_state.py -q` passed (146 passed); focused projection/write-target tests passed; current/validate text and JSON checks passed with existing redirect warnings only; ruff passed with existing `/usr/bin/python3.14` warning; `git diff --check` passed. | `runway_reviewer` clean. | Write/preflight commands refuse durable targets not allowed by policy. |
 | 4. Document policies and unblock SQLite | Pending |  |  | codex-config and ignored-local examples are documented; SQLite batch is queued next. |  |
 
 ## Orchestration Anomalies
@@ -154,6 +154,7 @@ orchestration_anomalies: []
 |---|---|---|---|
 | 1. Define project policy contract | This commit | Closed | Contract docs and schema validation cover committed, ignored-local, external, generated-only, none, missing, unsupported, root-mismatch, and empty-path policy cases; clean final review against task-scoped diff. |
 | 2. Report and validate project policy | This commit | Closed | `current`/`validate` report policy facts in text/JSON, preserve read-only Markdown behavior without policy, preflight `--require-project-policy`, discover policy from state fixtures, root/program CURRENT, instructions, and active specs, and keep malformed higher-precedence policy/queued-batch diagnostics stable; clean final review against task-scoped diff. |
+| 3. Enforce state and projection target policy | This commit | Closed | State-file write helpers enforce compatible project policy, read-only projection target preflight reports stable blockers without SQLite writes, `/tmp` proof targets remain available, and clean final review found no issues. |
 
 ## Slice 1. Define Project Policy Contract
 

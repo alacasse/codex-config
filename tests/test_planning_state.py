@@ -449,6 +449,134 @@ def test_validate_discovers_project_policy_from_id_only_queued_batch_spec(
     assert payload["blockers"] == []
 
 
+def test_projection_target_preflight_accepts_declared_committed_exception(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _append_root_project_policy(
+        root,
+        state_file_policy="generated-only",
+        state_file_path=None,
+        projection_policy="committed",
+        projection_path="docs/plans/projections/planning-state.sqlite",
+        committed_projection_exception=(
+            "Project instructions explicitly allow committed rebuildable reports."
+        ),
+    )
+    projection_target = root / "projections" / "planning-state.sqlite"
+
+    result = _run_validate_json(
+        root,
+        "--projection-target",
+        str(projection_target),
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["blockers"] == []
+
+
+def test_projection_target_preflight_rejects_missing_policy_durable_target(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    projection_target = root / "projections" / "planning-state.sqlite"
+
+    result = _run_validate_json(
+        root,
+        "--projection-target",
+        str(projection_target),
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert result.stderr == ""
+    assert payload["exit"]["code"] == 1
+    assert payload["blockers"] == [
+        {
+            "severity": "error",
+            "code": "projection_target_policy_conflict",
+            "message": (
+                f"projection target preflight target {projection_target} "
+                "conflicts with projection policy 'missing'; expected source "
+                f"of project value: {root / 'CURRENT.md'}; declare project "
+                "policy in the planning root, project instructions, active "
+                "spec, or state fixture; use stdout or /tmp proof output for "
+                "generated-only checks"
+            ),
+            "source_path": str(projection_target),
+        }
+    ]
+
+
+def test_projection_target_preflight_rejects_policy_path_mismatch(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _append_root_project_policy(
+        root,
+        state_file_policy="generated-only",
+        state_file_path=None,
+        projection_policy="ignored-local",
+        projection_path="docs/plans/projections/declared.sqlite",
+    )
+    projection_target = root / "projections" / "other.sqlite"
+
+    result = _run_validate_json(
+        root,
+        "--projection-target",
+        str(projection_target),
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert result.stderr == ""
+    assert payload["blockers"][0]["code"] == "projection_target_policy_conflict"
+    assert str(projection_target) in payload["blockers"][0]["message"]
+    assert "projection policy 'ignored-local'" in payload["blockers"][0]["message"]
+    assert "expected target from project policy: docs/plans/projections/declared.sqlite" in (
+        payload["blockers"][0]["message"]
+    )
+    assert payload["blockers"][0]["source_path"] == str(projection_target)
+
+
+def test_current_projection_target_preflight_reports_blocker_without_exit_failure(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    projection_target = root / "projections" / "planning-state.sqlite"
+
+    result = _run_current_json(
+        root,
+        "--projection-target",
+        str(projection_target),
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["exit"]["code"] == 0
+    assert payload["blockers"][0]["code"] == "projection_target_policy_conflict"
+    assert payload["blockers"][0]["source_path"] == str(projection_target)
+
+
+def test_projection_target_preflight_allows_explicit_temp_proof_without_policy(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    proof_target = tmp_path / "proof" / "planning-state.sqlite"
+
+    result = _run_validate_json(root, "--projection-target", str(proof_target))
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["blockers"] == []
+
+
 def test_malformed_root_policy_blocks_lower_precedence_instruction_policy(
     tmp_path: Path,
 ) -> None:
@@ -1292,6 +1420,35 @@ def test_bootstrap_state_command_writes_only_explicit_valid_target(
     ]
 
 
+def test_bootstrap_state_command_allows_declared_committed_state_target(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _append_root_project_policy(
+        root,
+        state_file_policy="committed",
+        state_file_path="docs/plans/state/planning-state.json",
+        projection_policy="generated-only",
+        projection_path=None,
+    )
+    state_file = root / "state" / "planning-state.json"
+    state_file.parent.mkdir()
+
+    result = _run_bootstrap_state(
+        root,
+        "--program",
+        "planning-state-tooling",
+        "--state-file",
+        str(state_file),
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert json.loads(state_file.read_text(encoding="utf-8")) == payload
+    assert payload["root"] == "docs/plans"
+
+
 def test_bootstrap_state_command_expands_id_only_queued_batch_artifacts(
     tmp_path: Path,
 ) -> None:
@@ -1530,6 +1687,31 @@ def test_bootstrap_state_command_rejects_invalid_targets_and_slugs(
     assert "state-file target must use a .json suffix" in wrong_suffix.stderr
     assert malformed_slug.returncode == 2
     assert "program slug must be a single path segment" in malformed_slug.stderr
+
+
+def test_bootstrap_state_command_rejects_generated_only_committed_target(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _append_root_project_policy(
+        root,
+        state_file_policy="generated-only",
+        state_file_path=None,
+        projection_policy="generated-only",
+        projection_path=None,
+    )
+    state_file = root / "state" / "planning-state.json"
+    state_file.parent.mkdir()
+
+    result = _run_bootstrap_state(root, "--state-file", str(state_file))
+
+    assert result.returncode == 2
+    assert str(state_file) in result.stderr
+    assert "state-file policy 'generated-only'" in result.stderr
+    assert "expected source of project value:" in result.stderr
+    assert str(root / "CURRENT.md") in result.stderr
+    assert not state_file.exists()
 
 
 def test_bootstrap_state_command_rejects_active_state_contradictions(
@@ -3272,6 +3454,65 @@ def test_register_artifact_updates_explicit_state_fixture(
     ]
 
 
+def test_register_artifact_rejects_missing_policy_durable_state_file(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = root / "state.json"
+    _write_state_fixture(state_file)
+    before = state_file.read_text(encoding="utf-8")
+
+    result = _run_register_artifact(
+        root,
+        "runway",
+        (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-write-transitions/runway.md"
+        ),
+        "--state-file",
+        str(state_file),
+    )
+
+    assert result.returncode == 2
+    assert str(state_file) in result.stderr
+    assert "state-file policy 'missing'" in result.stderr
+    assert "expected source of project value:" in result.stderr
+    assert state_file.read_text(encoding="utf-8") == before
+
+
+def test_register_artifact_uses_state_fixture_policy_for_durable_state_file(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = root / "state" / "planning-state.json"
+    state_file.parent.mkdir()
+    _write_state_fixture(state_file)
+    fixture = json.loads(state_file.read_text(encoding="utf-8"))
+    fixture["project_policy"] = _project_policy(
+        state_file_policy="committed",
+        state_file_path="docs/plans/state/planning-state.json",
+        projection_policy="generated-only",
+        projection_path=None,
+    )
+    state_file.write_text(json.dumps(fixture, indent=2, sort_keys=True) + "\n")
+
+    result = _run_register_artifact(
+        root,
+        "runway",
+        (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-write-transitions/runway.md"
+        ),
+        "--state-file",
+        str(state_file),
+    )
+
+    assert result.returncode == 0
+    assert json.loads(result.stdout)["status"] == "registered"
+
+
 def test_register_artifact_rejects_missing_program_root(tmp_path: Path) -> None:
     root = tmp_path / "docs" / "plans"
     _write_codex_config_fixture(root)
@@ -4159,6 +4400,7 @@ def _append_root_project_policy(
     projection_policy: str,
     projection_path: str | None = None,
     update_authority: str = "command",
+    committed_projection_exception: str | None = None,
 ) -> None:
     _append_project_policy(
         root / "CURRENT.md",
@@ -4170,6 +4412,7 @@ def _append_root_project_policy(
         projection_policy=projection_policy,
         projection_path=projection_path,
         update_authority=update_authority,
+        committed_projection_exception=committed_projection_exception,
     )
 
 
@@ -4184,6 +4427,7 @@ def _append_project_policy(
     projection_policy: str,
     projection_path: str | None = None,
     update_authority: str = "command",
+    committed_projection_exception: str | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
@@ -4200,6 +4444,14 @@ def _append_project_policy(
         f"- Projection policy: `{projection_policy}`",
         f"- Projection path: `{_markdown_value(projection_path)}`",
         f"- Update authority: `{update_authority}`",
+        *(
+            [
+                "- Committed projection exception: "
+                f"`{committed_projection_exception}`"
+            ]
+            if committed_projection_exception is not None
+            else []
+        ),
         "",
     ]
     with path.open("a", encoding="utf-8") as current:
@@ -4653,8 +4905,9 @@ def _project_policy(
     projection_policy: str = "generated-only",
     projection_path: str | None = None,
     update_authority: str = "command",
+    committed_projection_exception: str | None = None,
 ) -> dict[str, str | None]:
-    return {
+    policy = {
         "planning_root": planning_root,
         "run_artifact_root": run_artifact_root,
         "output_root": output_root,
@@ -4664,6 +4917,9 @@ def _project_policy(
         "projection_path": projection_path,
         "update_authority": update_authority,
     }
+    if committed_projection_exception is not None:
+        policy["committed_projection_exception"] = committed_projection_exception
+    return policy
 
 
 def _bootstrap_state_from_program(

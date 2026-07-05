@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state write-target policy enforcement
+
+Problem: planning-state write helpers accepted explicit JSON state targets
+without checking whether the target matched the project-owned state/projection
+policy.
+
+Decision: enforce resolved policy for state-file writes and closeout state-file
+inputs, keep stdout and `/tmp` proof targets available for generated-only or
+missing policy, and add `--projection-target` preflight checks before SQLite
+projection writing exists.
+
+Expected effect: durable state or projection commands stop with target-specific
+diagnostics instead of silently writing to undeclared committed or local paths.
+
 ### Planning-state project policy reporting
 
 Problem: read-only planning-state reports could validate Layout v1 Markdown but
