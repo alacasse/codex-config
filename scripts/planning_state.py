@@ -167,6 +167,7 @@ PROJECTION_REPORT_FACT_FIELDS = {
     "path",
     "phase",
     "program",
+    "reason",
     "root",
     "run_id",
     "severity",
@@ -177,6 +178,9 @@ PROJECTION_REPORT_FACT_FIELDS = {
     "target_batch",
     "value",
 }
+RUNNER_ARTIFACT_PROTOCOL_NAME = "planning-runner-artifact"
+RUNNER_ARTIFACT_MANIFEST_PROTOCOL_NAME = "planning-runner-artifact-manifest"
+RUNNER_ARTIFACT_PROTOCOL_VERSION = 1
 PROJECTION_FORBIDDEN_FACT_FIELDS = {
     "body",
     "content",
@@ -830,6 +834,20 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional active program slug to project. Defaults to all active programs.",
     )
     rebuild_projection_parser.add_argument(
+        "--runner-artifact",
+        action="append",
+        type=Path,
+        default=[],
+        help="Optional explicit compact runner artifact JSON to project.",
+    )
+    rebuild_projection_parser.add_argument(
+        "--runner-artifact-manifest",
+        action="append",
+        type=Path,
+        default=[],
+        help="Optional manifest JSON listing compact runner artifact paths.",
+    )
+    rebuild_projection_parser.add_argument(
         "--format",
         choices=("json",),
         default="json",
@@ -848,7 +866,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     report_projection_parser.add_argument(
         "--report",
-        choices=("pending-batches", "missing-closeout-evidence", "batch-evidence"),
+        choices=(
+            "pending-batches",
+            "missing-closeout-evidence",
+            "batch-evidence",
+            "runner-latest-run",
+            "runner-failed-phases",
+            "runner-context-pressure",
+        ),
         required=True,
         help="Projection report kind to emit.",
     )
@@ -1018,6 +1043,8 @@ def main(argv: list[str] | None = None) -> int:
                 database=args.database,
                 state_file=args.state_file,
                 program_slug=args.program,
+                runner_artifact_paths=args.runner_artifact,
+                runner_artifact_manifest_paths=args.runner_artifact_manifest,
             )
             sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
             return 0 if document["status"] == "rebuilt" else 1
@@ -1164,6 +1191,8 @@ def rebuild_projection(
     database: Path,
     state_file: Path | None,
     program_slug: str | None,
+    runner_artifact_paths: list[Path],
+    runner_artifact_manifest_paths: list[Path],
 ) -> dict[str, Any]:
     """Rebuild an explicit SQLite projection from bounded planning facts."""
 
@@ -1188,6 +1217,10 @@ def rebuild_projection(
             projection=None,
         )
     programs = _bootstrap_programs(state, program_slug)
+    runner_artifacts = _load_runner_projection_artifacts(
+        runner_artifact_paths,
+        runner_artifact_manifest_paths,
+    )
     projection = _projection_document(
         state,
         programs=programs,
@@ -1195,6 +1228,8 @@ def rebuild_projection(
         database=database,
         state_file=state_file,
         state_fixture=state_fixture,
+        runner_artifacts=runner_artifacts,
+        runner_artifact_manifest_paths=runner_artifact_manifest_paths,
     )
     validate_projection_contract_object(projection)
     _write_projection_database(database, projection)
@@ -2685,6 +2720,13 @@ def _require_string(data: dict[str, Any], key: str) -> str:
     return value
 
 
+def _require_int(data: dict[str, Any], key: str) -> int:
+    value = data.get(key)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ProtocolValidationError(f"{key} must be an integer")
+    return value
+
+
 def _require_optional_string(data: dict[str, Any], key: str) -> str | None:
     value = data.get(key)
     if value is None:
@@ -3763,6 +3805,8 @@ def _projection_document(
     database: Path,
     state_file: Path | None,
     state_fixture: dict[str, Any] | None,
+    runner_artifacts: list[tuple[Path, dict[str, Any]]],
+    runner_artifact_manifest_paths: list[Path],
 ) -> dict[str, Any]:
     metadata = {
         "schema_version": PROJECTION_SCHEMA_VERSION,
@@ -3771,6 +3815,10 @@ def _projection_document(
             state,
             programs,
             state_fixture=state_fixture,
+            extra_sources=_projection_runner_source_artifacts(
+                runner_artifacts,
+                runner_artifact_manifest_paths,
+            ),
         ),
         "state_fixture_identity": (
             _projection_source_artifact("state-fixture", state_file)
@@ -3782,6 +3830,8 @@ def _projection_document(
             database,
             state_file,
             program_slug=program_slug,
+            runner_artifact_paths=[path for path, _artifact in runner_artifacts],
+            runner_artifact_manifest_paths=runner_artifact_manifest_paths,
         ),
         "built_at": datetime.now(timezone.utc).isoformat(),
         "tables": sorted(PROJECTION_SCHEMA_TABLES),
@@ -3797,6 +3847,7 @@ def _projection_document(
             state,
             programs=programs,
             state_fixture=state_fixture,
+            runner_artifacts=runner_artifacts,
         ),
     }
 
@@ -3806,6 +3857,7 @@ def _projection_source_identity(
     programs: tuple[ProgramState, ...],
     *,
     state_fixture: dict[str, Any] | None,
+    extra_sources: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     sources = [_projection_source_artifact("root-current", state.root.current_path)]
     for program in programs:
@@ -3829,10 +3881,27 @@ def _projection_source_identity(
             programs=programs,
         )
     )
+    if extra_sources is not None:
+        sources.extend(extra_sources)
     return {
         "planning_root": _planning_root_prefix(state),
         "sources": sorted(sources, key=lambda source: (source["kind"], source["path"])),
     }
+
+
+def _projection_runner_source_artifacts(
+    runner_artifacts: list[tuple[Path, dict[str, Any]]],
+    runner_artifact_manifest_paths: list[Path],
+) -> list[dict[str, Any]]:
+    sources = [
+        _projection_source_artifact("runner-artifact", path)
+        for path, _artifact in runner_artifacts
+    ]
+    sources.extend(
+        _projection_source_artifact("runner-artifact-manifest", path)
+        for path in runner_artifact_manifest_paths
+    )
+    return sources
 
 
 def _projection_closeout_source_artifacts(
@@ -3897,6 +3966,8 @@ def _projection_build_command(
     state_file: Path | None,
     *,
     program_slug: str | None,
+    runner_artifact_paths: list[Path],
+    runner_artifact_manifest_paths: list[Path],
 ) -> str:
     parts = [
         "planning_state.py",
@@ -3910,6 +3981,10 @@ def _projection_build_command(
         parts.extend(["--state-file", str(state_file)])
     if program_slug is not None:
         parts.extend(["--program", program_slug])
+    for runner_artifact_path in runner_artifact_paths:
+        parts.extend(["--runner-artifact", str(runner_artifact_path)])
+    for manifest_path in runner_artifact_manifest_paths:
+        parts.extend(["--runner-artifact-manifest", str(manifest_path)])
     return " ".join(parts)
 
 
@@ -3918,6 +3993,7 @@ def _projection_report_facts(
     *,
     programs: tuple[ProgramState, ...],
     state_fixture: dict[str, Any] | None,
+    runner_artifacts: list[tuple[Path, dict[str, Any]]],
 ) -> list[dict[str, Any]]:
     facts: list[dict[str, Any]] = []
     for program in programs:
@@ -3929,6 +4005,11 @@ def _projection_report_facts(
             state_fixture,
             programs=programs,
         )
+    _append_runner_projection_facts(
+        facts,
+        runner_artifacts,
+        programs=programs,
+    )
     included_batches = _projection_program_batch_ids(programs)
     for obligation in state.obligations:
         if obligation.source_batch in included_batches or (
@@ -4176,6 +4257,148 @@ def _projection_commit_evidence_facts(
                 }
             ]
     return []
+
+
+def _load_runner_projection_artifacts(
+    artifact_paths: list[Path],
+    manifest_paths: list[Path],
+) -> list[tuple[Path, dict[str, Any]]]:
+    paths = list(artifact_paths)
+    for manifest_path in manifest_paths:
+        manifest = _read_json_object(manifest_path, "runner artifact manifest")
+        _require_protocol(
+            manifest,
+            RUNNER_ARTIFACT_MANIFEST_PROTOCOL_NAME,
+            "runner artifact manifest",
+        )
+        artifact_values = _require_array(manifest, "artifacts")
+        for index, artifact_value in enumerate(artifact_values):
+            if isinstance(artifact_value, str):
+                paths.append(Path(artifact_value))
+                continue
+            artifact_data = _require_object(
+                artifact_value,
+                f"artifacts[{index}]",
+            )
+            paths.append(Path(_require_string(artifact_data, "path")))
+    artifacts: list[tuple[Path, dict[str, Any]]] = []
+    seen: set[Path] = set()
+    for path in paths:
+        if path in seen:
+            continue
+        artifact = _read_json_object(path, "runner artifact")
+        artifacts.append((path, _validate_runner_projection_artifact(artifact, path)))
+        seen.add(path)
+    return artifacts
+
+
+def _read_json_object(path: Path, context: str) -> dict[str, Any]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as error:
+        raise ProtocolValidationError(f"{context} is missing: {path}") from error
+    except json.JSONDecodeError as error:
+        raise ProtocolValidationError(f"{context} is not valid JSON: {path}") from error
+    return _require_object(data, context)
+
+
+def _validate_runner_projection_artifact(
+    artifact: dict[str, Any],
+    path: Path,
+) -> dict[str, Any]:
+    _require_protocol(artifact, RUNNER_ARTIFACT_PROTOCOL_NAME, "runner artifact")
+    _validate_projection_text(_require_string(artifact, "program"), "program")
+    _validate_projection_text(_require_string(artifact, "run_id"), "run_id")
+    _validate_projection_text(_require_string(artifact, "status"), "status")
+    for key in ("started_at", "finished_at", "summary"):
+        if key in artifact and artifact[key] is not None:
+            _validate_projection_text(_require_string(artifact, key), key)
+    if "duration_ms" in artifact and artifact["duration_ms"] is not None:
+        _require_int(artifact, "duration_ms")
+    phases = _require_array(artifact, "phases")
+    for index, phase in enumerate(phases):
+        phase_data = _require_object(phase, f"phases[{index}]")
+        _validate_projection_text(_require_string(phase_data, "phase"), f"phases[{index}].phase")
+        _validate_projection_text(_require_string(phase_data, "status"), f"phases[{index}].status")
+        for key in ("reason", "message", "severity", "summary"):
+            if key in phase_data and phase_data[key] is not None:
+                _validate_projection_text(
+                    _require_string(phase_data, key),
+                    f"phases[{index}].{key}",
+                )
+        if "duration_ms" in phase_data and phase_data["duration_ms"] is not None:
+            _require_int(phase_data, "duration_ms")
+        if "context_pressure" in phase_data and phase_data["context_pressure"] is not None:
+            pressure = _require_object(
+                phase_data["context_pressure"],
+                f"phases[{index}].context_pressure",
+            )
+            if "value" in pressure and pressure["value"] is not None:
+                _require_int(pressure, "value")
+            for key in ("severity", "summary"):
+                if key in pressure and pressure[key] is not None:
+                    _validate_projection_text(
+                        _require_string(pressure, key),
+                        f"phases[{index}].context_pressure.{key}",
+                    )
+    return artifact | {"path": str(path)}
+
+
+def _append_runner_projection_facts(
+    facts: list[dict[str, Any]],
+    runner_artifacts: list[tuple[Path, dict[str, Any]]],
+    *,
+    programs: tuple[ProgramState, ...],
+) -> None:
+    included_programs = {program.slug for program in programs}
+    for path, artifact in runner_artifacts:
+        program = artifact["program"]
+        if program not in included_programs:
+            continue
+        base = {
+            "fact_type": "runner_summary",
+            "program": program,
+            "run_id": artifact["run_id"],
+            "path": str(path),
+        }
+        facts.append(
+            {
+                **base,
+                "artifact_type": "latest_run",
+                "status": artifact["status"],
+                "started_at": artifact.get("started_at"),
+                "finished_at": artifact.get("finished_at"),
+                "duration_ms": artifact.get("duration_ms"),
+                "summary": artifact.get("summary", "runner run summary"),
+            }
+        )
+        for phase in artifact["phases"]:
+            phase_name = phase["phase"]
+            if phase.get("status") == "failed":
+                facts.append(
+                    {
+                        **base,
+                        "artifact_type": "failed_phase",
+                        "phase": phase_name,
+                        "status": "failed",
+                        "reason": phase.get("reason") or phase.get("message") or "unspecified",
+                        "message": phase.get("message"),
+                        "duration_ms": phase.get("duration_ms"),
+                    }
+                )
+            pressure = phase.get("context_pressure")
+            if isinstance(pressure, dict):
+                facts.append(
+                    {
+                        **base,
+                        "artifact_type": "context_pressure",
+                        "phase": phase_name,
+                        "status": phase.get("status"),
+                        "severity": pressure.get("severity") or phase.get("severity"),
+                        "value": pressure.get("value"),
+                        "summary": pressure.get("summary") or phase.get("summary"),
+                    }
+                )
 
 
 def _projection_program_batch_ids(programs: tuple[ProgramState, ...]) -> set[str]:
@@ -4543,10 +4766,21 @@ def _projection_identity_blockers(
             None,
         )
         return
+    try:
+        extra_sources = _current_projection_extra_sources(metadata)
+    except ProtocolValidationError as error:
+        yield ValidationMessage(
+            "error",
+            "projection_database_stale",
+            str(error),
+            None,
+        )
+        return
     expected_source_identity = _projection_source_identity(
         state,
         programs,
         state_fixture=state_fixture,
+        extra_sources=extra_sources,
     )
     yield from projection_staleness_blockers(metadata, expected_source_identity)
     actual_state_fixture = metadata.get("state_fixture_identity")
@@ -4567,6 +4801,21 @@ def _projection_identity_blockers(
             "projection state-file identity does not match requested state-file",
             state_file,
         )
+
+
+def _current_projection_extra_sources(metadata: dict[str, Any]) -> list[dict[str, Any]]:
+    source_identity = _require_object(
+        metadata.get("source_identity"),
+        "projection source_identity",
+    )
+    current_sources: list[dict[str, Any]] = []
+    for source in _require_array(source_identity, "sources"):
+        source_data = _require_object(source, "source")
+        kind = _require_string(source_data, "kind")
+        if kind not in {"runner-artifact", "runner-artifact-manifest"}:
+            continue
+        current_sources.append(_projection_source_artifact(kind, Path(source_data["path"])))
+    return current_sources
 
 
 def _projection_report_rows(
@@ -4599,6 +4848,26 @@ def _projection_report_rows(
             and fact.get("batch_id") == batch_id
         ]
         rows = _batch_evidence_rows(rows, batch_id=batch_id or "")
+    elif report_kind == "runner-latest-run":
+        rows = _runner_latest_run_rows(facts)
+    elif report_kind == "runner-failed-phases":
+        rows = [
+            fact
+            for fact in facts
+            if fact.get("fact_type") == "runner_summary"
+            and fact.get("artifact_type") == "failed_phase"
+        ]
+        if not rows:
+            rows = [_missing_runner_projection_row("failed_phase")]
+    elif report_kind == "runner-context-pressure":
+        rows = [
+            fact
+            for fact in facts
+            if fact.get("fact_type") == "runner_summary"
+            and fact.get("artifact_type") == "context_pressure"
+        ]
+        if not rows:
+            rows = [_missing_runner_projection_row("context_pressure")]
     else:
         raise ProtocolValidationError(f"unsupported projection report: {report_kind}")
     unique_rows = list({json.dumps(row, sort_keys=True): row for row in rows}.values())
@@ -4613,8 +4882,44 @@ def _projection_report_rows(
             str(row.get("commit_range_from") or ""),
             str(row.get("commit_range_to") or ""),
             str(row.get("obligation_id") or ""),
+            str(row.get("phase") or ""),
+            str(row.get("reason") or ""),
         ),
     )
+
+
+def _runner_latest_run_rows(facts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    latest_by_program: dict[str, dict[str, Any]] = {}
+    for fact in facts:
+        if (
+            fact.get("fact_type") != "runner_summary"
+            or fact.get("artifact_type") != "latest_run"
+        ):
+            continue
+        program = str(fact.get("program") or "")
+        existing = latest_by_program.get(program)
+        if existing is None or _runner_run_sort_key(fact) > _runner_run_sort_key(existing):
+            latest_by_program[program] = fact
+    if not latest_by_program:
+        return [_missing_runner_projection_row("latest_run")]
+    return list(latest_by_program.values())
+
+
+def _runner_run_sort_key(row: dict[str, Any]) -> tuple[str, str, str]:
+    return (
+        str(row.get("finished_at") or ""),
+        str(row.get("started_at") or ""),
+        str(row.get("run_id") or ""),
+    )
+
+
+def _missing_runner_projection_row(artifact_type: str) -> dict[str, Any]:
+    return {
+        "fact_type": "runner_summary",
+        "artifact_type": artifact_type,
+        "status": "absent",
+        "summary": "runner artifacts are not projected",
+    }
 
 
 def _batch_evidence_rows(

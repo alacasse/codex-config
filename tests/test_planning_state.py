@@ -1744,6 +1744,318 @@ def test_report_projection_program_scope_ignores_unrelated_closeout_changes(
     assert payload["blockers"] == []
 
 
+def test_report_projection_outputs_runner_artifact_summaries(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    older_artifact = tmp_path / "run-older.json"
+    newer_artifact = tmp_path / "run-newer.json"
+    manifest = tmp_path / "runner-manifest.json"
+    _write_runner_artifact(
+        older_artifact,
+        run_id="run-older",
+        finished_at="2026-07-05T10:00:00Z",
+        status="failed",
+        phases=[
+            {
+                "phase": "implementation",
+                "status": "failed",
+                "reason": "pytest_failed",
+                "message": "focused pytest failed",
+                "duration_ms": 1200,
+            }
+        ],
+    )
+    _write_runner_artifact(
+        newer_artifact,
+        run_id="run-newer",
+        finished_at="2026-07-05T11:00:00Z",
+        status="passed",
+        phases=[
+            {
+                "phase": "review",
+                "status": "passed",
+                "context_pressure": {
+                    "severity": "medium",
+                    "value": 73,
+                    "summary": "context budget reached medium pressure",
+                },
+            }
+        ],
+    )
+    manifest.write_text(
+        json.dumps(
+            {
+                "protocol": {
+                    "name": "planning-runner-artifact-manifest",
+                    "version": 1,
+                },
+                "artifacts": [str(newer_artifact)],
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    database = tmp_path / "projection.sqlite"
+    rebuild = _run_rebuild_projection(
+        root,
+        database,
+        "--program",
+        "planning-state-tooling",
+        "--runner-artifact",
+        str(older_artifact),
+        "--runner-artifact-manifest",
+        str(manifest),
+    )
+
+    latest = _run_report_projection(
+        root,
+        database,
+        "runner-latest-run",
+        "--program",
+        "planning-state-tooling",
+        "--format",
+        "json",
+    )
+    failed = _run_report_projection(
+        root,
+        database,
+        "runner-failed-phases",
+        "--program",
+        "planning-state-tooling",
+        "--format",
+        "json",
+    )
+    pressure = _run_report_projection(
+        root,
+        database,
+        "runner-context-pressure",
+        "--program",
+        "planning-state-tooling",
+        "--format",
+        "json",
+    )
+
+    facts = _read_projection_database(database)["facts"]
+    source_rows = _read_projection_database(database)["sources"]
+    latest_rows = json.loads(latest.stdout)["rows"]
+    failed_rows = json.loads(failed.stdout)["rows"]
+    pressure_rows = json.loads(pressure.stdout)["rows"]
+    source_identities = {
+        (source["kind"], source["path"])
+        for source in json.loads(rebuild.stdout)["metadata"]["source_identity"]["sources"]
+    }
+
+    assert rebuild.returncode == 0
+    assert latest.returncode == 0
+    assert failed.returncode == 0
+    assert pressure.returncode == 0
+    assert latest_rows == [
+        {
+            "artifact_type": "latest_run",
+            "duration_ms": None,
+            "fact_type": "runner_summary",
+            "finished_at": "2026-07-05T11:00:00Z",
+            "path": str(newer_artifact),
+            "program": "planning-state-tooling",
+            "run_id": "run-newer",
+            "started_at": None,
+            "status": "passed",
+            "summary": "runner run summary",
+        }
+    ]
+    assert failed_rows == [
+        {
+            "artifact_type": "failed_phase",
+            "duration_ms": 1200,
+            "fact_type": "runner_summary",
+            "message": "focused pytest failed",
+            "path": str(older_artifact),
+            "phase": "implementation",
+            "program": "planning-state-tooling",
+            "reason": "pytest_failed",
+            "run_id": "run-older",
+            "status": "failed",
+        }
+    ]
+    assert pressure_rows == [
+        {
+            "artifact_type": "context_pressure",
+            "fact_type": "runner_summary",
+            "path": str(newer_artifact),
+            "phase": "review",
+            "program": "planning-state-tooling",
+            "run_id": "run-newer",
+            "severity": "medium",
+            "status": "passed",
+            "summary": "context budget reached medium pressure",
+            "value": 73,
+        }
+    ]
+    assert all(
+        fact["fact_type"] != "runner_summary" or "raw_telemetry" not in fact
+        for fact in facts
+    )
+    assert ("runner-artifact", str(older_artifact)) in source_identities
+    assert ("runner-artifact", str(newer_artifact)) in source_identities
+    assert ("runner-artifact-manifest", str(manifest)) in source_identities
+    assert ("runner-artifact", str(older_artifact)) in {
+        (source["kind"], source["path"]) for source in source_rows
+    }
+
+
+def test_report_projection_rejects_stale_runner_artifact_sources(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    artifact = tmp_path / "run.json"
+    _write_runner_artifact(
+        artifact,
+        run_id="run-before",
+        finished_at="2026-07-05T10:00:00Z",
+        status="passed",
+        phases=[],
+    )
+    database = tmp_path / "projection.sqlite"
+    _run_rebuild_projection(
+        root,
+        database,
+        "--program",
+        "planning-state-tooling",
+        "--runner-artifact",
+        str(artifact),
+    )
+
+    _write_runner_artifact(
+        artifact,
+        run_id="run-after",
+        finished_at="2026-07-05T11:00:00Z",
+        status="passed",
+        phases=[],
+    )
+    mutated = _run_report_projection(
+        root,
+        database,
+        "runner-latest-run",
+        "--program",
+        "planning-state-tooling",
+        "--format",
+        "json",
+    )
+    artifact.unlink()
+    removed = _run_report_projection(
+        root,
+        database,
+        "runner-latest-run",
+        "--program",
+        "planning-state-tooling",
+        "--format",
+        "json",
+    )
+
+    assert _first_blocker_code(mutated) == "projection_database_stale"
+    assert _first_blocker_code(removed) == "projection_database_stale"
+    assert json.loads(mutated.stdout)["rows"] == []
+    assert json.loads(removed.stdout)["rows"] == []
+
+
+def test_report_projection_rejects_stale_runner_manifest_sources(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    artifact = tmp_path / "run.json"
+    manifest = tmp_path / "runner-manifest.json"
+    _write_runner_artifact(
+        artifact,
+        run_id="run-before",
+        finished_at="2026-07-05T10:00:00Z",
+        status="passed",
+        phases=[],
+    )
+    _write_runner_manifest(manifest, [artifact])
+    database = tmp_path / "projection.sqlite"
+    _run_rebuild_projection(
+        root,
+        database,
+        "--program",
+        "planning-state-tooling",
+        "--runner-artifact-manifest",
+        str(manifest),
+    )
+
+    _write_runner_manifest(manifest, [artifact])
+    with manifest.open("a", encoding="utf-8") as handle:
+        handle.write("\n")
+    mutated = _run_report_projection(
+        root,
+        database,
+        "runner-latest-run",
+        "--program",
+        "planning-state-tooling",
+        "--format",
+        "json",
+    )
+    manifest.unlink()
+    removed = _run_report_projection(
+        root,
+        database,
+        "runner-latest-run",
+        "--program",
+        "planning-state-tooling",
+        "--format",
+        "json",
+    )
+
+    assert _first_blocker_code(mutated) == "projection_database_stale"
+    assert _first_blocker_code(removed) == "projection_database_stale"
+
+
+def test_report_projection_runner_reports_absent_artifacts_without_blocking_planning_reports(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    database = tmp_path / "projection.sqlite"
+    _run_rebuild_projection(root, database, "--program", "planning-state-tooling")
+
+    pending = _run_report_projection(
+        root,
+        database,
+        "pending-batches",
+        "--program",
+        "planning-state-tooling",
+        "--format",
+        "json",
+    )
+    latest = _run_report_projection(
+        root,
+        database,
+        "runner-latest-run",
+        "--program",
+        "planning-state-tooling",
+        "--format",
+        "json",
+    )
+    latest_payload = json.loads(latest.stdout)
+
+    assert pending.returncode == 0
+    assert latest.returncode == 0
+    assert latest_payload["blockers"] == []
+    assert latest_payload["rows"] == [
+        {
+            "artifact_type": "latest_run",
+            "fact_type": "runner_summary",
+            "status": "absent",
+            "summary": "runner artifacts are not projected",
+        }
+    ]
+
+
 def test_report_projection_rejects_state_file_and_policy_mismatches(
     tmp_path: Path,
 ) -> None:
@@ -5412,7 +5724,19 @@ def _read_projection_database(database: Path) -> dict[str, object]:
                 "select payload_json from report_facts order by id"
             )
         ]
-    return {"tables": tables, "metadata": metadata, "facts": facts}
+        sources = [
+            {
+                "kind": kind,
+                "path": path,
+                "sha256": sha256,
+                "mtime_ns": mtime_ns,
+            }
+            for kind, path, sha256, mtime_ns in connection.execute(
+                "select kind, path, sha256, mtime_ns from source_artifacts "
+                "order by kind, path"
+            )
+        ]
+    return {"tables": tables, "metadata": metadata, "facts": facts, "sources": sources}
 
 
 def _run_register_artifact(
@@ -5680,6 +6004,53 @@ def _write_closeout_file(
         "```json\n"
         + json.dumps(closeout, indent=2, sort_keys=True)
         + "\n```\n",
+        encoding="utf-8",
+    )
+
+
+def _write_runner_artifact(
+    path: Path,
+    *,
+    run_id: str,
+    finished_at: str,
+    status: str,
+    phases: list[dict[str, object]],
+) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "protocol": {
+                    "name": "planning-runner-artifact",
+                    "version": 1,
+                },
+                "program": "planning-state-tooling",
+                "run_id": run_id,
+                "finished_at": finished_at,
+                "status": status,
+                "phases": phases,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_runner_manifest(path: Path, artifacts: list[Path]) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "protocol": {
+                    "name": "planning-runner-artifact-manifest",
+                    "version": 1,
+                },
+                "artifacts": [str(artifact) for artifact in artifacts],
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
         encoding="utf-8",
     )
 

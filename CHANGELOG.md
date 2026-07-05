@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Planning-state runner artifact projection reports
+
+Problem: projection reports could answer planning-state questions but could not
+summarize compact runner outputs without agents inspecting runner artifacts by
+hand.
+
+Decision: let `planning_state rebuild-projection` and `report-projection` accept
+explicit compact runner artifact JSON files or manifests, and add reports for
+latest runs, failed phases by reason, and context pressure by phase.
+
+Expected effect: agents can include bounded runner summaries in generated
+projection databases while missing runner artifacts remain optional and
+unrelated planning reports continue to pass; reports reject stale runner
+summaries when projected runner artifacts or manifests change or disappear.
+
 ### Planning-state SQLite projection reports
 
 Problem: agents could rebuild a bounded SQLite projection but still had no
