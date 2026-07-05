@@ -147,7 +147,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 3. Add planning-state report commands | Pending |  |  | Compact reports answer pending batches, missing closeout evidence, and batch evidence lookup without SQL exposure. |  |
 | 4. Add runner-artifact report coverage | Pending |  |  | Reports summarize latest runs, failed phases, and context pressure from bounded runner artifacts when present. |  |
 | 5. Document projection workflow and close PST-6 | Pending |  |  | Docs, ledger, completed-slices, and closeout evidence prove SQLite remains optional. |  |
 
@@ -161,6 +160,7 @@ orchestration_anomalies: []
 |---|---|---|---|
 | 1. Define SQLite projection contract | `0ae6e99` | success | `python -m pytest tests/test_planning_state.py -q` 152 passed; `python scripts/planning_state.py current --root docs/plans` passed with expected redirect warnings; `python scripts/planning_state.py validate --root docs/plans` passed with expected redirect warnings; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py` passed; `git diff --check`; review approved updated diff against `ec4179f` |
 | 2. Add explicit projection rebuild | `1e5f47d` | success | `python -m pytest tests/test_planning_state.py -q` 157 passed; `python scripts/planning_state.py current --root docs/plans` passed with expected redirect warnings; `python scripts/planning_state.py validate --root docs/plans` passed with expected redirect warnings; temp rebuilds passed for all programs and `--program planning-state-tooling`; policy-incompatible `docs/plans/projection.sqlite` was rejected; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py` passed; `git diff --check`; review approved updated diff against `530b1d2` |
+| 3. Add planning-state report commands | `fc46c41` | success | `python -m pytest tests/test_planning_state.py -q` 165 passed; `python scripts/planning_state.py current --root docs/plans` passed with expected redirect warnings; `python scripts/planning_state.py validate --root docs/plans` passed with expected redirect warnings; temp rebuild plus pending-batches, missing-closeout-evidence, and batch-evidence reports passed; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py` passed; `git diff --check`; review approved updated diff against `4d67a03` |
 
 ## Slice 1. Define SQLite Projection Contract
 
