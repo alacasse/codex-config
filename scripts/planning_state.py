@@ -1600,6 +1600,7 @@ def _validation_messages(
         if not redirect.target_path:
             yield ValidationMessage("error", "redirect_without_target", "redirect has no target path", redirect.source_path)
     if state_fixture is not None:
+        yield from _state_fixture_validation_messages(root_state, programs, state_fixture)
         yield from _obligation_validation_messages(state_fixture)
 
 
@@ -1894,10 +1895,15 @@ def _validate_fixture_obligation_schema(data: dict[str, Any]) -> None:
     if not isinstance(obligations, list):
         raise ProtocolValidationError("obligations must be an array")
     for index, obligation in enumerate(obligations):
-        _validate_obligation_object(
-            _require_object(obligation, f"obligations[{index}]"),
-            f"obligations[{index}]",
-        )
+        try:
+            _validate_obligation_object(
+                _require_object(obligation, f"obligations[{index}]"),
+                f"obligations[{index}]",
+            )
+        except ProtocolValidationError as error:
+            raise ProtocolValidationError(
+                f"malformed_obligation_record: {error}"
+            ) from error
 
 
 def _validate_bootstrap_contract_schema(data: dict[str, Any]) -> None:
@@ -1984,7 +1990,9 @@ def _validate_obligation_object(data: dict[str, Any], context: str) -> None:
     _require_optional_string(data, "close_condition")
     status = _require_string(data, "status")
     if status not in {"open", "closed"}:
-        raise ProtocolValidationError(f"{context}.status must be 'open' or 'closed'")
+        raise ProtocolValidationError(
+            f"invalid_obligation_record: {context}.status must be 'open' or 'closed'"
+        )
     _require_optional_string(data, "evidence_path")
 
 
@@ -2666,6 +2674,13 @@ def _bootstrap_queued_batch_value(
     state: PlanningState,
     program: ProgramState,
 ) -> str | None:
+    return _migrated_queued_batch_value(state.root, program)
+
+
+def _migrated_queued_batch_value(
+    root_state: RootState,
+    program: ProgramState,
+) -> str | None:
     value = program.queued_batch.value
     if value is None:
         return None
@@ -2673,7 +2688,17 @@ def _bootstrap_queued_batch_value(
     if batch_id:
         return value
     _safe_path_segment(value, "queued batch id")
-    return _canonical_batch_paths(state, program, value)["runway"]
+    _safe_path_segment(program.slug, "program slug")
+    return str(
+        PurePosixPath(
+            _planning_root_prefix_for(root_state),
+            "programs",
+            program.slug,
+            "batches",
+            value,
+            "runway.md",
+        )
+    )
 
 
 def _batch_id_from_queued_batch_value(value: str) -> str:
@@ -2715,6 +2740,8 @@ def _append_bootstrap_artifact(
 ) -> None:
     key = (artifact_type, batch_id, path)
     if key in seen:
+        return
+    if any(artifact["path"] == path for artifact in artifacts):
         return
     seen.add(key)
     artifacts.append(
@@ -2766,12 +2793,16 @@ def _validate_bootstrap_state_target(state: PlanningState, target: Path) -> None
 
 
 def _path_under_planning_root(state: PlanningState, path: Path) -> str:
-    root = state.root.root_path
+    return _path_under_root_state(state.root, path)
+
+
+def _path_under_root_state(root_state: RootState, path: Path) -> str:
+    root = root_state.root_path
     try:
         relative = path.relative_to(root)
     except ValueError:
         return path.as_posix()
-    return str(PurePosixPath(_planning_root_prefix(state), *relative.parts))
+    return str(PurePosixPath(_planning_root_prefix_for(root_state), *relative.parts))
 
 
 def _fixture_artifact_keys(data: dict[str, Any]) -> set[tuple[str, str, str]]:
@@ -2835,6 +2866,185 @@ def _obligations_from_fixture(
             status=str(obligation.get("status") or ""),
             evidence_path=obligation.get("evidence_path"),
         )
+
+
+def _state_fixture_validation_messages(
+    root_state: RootState,
+    programs: tuple[ProgramState, ...],
+    state_fixture: dict[str, Any],
+) -> Iterable[ValidationMessage]:
+    markdown_programs = {program.slug: program for program in programs}
+    seen_programs: set[str] = set()
+    duplicate_programs: set[str] = set()
+    fixture_programs = state_fixture.get("programs", [])
+    if not isinstance(fixture_programs, list):
+        return
+    for fixture_program in fixture_programs:
+        if not isinstance(fixture_program, dict):
+            continue
+        slug = fixture_program.get("slug")
+        if not isinstance(slug, str):
+            continue
+        if slug in seen_programs and slug not in duplicate_programs:
+            duplicate_programs.add(slug)
+            yield ValidationMessage(
+                "error",
+                "duplicate_fixture_program",
+                f"state fixture defines program {slug} more than once",
+            )
+        seen_programs.add(slug)
+        program = markdown_programs.get(slug)
+        if program is None:
+            yield ValidationMessage(
+                "error",
+                "unknown_fixture_program",
+                f"state fixture program {slug} is not active in root CURRENT.md",
+            )
+            continue
+        yield from _fixture_program_consistency_messages(
+            root_state,
+            program,
+            fixture_program,
+        )
+
+
+def _fixture_program_consistency_messages(
+    root_state: RootState,
+    program: ProgramState,
+    fixture_program: dict[str, Any],
+) -> Iterable[ValidationMessage]:
+    for field_name, expected in (
+        ("current", _path_under_root_state(root_state, program.current_path)),
+        ("ledger", program.ledger.value),
+        ("selected_dispatch", program.selected_dispatch.value),
+        ("active_runway", program.active_runway.value),
+        ("queued_batch", _migrated_queued_batch_value(root_state, program)),
+        ("latest_closeout", program.latest_closeout.value),
+    ):
+        actual = fixture_program.get(field_name)
+        if actual != expected:
+            yield ValidationMessage(
+                "error",
+                "migrated_state_mismatch",
+                (
+                    f"state fixture {program.slug}.{field_name} "
+                    "does not match CURRENT.md"
+                ),
+                program.current_path,
+            )
+    if len(_fixture_active_values(fixture_program)) > 1:
+        yield ValidationMessage(
+            "error",
+            "fixture_active_state_conflict",
+            "state fixture selects more than one dispatch, active runway, or queued batch",
+        )
+    yield from _fixture_artifact_duplicate_messages(fixture_program)
+    for field_name, artifact_type in (
+        ("selected_dispatch", "dispatch"),
+        ("active_runway", "runway"),
+        ("queued_batch", "runway"),
+    ):
+        pointer = fixture_program.get(field_name)
+        if isinstance(pointer, str) and not _fixture_registers_active_pointer(
+            fixture_program,
+            artifact_type=artifact_type,
+            pointer=pointer,
+        ):
+            yield ValidationMessage(
+                "error",
+                "unregistered_active_batch_pointer",
+                (
+                    f"state fixture {program.slug}.{field_name} "
+                    "does not reference a registered artifact"
+                ),
+            )
+
+
+def _fixture_artifact_duplicate_messages(
+    fixture_program: dict[str, Any],
+) -> Iterable[ValidationMessage]:
+    seen: set[tuple[str, str, str]] = set()
+    duplicate_keys: set[tuple[str, str, str]] = set()
+    artifacts_by_identity: dict[tuple[str, str], str] = {}
+    collided_identities: set[tuple[str, str]] = set()
+    artifacts_by_path: dict[str, tuple[str, str]] = {}
+    collided_paths: set[str] = set()
+    artifacts = fixture_program.get("artifacts", [])
+    if not isinstance(artifacts, list):
+        return
+    for artifact in artifacts:
+        if not isinstance(artifact, dict):
+            continue
+        artifact_type = artifact.get("type")
+        batch_id = artifact.get("batch_id")
+        path = artifact.get("path")
+        if not (
+            isinstance(artifact_type, str)
+            and isinstance(batch_id, str)
+            and isinstance(path, str)
+        ):
+            continue
+        key = (artifact_type, batch_id, path)
+        if key in seen and key not in duplicate_keys:
+            duplicate_keys.add(key)
+            yield ValidationMessage(
+                "error",
+                "duplicate_artifact_registration",
+                f"state fixture duplicates {artifact_type} for {batch_id}",
+            )
+        seen.add(key)
+        identity = (artifact_type, batch_id)
+        previous_path = artifacts_by_identity.get(identity)
+        if (
+            previous_path is not None
+            and previous_path != path
+            and identity not in collided_identities
+        ):
+            collided_identities.add(identity)
+            yield ValidationMessage(
+                "error",
+                "artifact_registration_collision",
+                (
+                    f"state fixture registers {artifact_type} for {batch_id} "
+                    "with more than one path"
+                ),
+            )
+        artifacts_by_identity.setdefault(identity, path)
+        previous_identity = artifacts_by_path.get(path)
+        if (
+            previous_identity is not None
+            and previous_identity != identity
+            and path not in collided_paths
+        ):
+            collided_paths.add(path)
+            yield ValidationMessage(
+                "error",
+                "artifact_path_collision",
+                f"state fixture registers {path} for more than one artifact",
+            )
+        artifacts_by_path.setdefault(path, identity)
+
+
+def _fixture_registers_active_pointer(
+    fixture_program: dict[str, Any],
+    *,
+    artifact_type: str,
+    pointer: str,
+) -> bool:
+    artifacts = fixture_program.get("artifacts", [])
+    if not isinstance(artifacts, list):
+        return False
+    batch_id = _batch_id_from_path(pointer)
+    for artifact in artifacts:
+        if not isinstance(artifact, dict):
+            continue
+        if artifact.get("type") != artifact_type:
+            continue
+        if artifact.get("path") == pointer:
+            return True
+        if batch_id is None and artifact.get("batch_id") == pointer:
+            return True
+    return False
 
 
 def _obligation_validation_messages(
@@ -3042,7 +3252,7 @@ def _validate_state_fixture_root(
     fixture_root = data["root"].strip().rstrip("/")
     if fixture_root != expected_root:
         raise ProtocolValidationError(
-            "state-file root does not match planning root: "
+            "state_file_root_mismatch: state-file root does not match planning root: "
             f"{fixture_root} != {expected_root}"
         )
 

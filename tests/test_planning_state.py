@@ -798,6 +798,164 @@ def test_bootstrap_state_command_expands_id_only_queued_batch_artifacts(
     ]
 
 
+def test_bootstrap_state_file_validates_id_only_queued_batch(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    batch_id = "planning-state-write-transitions"
+    batch_root = _write_transition_batch(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued=batch_id,
+        latest="None",
+    )
+    state_file = tmp_path / "id-only-queued-state.json"
+
+    bootstrap_result = _run_bootstrap_state(
+        root,
+        "--program",
+        "planning-state-tooling",
+        "--state-file",
+        str(state_file),
+    )
+    validate_result = _run_validate_json(root, "--state-file", str(state_file))
+    payload = json.loads(validate_result.stdout)
+
+    assert bootstrap_result.returncode == 0
+    assert validate_result.returncode == 0
+    assert payload["blockers"] == []
+    planning_program = next(
+        program
+        for program in payload["programs"]
+        if program["slug"] == "planning-state-tooling"
+    )
+    assert planning_program["queued_batch"]["value"] == batch_id
+    assert json.loads(state_file.read_text(encoding="utf-8"))["programs"][0][
+        "queued_batch"
+    ] == f"{batch_root}/runway.md"
+
+
+def test_bootstrap_state_file_validates_with_current_and_obligations(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    batch_root = _write_transition_batch(root)
+    closeout = (
+        root
+        / "programs"
+        / "planning-state-tooling"
+        / "batches"
+        / "planning-state-write-transitions"
+        / "closeout.md"
+    )
+    closeout.write_text("# Closeout\n", encoding="utf-8")
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued=f"{batch_root}/runway.md",
+        latest=f"{batch_root}/closeout.md",
+    )
+    state_file = tmp_path / "migrated-state.json"
+
+    bootstrap_result = _run_bootstrap_state(
+        root,
+        "--program",
+        "planning-state-tooling",
+        "--state-file",
+        str(state_file),
+    )
+    migrated = json.loads(state_file.read_text(encoding="utf-8"))
+    migrated["obligations"] = [
+        {
+            "id": "PST-OBL-MIGRATED-001",
+            "owner": "slice-4",
+            "source_batch": "planning-state-write-transitions",
+            "target_batch": None,
+            "close_condition": "document migration validation evidence",
+            "status": "open",
+            "evidence_path": None,
+        }
+    ]
+    state_file.write_text(json.dumps(migrated, indent=2, sort_keys=True) + "\n")
+
+    current_output = _run_current(root, "--state-file", str(state_file))
+    validate_result = _run_validate_json(root, "--state-file", str(state_file))
+    payload = json.loads(validate_result.stdout)
+
+    assert bootstrap_result.returncode == 0
+    assert validate_result.returncode == 0
+    assert "queued_batch: docs/plans/programs/planning-state-tooling/batches/" in (
+        current_output
+    )
+    assert "latest_closeout: docs/plans/programs/planning-state-tooling/batches/" in (
+        current_output
+    )
+    assert "PST-OBL-MIGRATED-001" in current_output
+    assert payload["blockers"] == []
+    assert {message["code"] for message in payload["validation_messages"]} >= {
+        "open_obligation"
+    }
+    assert migrated["programs"][0]["artifacts"] == [
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": f"{batch_root}/dispatch.md",
+            "type": "dispatch",
+        },
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": f"{batch_root}/runway.md",
+            "type": "runway",
+        },
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": f"{batch_root}/closeout.md",
+            "type": "closeout",
+        },
+    ]
+
+
+def test_bootstrap_state_file_validates_graphify_style_compatibility_evidence(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "my-docs" / "plans"
+    _write_graphify_fixture(root)
+    state_file = tmp_path / "graphify-migrated-state.json"
+
+    bootstrap_result = _run_bootstrap_state(root, "--state-file", str(state_file))
+    validate_result = _run_validate_json(root, "--state-file", str(state_file))
+    payload = json.loads(validate_result.stdout)
+    migrated = json.loads(state_file.read_text(encoding="utf-8"))
+
+    assert bootstrap_result.returncode == 0
+    assert validate_result.returncode == 0
+    assert payload["blockers"] == []
+    assert {warning["code"] for warning in payload["warnings"]} >= {
+        "redirect_ledger",
+        "historical_batch_artifact",
+        "stale_pickup_note",
+        "stale_pickup_contradiction",
+    }
+    assert payload["programs"][0]["queued_batch"]["value"] is None
+    assert payload["programs"][0]["active_runway"]["value"] is None
+    assert payload["programs"][0]["latest_closeout"]["value"] == (
+        "my-docs/plans/programs/install-sandbox-test-quality-architecture/"
+        "batches/tqa-b11-target-selection-diagnostic-wording/runway.md"
+    )
+    assert migrated["programs"][0]["artifacts"] == [
+        {
+            "batch_id": "tqa-b11-target-selection-diagnostic-wording",
+            "path": (
+                "my-docs/plans/programs/install-sandbox-test-quality-architecture/"
+                "batches/tqa-b11-target-selection-diagnostic-wording/runway.md"
+            ),
+            "type": "runway",
+        },
+    ]
+
+
 def test_bootstrap_state_command_rejects_invalid_targets_and_slugs(
     tmp_path: Path,
 ) -> None:
@@ -2098,8 +2256,247 @@ def test_validate_rejects_state_file_from_different_planning_root(
     result = _run_validate(root, "--state-file", str(state_file))
 
     assert result.returncode == 2
+    assert "state_file_root_mismatch" in result.stderr
     assert "state-file root does not match planning root" in result.stderr
     assert "my-docs/plans != docs/plans" in result.stderr
+
+
+def test_validate_rejects_malformed_obligation_without_traceback(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "state.json"
+    _write_state_fixture(
+        state_file,
+        obligations=[
+            {
+                "id": "PST-OBL-BAD",
+                "owner": "slice-4",
+                "source_batch": "planning-state-readonly-core",
+                "target_batch": None,
+                "close_condition": "close when documented",
+                "status": "pending",
+                "evidence_path": None,
+            }
+        ],
+    )
+
+    result = _run_validate(root, "--state-file", str(state_file))
+
+    assert result.returncode == 2
+    assert "Traceback" not in result.stderr
+    assert "malformed_obligation_record" in result.stderr
+    assert "invalid_obligation_record" in result.stderr
+    assert "status must be 'open' or 'closed'" in result.stderr
+
+
+def test_validate_rejects_non_status_malformed_obligation_without_traceback(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "state.json"
+    _write_state_fixture(
+        state_file,
+        obligations=[
+            {
+                "id": "PST-OBL-BAD",
+                "owner": ["slice-4"],
+                "source_batch": "planning-state-readonly-core",
+                "target_batch": None,
+                "close_condition": "close when documented",
+                "status": "open",
+                "evidence_path": None,
+            }
+        ],
+    )
+
+    result = _run_validate(root, "--state-file", str(state_file))
+
+    assert result.returncode == 2
+    assert "Traceback" not in result.stderr
+    assert "malformed_obligation_record" in result.stderr
+    assert "owner must be a string or null" in result.stderr
+
+
+def test_validate_rejects_duplicate_migrated_artifacts_with_stable_code(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "state.json"
+    artifact = {
+        "batch_id": "planning-state-readonly-core",
+        "path": (
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-readonly-core/runway.md"
+        ),
+        "type": "runway",
+    }
+    _write_state_fixture(state_file, artifacts=[artifact, artifact])
+
+    result = _run_validate_json(root, "--state-file", str(state_file))
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert "Traceback" not in result.stderr
+    assert [blocker["code"] for blocker in payload["blockers"]] == [
+        "migrated_state_mismatch",
+        "duplicate_artifact_registration",
+    ]
+
+
+def test_validate_rejects_migrated_artifact_identity_collisions(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    state_file = tmp_path / "state.json"
+    _write_state_fixture(
+        state_file,
+        artifacts=[
+            {
+                "batch_id": "planning-state-readonly-core",
+                "path": (
+                    "docs/plans/programs/planning-state-tooling/batches/"
+                    "planning-state-readonly-core/runway.md"
+                ),
+                "type": "runway",
+            },
+            {
+                "batch_id": "planning-state-readonly-core",
+                "path": (
+                    "docs/plans/programs/planning-state-tooling/batches/"
+                    "planning-state-readonly-core/alternate-runway.md"
+                ),
+                "type": "runway",
+            },
+        ],
+    )
+
+    result = _run_validate_json(root, "--state-file", str(state_file))
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert [blocker["code"] for blocker in payload["blockers"]] == [
+        "artifact_registration_collision"
+    ]
+
+
+def test_validate_rejects_migrated_artifact_path_collisions(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    state_file = tmp_path / "state.json"
+    path = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-readonly-core/runway.md"
+    )
+    _write_state_fixture(
+        state_file,
+        artifacts=[
+            {
+                "batch_id": "planning-state-readonly-core",
+                "path": path,
+                "type": "runway",
+            },
+            {
+                "batch_id": "planning-state-readonly-core",
+                "path": path,
+                "type": "dispatch",
+            },
+        ],
+    )
+
+    result = _run_validate_json(root, "--state-file", str(state_file))
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert [blocker["code"] for blocker in payload["blockers"]] == [
+        "artifact_path_collision"
+    ]
+
+
+def test_validate_rejects_migrated_active_state_contradictions(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    batch_root = _write_transition_batch(root)
+    dispatch = f"{batch_root}/dispatch.md"
+    runway = f"{batch_root}/runway.md"
+    state_file = tmp_path / "state.json"
+    _write_state_fixture(
+        state_file,
+        selected_dispatch=dispatch,
+        queued_batch=runway,
+        artifacts=[
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": dispatch,
+                "type": "dispatch",
+            },
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": runway,
+                "type": "runway",
+            },
+        ],
+    )
+
+    result = _run_validate_json(root, "--state-file", str(state_file))
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert {blocker["code"] for blocker in payload["blockers"]} == {
+        "fixture_active_state_conflict",
+        "migrated_state_mismatch",
+    }
+
+
+def test_validate_rejects_unregistered_migrated_active_batch_pointer(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    batch_root = _write_transition_batch(root)
+    runway = f"{batch_root}/runway.md"
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued=runway,
+        latest="None",
+    )
+    state_file = tmp_path / "state.json"
+    _write_state_fixture(state_file, queued_batch=runway)
+
+    result = _run_validate_json(root, "--state-file", str(state_file))
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert [blocker["code"] for blocker in payload["blockers"]] == [
+        "unregistered_active_batch_pointer"
+    ]
 
 
 def test_allocate_batch_command_reports_canonical_layout_v1_paths(
@@ -3181,9 +3578,16 @@ def _display_root(root: Path) -> str:
     return "my-docs/plans"
 
 
-def _run_current(root: Path) -> str:
+def _run_current(root: Path, *extra_args: str) -> str:
     result = subprocess.run(
-        [sys.executable, str(PLANNING_STATE_SCRIPT), "current", "--root", str(root)],
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "current",
+            "--root",
+            str(root),
+            *extra_args,
+        ],
         cwd=REPO_ROOT,
         check=True,
         text=True,
@@ -3192,7 +3596,7 @@ def _run_current(root: Path) -> str:
     return result.stdout
 
 
-def _run_current_json(root: Path) -> subprocess.CompletedProcess[str]:
+def _run_current_json(root: Path, *extra_args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
             sys.executable,
@@ -3202,6 +3606,7 @@ def _run_current_json(root: Path) -> subprocess.CompletedProcess[str]:
             str(root),
             "--format",
             "json",
+            *extra_args,
         ],
         cwd=REPO_ROOT,
         check=False,

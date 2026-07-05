@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state migrated fixture validation
+
+Problem: generated Layout v1 state fixtures could be schema-valid while still
+drifting from active Markdown pickup state or missing registered artifact facts.
+
+Decision: make `current` and `validate --state-file` cross-check migrated state
+fixtures against active root/program `CURRENT.md` facts, registered active batch
+pointers, duplicate artifact registrations, active-state contradictions, and
+obligation record shape with stable blocker codes.
+
+Expected effect: migration pilots can immediately validate generated state files
+without closing or queueing batches, requiring live downstream project access,
+or breaking Markdown-only planning roots.
+
 ### Planning-state bootstrap generation
 
 Problem: agents could define the Layout v1 bootstrap contract but still had to
