@@ -8,7 +8,7 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID: `planning-state-skill-interface`
 - Latest closeout path:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/closeout.md`
 - Run artifact location: `None selected`
@@ -45,9 +45,10 @@
 
 Use `python scripts/planning_state.py current --root docs/plans` and
 `python scripts/planning_state.py validate --root docs/plans` before broad
-planning tree scans. There is no selected, active, or queued
-planning-state-tooling batch. A future user request should create or queue the
-next batch explicitly before implementation work starts.
+planning tree scans. The queued `planning-state-skill-interface` batch should
+execute from
+`docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/runway.md`
+when implementation work starts.
 
 ## Stop Conditions
 

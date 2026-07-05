@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+### Planning-state skill entrypoint
+
+Problem: agents had planning-state commands and Layout v1 conventions, but no
+single skill entrypoint for safe read-only discovery and validation before
+ledger-driven workflows consumed state.
+
+Decision: add a `planning-state` skill entrypoint that routes through
+`scripts/planning_state.py`, delegates Layout v1 placement to
+`planning-artifacts`, and requires explicit policy or temporary proof targets
+before durable JSON state or SQLite projection writes.
+
+Expected effect: fresh agents can run the planning-state diagnostic hot path
+without importing script internals, querying SQLite directly, scraping historical
+filenames, or baking downstream project paths into generic workflow guidance.
+
+### Planning-state skill-interface backlog
+
+Problem: planning-state commands and Layout v1 rules existed, but there was no
+single skill-level interface for agents to discover, validate, bootstrap,
+project, and report planning state before other ledger-dependent skills consume
+it.
+
+Decision: add ordered ledger findings and candidate batches for a
+`planning-state` skill interface followed by consumer-skill integration, keeping
+layout ownership in `planning-artifacts` and operational state/projection
+workflow in the future shared skill.
+
+Expected effect: future work can first create the deep Planning State Diagnostic
+skill, then wire `architecture-program-runway`, `batch-runway`, and
+`legacy-removal` to use it without duplicating active-state or SQLite setup.
+
 ### Planning-state runner artifact projection reports
 
 Problem: projection reports could answer planning-state questions but could not

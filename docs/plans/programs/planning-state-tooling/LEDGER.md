@@ -57,6 +57,11 @@ is planning-only; it does not implement code.
 | PST-6. Operational queries are awkward from files alone | Closed | `planning-state-sqlite-projection` | Use `rebuild-projection` and `report-projection` for bounded operational reports when a caller provides a policy-compatible database target | Closed by optional SQLite projection rebuild, report commands, runner-artifact report coverage, validation, review, and pointer-first closeout evidence. SQLite is delete-safe and remains behind command/report interfaces. |
 | PST-7. Runner interoperability protocol is undefined | Closed | `planning-state-write-transitions` | Use command/file outputs as the runner boundary | Depends on PST-1 and informed PST-2/PST-3. Slice 1 defined JSON facts, Slice 3 added transition receipts, and Slice 4 added obligation facts without runner imports of planning-state internals. |
 | PST-8. Project planning-state ownership policy is implicit | Closed | `planning-state-project-policy` | Use resolved project policy for durable state/projection writes and SQLite work | Closed with validation, review, and closeout evidence. codex-config committed planning docs and ignored-local overlay examples are documented without becoming universal defaults; write-target preflights reject policy-incompatible durable JSON or SQLite outputs. |
+| PST-9. Planning-state operations have no reusable skill interface | Open | `planning-state-skill-interface` | Create a repo-owned `planning-state` skill before wiring consumers | The code surface exists, but agents still have to reconstruct the correct sequence for discovery, validation, state bootstrapping, projection rebuilding, and projection reporting from plan docs and prior context. |
+| PST-10. Planning-state operational details are split between layout guidance and historical plan prose | Open | `planning-state-skill-interface` | Move the hot path into a compact skill entrypoint with optional references | `planning-artifacts` owns Layout v1 placement, while `docs/plans/planning-state-tooling-plan.md` owns detailed command history. A fresh agent needs progressive discovery that loads only the state/projection details needed for the current question. |
+| PST-11. Project policy target selection is not packaged as an agent-facing adapter | Open | `planning-state-skill-interface` | Make the new skill resolve or refuse state/projection targets from project policy | Consumers need one safe interface for choosing stdout, `/tmp`, ignored-local, external, or committed state/projection targets without learning each policy rule or hard-coding codex-config and Graphify paths. |
+| PST-12. Ledger-dependent skills duplicate active-state pickup and projection setup | Open | `planning-state-consumer-integration` | Update consumer skills to call the shared planning-state interface first | `architecture-program-runway`, `batch-runway`, and `legacy-removal` each carry partial active-state rules. They should consume compact Planning State Diagnostic facts, then make their own semantic decisions. |
+| PST-13. Feature dependency metadata cannot express operational planning-state reuse | Open | `planning-state-consumer-integration` | Add a `planning-state` feature and declare dependencies from consumers that use it | `codex-features.json` currently links consumers to `planning-artifacts`, which is correct for layout but does not install or describe the operational state/projection skill seam. |
 
 ## Batch Queue
 
@@ -68,6 +73,8 @@ is planning-only; it does not implement code.
 | planning-state-migration-pilot | PST-5 | Completed | Bootstraps tool state from existing planning roots without hiding Markdown | planning-state-readonly-core; preferably planning-state-closeout-contract | Fixture migration tests, current/validate diagnostics, review, and closeout evidence | `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/runway.md` |
 | planning-state-project-policy | PST-8 | Completed | Makes state-file and projection ownership explicit per project before SQLite chooses targets | planning-state-migration-pilot | Project-policy parsing/validation tests, temp committed and ignored-local fixtures, current/validate diagnostics, and closeout evidence | `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/runway.md` |
 | planning-state-sqlite-projection | PST-6 | Completed | Adds fast operational reporting after canonical files and project policy are stable while keeping SQLite optional and rebuildable | planning-state-project-policy closed by `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/closeout.md` | SQLite rebuild/report tests, report CLI checks, current/validate diagnostics, review, and closeout evidence | `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/runway.md` |
+| planning-state-skill-interface | PST-9, PST-10, PST-11 | Queued | Creates the deep skill interface that centralizes planning-state operations before consumers depend on it | planning-state-sqlite-projection | Skill validation, current/validate CLI smoke, generated-only `/tmp` state/projection smoke, manifest/changelog alignment, and grep checks for project-specific hard-coding | `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/runway.md` |
+| planning-state-consumer-integration | PST-12, PST-13 | Candidate | Wires ledger-dependent skills and install metadata to the shared planning-state skill after the interface exists | planning-state-skill-interface | Skill validation, dependency-manifest JSON check, focused wording checks across consumer skills, current/validate diagnostics, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/runway.md` |
 
 ## Latest Batch Brief
 
@@ -87,13 +94,29 @@ Latest completed batch:
 
 ## Queued Batch Brief
 
-Queued batch: `None`
+Queued batch:
+
+- Batch: `planning-state-skill-interface`
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/dispatch.md`
+- Status: `Queued`
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/runway.md`
+- Notes: Execute this batch before `planning-state-consumer-integration`.
 
 ## Recommended Work Order
 
-1. Do not start another planning-state-tooling batch until a future user
-   request selects or creates one.
-2. For projection reporting, rebuild only to explicit temp or
+1. Execute `planning-state-skill-interface` first. It should add the shared
+   `planning-state` skill, keep the hot path compact, move conditional details
+   into references, resolve project policy for generated/durable targets, and
+   validate the skill plus smoke commands without committing generated state or
+   SQLite files.
+2. Create `planning-state-consumer-integration` only after the shared interface
+   exists. It should update `architecture-program-runway`, `batch-runway`, and
+   `legacy-removal` to consume Planning State Diagnostic facts instead of
+   duplicating active-state/projection setup, and add the install-time feature
+   dependency metadata.
+3. For projection reporting, rebuild only to explicit temp or
    policy-compatible database targets and keep Markdown/JSON canonical.
 
 ## Closeout Rules
@@ -122,6 +145,22 @@ Queued batch: `None`
   ignored-local, external, generated-only, and no durable state/projection
   layouts without hard-coding a downstream project path, and after write-target
   preflights reject policy-incompatible durable JSON or SQLite outputs.
+- Mark PST-9 `Closed` only after a repo-owned `planning-state` skill gives
+  fresh agents a compact interface for discovery, validation, optional
+  state-fixture bootstrapping, optional SQLite projection rebuild, and
+  projection reporting.
+- Mark PST-10 `Closed` only after the planning-state skill uses progressive
+  discovery: the entrypoint covers the routine hot path, and references cover
+  state fixtures, projection reporting, runner artifacts, closeout, and
+  target-policy details only when needed.
+- Mark PST-11 `Closed` only after the skill tells agents how to resolve or
+  refuse state/projection targets from project policy without embedding
+  project-specific paths as generic defaults.
+- Mark PST-12 `Closed` only after the ledger-dependent consumer skills use the
+  shared planning-state interface before making their own semantic decisions.
+- Mark PST-13 `Closed` only after feature metadata installs the new skill and
+  declares consumer dependencies that distinguish layout convention from
+  operational planning-state diagnostics.
 
 ## Planning Rules
 
