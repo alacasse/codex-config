@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state project policy contract
+
+Problem: future durable JSON state and projection work needed a reusable policy
+boundary that did not assume every project commits planning state or uses the
+same ignored local paths.
+
+Decision: define project-owned state/projection policy vocabulary in Planning
+Artifact Layout v1 and add schema tests for committed, ignored-local, external,
+generated-only, none, missing, and unsupported policy cases.
+
+Expected effect: later planning-state write and SQLite slices can require
+compatible project policy before durable writes without hard-coding
+`codex-config`, Graphify, or a universal state-file location.
+
 ### Planning-state migration pilot handoff
 
 Problem: the migration pilot needed a durable handoff that explains how

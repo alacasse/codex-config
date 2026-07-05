@@ -24,6 +24,27 @@ ARTIFACT_REGISTRATION_PROTOCOL_NAME = "planning-state-artifact-registration"
 TRANSITION_RECEIPT_PROTOCOL_NAME = "planning-state-transition"
 CLOSEOUT_VALIDATION_PROTOCOL_NAME = "planning-state-closeout-validation"
 CLOSEOUT_RENDERING_PROTOCOL_NAME = "planning-state-closeout-rendering"
+STATE_FILE_POLICIES = {
+    "committed",
+    "external",
+    "generated-only",
+    "ignored-local",
+    "none",
+}
+PROJECTION_POLICIES = {
+    "external",
+    "generated-only",
+    "ignored-local",
+    "none",
+}
+COMMITTED_PROJECTION_POLICY = "committed"
+UPDATE_AUTHORITIES = {
+    "ask-first",
+    "command",
+    "read-only",
+}
+STATE_FILE_PATH_POLICIES = {"committed", "external", "ignored-local"}
+PROJECTION_PATH_POLICIES = {"committed", "external", "ignored-local"}
 BOOTSTRAP_SOURCE_MARKDOWN_LAYOUT_V1 = "layout-v1-markdown"
 BOOTSTRAP_SELECTION_PRECEDENCE = "root/program CURRENT.md active-first"
 SUPPORTED_ARTIFACT_TYPES = {
@@ -332,7 +353,7 @@ def validate_state_fixture_object(value: object) -> dict[str, Any]:
 
     data = _require_object(value, "state fixture")
     _require_protocol(data, STATE_FIXTURE_SCHEMA_NAME, "state fixture")
-    _require_string(data, "root")
+    fixture_root = _require_string(data, "root")
     programs = _require_array(data, "programs")
     for index, program in enumerate(programs):
         program_data = _require_object(program, f"programs[{index}]")
@@ -356,6 +377,15 @@ def validate_state_fixture_object(value: object) -> dict[str, Any]:
             _require_string(artifact_data, "path")
     _validate_fixture_obligation_schema(data)
     _validate_bootstrap_contract_schema(data)
+    _validate_project_policy_schema(data, expected_root=fixture_root)
+    return data
+
+
+def validate_project_policy_object(value: object) -> dict[str, Any]:
+    """Validate the project-owned planning-state policy contract."""
+
+    data = _require_object(value, "project_policy")
+    _validate_project_policy_object(data, "project_policy")
     return data
 
 
@@ -1944,6 +1974,111 @@ def _validate_bootstrap_contract_schema(data: dict[str, Any]) -> None:
         "compatibility_evidence",
         BOOTSTRAP_COMPATIBILITY_EVIDENCE_CODES,
     )
+
+
+def _validate_project_policy_schema(
+    data: dict[str, Any],
+    *,
+    expected_root: str,
+) -> None:
+    policy = data.get("project_policy")
+    if policy is None:
+        return
+    _validate_project_policy_object(
+        _require_object(policy, "project_policy"),
+        "project_policy",
+        expected_root=expected_root,
+    )
+
+
+def _validate_project_policy_object(
+    data: dict[str, Any],
+    context: str,
+    *,
+    expected_root: str | None = None,
+) -> None:
+    planning_root = _require_string(data, "planning_root")
+    if expected_root is not None and _normalize_policy_root(
+        planning_root
+    ) != _normalize_policy_root(expected_root):
+        raise ProtocolValidationError(
+            f"{context}.planning_root must match fixture root {expected_root!r}"
+        )
+    _require_optional_string(data, "run_artifact_root")
+    _require_optional_string(data, "output_root")
+    state_file_policy = _require_string(data, "state_file_policy")
+    if state_file_policy not in STATE_FILE_POLICIES:
+        raise ProtocolValidationError(
+            f"{context}.state_file_policy is unsupported: {state_file_policy}"
+        )
+    state_file_path = _require_optional_string(data, "state_file_path")
+    _validate_policy_path(
+        context,
+        policy_field="state_file_policy",
+        policy_value=state_file_policy,
+        path_field="state_file_path",
+        path_value=state_file_path,
+        durable_path_policies=STATE_FILE_PATH_POLICIES,
+    )
+    projection_policy = _require_string(data, "projection_policy")
+    if projection_policy == COMMITTED_PROJECTION_POLICY:
+        if not _require_optional_string(data, "committed_projection_exception"):
+            raise ProtocolValidationError(
+                f"{context}.committed_projection_exception must explain committed "
+                "projection policy"
+            )
+    elif projection_policy not in PROJECTION_POLICIES:
+        raise ProtocolValidationError(
+            f"{context}.projection_policy is unsupported: {projection_policy}"
+        )
+    projection_path = _require_optional_string(data, "projection_path")
+    _validate_policy_path(
+        context,
+        policy_field="projection_policy",
+        policy_value=projection_policy,
+        path_field="projection_path",
+        path_value=projection_path,
+        durable_path_policies=PROJECTION_PATH_POLICIES,
+    )
+    update_authority = _require_string(data, "update_authority")
+    if update_authority not in UPDATE_AUTHORITIES:
+        raise ProtocolValidationError(
+            f"{context}.update_authority is unsupported: {update_authority}"
+        )
+
+
+def _normalize_policy_root(value: str) -> str:
+    normalized = value.strip()
+    while normalized != "/" and normalized.endswith("/"):
+        normalized = normalized[:-1]
+    return normalized
+
+
+def _validate_policy_path(
+    context: str,
+    *,
+    policy_field: str,
+    policy_value: str,
+    path_field: str,
+    path_value: str | None,
+    durable_path_policies: set[str],
+) -> None:
+    if path_value == "":
+        raise ProtocolValidationError(
+            f"{context}.{path_field} must be null or a non-empty string"
+        )
+    if policy_value in durable_path_policies:
+        if not path_value:
+            raise ProtocolValidationError(
+                f"{context}.{path_field} is required when {policy_field} is "
+                f"{policy_value!r}"
+            )
+        return
+    if path_value:
+        raise ProtocolValidationError(
+            f"{context}.{path_field} must be null when {policy_field} is "
+            f"{policy_value!r}"
+        )
 
 
 def _require_exact_string_set(

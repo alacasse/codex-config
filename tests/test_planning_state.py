@@ -20,6 +20,7 @@ from scripts.planning_state import (
     format_validation_report,
     load_planning_state,
     validate_closeout_evidence_index_object,
+    validate_project_policy_object,
     validate_receipt_fixture_object,
     validate_state_fixture_object,
 )
@@ -420,6 +421,194 @@ def test_state_fixture_schema_rejects_malformed_objects() -> None:
         assert "state fixture.protocol.name" in str(error)
     else:
         raise AssertionError("expected malformed state fixture to fail")
+
+
+def test_project_policy_contract_represents_committed_and_ignored_local_roots() -> None:
+    committed_policy = _project_policy(
+        planning_root="docs/plans/",
+        run_artifact_root="docs/plans/runs/",
+        output_root="docs/plans/outputs/",
+        state_file_policy="committed",
+        state_file_path="docs/plans/state/planning-state.json",
+        projection_policy="generated-only",
+        projection_path=None,
+        update_authority="command",
+    )
+    ignored_local_policy = _project_policy(
+        planning_root="my-docs/plans/",
+        run_artifact_root="my-docs/runs/",
+        output_root="my-docs/outputs/",
+        state_file_policy="ignored-local",
+        state_file_path="my-docs/runs/planning-state/state.json",
+        projection_policy="ignored-local",
+        projection_path="my-docs/outputs/planning-state/planning-state.sqlite",
+        update_authority="ask-first",
+    )
+
+    assert validate_project_policy_object(committed_policy) == committed_policy
+    assert validate_project_policy_object(ignored_local_policy) == ignored_local_policy
+
+
+def test_project_policy_contract_represents_external_generated_and_none() -> None:
+    external_policy = _project_policy(
+        state_file_policy="external",
+        state_file_path="/var/lib/planning-state/project.json",
+        projection_policy="external",
+        projection_path="/var/lib/planning-state/project.sqlite",
+        update_authority="read-only",
+    )
+    generated_only_policy = _project_policy(
+        state_file_policy="generated-only",
+        state_file_path=None,
+        projection_policy="generated-only",
+        projection_path=None,
+        update_authority="command",
+    )
+    no_durable_policy = _project_policy(
+        state_file_policy="none",
+        state_file_path=None,
+        projection_policy="none",
+        projection_path=None,
+        update_authority="read-only",
+    )
+
+    assert validate_project_policy_object(external_policy) == external_policy
+    assert validate_project_policy_object(generated_only_policy) == generated_only_policy
+    assert validate_project_policy_object(no_durable_policy) == no_durable_policy
+
+
+def test_project_policy_contract_rejects_missing_and_unsupported_values() -> None:
+    missing_policy = _project_policy(state_file_policy="committed")
+    missing_policy["state_file_path"] = None
+    incomplete_policy = {"planning_root": "docs/plans/"}
+    unsupported_policy = _project_policy(state_file_policy="repository-default")
+
+    try:
+        validate_project_policy_object(missing_policy)
+    except ProtocolValidationError as error:
+        assert "state_file_path is required" in str(error)
+    else:
+        raise AssertionError("expected missing durable state-file path to fail")
+
+    try:
+        validate_project_policy_object(incomplete_policy)
+    except ProtocolValidationError as error:
+        assert "state_file_policy must be a non-empty string" in str(error)
+    else:
+        raise AssertionError("expected incomplete policy to fail")
+
+    try:
+        validate_project_policy_object(unsupported_policy)
+    except ProtocolValidationError as error:
+        assert "state_file_policy is unsupported: repository-default" in str(error)
+    else:
+        raise AssertionError("expected unsupported state-file policy to fail")
+
+
+def test_project_policy_contract_rejects_empty_string_paths() -> None:
+    empty_forbidden_state_path = _project_policy(
+        state_file_policy="generated-only",
+        state_file_path="",
+        projection_policy="none",
+        projection_path=None,
+    )
+    empty_forbidden_projection_path = _project_policy(
+        state_file_policy="none",
+        state_file_path=None,
+        projection_policy="generated-only",
+        projection_path="",
+    )
+
+    for policy, expected_field in (
+        (empty_forbidden_state_path, "state_file_path"),
+        (empty_forbidden_projection_path, "projection_path"),
+    ):
+        try:
+            validate_project_policy_object(policy)
+        except ProtocolValidationError as error:
+            assert f"{expected_field} must be null or a non-empty string" in str(error)
+        else:
+            raise AssertionError(f"expected empty {expected_field} to fail")
+
+
+def test_project_policy_contract_restricts_committed_projections_to_exceptions() -> None:
+    committed_without_exception = _project_policy(
+        projection_policy="committed",
+        projection_path="docs/plans/projections/planning-state.sqlite",
+    )
+    committed_with_exception = {
+        **committed_without_exception,
+        "committed_projection_exception": (
+            "Project instructions explicitly allow committed rebuildable reports."
+        ),
+    }
+
+    try:
+        validate_project_policy_object(committed_without_exception)
+    except ProtocolValidationError as error:
+        assert "committed_projection_exception must explain" in str(error)
+    else:
+        raise AssertionError("expected committed projection without exception to fail")
+
+    assert validate_project_policy_object(committed_with_exception) == (
+        committed_with_exception
+    )
+
+
+def test_state_fixture_schema_accepts_project_policy_contract() -> None:
+    valid_state = {
+        "protocol": {
+            "name": "planning-state-tool-state",
+            "version": 1,
+        },
+        "root": "docs/plans",
+        "project_policy": _project_policy(
+            state_file_policy="generated-only",
+            state_file_path=None,
+            projection_policy="none",
+            projection_path=None,
+        ),
+        "programs": [],
+    }
+
+    assert validate_state_fixture_object(valid_state) == valid_state
+
+
+def test_state_fixture_schema_rejects_project_policy_root_mismatch() -> None:
+    committed_state = {
+        "protocol": {
+            "name": "planning-state-tool-state",
+            "version": 1,
+        },
+        "root": "docs/plans",
+        "project_policy": _project_policy(
+            planning_root="my-docs/plans/",
+            state_file_policy="committed",
+            state_file_path="docs/plans/state/planning-state.json",
+            projection_policy="none",
+            projection_path=None,
+        ),
+        "programs": [],
+    }
+    ignored_local_state = {
+        **committed_state,
+        "root": "my-docs/plans",
+        "project_policy": _project_policy(
+            planning_root="docs/plans/",
+            state_file_policy="ignored-local",
+            state_file_path="my-docs/runs/planning-state/state.json",
+            projection_policy="ignored-local",
+            projection_path="my-docs/outputs/planning-state/planning-state.sqlite",
+        ),
+    }
+
+    for state in (committed_state, ignored_local_state):
+        try:
+            validate_state_fixture_object(state)
+        except ProtocolValidationError as error:
+            assert "project_policy.planning_root must match fixture root" in str(error)
+        else:
+            raise AssertionError("expected project policy root mismatch to fail")
 
 
 def test_state_fixture_schema_accepts_layout_v1_bootstrap_contract() -> None:
@@ -3985,6 +4174,29 @@ def _write_state_fixture(
         + "\n",
         encoding="utf-8",
     )
+
+
+def _project_policy(
+    *,
+    planning_root: str = "docs/plans/",
+    run_artifact_root: str | None = "docs/plans/runs/",
+    output_root: str | None = "docs/plans/outputs/",
+    state_file_policy: str = "generated-only",
+    state_file_path: str | None = None,
+    projection_policy: str = "generated-only",
+    projection_path: str | None = None,
+    update_authority: str = "command",
+) -> dict[str, str | None]:
+    return {
+        "planning_root": planning_root,
+        "run_artifact_root": run_artifact_root,
+        "output_root": output_root,
+        "state_file_policy": state_file_policy,
+        "state_file_path": state_file_path,
+        "projection_policy": projection_policy,
+        "projection_path": projection_path,
+        "update_authority": update_authority,
+    }
 
 
 def _bootstrap_state_from_program(

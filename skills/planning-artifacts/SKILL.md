@@ -29,6 +29,18 @@ Resolve these values before writing artifacts:
   telemetry. If omitted, derive it from the project rule or stop before writing
   runner artifacts.
 - `output_root`: generated tool outputs that are not durable planning docs.
+- `state_file_policy`: whether durable JSON planning state is `committed`,
+  `ignored-local`, `external`, `generated-only`, or `none`.
+- `state_file_path`: required only when `state_file_policy` selects a durable
+  project-owned state file.
+- `projection_policy`: whether rebuildable reporting/query projections are
+  `ignored-local`, `external`, `generated-only`, or `none`. A committed
+  projection is valid only when project instructions explicitly declare that
+  exception.
+- `projection_path`: required only when `projection_policy` selects a durable
+  projection target.
+- `update_authority`: whether workflow commands may update the target directly,
+  must ask first, or may only validate/read it.
 
 `planning_root` is required. Projects should declare it in repository
 instructions or a local overlay such as `AGENTS.md`, for example:
@@ -40,12 +52,23 @@ instructions or a local overlay such as `AGENTS.md`, for example:
 - Planning root: `my-docs/planning`
 - Run artifact root: `my-docs/runs`
 - Output root: `my-docs/outputs`
+- State file policy: `ignored-local`
+- State file path: `my-docs/runs/planning-state/state.json`
+- Projection policy: `generated-only`
+- Projection path: `None`
+- Update authority: `ask-first`
 - One-shot intake: `my-docs/planning/intake` or `None`
 ```
 
 If no planning root is declared and the task needs durable coordination state,
 stop and ask for the project value. Do not infer a root from another project or
 create loose files under `plans/`, `planning/`, or the repository root.
+
+If a command needs to write durable JSON state or projections and the project
+has not declared a compatible policy, stop before writing. Read-only diagnostics
+may still operate from Markdown-only planning roots. Generic skills must not
+bake in `codex-config` committed paths, Graphify-style ignored overlay paths, or
+any other project-specific state location as a reusable default.
 
 Preferred discovery order:
 

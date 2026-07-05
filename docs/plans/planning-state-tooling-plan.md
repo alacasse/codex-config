@@ -223,14 +223,24 @@ direction:
   `none`; committed projection files require an explicit project exception.
 - `projection_path`: required when the policy selects a durable projection
   target.
-- `update_authority`: whether agents may update the artifact through
-  planning-state commands, must ask first, or may only validate/read it.
+- `update_authority`: `command`, `ask-first`, or `read-only`.
+
+`state_file_path` is required for `committed`, `ignored-local`, and `external`
+state-file policies and must be absent for `generated-only` and `none`.
+`projection_path` is required for `ignored-local`, `external`, and any explicit
+committed-projection exception and must be absent for `generated-only` and
+`none`.
 
 Read-only commands such as `current` and `validate` should continue to work for
 Markdown-only projects. Commands that write durable JSON state or projections
 must require compatible project policy. When policy is missing, stdout and
 caller-provided temporary proof output remain valid, but durable writes should
 stop with a stable blocker.
+
+The contract is a discovery contract, not a default layout. Reusable workflow
+code must resolve these facts from the current project context and must not
+hard-code `codex-config` committed planning paths, Graphify ignored local
+overlay paths, or a universal state/projection location.
 
 ## Runner Interoperability Boundary
 
