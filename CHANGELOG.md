@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Planning-state projection routing guidance
+
+Problem: the planning-state skill documented projection commands, but did not
+clearly route history/reporting questions through policy-compatible projection
+reports before broad historical scans.
+
+Decision: update the skill entrypoint and target/projection references to
+distinguish active-state `current`/`validate` from optional projection-backed
+reporting, including `projection_usage` and `projection_rebuild_authority`
+prerequisites.
+
+Expected effect: agents keep active-state pickup SQLite-free while bounded
+history/reporting workflows stop on missing or incompatible projection policy
+instead of silently scraping historical planning files.
+
 ### Planning-state projection usage policy
 
 Problem: project policy could say where a projection database may be written,

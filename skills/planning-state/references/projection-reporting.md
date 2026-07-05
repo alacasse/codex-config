@@ -4,11 +4,26 @@ Use this reference when a workflow needs generated projection reports. Markdown
 planning files and explicit JSON state fixtures remain canonical; the SQLite
 database is a replaceable reporting projection.
 
+Use projection reports for supported history/reporting questions before broad
+historical planning scans when project policy says projection reporting is
+`expected` or when `optional`/`caller-directed` usage has explicit caller or
+spec authority. Do not use projection reports when `projection_usage` is
+`disabled`.
+
+`current` and `validate` remain the routine active-state hot path. They do not
+need SQLite, do not rebuild projections, and should be used before projection
+reporting to resolve the active planning root, selected work, blockers, and
+policy facts.
+
 ## Command Sequence
 
 1. Resolve the planning root and any project-approved projection target through
    `references/target-policy.md`.
-2. Rebuild the projection to an explicit database target:
+2. Confirm `projection_usage` and `projection_rebuild_authority` allow the
+   requested report and rebuild. If rebuild authority is `ask-first`, get
+   explicit authority for this run; if it is `external-owner` or `no-rebuild`,
+   use a compatible existing projection or stop.
+3. Rebuild the projection to an explicit database target:
 
    ```bash
    python scripts/planning_state.py rebuild-projection --root <planning-root> --database <projection.sqlite>
@@ -18,13 +33,13 @@ database is a replaceable reporting projection.
    same explicit JSON fixture facts later used for reporting. Add `--program
    <program-slug>` only when the report scope is intentionally limited.
 
-3. Run reports from the same database, root, state-file, and program scope:
+4. Run reports from the same database, root, state-file, and program scope:
 
    ```bash
    python scripts/planning_state.py report-projection --root <planning-root> --database <projection.sqlite> --report pending-batches
    ```
 
-4. Consume the command output. Do not open the database, issue SQL queries, or
+5. Consume the command output. Do not open the database, issue SQL queries, or
    rely on projection table names in an agent workflow.
 
 ## Supported Reports
