@@ -70,13 +70,25 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 with self.subTest(feature=feature_name):
                     self.assertIn("planning-artifacts", feature.get("requires", []))
 
-    def test_single_feature_install_expands_planning_artifact_dependency(self) -> None:
+    def test_single_feature_install_expands_planning_state_consumer_dependencies(
+        self,
+    ) -> None:
         manifest = self.load_manifest()
-        args = Namespace(feature=["batch-runway"], all_features=False)
+        expected_dependencies = ["planning-artifacts", "planning-state"]
 
-        selected = install_codex_config.selected_feature_names(args, manifest)
+        for feature_name in (
+            "batch-runway",
+            "architecture-program-runway",
+            "legacy-removal",
+        ):
+            with self.subTest(feature=feature_name):
+                feature = manifest["features"][feature_name]
+                self.assertEqual(feature.get("requires", []), expected_dependencies)
 
-        self.assertEqual(selected, ["planning-artifacts", "batch-runway"])
+                args = Namespace(feature=[feature_name], all_features=False)
+                selected = install_codex_config.selected_feature_names(args, manifest)
+
+                self.assertEqual(selected, [*expected_dependencies, feature_name])
 
     def test_planning_state_installs_skill_and_command_boundary(self) -> None:
         manifest = self.load_manifest()

@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state consumer install dependencies
+
+Problem: Batch Runway, Architecture Program Runway, and Legacy Removal now call
+the shared `planning-state` diagnostic interface, but their feature metadata
+still installed only the Layout v1 placement skill.
+
+Decision: add `planning-state` as an install dependency for those consumers
+while keeping `planning-artifacts` because they still consume placement
+conventions directly.
+
+Expected effect: installing any rewired consumer feature installs
+`planning-artifacts`, then `planning-state`, then the consumer without creating
+a dependency cycle.
+
 ### Legacy-removal planning-state diagnostics
 
 Problem: Legacy Removal could start Layout v1 ledger or selected-dispatch work

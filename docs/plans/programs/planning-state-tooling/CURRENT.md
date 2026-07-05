@@ -10,7 +10,7 @@
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -27,29 +27,26 @@
 
 ## Latest Completed Batch
 
-- Batch: `planning-state-skill-interface`
-- Status: completed; the repo-owned `planning-state` skill now provides the
-  safe agent interface for current/validate diagnostics, generated state
-  fixtures, target-policy refusal, optional projection reporting, closeout
-  evidence, and runner-artifact projection inputs.
+- Batch: `planning-state-consumer-integration`
+- Status: completed; Batch Runway, Architecture Program Runway, and Legacy
+  Removal now consume the shared `planning-state` diagnostic interface before
+  Layout v1 ledger or active-state pickup while preserving each workflow's
+  semantic ownership.
 - Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/dispatch.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/dispatch.md`
 - Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/runway.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/runway.md`
 - Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/closeout.md`
-- Notes: `planning-state` depends on `planning-artifacts`, keeps
-  `scripts/planning_state.py` as the command/file boundary, and leaves consumer
-  skill rewiring for the later `planning-state-consumer-integration` batch.
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/closeout.md`
+- Notes: consumer features now depend on both `planning-artifacts` for placement
+  conventions and `planning-state` for operational diagnostics. PST-12 and
+  PST-13 are closed with completed-slice, validation, review, and closeout
+  evidence.
 
 ## Next Safe Action
 
-Use `python scripts/planning_state.py current --root docs/plans` and
-`python scripts/planning_state.py validate --root docs/plans` before broad
-planning tree scans. There is no selected, active, or queued
-planning-state-tooling batch. Create or queue
-`planning-state-consumer-integration` only when consumer skill rewiring is
-requested.
+No planning-state-tooling batch is selected or queued. Use the ledger before
+creating any new batch.
 
 ## Stop Conditions
 
