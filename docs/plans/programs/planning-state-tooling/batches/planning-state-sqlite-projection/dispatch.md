@@ -2,7 +2,7 @@
 
 ```yaml
 batch_id: planning-state-sqlite-projection
-status: deferred
+status: queued
 source_program_ledger: docs/plans/programs/planning-state-tooling/LEDGER.md
 included_findings:
   - id: PST-6
@@ -46,8 +46,8 @@ dependencies_satisfied:
   - PST-4 closeout evidence is bounded and validateable.
   - PST-5 bootstrap-state can generate companion JSON state from Layout v1 Markdown.
   - PST-7 command/file protocol boundary exists for runner interop.
-dependencies_blocking:
-  - planning-state-project-policy must close first so SQLite consumes resolved project state/projection policy instead of choosing target ownership.
+  - PST-8 planning-state-project-policy is closed with bounded closeout evidence.
+dependencies_blocking: []
 suggested_slices:
   - Define the SQLite projection contract, schema metadata, stale-database checks, and allowed report facts.
   - Add an explicit projection rebuild command that writes only to a caller-provided SQLite target.

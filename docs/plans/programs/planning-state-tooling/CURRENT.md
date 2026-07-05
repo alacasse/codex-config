@@ -9,39 +9,48 @@
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/runway.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/runway.md`
 - Latest closeout path:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
+## Project State Policy
+
+- Planning root: `docs/plans/`
+- Run artifact root: `None`
+- Output root: `None`
+- State file policy: `generated-only`
+- State file path: `None`
+- Projection policy: `generated-only`
+- Projection path: `None`
+- Update authority: `command`
+
 ## Latest Completed Batch
 
-- Batch: `planning-state-migration-pilot`
-- Status: completed; migration bootstrap generation and migrated-fixture
-  validation are available while Markdown remains the human-readable planning
-  surface.
+- Batch: `planning-state-project-policy`
+- Status: completed; project-owned state/projection policy is explicit before
+  durable JSON or SQLite targets are selected.
 - Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/dispatch.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/dispatch.md`
 - Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/runway.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/runway.md`
 - Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/closeout.md`
-- Notes: `bootstrap-state` can generate v1 companion JSON state from Layout v1
-  Markdown, and `current`/`validate --state-file` can reject migrated fixture
-  drift before runner or reporting layers consume it.
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/closeout.md`
+- Notes: `current`/`validate` report project policy, write/preflight commands
+  enforce state-file and projection target policy, and codex-config committed
+  docs plus ignored-local overlay examples are documented without making either
+  a universal default.
 
 ## Next Safe Action
 
 Use `python scripts/planning_state.py current --root docs/plans` and
 `python scripts/planning_state.py validate --root docs/plans` before broad
 planning tree scans. The next safe implementation action is to execute the
-queued PST-8 project policy runway from:
+queued SQLite projection runway, which must consume resolved project policy
+before choosing any durable state or projection target:
 
-`docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/runway.md`
-
-The SQLite projection batch remains deferred until project state/projection
-ownership policy is explicit.
+`docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/runway.md`
 
 ## Stop Conditions
 

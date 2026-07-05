@@ -27,7 +27,7 @@ This spec executes the `planning-state-sqlite-projection` batch described by
   validate/render bounded closeout evidence, and bootstrap companion JSON state
   from Layout v1 Markdown.
 - Latest completed closeout:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/closeout.md`.
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/closeout.md`.
 
 ## Assumptions
 
@@ -45,8 +45,9 @@ This spec executes the `planning-state-sqlite-projection` batch described by
 - Graphify-style and runner-style behavior belongs in temp fixtures.
   Production code must not contain project-specific downstream paths, cache
   locations, validation commands, or overlay rules.
-- `planning-state-project-policy` must close before this batch executes so
-  state-file and projection ownership are explicit project values.
+- `planning-state-project-policy` is closed. This batch consumes its resolved
+  state-file and projection ownership policy instead of choosing durable target
+  ownership by itself.
 
 ## Non-Goals
 
@@ -93,7 +94,8 @@ Overrides:
 - Workers must not create a committed durable SQLite database unless a later
   explicit project policy selects a location.
 - Stop before Slice 1 if `planning-state-project-policy` is not completed in
-  the program ledger.
+  the program ledger or if resolved project policy cannot be checked before a
+  durable database target is used.
 
 ## Validation Profile
 

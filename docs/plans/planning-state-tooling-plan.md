@@ -253,6 +253,23 @@ code must resolve these facts from the current project context and must not
 hard-code `codex-config` committed planning paths, Graphify ignored local
 overlay paths, or a universal state/projection location.
 
+Example policies:
+
+- `codex-config` owns committed workflow planning documentation under
+  `docs/plans/`. Durable companion JSON state may be committed only when a
+  future spec declares that path and the command validates it against
+  `state_file_policy: committed`. SQLite remains a generated projection unless
+  an explicit project exception selects a committed projection path.
+- A Graphify-style local overlay can keep personal planning coordination under
+  an ignored root such as `my-docs/plans/`. Durable JSON state or SQLite output
+  for that workflow must use `ignored-local` or `external` policy and must not
+  be copied into the upstream repository by generic tooling.
+
+SQLite work must consume the resolved project policy before choosing any state
+file or projection target. The projection batch may define schema, rebuild, and
+report behavior, but it must reject durable outputs that are not allowed by the
+project's declared state-file and projection policy.
+
 ## Runner Interoperability Boundary
 
 Planning-state tooling and the phase runner should remain separate but
