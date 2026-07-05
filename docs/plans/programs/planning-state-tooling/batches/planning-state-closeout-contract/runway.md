@@ -128,7 +128,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 2. Add closeout validation | Pending |  |  |  |  |
 | 3. Add explicit closeout rendering | Pending |  |  |  |  |
 | 4. Document closeout workflow and state handoff | Pending |  |  |  |  |
 
@@ -141,6 +140,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1. Define closeout evidence contract | this commit | Added the bounded closeout evidence-index contract helper and focused contract tests; no CLI command or Markdown rendering added. | Validation: `python -m pytest tests/test_planning_state.py -q` (79 passed), `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check scripts/planning_state.py tests/test_planning_state.py` (passed with existing `/usr/bin/python3.14` symlink warning), `git diff --check` (passed). Review: `runway_reviewer` clean against final diff basis `HEAD 6ccafe0` scoped to `scripts/planning_state.py` and `tests/test_planning_state.py`. |
+| 2. Add closeout validation | this commit | Added `validate-closeout` JSON preflight for registered closeout evidence indexes with compact blockers for missing evidence, path ownership, non-file closeouts, and malformed artifact pointers; no rendering or live planning Markdown mutation added. | Validation: `python -m pytest tests/test_planning_state.py -q` (92 passed), `python scripts/planning_state.py validate --root docs/plans` (passed with existing redirect warnings), `UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uvx ruff check CHANGELOG.md scripts/planning_state.py tests/test_planning_state.py` (passed with existing `/usr/bin/python3.14` symlink warning), `git diff --check` (passed). Review: `runway_reviewer` clean against final diff basis `HEAD e332699` scoped to `CHANGELOG.md`, `scripts/planning_state.py`, and `tests/test_planning_state.py`. |
 
 ## Slice 1. Define Closeout Evidence Contract
 

@@ -22,6 +22,7 @@ CLOSEOUT_EVIDENCE_INDEX_SCHEMA_NAME = "planning-state-closeout-evidence-index"
 SUPPORTED_SCHEMA_VERSION = 1
 ARTIFACT_REGISTRATION_PROTOCOL_NAME = "planning-state-artifact-registration"
 TRANSITION_RECEIPT_PROTOCOL_NAME = "planning-state-transition"
+CLOSEOUT_VALIDATION_PROTOCOL_NAME = "planning-state-closeout-validation"
 SUPPORTED_ARTIFACT_TYPES = {
     "dispatch",
     "runway",
@@ -378,6 +379,8 @@ def validate_closeout_evidence_index_object(
     value: object,
     *,
     state_fixture: dict[str, Any] | None = None,
+    planning_state: PlanningState | None = None,
+    paths: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Validate the bounded closeout evidence-index data contract."""
 
@@ -402,15 +405,38 @@ def validate_closeout_evidence_index_object(
         if fixture is not None
         else None
     )
-    _validate_closeout_artifacts(data, batch_id, fixture_program)
+    _validate_closeout_artifacts(
+        data,
+        batch_id,
+        fixture_program,
+        planning_state=planning_state,
+        paths=paths,
+    )
     _validate_commit_evidence(_require_object(data.get("commit_evidence"), "commit_evidence"))
     _validate_closeout_evidence_items(
-        data, "validation_evidence", batch_id, fixture_program
+        data,
+        "validation_evidence",
+        batch_id,
+        fixture_program,
+        planning_state=planning_state,
+        paths=paths,
     )
-    _validate_closeout_evidence_items(data, "review_evidence", batch_id, fixture_program)
+    _validate_closeout_evidence_items(
+        data,
+        "review_evidence",
+        batch_id,
+        fixture_program,
+        planning_state=planning_state,
+        paths=paths,
+    )
     if "transition_receipts" in data:
         _validate_closeout_evidence_items(
-            data, "transition_receipts", batch_id, fixture_program
+            data,
+            "transition_receipts",
+            batch_id,
+            fixture_program,
+            planning_state=planning_state,
+            paths=paths,
         )
     _validate_closeout_obligations(data, batch_id, fixture)
     _validate_cleanup_residue(
@@ -532,6 +558,15 @@ def main(argv: list[str] | None = None) -> int:
     queue_parser.add_argument("--runway", required=True)
     queue_parser.add_argument("--state-file", type=Path, required=True)
     queue_parser.add_argument("--receipt-file", type=Path)
+    closeout_parser = subparsers.add_parser(
+        "validate-closeout",
+        help="Validate a registered closeout evidence index.",
+    )
+    closeout_parser.add_argument("--root", type=Path, required=True)
+    closeout_parser.add_argument("--program", required=True)
+    closeout_parser.add_argument("--batch-id", required=True)
+    closeout_parser.add_argument("--closeout", required=True)
+    closeout_parser.add_argument("--state-file", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
         if args.command == "current":
@@ -611,6 +646,17 @@ def main(argv: list[str] | None = None) -> int:
             )
             sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
             return 0 if document["status"] == "applied" else 1
+        if args.command == "validate-closeout":
+            state = load_planning_state(args.root)
+            document = validate_closeout(
+                state,
+                program_slug=args.program,
+                batch_id=args.batch_id,
+                closeout_path=args.closeout,
+                state_file=args.state_file,
+            )
+            sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
+            return 0 if document["status"] == "passed" else 1
     except ProtocolValidationError as error:
         parser.exit(2, f"{parser.prog}: error: {error}\n")
     parser.error(f"unknown command: {args.command}")
@@ -827,6 +873,92 @@ def queue_batch(
         _write_state_fixture(state_file, data)
     _write_receipt_fixture(receipt_file, receipt)
     return receipt
+
+
+def validate_closeout(
+    state: PlanningState,
+    *,
+    program_slug: str,
+    batch_id: str,
+    closeout_path: str,
+    state_file: Path,
+) -> dict[str, Any]:
+    """Validate a named closeout evidence index against explicit state facts."""
+
+    program = _find_program(state, program_slug)
+    paths = _canonical_batch_paths(state, program, batch_id)
+    data = _load_state_fixture(state_file, expected_root=_planning_root_prefix(state))
+    messages: list[dict[str, str | None]] = []
+    _validate_closeout_path(
+        state,
+        artifact_path=closeout_path,
+        paths=paths,
+        messages=messages,
+    )
+    if not _has_message_codes(
+        messages,
+        {"invalid_closeout_path", "missing_closeout", "non_file_closeout"},
+    ):
+        program_data = _fixture_program(data, program.slug)
+        _validate_registered_artifact(
+            program_data,
+            artifact_type="closeout",
+            batch_id=batch_id,
+            artifact_path=closeout_path,
+            messages=messages,
+        )
+        closeout = _read_closeout_evidence_index(state, closeout_path, messages)
+        if closeout is not None:
+            _append_closeout_preflight_messages(
+                closeout,
+                program=program.slug,
+                batch_id=batch_id,
+                closeout_path=closeout_path,
+                state_fixture=data,
+                messages=messages,
+            )
+            _append_closeout_pointer_contract_messages(
+                closeout,
+                batch_id=batch_id,
+                planning_state=state,
+                paths=paths,
+                source_path=closeout_path,
+                messages=messages,
+            )
+            if not _has_message_errors(messages):
+                try:
+                    validate_closeout_evidence_index_object(
+                        closeout,
+                        state_fixture=data,
+                        planning_state=state,
+                        paths=paths,
+                    )
+                except ProtocolValidationError as error:
+                    _append_message(
+                        messages,
+                        severity="error",
+                        code="invalid_closeout_contract",
+                        message=str(error),
+                        source_path=closeout_path,
+                    )
+    blockers = [message for message in messages if message["severity"] == "error"]
+    warnings = [message for message in messages if message["severity"] == "warning"]
+    result = {
+        "protocol": {
+            "name": CLOSEOUT_VALIDATION_PROTOCOL_NAME,
+            "version": SUPPORTED_SCHEMA_VERSION,
+            "command": "validate-closeout",
+        },
+        "root": _planning_root_prefix(state),
+        "status": "failed" if blockers else "passed",
+        "program": program.slug,
+        "batch_id": batch_id,
+        "closeout": closeout_path,
+        "warnings": warnings,
+        "blockers": blockers,
+        "messages": messages,
+    }
+    return result
 
 
 def _read_text(path: Path) -> str:
@@ -1346,6 +1478,9 @@ def _validate_closeout_artifacts(
     data: dict[str, Any],
     batch_id: str,
     fixture_program: dict[str, Any] | None,
+    *,
+    planning_state: PlanningState | None = None,
+    paths: dict[str, str] | None = None,
 ) -> None:
     artifacts = _require_array(data, "artifacts")
     artifacts_by_type: dict[str, dict[str, Any]] = {}
@@ -1355,6 +1490,8 @@ def _validate_closeout_artifacts(
             f"artifacts[{index}]",
             batch_id=batch_id,
             fixture_program=fixture_program,
+            planning_state=planning_state,
+            paths=paths,
         )
         artifact_type = artifact_data["type"]
         if artifact_type in artifacts_by_type:
@@ -1373,6 +1510,8 @@ def _validate_closeout_artifact_pointer(
     *,
     batch_id: str,
     fixture_program: dict[str, Any] | None,
+    planning_state: PlanningState | None = None,
+    paths: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     artifact = _require_object(value, context)
     artifact_type = _require_supported_artifact_type(artifact, "type")
@@ -1382,6 +1521,13 @@ def _validate_closeout_artifact_pointer(
     if artifact_batch != batch_id:
         raise ProtocolValidationError(
             f"{context}.batch_id must match closeout batch_id {batch_id!r}"
+        )
+    if planning_state is not None and paths is not None:
+        _validate_registered_path(
+            planning_state,
+            artifact_type=artifact_type,
+            artifact_path=artifact_path,
+            paths=paths,
         )
     if fixture_program is not None and (
         artifact_type,
@@ -1433,6 +1579,9 @@ def _validate_closeout_evidence_items(
     key: str,
     batch_id: str,
     fixture_program: dict[str, Any] | None,
+    *,
+    planning_state: PlanningState | None = None,
+    paths: dict[str, str] | None = None,
 ) -> None:
     items = _require_array(data, key)
     if not items:
@@ -1452,6 +1601,8 @@ def _validate_closeout_evidence_items(
             f"{key}[{index}].artifact",
             batch_id=batch_id,
             fixture_program=fixture_program,
+            planning_state=planning_state,
+            paths=paths,
         )
 
 
@@ -1510,6 +1661,261 @@ def _validate_closeout_obligations(
                 raise ProtocolValidationError(
                     f"obligations.{collection_name}[{index}] must match a state fixture obligation"
                 )
+
+
+def _validate_closeout_path(
+    state: PlanningState,
+    *,
+    artifact_path: str,
+    paths: dict[str, str],
+    messages: list[dict[str, str | None]],
+) -> None:
+    try:
+        _validate_registered_path(
+            state,
+            artifact_type="closeout",
+            artifact_path=artifact_path,
+            paths=paths,
+        )
+    except ProtocolValidationError as error:
+        _append_message(
+            messages,
+            severity="error",
+            code="invalid_closeout_path",
+            message=str(error),
+            source_path=artifact_path,
+        )
+        return
+    resolved_path = _resolve_pointer(state.root.root_path, artifact_path)
+    if not resolved_path.exists():
+        _append_message(
+            messages,
+            severity="error",
+            code="missing_closeout",
+            message=f"{artifact_path} is missing",
+            source_path=artifact_path,
+        )
+        return
+    if not resolved_path.is_file():
+        _append_message(
+            messages,
+            severity="error",
+            code="non_file_closeout",
+            message=f"{artifact_path} is not a file",
+            source_path=artifact_path,
+        )
+
+
+def _read_closeout_evidence_index(
+    state: PlanningState,
+    closeout_path: str,
+    messages: list[dict[str, str | None]],
+) -> dict[str, Any] | None:
+    path = _resolve_pointer(state.root.root_path, closeout_path)
+    try:
+        text = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        data = _json_from_fenced_block(text)
+        if data is None:
+            _append_message(
+                messages,
+                severity="error",
+                code="invalid_closeout_json",
+                message=f"{closeout_path} does not contain a JSON evidence index",
+                source_path=closeout_path,
+            )
+            return None
+    if not isinstance(data, dict):
+        _append_message(
+            messages,
+            severity="error",
+            code="invalid_closeout_json",
+            message=f"{closeout_path} evidence index must be a JSON object",
+            source_path=closeout_path,
+        )
+        return None
+    return data
+
+
+def _json_from_fenced_block(text: str) -> object | None:
+    match = re.search(r"```json\s*\n(.*?)\n```", text, flags=re.DOTALL)
+    if match is None:
+        return None
+    try:
+        return json.loads(match.group(1))
+    except json.JSONDecodeError:
+        return None
+
+
+def _append_closeout_preflight_messages(
+    closeout: dict[str, Any],
+    *,
+    program: str,
+    batch_id: str,
+    closeout_path: str,
+    state_fixture: dict[str, Any],
+    messages: list[dict[str, str | None]],
+) -> None:
+    if closeout.get("program") != program:
+        _append_message(
+            messages,
+            severity="error",
+            code="closeout_program_mismatch",
+            message=f"closeout program does not match {program}",
+            source_path=closeout_path,
+        )
+    if closeout.get("batch_id") != batch_id:
+        _append_message(
+            messages,
+            severity="error",
+            code="closeout_batch_mismatch",
+            message=f"closeout batch_id does not match {batch_id}",
+            source_path=closeout_path,
+        )
+    artifacts_by_type = _closeout_artifacts_by_type(closeout)
+    closeout_artifact = artifacts_by_type.get("closeout")
+    if closeout_artifact is not None and closeout_artifact.get("path") != closeout_path:
+        _append_message(
+            messages,
+            severity="error",
+            code="closeout_path_mismatch",
+            message=f"closeout artifact path does not match {closeout_path}",
+            source_path=closeout_path,
+        )
+    for artifact_type in CLOSEOUT_REQUIRED_ARTIFACT_TYPES:
+        if artifact_type not in artifacts_by_type:
+            _append_message(
+                messages,
+                severity="error",
+                code=f"missing_{artifact_type.replace('-', '_')}_pointer",
+                message=f"closeout is missing {artifact_type} artifact pointer",
+                source_path=closeout_path,
+            )
+    for key, code in (
+        ("validation_evidence", "missing_validation_evidence"),
+        ("review_evidence", "missing_review_evidence"),
+    ):
+        value = closeout.get(key)
+        if not isinstance(value, list) or not value:
+            _append_message(
+                messages,
+                severity="error",
+                code=code,
+                message=f"closeout {key} must not be empty",
+                source_path=closeout_path,
+            )
+    _append_missing_closed_obligation_messages(
+        closeout,
+        batch_id=batch_id,
+        state_fixture=state_fixture,
+        source_path=closeout_path,
+        messages=messages,
+    )
+
+
+def _closeout_artifacts_by_type(data: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    artifacts = data.get("artifacts")
+    if not isinstance(artifacts, list):
+        return {}
+    by_type: dict[str, dict[str, Any]] = {}
+    for artifact in artifacts:
+        if isinstance(artifact, dict) and isinstance(artifact.get("type"), str):
+            by_type[artifact["type"]] = artifact
+    return by_type
+
+
+def _append_missing_closed_obligation_messages(
+    closeout: dict[str, Any],
+    *,
+    batch_id: str,
+    state_fixture: dict[str, Any],
+    source_path: str,
+    messages: list[dict[str, str | None]],
+) -> None:
+    closeout_obligations = closeout.get("obligations")
+    closeout_closed = []
+    if isinstance(closeout_obligations, dict):
+        closed_value = closeout_obligations.get("closed")
+        if isinstance(closed_value, list):
+            closeout_closed = [
+                obligation
+                for obligation in closed_value
+                if isinstance(obligation, dict)
+            ]
+    closed_by_id = {
+        obligation.get("id"): obligation
+        for obligation in closeout_closed
+        if isinstance(obligation.get("id"), str)
+    }
+    for obligation in _obligations_from_fixture(state_fixture):
+        if obligation.status != "closed":
+            continue
+        if obligation.source_batch != batch_id and obligation.target_batch != batch_id:
+            continue
+        closeout_obligation = closed_by_id.get(obligation.id)
+        evidence_path = (
+            closeout_obligation.get("evidence_path")
+            if isinstance(closeout_obligation, dict)
+            else None
+        )
+        if not isinstance(evidence_path, str) or not evidence_path:
+            _append_message(
+                messages,
+                severity="error",
+                code="missing_closed_obligation_evidence",
+                message=f"closed obligation {obligation.id} lacks closeout evidence",
+                source_path=source_path,
+            )
+
+
+def _append_closeout_pointer_contract_messages(
+    closeout: dict[str, Any],
+    *,
+    batch_id: str,
+    planning_state: PlanningState,
+    paths: dict[str, str],
+    source_path: str,
+    messages: list[dict[str, str | None]],
+) -> None:
+    for context, artifact in _present_closeout_artifact_pointers(closeout):
+        try:
+            _validate_closeout_artifact_pointer(
+                artifact,
+                context,
+                batch_id=batch_id,
+                fixture_program=None,
+                planning_state=planning_state,
+                paths=paths,
+            )
+        except ProtocolValidationError as error:
+            _append_message(
+                messages,
+                severity="error",
+                code="invalid_closeout_contract",
+                message=str(error),
+                source_path=source_path,
+            )
+
+
+def _present_closeout_artifact_pointers(
+    closeout: dict[str, Any],
+) -> Iterable[tuple[str, object]]:
+    artifacts = closeout.get("artifacts")
+    if isinstance(artifacts, list):
+        for index, artifact in enumerate(artifacts):
+            if isinstance(artifact, dict):
+                yield f"artifacts[{index}]", artifact
+    for key in ("validation_evidence", "review_evidence", "transition_receipts"):
+        items = closeout.get(key)
+        if not isinstance(items, list):
+            continue
+        for index, item in enumerate(items):
+            if isinstance(item, dict) and "artifact" in item:
+                yield f"{key}[{index}].artifact", item["artifact"]
 
 
 def _validate_cleanup_residue(cleanup_residue: dict[str, Any]) -> None:
@@ -2243,6 +2649,17 @@ def _append_message(
 
 def _has_validation_errors(state: PlanningState) -> bool:
     return any(message.severity == "error" for message in state.validation_messages)
+
+
+def _has_message_errors(messages: Iterable[dict[str, str | None]]) -> bool:
+    return any(message.get("severity") == "error" for message in messages)
+
+
+def _has_message_codes(
+    messages: Iterable[dict[str, str | None]],
+    codes: set[str],
+) -> bool:
+    return any(message.get("code") in codes for message in messages)
 
 
 def _program_active_state_messages(program: ProgramState) -> Iterable[ValidationMessage]:

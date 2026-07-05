@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state closeout validation
+
+Problem: completed batches had a closeout evidence-index contract but no
+runner-friendly preflight that checked a named `closeout.md` against explicit
+state, artifact, and obligation facts.
+
+Decision: add `planning_state validate-closeout` for registered closeout
+artifacts, required closeout pointers, commit/validation/review evidence, and
+closed-obligation evidence using compact blocker codes.
+
+Expected effect: future closeout rendering and runner handoff slices can fail
+early on missing evidence without parsing transcripts or mutating planning
+Markdown.
+
 ### Planning-state obligations
 
 Problem: batch selection and queue receipts could carry artifact facts but not

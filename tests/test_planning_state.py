@@ -1238,6 +1238,345 @@ def test_closeout_evidence_index_rejects_oversized_split_log_cleanup_evidence() 
         raise AssertionError("expected oversized cleanup residue evidence to fail")
 
 
+def test_validate_closeout_command_accepts_registered_fixture(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+
+    result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["protocol"] == {
+        "command": "validate-closeout",
+        "name": "planning-state-closeout-validation",
+        "version": 1,
+    }
+    assert payload["status"] == "passed"
+    assert payload["blockers"] == []
+
+
+def test_validate_closeout_command_reports_stable_blockers(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+    closeout = _closeout_evidence_index()
+    closeout["artifacts"] = [
+        artifact
+        for artifact in closeout["artifacts"]
+        if artifact["type"] != "completed-slices"
+    ]
+    closeout["validation_evidence"] = []
+    closeout["review_evidence"] = []
+    closeout["obligations"]["closed"][0]["evidence_path"] = None
+    _write_closeout_file(root, closeout_path, closeout)
+
+    result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert payload["status"] == "failed"
+    assert {blocker["code"] for blocker in payload["blockers"]} == {
+        "missing_completed_slices_pointer",
+        "missing_validation_evidence",
+        "missing_review_evidence",
+        "missing_closed_obligation_evidence",
+    }
+
+
+def test_validate_closeout_command_rejects_unregistered_closeout(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+    state_fixture = _closeout_state_fixture()
+    state_fixture["programs"][0]["artifacts"] = [
+        artifact
+        for artifact in state_fixture["programs"][0]["artifacts"]
+        if artifact["type"] != "closeout"
+    ]
+    state_file.write_text(json.dumps(state_fixture), encoding="utf-8")
+
+    result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert [blocker["code"] for blocker in payload["blockers"]] == [
+        "unregistered_closeout"
+    ]
+
+
+def test_validate_closeout_command_rejects_batch_and_path_mismatch(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+    closeout = _closeout_evidence_index()
+    closeout["batch_id"] = "planning-state-readonly-core"
+    closeout["artifacts"][0]["path"] = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-readonly-core/closeout.md"
+    )
+    _write_closeout_file(root, closeout_path, closeout)
+
+    result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert {blocker["code"] for blocker in payload["blockers"]} == {
+        "closeout_batch_mismatch",
+        "closeout_path_mismatch",
+        "invalid_closeout_contract",
+    }
+
+
+def test_validate_closeout_command_rejects_existing_absolute_path_without_reading(
+    tmp_path: Path,
+) -> None:
+    root, state_file, _closeout_path = _write_closeout_validation_fixture(tmp_path)
+    outside_closeout = tmp_path / "outside-closeout.md"
+    outside_closeout.write_text("not json\n", encoding="utf-8")
+
+    result = _run_validate_closeout(root, state_file, str(outside_closeout))
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert "Traceback" not in result.stderr
+    assert payload["status"] == "failed"
+    assert [blocker["code"] for blocker in payload["blockers"]] == [
+        "invalid_closeout_path"
+    ]
+
+
+def test_validate_closeout_command_rejects_canonical_directory_without_traceback(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+    closeout_file = root / Path(closeout_path).relative_to("docs/plans")
+    closeout_file.unlink()
+    closeout_file.mkdir()
+
+    result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert "Traceback" not in result.stderr
+    assert payload["status"] == "failed"
+    assert [blocker["code"] for blocker in payload["blockers"]] == [
+        "non_file_closeout"
+    ]
+
+
+def test_validate_closeout_command_rejects_registered_wrong_batch_required_artifact(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+    closeout = _closeout_evidence_index()
+    state_fixture = _closeout_state_fixture()
+    bad_path = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "other-batch/completed-slices.md"
+    )
+    closeout["artifacts"][1]["path"] = bad_path
+    _replace_registered_artifact_path(
+        state_fixture,
+        "completed-slices",
+        bad_path,
+    )
+    state_file.write_text(json.dumps(state_fixture), encoding="utf-8")
+    _write_closeout_file(root, closeout_path, closeout)
+
+    result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert payload["status"] == "failed"
+    assert [blocker["code"] for blocker in payload["blockers"]] == [
+        "invalid_closeout_contract"
+    ]
+    assert "completed-slices must be co-located at" in payload["blockers"][0]["message"]
+
+
+def test_validate_closeout_command_rejects_registered_out_of_root_validation_artifact(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+    closeout = _closeout_evidence_index()
+    state_fixture = _closeout_state_fixture()
+    bad_path = "tmp/pytest.json"
+    closeout["validation_evidence"][0]["artifact"]["path"] = bad_path
+    _replace_registered_artifact_path(state_fixture, "output", bad_path)
+    state_file.write_text(json.dumps(state_fixture), encoding="utf-8")
+    _write_closeout_file(root, closeout_path, closeout)
+
+    result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert [blocker["code"] for blocker in payload["blockers"]] == [
+        "invalid_closeout_contract"
+    ]
+    assert "artifact path must be under the planning root" in payload["blockers"][0]["message"]
+
+
+def test_validate_closeout_command_rejects_registered_absolute_review_artifact(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+    closeout = _closeout_evidence_index()
+    state_fixture = _closeout_state_fixture()
+    bad_path = str(tmp_path / "review-receipt.json")
+    bad_artifact = dict(closeout["review_evidence"][0]["artifact"])
+    bad_artifact["path"] = bad_path
+    closeout["review_evidence"][0]["artifact"] = bad_artifact
+    _replace_registered_artifact_path(state_fixture, "receipt", bad_path)
+    state_file.write_text(json.dumps(state_fixture), encoding="utf-8")
+    _write_closeout_file(root, closeout_path, closeout)
+
+    result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert [blocker["code"] for blocker in payload["blockers"]] == [
+        "invalid_closeout_contract"
+    ]
+    assert "artifact path must be relative to the workspace" in payload["blockers"][0]["message"]
+
+
+def test_validate_closeout_command_checks_present_artifact_paths_with_preflight_blockers(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+    closeout = _closeout_evidence_index()
+    bad_artifact = dict(closeout["review_evidence"][0]["artifact"])
+    bad_artifact["path"] = str(tmp_path / "review-receipt.json")
+    closeout["review_evidence"][0]["artifact"] = bad_artifact
+    closeout["validation_evidence"] = []
+    _write_closeout_file(root, closeout_path, closeout)
+
+    result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    blocker_codes = [blocker["code"] for blocker in payload["blockers"]]
+    assert "missing_validation_evidence" in blocker_codes
+    assert "invalid_closeout_contract" in blocker_codes
+    assert any(
+        "artifact path must be relative to the workspace" in blocker["message"]
+        for blocker in payload["blockers"]
+    )
+
+
+def test_validate_closeout_command_checks_artifact_paths_when_closeout_unregistered(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+    state_fixture = _closeout_state_fixture()
+    state_fixture["programs"][0]["artifacts"] = [
+        artifact
+        for artifact in state_fixture["programs"][0]["artifacts"]
+        if artifact["type"] != "closeout"
+    ]
+    state_file.write_text(json.dumps(state_fixture), encoding="utf-8")
+    closeout = _closeout_evidence_index()
+    bad_artifact = dict(closeout["review_evidence"][0]["artifact"])
+    bad_artifact["path"] = str(tmp_path / "review-receipt.json")
+    closeout["review_evidence"][0]["artifact"] = bad_artifact
+    _write_closeout_file(root, closeout_path, closeout)
+
+    result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    blocker_codes = [blocker["code"] for blocker in payload["blockers"]]
+    assert "unregistered_closeout" in blocker_codes
+    assert "invalid_closeout_contract" in blocker_codes
+    assert any(
+        "artifact path must be relative to the workspace" in blocker["message"]
+        for blocker in payload["blockers"]
+    )
+
+
+def test_validate_closeout_command_collects_multiple_invalid_artifact_pointers(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+    closeout = _closeout_evidence_index()
+    closeout["artifacts"][1]["path"] = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "other-batch/completed-slices.md"
+    )
+    closeout["validation_evidence"][0]["artifact"]["path"] = "tmp/pytest.json"
+    bad_review_artifact = dict(closeout["review_evidence"][0]["artifact"])
+    bad_review_artifact["path"] = str(tmp_path / "review-receipt.json")
+    closeout["review_evidence"][0]["artifact"] = bad_review_artifact
+    bad_transition_artifact = dict(closeout["transition_receipts"][0]["artifact"])
+    bad_transition_artifact["path"] = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "other-batch/receipts/queue-batch.json"
+    )
+    closeout["transition_receipts"][0]["artifact"] = bad_transition_artifact
+    _write_closeout_file(root, closeout_path, closeout)
+
+    result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    invalid_contract_messages = [
+        blocker["message"]
+        for blocker in payload["blockers"]
+        if blocker["code"] == "invalid_closeout_contract"
+    ]
+    assert len(invalid_contract_messages) == 4
+    assert any(
+        "completed-slices must be co-located at" in message
+        for message in invalid_contract_messages
+    )
+    assert any(
+        "artifact path must be under the planning root" in message
+        for message in invalid_contract_messages
+    )
+    assert any(
+        "artifact path must be relative to the workspace" in message
+        for message in invalid_contract_messages
+    )
+    assert any(
+        "artifact path must be co-located with the batch" in message
+        for message in invalid_contract_messages
+    )
+
+
+def test_validate_closeout_command_rejects_registered_wrong_batch_transition_receipt(
+    tmp_path: Path,
+) -> None:
+    root, state_file, closeout_path = _write_closeout_validation_fixture(tmp_path)
+    closeout = _closeout_evidence_index()
+    state_fixture = _closeout_state_fixture()
+    bad_path = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "other-batch/receipts/queue-batch.json"
+    )
+    bad_artifact = dict(closeout["transition_receipts"][0]["artifact"])
+    bad_artifact["path"] = bad_path
+    closeout["transition_receipts"][0]["artifact"] = bad_artifact
+    state_fixture["programs"][0]["artifacts"].append(
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": bad_path,
+            "type": "receipt",
+        }
+    )
+    state_file.write_text(json.dumps(state_fixture), encoding="utf-8")
+    _write_closeout_file(root, closeout_path, closeout)
+
+    result = _run_validate_closeout(root, state_file, closeout_path)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert [blocker["code"] for blocker in payload["blockers"]] == [
+        "invalid_closeout_contract"
+    ]
+    assert "artifact path must be co-located with the batch" in payload["blockers"][0]["message"]
+
+
 def test_validate_rejects_state_file_from_different_planning_root(
     tmp_path: Path,
 ) -> None:
@@ -2522,6 +2861,34 @@ def _run_queue_batch(
     )
 
 
+def _run_validate_closeout(
+    root: Path,
+    state_file: Path,
+    closeout_path: str,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "validate-closeout",
+            "--root",
+            str(root),
+            "--program",
+            "planning-state-tooling",
+            "--batch-id",
+            "planning-state-write-transitions",
+            "--closeout",
+            closeout_path,
+            "--state-file",
+            str(state_file),
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+
 def _write_transition_batch(
     root: Path,
     *,
@@ -2534,6 +2901,50 @@ def _write_transition_batch(
     if write_runway:
         (batch_root / "runway.md").write_text("# Runway\n", encoding="utf-8")
     return f"docs/plans/programs/{program}/batches/planning-state-write-transitions"
+
+
+def _write_closeout_validation_fixture(tmp_path: Path) -> tuple[Path, Path, str]:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    batch_root = _write_transition_batch(root)
+    for relative_path in (
+        "completed-slices.md",
+        "outputs/pytest.json",
+        "receipts/queue-batch.json",
+    ):
+        path = (
+            root
+            / "programs"
+            / "planning-state-tooling"
+            / "batches"
+            / "planning-state-write-transitions"
+            / relative_path
+        )
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{}\n", encoding="utf-8")
+    closeout_path = f"{batch_root}/closeout.md"
+    _write_closeout_file(root, closeout_path, _closeout_evidence_index())
+    state_file = tmp_path / "planning-state.json"
+    state_file.write_text(
+        json.dumps(_closeout_state_fixture(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return root, state_file, closeout_path
+
+
+def _write_closeout_file(
+    root: Path,
+    closeout_path: str,
+    closeout: dict[str, object],
+) -> None:
+    path = root / Path(closeout_path).relative_to("docs/plans")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "```json\n"
+        + json.dumps(closeout, indent=2, sort_keys=True)
+        + "\n```\n",
+        encoding="utf-8",
+    )
 
 
 def _write_state_fixture(
@@ -2638,6 +3049,18 @@ def _closeout_state_fixture() -> dict[str, object]:
             },
         ],
     }
+
+
+def _replace_registered_artifact_path(
+    state_fixture: dict[str, object],
+    artifact_type: str,
+    path: str,
+) -> None:
+    for artifact in state_fixture["programs"][0]["artifacts"]:
+        if artifact["type"] == artifact_type:
+            artifact["path"] = path
+            return
+    raise AssertionError(f"missing registered artifact type: {artifact_type}")
 
 
 def _closeout_evidence_index(
