@@ -10,7 +10,7 @@
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -27,26 +27,25 @@
 
 ## Latest Completed Batch
 
-- Batch: `planning-state-consumer-integration`
-- Status: completed; Batch Runway, Architecture Program Runway, and Legacy
-  Removal now consume the shared `planning-state` diagnostic interface before
-  Layout v1 ledger or active-state pickup while preserving each workflow's
-  semantic ownership.
+- Batch: `planning-state-projection-routing`
+- Status: completed; planning-state diagnostics now expose projection usage and
+  rebuild-authority routing for history/reporting questions while preserving
+  SQLite-independent `current` and `validate` active-state checks.
 - Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/dispatch.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/dispatch.md`
 - Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/runway.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/runway.md`
 - Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/closeout.md`
-- Notes: consumer features now depend on both `planning-artifacts` for placement
-  conventions and `planning-state` for operational diagnostics. PST-12 and
-  PST-13 are closed with completed-slice, validation, review, and closeout
-  evidence.
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/closeout.md`
+- Notes: PST-14 and PST-15 are closed with completed commits, validation,
+  review, and projection smoke evidence. PST-16 and PST-17 remain open for the
+  next candidate batch, `planning-state-projection-consumers`.
 
 ## Next Safe Action
 
-No planning-state-tooling batch is selected or queued. Use the ledger before
-creating any new batch.
+Use `planning-state-projection-consumers` as the next candidate only when asked
+to create the next planning-state-tooling batch. Do not create it as part of the
+projection-routing closeout.
 
 ## Stop Conditions
 

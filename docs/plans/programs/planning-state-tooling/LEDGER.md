@@ -46,7 +46,7 @@ is planning-only; it does not implement code.
 - Run artifact root: not selected for this planning-only ledger.
 - Output root: not selected for this planning-only ledger.
 - Latest completed batch directory:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/`
 
 ## Findings Ledger
 
@@ -65,8 +65,8 @@ is planning-only; it does not implement code.
 | PST-11. Project policy target selection is not packaged as an agent-facing adapter | Closed | `planning-state-skill-interface` | Resolve or refuse state/projection targets through the planning-state skill | Closed by target-policy guidance covering stdout, `/tmp`, generated-only, committed, ignored-local, external, and none policies without embedding project-specific paths as generic defaults. |
 | PST-12. Ledger-dependent skills duplicate active-state pickup and projection setup | Closed | `planning-state-consumer-integration` | Use the shared planning-state diagnostic interface before consumer-owned decisions | Closed by slices 1-3: `batch-runway`, `architecture-program-runway`, and `legacy-removal` now consume compact Planning State Diagnostic facts before Layout v1 pickup while preserving their own semantic decisions. |
 | PST-13. Feature dependency metadata cannot express operational planning-state reuse | Closed | `planning-state-consumer-integration` | Install `planning-state` before consumers that invoke it | Closed by slice 4: `codex-features.json` keeps `planning-artifacts` and adds `planning-state` dependencies for the rewired consumers, with manifest tests covering expansion order and no cycle. |
-| PST-14. Projection routing is implemented but not part of the routine interface | Open | None | Make Planning State Diagnostic projection-aware for history/reporting questions | `rebuild-projection` and `report-projection` exist, but the routine hot path still stops at `current` and `validate`. Agents must remember a separate optional reference instead of getting a deep interface that says when projection reports should replace historical planning scans. |
-| PST-15. Projection target policy does not express expected projection usage | Open | None | Add explicit project policy vocabulary for projection usage and rebuild authority | `projection_policy` and `projection_path` answer where a database may be written, not whether agents should use it for history/reporting. This leaves `ignored-local` targets such as Graphify's projection path operationally inert unless a human intervenes. |
+| PST-14. Projection routing is implemented but not part of the routine interface | Closed | `planning-state-projection-routing` | Use projection-aware Planning State Diagnostic facts for history/reporting questions before broad historical scans when policy permits | Closed by the projection-routing batch. The `planning-state` skill now routes history/reporting questions through policy-compatible projection reports, while `current` and `validate` remain SQLite-independent active-state checks. |
+| PST-15. Projection target policy does not express expected projection usage | Closed | `planning-state-projection-routing` | Use explicit `projection_usage` and `projection_rebuild_authority` policy before rebuilding or reporting projections | Closed by the projection-routing batch. Project policy now distinguishes allowed projection targets from expected projection usage and rebuild authority without introducing downstream project paths or durable default databases. |
 | PST-16. Consumer skills consume active-state diagnostics but not projection reports | Open | None | Route Batch Runway, Architecture Program Runway, and Legacy Removal history/report workflows through projection reports before broad scans | Consumer skills now use `planning-state` before active-state pickup, but they do not require projection reports for pending batches, missing closeout evidence, batch evidence, or runner summaries. The token-saving interface is therefore not exercised by default. |
 | PST-17. Tests protect projection commands but not workflow obligations | Open | None | Add skill/manifest regression checks for projection-report routing obligations | `tests/test_planning_state.py` covers SQLite rebuild/report behavior, but no test protects the agent-facing rule that history/reporting workflows should try projection reports before Markdown archaeology when policy permits. |
 
@@ -82,40 +82,35 @@ is planning-only; it does not implement code.
 | planning-state-sqlite-projection | PST-6 | Completed | Adds fast operational reporting after canonical files and project policy are stable while keeping SQLite optional and rebuildable | planning-state-project-policy closed by `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/closeout.md` | SQLite rebuild/report tests, report CLI checks, current/validate diagnostics, review, and closeout evidence | `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/runway.md` |
 | planning-state-skill-interface | PST-9, PST-10, PST-11 | Completed | Creates the deep skill interface that centralizes planning-state operations before consumers depend on it | planning-state-sqlite-projection | Skill validation, current/validate CLI smoke, generated-only `/tmp` state/projection smoke, manifest/changelog alignment, and grep checks for project-specific hard-coding | `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/runway.md` |
 | planning-state-consumer-integration | PST-12, PST-13 | Completed | Wires ledger-dependent skills and install metadata to the shared planning-state skill after the interface exists | planning-state-skill-interface | Skill validation, dependency-manifest JSON check, focused wording checks across consumer skills, current/validate diagnostics, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/runway.md` |
-| planning-state-projection-routing | PST-14, PST-15 | Candidate | Deepens the Planning State Diagnostic interface so declared projections become useful for history/reporting without becoming canonical active state | planning-state-consumer-integration | Skill/reference tests, project-policy parsing checks, current/validate/projection smoke tests against generated-only and ignored-local fixtures, and `git diff --check` | None | None |
+| planning-state-projection-routing | PST-14, PST-15 | Completed | Deepens the Planning State Diagnostic interface so declared projections become useful for history/reporting without becoming canonical active state | planning-state-consumer-integration | Skill/reference tests, project-policy parsing checks, current/validate/projection smoke tests against generated-only and ignored-local fixtures, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/runway.md` |
 | planning-state-projection-consumers | PST-16, PST-17 | Candidate | Wires consumer skills and regression checks so projection reports are tried before broad historical scans when policy permits | planning-state-projection-routing | Skill wording tests, manifest/dependency checks if metadata changes, focused grep checks across consumer skills, current/validate diagnostics, and `git diff --check` | None | None |
 
 ## Latest Batch Brief
 
 Latest completed batch:
 
-- Batch: `planning-state-consumer-integration`
+- Batch: `planning-state-projection-routing`
 - Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/dispatch.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/dispatch.md`
 - Status: `Completed`
 - Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/runway.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/runway.md`
 - Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/closeout.md`
-- Notes: PST-12 and PST-13 are closed. The consumer skills now call the shared
-  Planning State Diagnostic interface, and install metadata brings in
-  `planning-state` after `planning-artifacts` for the rewired consumers.
-
-## Queued Batch Brief
-
-Queued batch: `None`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/closeout.md`
+- Notes: PST-14 and PST-15 are closed. Projection-aware policy, skill routing,
+  diagnostics, and smoke evidence are complete. PST-16 and PST-17 remain open
+  for `planning-state-projection-consumers`.
 
 ## Recommended Work Order
 
 1. Select the next planning-state-tooling batch from this ledger before writing
    a new dispatch or runway.
-2. Prefer `planning-state-projection-routing` next if the goal is to make
-   SQLite useful for agent token economy. It should deepen the `planning-state`
-   interface before consumer skills add duplicated rules.
-3. Follow with `planning-state-projection-consumers` so Batch Runway,
+2. Prefer `planning-state-projection-consumers` next if the goal is to make
+   projection reporting operationally useful for consumer workflows. It should
+   route Batch Runway,
    Architecture Program Runway, and Legacy Removal use projection reports for
    history/reporting workflows before broad Markdown scans.
-4. For projection reporting, rebuild only to explicit temp or
+3. For projection reporting, rebuild only to explicit temp or
    policy-compatible database targets and keep Markdown/JSON canonical.
 
 ## Closeout Rules
