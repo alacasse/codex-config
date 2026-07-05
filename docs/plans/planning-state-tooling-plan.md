@@ -257,13 +257,29 @@ Migrate active pickup safety before historical neatness.
 1. Use read-only `current` and `validate` diagnostics over the Graphify
    active-state fixture and the codex-config Layout v1 plus redirect
    compatibility fixture.
-2. Bootstrap tool state from existing `CURRENT.md` files and program ledgers.
-3. Render `CURRENT.md` from tool state, then validate round trips.
-4. Move batch selection and artifact registration behind tool commands.
-5. Add cross-batch obligations and closeout evidence checks.
-6. Pilot write transitions on `docs/plans/` only after the read-only Graphify
-   fixture proves active-state precedence and stale-context warnings.
-7. Add SQLite reporting only after state and rendering are stable.
+2. Move batch selection, artifact registration, cross-batch obligations, and
+   closeout evidence checks behind explicit command/file protocols.
+3. Bootstrap tool state from existing `CURRENT.md` files, program ledgers, and
+   co-located batch artifacts with `bootstrap-state`.
+4. Validate migrated state fixtures with `current` and `validate --state-file`
+   before any runner or reporting layer consumes them.
+5. Keep `CURRENT.md`, `LEDGER.md`, dispatches, runways, closeouts, and
+   completed-slices archives as the human-readable coordination state. Bootstrap
+   output is companion JSON state and must not rewrite those Markdown files.
+6. Choose a durable state-file location only through an explicit project value.
+   Until then, write migration fixtures only to stdout, caller-provided temp
+   paths, or other explicit non-planning-root targets.
+7. Add SQLite reporting only after canonical Markdown and JSON state have stable
+   round-trip evidence.
+
+The migration pilot proved the bootstrap boundary without selecting a durable
+state-file location. `bootstrap-state` now emits a `planning-state-tool-state`
+version `1` fixture from Layout v1 Markdown, preserves root/program
+`CURRENT.md` active-first precedence, registers existing co-located batch
+artifacts, and leaves redirect ledgers or historical flat files as warnings or
+compatibility evidence. `current --state-file` and `validate --state-file`
+cross-check migrated fixtures against live Markdown facts so future runner
+preflights can reject drift instead of silently trusting stale JSON.
 
 Existing Markdown-only workflows must keep working during migration. A project
 without `.planning-state/state.json` or equivalent tool state should still be

@@ -8,34 +8,36 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-closeout-contract/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
 ## Latest Completed Batch
 
-- Batch: `planning-state-closeout-contract`
-- Status: completed; bounded closeout evidence-index validation and rendering
-  are available.
+- Batch: `planning-state-migration-pilot`
+- Status: completed; migration bootstrap generation and migrated-fixture
+  validation are available while Markdown remains the human-readable planning
+  surface.
 - Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-closeout-contract/dispatch.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/dispatch.md`
 - Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-closeout-contract/runway.md`
-- Closeout contract: `closeout.md` is a bounded pointer-first evidence index.
-  It should point to commits, completed slices, validation, review, receipts
-  when present, obligations, and cleanup residue evidence instead of embedding
-  transcripts or long logs.
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/runway.md`
+- Closeout:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/closeout.md`
+- Notes: `bootstrap-state` can generate v1 companion JSON state from Layout v1
+  Markdown, and `current`/`validate --state-file` can reject migrated fixture
+  drift before runner or reporting layers consume it.
 
 ## Next Safe Action
 
 Use `python scripts/planning_state.py current --root docs/plans` and
 `python scripts/planning_state.py validate --root docs/plans` before broad
-planning tree scans. When the user asks to work on the next planning-state
-batch, execute the queued `planning-state-migration-pilot` runway, starting at
-the first pending active-ledger row.
+planning tree scans. PST-5 is closed with validation, review, and closeout
+evidence. The next safe planning action is to create a concrete spec for
+deferred PST-6 SQLite projection only if the user requests more planning-state
+work.
 
 ## Stop Conditions
 

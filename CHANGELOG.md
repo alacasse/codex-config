@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state migration pilot handoff
+
+Problem: the migration pilot needed a durable handoff that explains how
+bootstrap JSON state coexists with Markdown planning artifacts and prevents
+agents from jumping straight to SQLite reporting.
+
+Decision: document the migration workflow as companion state bootstrapping,
+advance the planning-state program to migration-pilot closeout, and require
+validation, review, and closeout evidence before marking PST-5 closed.
+
+Expected effect: future agents can consume or build on the completed
+migration-pilot evidence, keep `CURRENT.md` and ledgers human-readable, and
+leave PST-6 deferred until the user requests the reporting projection batch.
+
 ### Planning-state migrated fixture validation
 
 Problem: generated Layout v1 state fixtures could be schema-valid while still
