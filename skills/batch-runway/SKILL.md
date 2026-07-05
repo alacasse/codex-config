@@ -45,6 +45,11 @@ Read only the reference files needed for the current mode. Do not load every
 reference file by default.
 
 - `references/project-values.md`: read before creating or executing a spec.
+- `../planning-state/SKILL.md`: read before consuming Layout v1 active-state
+  files, selected dispatches, queued specs, active runways, blockers, or target
+  policy. Treat its output as Planning State Diagnostic facts for this
+  workflow; Batch Runway still owns spec creation, execution orchestration,
+  validation selection, subagent routing, ledger updates, and commits.
 - `../planning-artifacts/SKILL.md`: read when resolving a planning location,
   creating a spec from a selected dispatch packet, reorganizing planning
   artifacts, or when project instructions name Planning Artifact Layout v1.
@@ -88,9 +93,15 @@ capsule and the relevant Batch Runway reference path in the subagent prompt.
 2. Resolve project-specific values from repository instructions, local overlays,
    the active spec, or explicit user direction. See
    `references/project-values.md`.
-3. Check the worktree and preserve unrelated dirty files.
-4. Choose `create-spec` or `execute-spec`.
-5. Choose `lean-runway` or `full-runway`.
+3. When the work uses a ledger-driven planning root, run the `planning-state`
+   hot path before consuming Layout v1 active-state files, selected dispatches,
+   queued specs, active runways, blockers, or target policy. Carry forward only
+   compact Planning State Diagnostic facts: planning root, current and validate
+   status, active programs, selected dispatch, queued batch, active runway,
+   blockers, warnings, and project policy.
+4. Check the worktree and preserve unrelated dirty files.
+5. Choose `create-spec` or `execute-spec`.
+6. Choose `lean-runway` or `full-runway`.
 
 Stop instead of guessing when a required project value, validation command,
 harness command, output path, summary artifact, planning location, or
@@ -185,10 +196,12 @@ Keep live orchestration context small enough for long batches.
 In `create-spec` mode:
 
 1. Read `references/create-spec.md`.
-2. If the project uses Planning Artifact Layout v1, read the root `CURRENT.md`
-   and relevant program `CURRENT.md` before historical local plans, recent
-   commits, generated reports, or broad source inspection.
-3. If a selected dispatch, active runway, or queued batch already exists, do not
+2. If the project uses Planning Artifact Layout v1, use `planning-state` first
+   to collect Planning State Diagnostic facts, then read the root `CURRENT.md`
+   and relevant program `CURRENT.md` named by that diagnostic before historical
+   local plans, recent commits, generated reports, or broad source inspection.
+3. If a selected dispatch, active runway, or queued batch exists in the
+   diagnostic or active-state files, do not
    select another batch. Report the queued/active path, or create the missing
    `runway.md` from the selected dispatch when that is the requested action.
 4. If no batch is selected, read the relevant program ledger and only the source
@@ -206,19 +219,22 @@ In `execute-spec` mode:
 
 1. Read the full active spec.
 2. Read `references/project-values.md`.
-3. For routine slice execution, read `references/execute-slice-core-v1.md` and
+3. For Layout v1 or ledger-driven specs, use `planning-state` first to collect
+   Planning State Diagnostic facts before reading active-state files, queued
+   specs, active runways, blockers, or target policy.
+4. For routine slice execution, read `references/execute-slice-core-v1.md` and
    only the selected validation profile file under
    `references/validation-profiles/`.
-4. Identify the active validation profile, pending ledger rows, stop conditions,
+5. Identify the active validation profile, pending ledger rows, stop conditions,
    commit strategy, density mode, convergence state, active ledger rows, and
    completed slice archive.
-5. Execute from the next incomplete ledger row.
-6. For each routine slice: spawn coding subagent, validate, spawn separate review
+6. Execute from the next incomplete ledger row.
+7. For each routine slice: spawn coding subagent, validate, spawn separate review
    subagent, commit if clean, record any orchestration anomalies, report
    receipt, update ledger/archive, close subagents, continue.
-7. If validation fails, review finds issues, blockers appear, or escalation is
+8. If validation fails, review finds issues, blockers appear, or escalation is
    needed, read `references/execute-recovery-v1.md`.
-8. After the last slice, read `references/finalize-batch-v1.md`, run final
+9. After the last slice, read `references/finalize-batch-v1.md`, run final
    validation and project-required index refresh,
    then report commits, validation, skipped slices, remaining risks, cleanup
    residues, `orchestration_anomalies`, and expanded convergence.

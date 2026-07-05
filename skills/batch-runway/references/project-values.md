@@ -2,6 +2,10 @@
 
 Resolve these values before creating or executing a spec:
 
+- `planning_state_diagnostic`: compact facts from `planning-state` for
+  ledger-driven work: planning root, current and validate status, active
+  programs, selected dispatch, queued batch, active runway, blockers, warnings,
+  and project policy.
 - `planning_location`: where local runway specs belong.
 - `planning_artifact_layout`: whether the project uses a flat local planning
   location or Planning Artifact Layout v1.
@@ -30,6 +34,10 @@ Resolve these values before creating or executing a spec:
 
 Stop instead of guessing when:
 
+- ledger-driven work needs current planning state but the planning root cannot
+  be resolved for the `planning-state` diagnostic
+- the Planning State Diagnostic reports blockers that make the selected
+  dispatch, queued batch, active runway, or target policy unsafe to consume
 - no planning location is discoverable in `create-spec` mode
 - project instructions require Planning Artifact Layout v1 but the program root
   or selected batch directory cannot be resolved for a selected batch

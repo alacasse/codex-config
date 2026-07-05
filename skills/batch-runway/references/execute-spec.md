@@ -10,13 +10,22 @@ for compatibility questions, non-routine execution, recovery, and finalization.
 ## Coordinator Preflight
 
 1. Read project instructions, local overlays, and the full spec.
-2. For routine slices, read `execute-slice-core-v1.md` and only the selected
+2. If the spec is Layout v1 or otherwise ledger-driven, read
+   `../../planning-state/SKILL.md`, run its current and validate hot path, and
+   carry forward compact Planning State Diagnostic facts: planning root, current
+   and validate status, active programs, selected dispatch, queued batch, active
+   runway, blockers, warnings, and project policy.
+3. Consume active-state files, selected dispatches, queued specs, active
+   runways, blockers, and target policy only after that diagnostic handoff.
+   Batch Runway still owns execution orchestration, pending-row selection,
+   validation profile handling, subagent routing, ledger updates, and commits.
+4. For routine slices, read `execute-slice-core-v1.md` and only the selected
    validation profile file.
-3. Read the full Batch Runway reference files named by the spec only when the
+5. Read the full Batch Runway reference files named by the spec only when the
    spec is full-runway, the slice is non-routine, compatibility needs auditing,
    or canonical contract semantics are being changed.
-4. Check the worktree and identify dirty-file risks.
-5. Identify:
+6. Check the worktree and identify dirty-file risks.
+7. Identify:
    - active validation profile
    - pending ledger rows
    - stop conditions
@@ -24,24 +33,24 @@ for compatibility questions, non-routine execution, recovery, and finalization.
    - whether this is `lean-runway` or `full-runway`
    - current compact convergence fields
    - active ledger rows versus completed slice archive
-6. Confirm subagent tooling is available.
-7. Prefer `runway_worker` for coding and `runway_reviewer` for review.
-8. Classify likely review triggers from the spec and current diff. Always keep
+8. Confirm subagent tooling is available.
+9. Prefer `runway_worker` for coding and `runway_reviewer` for review.
+10. Classify likely review triggers from the spec and current diff. Always keep
    `runway_reviewer` as the final review gate. Invoke specialist support
    reviewers only when triggered by task-scoped changes, using
    `subagent-briefs.md` for routing.
-9. Use `fast_explorer` for optional read-only side investigations when broad
+11. Use `fast_explorer` for optional read-only side investigations when broad
    source, test, memory, prior-spec, or architecture exploration would otherwise
    enter coordinator context. Prefer one batch-scoped investigation for related
    adjacent slices, then pass only compact findings, selected per-slice notes, or
    artifact paths to workers and reviewers.
-10. Identify or create the spec's compact `orchestration_anomalies` location for
+12. Identify or create the spec's compact `orchestration_anomalies` location for
    suspicious coordinator or subagent-lifecycle behavior. Do not use it for
    routine command output, normal validation logs, clean reviews, or
    implementation chronology.
    Include unexpected `HEAD` or diff movement and stale review evidence here
    when they affect execution confidence.
-11. If required custom agents are unavailable because Codex has not reloaded
+13. If required custom agents are unavailable because Codex has not reloaded
    configuration yet, stop and ask for a restart or new thread rather than
    falling back to main-agent implementation.
 

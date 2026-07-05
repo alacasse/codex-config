@@ -82,24 +82,30 @@ appropriate.
 1. Read the active spec, current ledger, selected slice, dirty-file constraints,
    allowed files, stop conditions, commit strategy, and selected validation
    profile.
-2. If broad source, test, memory, prior-spec, or architecture exploration would
+2. For Layout v1 or ledger-driven specs, read `../../planning-state/SKILL.md`, run
+   its current and validate hot path, and keep compact Planning State Diagnostic
+   facts before consuming active-state files, selected dispatches, queued specs,
+   active runways, blockers, or target policy. Batch Runway still owns
+   pending-row selection, validation, subagent routing, ledger updates, and
+   commits.
+3. If broad source, test, memory, prior-spec, or architecture exploration would
    otherwise be needed in coordinator context, spawn one batch-scoped
    `fast_explorer` with the compact support handoff below. Reuse its compact
    findings across related adjacent slices.
-3. Spawn `runway_worker` with the compact coding handoff below.
-4. Require compact YAML from the worker.
-5. Run or verify focused validation and selected-profile validation.
-6. Classify the task-scoped diff for review triggers. If specialist support is
+4. Spawn `runway_worker` with the compact coding handoff below.
+5. Require compact YAML from the worker.
+6. Run or verify focused validation and selected-profile validation.
+7. Classify the task-scoped diff for review triggers. If specialist support is
    needed, use `subagent-briefs.md` and retain only compact YAML findings.
-7. Spawn `runway_reviewer` with the compact review handoff below.
-8. Require compact YAML from the reviewer.
-9. Commit only the intended slice files once validation and review are clean.
-10. Record any orchestration anomalies using the compact log below.
-11. Report the compact commit receipt.
-12. Update the active ledger with only remaining-work state.
-13. Move completed-slice audit references to the completed archive.
-14. Close completed subagents.
-15. Continue to the next pending slice unless a stop condition remains active or
+8. Spawn `runway_reviewer` with the compact review handoff below.
+9. Require compact YAML from the reviewer.
+10. Commit only the intended slice files once validation and review are clean.
+11. Record any orchestration anomalies using the compact log below.
+12. Report the compact commit receipt.
+13. Update the active ledger with only remaining-work state.
+14. Move completed-slice audit references to the completed archive.
+15. Close completed subagents.
+16. Continue to the next pending slice unless a stop condition remains active or
     the user explicitly asks to stop.
 
 ## Worker Handoff

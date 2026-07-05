@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Batch-runway planning-state diagnostics
+
+Problem: Batch Runway could consume Layout v1 active-state files, selected
+dispatches, queued specs, or target policy without first using the shared
+planning-state diagnostic interface.
+
+Decision: route create-spec and execute-spec guidance through
+`planning-state` current/validate diagnostics, carrying compact facts into
+Batch Runway while leaving spec creation, execution orchestration, validation,
+subagent routing, ledger updates, and commits owned by Batch Runway.
+
+Expected effect: fresh Batch Runway agents start from validated planning-state
+handoff facts before broad Layout v1 scans without embedding downstream project
+paths or moving placement policy out of `planning-artifacts`.
+
 ### Planning-state install metadata
 
 Problem: the new planning-state skill existed in the repository, but the

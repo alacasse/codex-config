@@ -5,20 +5,32 @@ Write one local plan file. Do not implement code.
 Steps:
 
 1. Read applicable project instructions and local overlays first.
-2. If the project uses Planning Artifact Layout v1, read the root `CURRENT.md`
-   and the relevant program `CURRENT.md` files before scanning historical local
-   plans, old dispatch/runway filenames, generated reports, recent commits, or
-   source modules.
-3. If a selected dispatch, active runway, or queued batch already exists, do not
+2. If the project uses Planning Artifact Layout v1 or another ledger-driven
+   planning root, read `../../planning-state/SKILL.md`, run its current and
+   validate hot path, and carry forward compact Planning State Diagnostic facts:
+   planning root, current and validate status, active programs, selected
+   dispatch, queued batch, active runway, blockers, warnings, and project
+   policy.
+3. For Planning Artifact Layout v1, read the root `CURRENT.md` and the relevant
+   program `CURRENT.md` files named by the diagnostic before scanning
+   historical local plans, old dispatch/runway filenames, generated reports,
+   recent commits, or source modules.
+4. If a selected dispatch, active runway, or queued batch already exists in the
+   diagnostic or active-state files, do not
    select a second batch. Report or use that path according to the request.
-4. If no batch is selected, inspect only the relevant program ledger and the
+5. If no batch is selected, inspect only the relevant program ledger and the
    source packet or finding note named by the selected ledger row before
    broadening context.
-5. Pick 3-5 tightly related slices that can execute sequentially.
-6. Keep each slice independently testable and committable.
-7. Store the spec in the project's local planning location.
-8. Prefer `lean-runway` unless the work touches high-risk production behavior or
+6. Pick 3-5 tightly related slices that can execute sequentially.
+7. Keep each slice independently testable and committable.
+8. Store the spec in the project's local planning location.
+9. Prefer `lean-runway` unless the work touches high-risk production behavior or
    subagent file access is unreliable.
+
+After the Planning State Diagnostic handoff, Batch Runway still makes the
+semantic planning decision: whether to create a spec, report an existing queued
+or active spec, choose 3-5 slices, select validation, and define subagent briefs.
+Do not move those decisions into `planning-state`.
 
 When the project uses Planning Artifact Layout v1, store the concrete spec at:
 
