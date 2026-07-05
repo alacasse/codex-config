@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state closeout workflow
+
+Problem: future agents could validate or render closeout artifacts without a
+compact handoff rule for when a batch is actually closed and what evidence a
+human should inspect.
+
+Decision: document closeout Markdown as a bounded pointer-first evidence index,
+render this batch's closeout from explicit registered facts, and advance the
+planning-state program handoff to PST-5 while keeping PST-6 deferred.
+
+Expected effect: completed batches have a small evidence index instead of
+transcripts or long logs, and the next planning-state work starts with migration
+planning rather than SQLite projection or implicit state rewrites.
+
 ### Planning-state closeout rendering
 
 Problem: closeout evidence indexes could be validated but still had to be

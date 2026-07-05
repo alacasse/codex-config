@@ -113,6 +113,29 @@ should preserve these behaviors:
   reconciled.
 - Later, render compact Markdown views for humans and future agents.
 
+Closeout workflow is intentionally bounded and pointer-first. A completed batch
+should have an explicit `closeout.md` evidence index that points to the source
+dispatch, runway, completed-slices archive, commit or commit range, validation
+evidence, review evidence, transition or runner receipts when present, closed
+obligation evidence, open/deferred obligations, and cleanup residue
+classification. It must not embed transcripts, long validation logs, or session
+reconstruction prose.
+
+The closeout command surface is explicit-file oriented:
+
+```text
+python scripts/planning_state.py validate-closeout --root <planning-root> --program <slug> --batch-id <batch-id> --closeout <closeout.md> --state-file <state.json>
+python scripts/planning_state.py render-closeout --root <planning-root> --program <slug> --batch-id <batch-id> --state-file <state.json> --completed-slices-summary "<summary>" --validation-artifact <path> --validation-summary "<summary>" --review-artifact <path> --review-summary "<summary>" --cleanup-classification <none|intentional|deferred> [--target <closeout.md>]
+```
+
+`render-closeout` prints Markdown to stdout unless `--target` is supplied. A
+target write is valid only for the registered closeout path for that batch. The
+command does not rewrite root/program `CURRENT.md`, ledgers, dispatches,
+runways, selected/queued state, or migration fixtures. Closeout rendering and
+validation consume explicit registered artifact facts and obligation facts; they
+do not infer evidence from old filenames, commit history scans, SQLite, or long
+runner transcripts.
+
 When a planning root has Layout v1 `CURRENT.md` files, agents should run the
 read-only diagnostics before broad planning tree scans or historical filename
 searches. `current` reports the root/program active state and stale-context
