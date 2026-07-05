@@ -147,7 +147,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 1. Define SQLite projection contract | Pending |  |  | Projection schema and stale-database contract are fixture-tested. |  |
 | 2. Add explicit projection rebuild | Pending |  |  | Rebuild writes only to explicit SQLite targets and validates source identity. |  |
 | 3. Add planning-state report commands | Pending |  |  | Compact reports answer pending batches, missing closeout evidence, and batch evidence lookup without SQL exposure. |  |
 | 4. Add runner-artifact report coverage | Pending |  |  | Reports summarize latest runs, failed phases, and context pressure from bounded runner artifacts when present. |  |
@@ -161,6 +160,7 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
+| 1. Define SQLite projection contract | `0ae6e99` | success | `python -m pytest tests/test_planning_state.py -q` 152 passed; `python scripts/planning_state.py current --root docs/plans` passed with expected redirect warnings; `python scripts/planning_state.py validate --root docs/plans` passed with expected redirect warnings; `uvx ruff check scripts/planning_state.py tests/test_planning_state.py` passed; `git diff --check`; review approved updated diff against `ec4179f` |
 
 ## Slice 1. Define SQLite Projection Contract
 
