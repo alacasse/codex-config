@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/runway.md`
 - Latest closeout path:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/closeout.md`
 - Run artifact location: `None selected`
@@ -34,10 +35,13 @@
 
 Use `python scripts/planning_state.py current --root docs/plans` and
 `python scripts/planning_state.py validate --root docs/plans` before broad
-planning tree scans. PST-5 is closed with validation, review, and closeout
-evidence. The next safe planning action is to create a concrete spec for
-deferred PST-6 SQLite projection only if the user requests more planning-state
-work.
+planning tree scans. The next safe implementation action is to execute the
+queued PST-8 project policy runway from:
+
+`docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/runway.md`
+
+The SQLite projection batch remains deferred until project state/projection
+ownership policy is explicit.
 
 ## Stop Conditions
 
@@ -47,5 +51,7 @@ work.
   explicit registered `closeout.md` target path.
 - Stop if work would add SQLite or write transition state without an
   explicit state/receipt target.
+- Stop if work would choose a durable JSON state or SQLite projection location
+  as a generic default instead of resolving project policy.
 - Stop if work would add Graphify-specific paths or validation commands to
   generic code instead of using fixture data.

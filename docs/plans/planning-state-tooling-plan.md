@@ -45,6 +45,11 @@ Markdown and JSON remain canonical.
   `completed-slices.md`.
 - JSON state is allowed for tool-owned active state because it is explicit,
   strict, easy to validate, and easy to render back into Markdown.
+- JSON state ownership is project-specific. A project may choose committed
+  companion state, ignored-local state, external state, generated-only proof, or
+  no durable state. Reusable workflow code must resolve that policy from
+  project instructions, local overlays, active specs, or explicit user
+  direction.
 - SQLite, if added, is an optional rebuildable projection for reporting and
   queries. It is not canonical storage.
 - If the SQLite database is deleted, the workflow must still be understandable
@@ -195,6 +200,38 @@ the state fixture. Transition receipts include the obligations for the selected
 or queued batch so closeout work can require bounded evidence without parsing
 Markdown prose.
 
+## Project State Policy
+
+Planning-state tooling is reusable workflow code. It must not assume that every
+project can commit planning state beside its source files. `codex-config` owns
+its workflow docs, while Graphify-style work may use ignored local overlays, and
+future projects may choose different state locations.
+
+Projects should be able to declare these values through project instructions,
+local overlays, root/program `CURRENT.md`, active specs, or explicit user
+direction:
+
+- `planning_root`: human-readable planning artifacts.
+- `run_artifact_root`: runner-owned JSON state, receipts, manifests, and
+  telemetry.
+- `output_root`: generated reports and projections.
+- `state_file_policy`: `generated-only`, `committed`, `ignored-local`,
+  `external`, or `none`.
+- `state_file_path`: required when the policy selects a durable project-owned
+  state file.
+- `projection_policy`: `generated-only`, `ignored-local`, `external`, or
+  `none`; committed projection files require an explicit project exception.
+- `projection_path`: required when the policy selects a durable projection
+  target.
+- `update_authority`: whether agents may update the artifact through
+  planning-state commands, must ask first, or may only validate/read it.
+
+Read-only commands such as `current` and `validate` should continue to work for
+Markdown-only projects. Commands that write durable JSON state or projections
+must require compatible project policy. When policy is missing, stdout and
+caller-provided temporary proof output remain valid, but durable writes should
+stop with a stable blocker.
+
 ## Runner Interoperability Boundary
 
 Planning-state tooling and the phase runner should remain separate but
@@ -266,11 +303,11 @@ Migrate active pickup safety before historical neatness.
 5. Keep `CURRENT.md`, `LEDGER.md`, dispatches, runways, closeouts, and
    completed-slices archives as the human-readable coordination state. Bootstrap
    output is companion JSON state and must not rewrite those Markdown files.
-6. Choose a durable state-file location only through an explicit project value.
-   Until then, write migration fixtures only to stdout, caller-provided temp
-   paths, or other explicit non-planning-root targets.
-7. Add SQLite reporting only after canonical Markdown and JSON state have stable
-   round-trip evidence.
+6. Choose durable state-file and projection locations only through explicit
+   project policy. Until then, write migration fixtures only to stdout,
+   caller-provided temp paths, or other explicit non-planning-root targets.
+7. Add SQLite reporting only after canonical Markdown/JSON state and project
+   state/projection policy have stable round-trip evidence.
 
 The migration pilot proved the bootstrap boundary without selecting a durable
 state-file location. `bootstrap-state` now emits a `planning-state-tool-state`
@@ -304,6 +341,7 @@ SQLite must be:
 - safe to delete;
 - hidden behind tool/report commands;
 - limited to paths, metadata, compact summaries, statuses, and hashes.
+- written only to targets allowed by resolved project policy.
 
 SQLite must not store canonical program ledgers, dispatch packet prose, Batch
 Runway specs, closeout decisions, full prompts, long logs, or transcripts.

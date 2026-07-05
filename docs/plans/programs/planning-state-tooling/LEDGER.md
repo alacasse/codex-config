@@ -54,8 +54,9 @@ is planning-only; it does not implement code.
 | PST-3. Cross-batch obligations are not first-class state | Closed | `planning-state-write-transitions` | Feed explicit obligations into future closeout contracts | Enables fourth-batch cleanup without archaeology. Slice 4 added obligation records and validation. |
 | PST-4. Batch closeout lacks a bounded evidence-index contract | Closed | `planning-state-closeout-contract` | Require bounded pointer-first closeout evidence before batch closure | Closed by closeout contract, validation, rendering, and handoff docs. Completed-batch closeout must point to validation, review, completed-slices, commits, obligations, receipts when present, and cleanup residue evidence instead of embedding logs. |
 | PST-5. Existing planning roots need migration without losing human readability | Closed | `planning-state-migration-pilot` | Use bootstrap and migrated-fixture validation before any future runner/reporting layer consumes planning state | Closed by the migration-pilot closeout. `bootstrap-state` generates companion v1 JSON state from Layout v1 Markdown, preserves active-first pickup, registers co-located artifacts, and keeps Markdown as human-readable coordination state. `current`/`validate --state-file` reject drift, malformed obligations, artifact collisions, and unregistered active pointers. |
-| PST-6. Operational queries are awkward from files alone | Deferred | None | Add optional SQLite projection and report commands | Do only after canonical state and rendering are stable. |
+| PST-6. Operational queries are awkward from files alone | Deferred | None | Add optional SQLite projection and report commands after PST-8 closes | Do only after canonical state, rendering, and project state/projection ownership policy are stable. |
 | PST-7. Runner interoperability protocol is undefined | Closed | `planning-state-write-transitions` | Use command/file outputs as the runner boundary | Depends on PST-1 and informed PST-2/PST-3. Slice 1 defined JSON facts, Slice 3 added transition receipts, and Slice 4 added obligation facts without runner imports of planning-state internals. |
+| PST-8. Project planning-state ownership policy is implicit | Queued | `planning-state-project-policy` | Execute the project policy batch before SQLite | codex-config can commit repo-owned planning docs; Graphify-style work may require ignored local overlays; future projects may choose committed, ignored-local, external, generated-only, or no durable state. Tooling must resolve this as project policy before durable JSON state or SQLite projections are written. |
 
 ## Batch Queue
 
@@ -65,7 +66,8 @@ is planning-only; it does not implement code.
 | planning-state-write-transitions | PST-2, PST-3, PST-7 | Completed | Moves allocation, registration, selection, obligations, and runner-facing interop facts into commands | planning-state-readonly-core | Focused state/CLI tests, interop fixture tests, and Markdown round-trip checks | `docs/plans/programs/planning-state-tooling/batches/planning-state-write-transitions/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-write-transitions/runway.md` |
 | planning-state-closeout-contract | PST-4 | Completed | Makes completed-batch evidence bounded and validateable | planning-state-write-transitions | Focused rendering/validation tests plus current/validate diagnostics | `docs/plans/programs/planning-state-tooling/batches/planning-state-closeout-contract/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-closeout-contract/runway.md` |
 | planning-state-migration-pilot | PST-5 | Completed | Bootstraps tool state from existing planning roots without hiding Markdown | planning-state-readonly-core; preferably planning-state-closeout-contract | Fixture migration tests, current/validate diagnostics, review, and closeout evidence | `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/runway.md` |
-| planning-state-sqlite-projection | PST-6 | Deferred | Adds fast operational reporting after canonical files are stable | planning-state-write-transitions; migration pilot evidence | SQLite rebuild/report tests | TBD | TBD |
+| planning-state-project-policy | PST-8 | Queued | Makes state-file and projection ownership explicit per project before SQLite chooses targets | planning-state-migration-pilot | Project-policy parsing/validation tests, temp committed and ignored-local fixtures, current/validate diagnostics, and closeout evidence | `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/runway.md` |
+| planning-state-sqlite-projection | PST-6 | Deferred | Adds fast operational reporting after canonical files and project policy are stable while keeping SQLite optional and rebuildable | planning-state-project-policy | SQLite rebuild/report tests, report CLI checks, current/validate diagnostics, and closeout evidence | `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/runway.md` |
 
 ## Latest Batch Brief
 
@@ -84,11 +86,25 @@ Latest completed batch:
   human-readable Markdown planning artifacts. PST-6 remains deferred optional
   reporting work.
 
+## Queued Batch Brief
+
+Queued batch:
+
+- Batch: `planning-state-project-policy`
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/dispatch.md`
+- Status: `Queued`
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/runway.md`
+- Notes: PST-8 should define project-owned state and projection policy before
+  SQLite. codex-config, ignored local overlays, and future projects must be
+  able to declare different ownership policies without generic workflow code
+  hard-coding one repository's layout.
+
 ## Recommended Work Order
 
-1. `planning-state-sqlite-projection`: add rebuildable operational reporting
-   only after PST-5 is closed and the user asks for the deferred reporting
-   batch.
+1. Execute `planning-state-project-policy` from its queued runway.
+2. Queue and execute `planning-state-sqlite-projection` only after PST-8 closes.
 
 ## Closeout Rules
 
@@ -106,11 +122,16 @@ Latest completed batch:
   Markdown while preserving human-readable artifacts and redirects, and after
   the migration-pilot batch has validation, review, and closeout evidence.
 - Mark PST-6 `Closed` only after SQLite can be deleted and rebuilt from
-  canonical artifacts, with agents still using command/report interfaces.
+  canonical artifacts and resolved project policy, with agents still using
+  command/report interfaces.
 - Mark PST-7 `Closed` only after planning-state facts have an explicit
   command/file protocol with JSON shape, warning/error shape, exit-code meaning,
   and golden fixtures that a future Go runner can consume without scraping
   Markdown heuristics.
+- Mark PST-8 `Closed` only after project policy can represent committed,
+  ignored-local, external, generated-only, and no durable state/projection
+  layouts without hard-coding a downstream project path, and after write-target
+  preflights reject policy-incompatible durable JSON or SQLite outputs.
 
 ## Planning Rules
 
