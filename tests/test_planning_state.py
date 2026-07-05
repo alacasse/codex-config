@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from pathlib import PurePosixPath
 import re
+import sqlite3
 import subprocess
 import sys
 
@@ -1155,6 +1156,175 @@ def test_sqlite_projection_staleness_has_stable_blocker_code() -> None:
     assert blockers[0].severity == "error"
     assert blockers[0].code == "projection_database_stale"
     assert "source identity" in blockers[0].message
+
+
+def test_rebuild_projection_writes_explicit_temp_sqlite_database(tmp_path: Path) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _append_root_project_policy(
+        root,
+        state_file_policy="generated-only",
+        projection_policy="generated-only",
+        projection_path=None,
+    )
+    state_file = tmp_path / "planning-state.json"
+    batch_root = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-readonly-core"
+    )
+    _write_state_fixture(
+        state_file,
+        queued_batch=f"{batch_root}/runway.md",
+        artifacts=[
+            {"batch_id": "planning-state-readonly-core", "path": f"{batch_root}/runway.md", "type": "runway"},
+            {"batch_id": "planning-state-readonly-core", "path": f"{batch_root}/closeout.md", "type": "closeout"},
+        ],
+        obligations=[
+            {
+                "id": "closeout-proof",
+                "owner": "slice-5",
+                "source_batch": "planning-state-readonly-core",
+                "target_batch": None,
+                "close_condition": "closeout evidence exists",
+                "status": "open",
+                "evidence_path": None,
+            }
+        ],
+    )
+    database = tmp_path / "projection.sqlite"
+
+    result = _run_rebuild_projection(root, database, "--state-file", str(state_file))
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["status"] == "rebuilt"
+    rows = _read_projection_database(database)
+    assert payload["database"] == str(database)
+    assert payload["metadata"]["planning_root"] == "docs/plans"
+    assert database.exists()
+    assert set(rows["tables"]) == PROJECTION_SCHEMA_TABLES
+    assert rows["metadata"]["schema_version"] == 1
+    assert rows["metadata"]["state_fixture_identity"] is not None
+    assert {"pending_batch", "artifact_pointer", "closeout_evidence_status"} <= {
+        fact["fact_type"] for fact in rows["facts"]
+    }
+    assert any(
+        fact["fact_type"] == "obligation"
+        and fact["obligation_id"] == "closeout-proof"
+        for fact in rows["facts"]
+    )
+    assert all("markdown" not in fact and "transcript" not in fact for fact in rows["facts"])
+
+
+def test_rebuild_projection_program_filter_records_metadata_command(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    database = tmp_path / "projection.sqlite"
+
+    result = _run_rebuild_projection(
+        root,
+        database,
+        "--program",
+        "planning-state-tooling",
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["metadata"]["build_command"] == (
+        "planning_state.py rebuild-projection --root docs/plans "
+        f"--database {database} --program planning-state-tooling"
+    )
+    source_kinds = {
+        source["kind"]
+        for source in payload["metadata"]["source_identity"]["sources"]
+    }
+    assert "program-current:planning-state-tooling" in source_kinds
+    assert "program-ledger:planning-state-tooling" in source_kinds
+    assert "program-current:architecture-program-runner" not in source_kinds
+    assert "program-ledger:architecture-program-runner" not in source_kinds
+
+
+def test_rebuild_projection_rows_are_deterministic_except_metadata_noise(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "planning-state.json"
+    _write_state_fixture(
+        state_file,
+        queued_batch=(
+            "docs/plans/programs/planning-state-tooling/batches/"
+            "planning-state-readonly-core/runway.md"
+        ),
+        artifacts=[
+            {
+                "batch_id": "planning-state-readonly-core",
+                "path": (
+                    "docs/plans/programs/planning-state-tooling/batches/"
+                    "planning-state-readonly-core/runway.md"
+                ),
+                "type": "runway",
+            }
+        ],
+    )
+    first_database = tmp_path / "first.sqlite"
+    second_database = tmp_path / "second.sqlite"
+
+    first = _run_rebuild_projection(root, first_database, "--state-file", str(state_file))
+    second = _run_rebuild_projection(root, second_database, "--state-file", str(state_file))
+
+    assert first.returncode == 0
+    assert second.returncode == 0
+    assert _read_projection_database(first_database)["facts"] == (
+        _read_projection_database(second_database)["facts"]
+    )
+
+
+def test_rebuild_projection_rejects_planning_root_target_without_writing(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _append_root_project_policy(
+        root,
+        state_file_policy="generated-only",
+        projection_policy="generated-only",
+        projection_path=None,
+    )
+    database = root / "projection.sqlite"
+
+    result = _run_rebuild_projection(root, database)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert not database.exists()
+    assert payload["status"] == "rejected"
+    assert payload["blockers"][0]["code"] == "projection_target_policy_conflict"
+    assert "projection policy 'generated-only'" in payload["blockers"][0]["message"]
+
+
+def test_rebuild_projection_rejects_directory_and_missing_parent_targets(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    directory_database = tmp_path / "directory.sqlite"
+    directory_database.mkdir()
+    missing_parent_database = tmp_path / "missing" / "projection.sqlite"
+
+    directory_result = _run_rebuild_projection(root, directory_database)
+    missing_parent_result = _run_rebuild_projection(root, missing_parent_database)
+
+    assert directory_result.returncode == 1
+    assert missing_parent_result.returncode == 1
+    assert "projection target is a directory" in (
+        json.loads(directory_result.stdout)["blockers"][0]["message"]
+    )
+    assert "projection target parent is missing" in (
+        json.loads(missing_parent_result.stdout)["blockers"][0]["message"]
+    )
 
 
 def test_state_fixture_schema_accepts_project_policy_contract() -> None:
@@ -4696,6 +4866,54 @@ def _run_allocate_batch(
         text=True,
         capture_output=True,
     )
+
+
+def _run_rebuild_projection(
+    root: Path,
+    database: Path,
+    *extra_args: str,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "rebuild-projection",
+            "--root",
+            str(root),
+            "--database",
+            str(database),
+            "--format",
+            "json",
+            *extra_args,
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+
+def _read_projection_database(database: Path) -> dict[str, object]:
+    with sqlite3.connect(database) as connection:
+        tables = [
+            row[0]
+            for row in connection.execute(
+                "select name from sqlite_master where type = 'table' order by name"
+            )
+        ]
+        metadata = {
+            key: json.loads(value)
+            for key, value in connection.execute(
+                "select key, value from projection_metadata order by key"
+            )
+        }
+        facts = [
+            json.loads(row[0])
+            for row in connection.execute(
+                "select payload_json from report_facts order by id"
+            )
+        ]
+    return {"tables": tables, "metadata": metadata, "facts": facts}
 
 
 def _run_register_artifact(

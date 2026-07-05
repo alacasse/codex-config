@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state SQLite projection rebuild
+
+Problem: agents needed a bounded SQLite projection but no command existed to
+rebuild it from canonical planning facts without choosing a durable database
+location.
+
+Decision: add `planning_state rebuild-projection` with an explicit `--database`
+target, project-policy target checks, source identity metadata, and bounded
+projection tables for planning-state report facts.
+
+Expected effect: report slices can consume a generated, delete-safe SQLite
+projection while existing Markdown/JSON planning-state commands remain
+independent of SQLite.
+
 ### Planning-state SQLite projection contract
 
 Problem: SQLite projection work needed a stable, bounded contract before adding

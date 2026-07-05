@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 from dataclasses import dataclass
 from dataclasses import replace
+from datetime import datetime
+from datetime import timezone
 import json
 from pathlib import Path
 from pathlib import PurePosixPath
 import re
+import sqlite3
 import sys
 import tempfile
 from typing import Any, Iterable
@@ -134,6 +138,7 @@ PROJECTION_SCHEMA_TABLES = {
     "source_artifacts",
     "report_facts",
 }
+PROJECTION_DATABASE_SUFFIXES = {".db", ".sqlite", ".sqlite3"}
 PROJECTION_REPORT_FACT_TYPES = {
     "artifact_pointer",
     "batch_evidence_lookup",
@@ -800,6 +805,32 @@ def main(argv: list[str] | None = None) -> int:
         default="json",
         help="Output format. Only json is currently supported.",
     )
+    rebuild_projection_parser = subparsers.add_parser(
+        "rebuild-projection",
+        help="Rebuild an explicit SQLite projection from canonical planning facts.",
+    )
+    rebuild_projection_parser.add_argument("--root", type=Path, required=True)
+    rebuild_projection_parser.add_argument(
+        "--database",
+        type=Path,
+        required=True,
+        help="Explicit SQLite target to replace after a successful rebuild.",
+    )
+    rebuild_projection_parser.add_argument(
+        "--state-file",
+        type=Path,
+        help="Optional explicit JSON state fixture with artifact and obligation facts.",
+    )
+    rebuild_projection_parser.add_argument(
+        "--program",
+        help="Optional active program slug to project. Defaults to all active programs.",
+    )
+    rebuild_projection_parser.add_argument(
+        "--format",
+        choices=("json",),
+        default="json",
+        help="Output format. Only json is currently supported.",
+    )
     allocate_parser = subparsers.add_parser(
         "allocate-batch",
         help="Compute canonical Layout v1 paths for a program batch.",
@@ -937,6 +968,19 @@ def main(argv: list[str] | None = None) -> int:
             )
             sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
             return 0
+        if args.command == "rebuild-projection":
+            state = load_planning_state(
+                args.root,
+                args.state_file,
+            )
+            document = rebuild_projection(
+                state,
+                database=args.database,
+                state_file=args.state_file,
+                program_slug=args.program,
+            )
+            sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
+            return 0 if document["status"] == "rebuilt" else 1
         if args.command == "allocate-batch":
             state = load_planning_state(args.root)
             document = allocate_batch_paths(
@@ -1054,6 +1098,55 @@ def allocate_batch_paths(
             for artifact_type in BATCH_LOCAL_ARTIFACTS
         },
     }
+
+
+def rebuild_projection(
+    state: PlanningState,
+    *,
+    database: Path,
+    state_file: Path | None,
+    program_slug: str | None,
+) -> dict[str, Any]:
+    """Rebuild an explicit SQLite projection from bounded planning facts."""
+
+    state_fixture = (
+        _load_state_fixture(state_file, expected_root=_planning_root_prefix(state))
+        if state_file is not None
+        else None
+    )
+    blockers = list(
+        _projection_rebuild_blockers(
+            state,
+            database=database,
+            state_fixture=state_fixture,
+        )
+    )
+    if blockers:
+        return _projection_rebuild_result(
+            state,
+            database=database,
+            status="rejected",
+            blockers=blockers,
+            projection=None,
+        )
+    programs = _bootstrap_programs(state, program_slug)
+    projection = _projection_document(
+        state,
+        programs=programs,
+        program_slug=program_slug,
+        database=database,
+        state_file=state_file,
+        state_fixture=state_fixture,
+    )
+    validate_projection_contract_object(projection)
+    _write_projection_database(database, projection)
+    return _projection_rebuild_result(
+        state,
+        database=database,
+        status="rebuilt",
+        blockers=[],
+        projection=projection,
+    )
 
 
 def register_artifact(
@@ -3517,6 +3610,375 @@ def _bootstrap_contract_object() -> dict[str, Any]:
     }
 
 
+def _projection_document(
+    state: PlanningState,
+    *,
+    programs: tuple[ProgramState, ...],
+    program_slug: str | None,
+    database: Path,
+    state_file: Path | None,
+    state_fixture: dict[str, Any] | None,
+) -> dict[str, Any]:
+    metadata = {
+        "schema_version": PROJECTION_SCHEMA_VERSION,
+        "planning_root": _planning_root_prefix(state),
+        "source_identity": _projection_source_identity(state, programs),
+        "state_fixture_identity": (
+            _projection_source_artifact("state-fixture", state_file)
+            if state_file is not None
+            else None
+        ),
+        "build_command": _projection_build_command(
+            state,
+            database,
+            state_file,
+            program_slug=program_slug,
+        ),
+        "built_at": datetime.now(timezone.utc).isoformat(),
+        "tables": sorted(PROJECTION_SCHEMA_TABLES),
+    }
+    return {
+        "protocol": {
+            "name": PROJECTION_SCHEMA_NAME,
+            "version": PROJECTION_SCHEMA_VERSION,
+        },
+        "metadata": metadata,
+        "allowed_report_fact_types": sorted(PROJECTION_REPORT_FACT_TYPES),
+        "report_facts": _projection_report_facts(
+            state,
+            programs=programs,
+            state_fixture=state_fixture,
+        ),
+    }
+
+
+def _projection_source_identity(
+    state: PlanningState,
+    programs: tuple[ProgramState, ...],
+) -> dict[str, Any]:
+    sources = [_projection_source_artifact("root-current", state.root.current_path)]
+    for program in programs:
+        sources.append(
+            _projection_source_artifact(
+                f"program-current:{program.slug}",
+                program.current_path,
+            )
+        )
+        if program.ledger.value is not None and program.ledger.exists is True:
+            sources.append(
+                _projection_source_artifact(
+                    f"program-ledger:{program.slug}",
+                    _resolve_pointer(state.root.root_path, program.ledger.value),
+                )
+            )
+    return {
+        "planning_root": _planning_root_prefix(state),
+        "sources": sorted(sources, key=lambda source: (source["kind"], source["path"])),
+    }
+
+
+def _projection_source_artifact(kind: str, path: Path | None) -> dict[str, Any]:
+    if path is None:
+        raise ProtocolValidationError("projection source path is required")
+    try:
+        data = path.read_bytes()
+        stat = path.stat()
+    except FileNotFoundError as error:
+        raise ProtocolValidationError(f"projection source is missing: {path}") from error
+    if not path.is_file():
+        raise ProtocolValidationError(f"projection source is not a file: {path}")
+    return {
+        "kind": kind,
+        "path": str(path),
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "mtime_ns": stat.st_mtime_ns,
+    }
+
+
+def _projection_build_command(
+    state: PlanningState,
+    database: Path,
+    state_file: Path | None,
+    *,
+    program_slug: str | None,
+) -> str:
+    parts = [
+        "planning_state.py",
+        "rebuild-projection",
+        "--root",
+        _planning_root_prefix(state),
+        "--database",
+        str(database),
+    ]
+    if state_file is not None:
+        parts.extend(["--state-file", str(state_file)])
+    if program_slug is not None:
+        parts.extend(["--program", program_slug])
+    return " ".join(parts)
+
+
+def _projection_report_facts(
+    state: PlanningState,
+    *,
+    programs: tuple[ProgramState, ...],
+    state_fixture: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    facts: list[dict[str, Any]] = []
+    for program in programs:
+        _append_program_projection_facts(state, facts, program)
+    if state_fixture is not None:
+        _append_fixture_projection_facts(facts, state_fixture, programs=programs)
+    included_batches = _projection_program_batch_ids(programs)
+    for obligation in state.obligations:
+        if obligation.source_batch in included_batches or (
+            obligation.target_batch is not None
+            and obligation.target_batch in included_batches
+        ):
+            facts.append(
+                {
+                    "fact_type": "obligation",
+                    "obligation_id": obligation.id,
+                    "owner": obligation.owner,
+                    "source_batch": obligation.source_batch,
+                    "target_batch": obligation.target_batch,
+                    "close_condition": obligation.close_condition,
+                    "status": obligation.status,
+                    "evidence_path": obligation.evidence_path,
+                }
+            )
+    return sorted(
+        facts,
+        key=lambda fact: (
+            str(fact.get("program") or ""),
+            str(fact.get("batch_id") or ""),
+            str(fact.get("fact_type") or ""),
+            str(fact.get("artifact_type") or ""),
+            str(fact.get("path") or ""),
+            str(fact.get("obligation_id") or ""),
+        ),
+    )
+
+
+def _append_program_projection_facts(
+    state: PlanningState,
+    facts: list[dict[str, Any]],
+    program: ProgramState,
+) -> None:
+    current_pointer = ArtifactPointer(
+        "current",
+        _path_under_planning_root(state, program.current_path),
+        program.current_path,
+        True,
+    )
+    for pointer_name, pointer in (
+        ("current", current_pointer),
+        ("ledger", program.ledger),
+        ("selected_dispatch", program.selected_dispatch),
+        ("active_runway", program.active_runway),
+        ("queued_batch", program.queued_batch),
+        ("latest_closeout", program.latest_closeout),
+    ):
+        if pointer.value is None:
+            continue
+        facts.append(
+            {
+                "fact_type": "artifact_pointer",
+                "program": program.slug,
+                "batch_id": _batch_id_from_path(pointer.value),
+                "artifact_type": pointer_name,
+                "path": pointer.value,
+                "status": "exists" if pointer.exists is True else "missing",
+            }
+        )
+    for pointer in (program.selected_dispatch, program.active_runway, program.queued_batch):
+        if pointer.value is None:
+            continue
+        facts.append(
+            {
+                "fact_type": "pending_batch",
+                "program": program.slug,
+                "batch_id": _batch_id_from_queued_batch_value(pointer.value),
+                "path": (
+                    _migrated_queued_batch_value(state.root, program)
+                    if pointer is program.queued_batch
+                    else pointer.value
+                ),
+                "status": pointer.label,
+            }
+        )
+    if program.latest_closeout.value is not None:
+        facts.append(
+            {
+                "fact_type": "closeout_evidence_status",
+                "program": program.slug,
+                "batch_id": _batch_id_from_path(program.latest_closeout.value),
+                "path": program.latest_closeout.value,
+                "status": "exists" if program.latest_closeout.exists is True else "missing",
+                "summary": "latest closeout pointer",
+            }
+        )
+
+
+def _append_fixture_projection_facts(
+    facts: list[dict[str, Any]],
+    state_fixture: dict[str, Any],
+    *,
+    programs: tuple[ProgramState, ...],
+) -> None:
+    included_programs = {program.slug for program in programs}
+    for program_data in state_fixture.get("programs", []):
+        if not isinstance(program_data, dict):
+            continue
+        slug = program_data.get("slug")
+        if slug not in included_programs:
+            continue
+        for artifact in program_data.get("artifacts", []):
+            if not isinstance(artifact, dict):
+                continue
+            artifact_type = artifact.get("type")
+            batch_id = artifact.get("batch_id")
+            path = artifact.get("path")
+            if not all(isinstance(value, str) for value in (artifact_type, batch_id, path)):
+                continue
+            facts.append(
+                {
+                    "fact_type": "artifact_pointer",
+                    "program": slug,
+                    "batch_id": batch_id,
+                    "artifact_type": artifact_type,
+                    "path": path,
+                    "status": "registered",
+                }
+            )
+            facts.append(
+                {
+                    "fact_type": "batch_evidence_lookup",
+                    "program": slug,
+                    "batch_id": batch_id,
+                    "artifact_type": artifact_type,
+                    "path": path,
+                    "status": "registered",
+                }
+            )
+            if artifact_type == "closeout":
+                facts.append(
+                    {
+                        "fact_type": "closeout_evidence_status",
+                        "program": slug,
+                        "batch_id": batch_id,
+                        "path": path,
+                        "status": "registered",
+                        "summary": "registered closeout evidence pointer",
+                    }
+                )
+            if artifact_type == "receipt":
+                facts.append(
+                    {
+                        "fact_type": "batch_evidence_lookup",
+                        "program": slug,
+                        "batch_id": batch_id,
+                        "artifact_type": "receipt",
+                        "path": path,
+                        "status": "registered",
+                        "summary": "transition receipt pointer",
+                    }
+                )
+    for obligation in state_fixture.get("obligations", []):
+        if not isinstance(obligation, dict):
+            continue
+        facts.append(
+            {
+                "fact_type": "obligation",
+                "obligation_id": obligation.get("id"),
+                "owner": obligation.get("owner"),
+                "source_batch": obligation.get("source_batch"),
+                "target_batch": obligation.get("target_batch"),
+                "close_condition": obligation.get("close_condition"),
+                "status": obligation.get("status"),
+                "evidence_path": obligation.get("evidence_path"),
+            }
+        )
+
+
+def _projection_program_batch_ids(programs: tuple[ProgramState, ...]) -> set[str]:
+    batch_ids: set[str] = set()
+    for program in programs:
+        for value in (
+            program.selected_dispatch.value,
+            program.active_runway.value,
+            program.queued_batch.value,
+            program.latest_closeout.value,
+        ):
+            if value:
+                batch_ids.add(_batch_id_from_queued_batch_value(value))
+    return batch_ids
+
+
+def _write_projection_database(database: Path, projection: dict[str, Any]) -> None:
+    temp_path = database.with_name(f".{database.name}.tmp")
+    if temp_path.exists():
+        temp_path.unlink()
+    try:
+        with sqlite3.connect(temp_path) as connection:
+            _initialize_projection_database(connection, projection)
+        temp_path.replace(database)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink()
+
+
+def _initialize_projection_database(
+    connection: sqlite3.Connection,
+    projection: dict[str, Any],
+) -> None:
+    connection.execute(
+        "create table projection_metadata (key text primary key, value text not null)"
+    )
+    connection.execute(
+        "create table source_artifacts ("
+        "kind text not null, path text not null, sha256 text, mtime_ns integer)"
+    )
+    connection.execute(
+        "create table report_facts ("
+        "id integer primary key, fact_type text not null, program text, "
+        "batch_id text, payload_json text not null)"
+    )
+    metadata = projection["metadata"]
+    for key in sorted(metadata):
+        connection.execute(
+            "insert into projection_metadata (key, value) values (?, ?)",
+            (key, json.dumps(metadata[key], sort_keys=True)),
+        )
+    sources = list(metadata["source_identity"]["sources"])
+    state_fixture_identity = metadata.get("state_fixture_identity")
+    if state_fixture_identity is not None:
+        sources.append(state_fixture_identity)
+    for source in sources:
+        connection.execute(
+            "insert into source_artifacts (kind, path, sha256, mtime_ns) "
+            "values (?, ?, ?, ?)",
+            (
+                source["kind"],
+                source["path"],
+                source.get("sha256"),
+                source.get("mtime_ns"),
+            ),
+        )
+    for index, fact in enumerate(projection["report_facts"], start=1):
+        connection.execute(
+            "insert into report_facts (id, fact_type, program, batch_id, payload_json) "
+            "values (?, ?, ?, ?, ?)",
+            (
+                index,
+                fact["fact_type"],
+                fact.get("program"),
+                fact.get("batch_id"),
+                json.dumps(fact, sort_keys=True),
+            ),
+        )
+    connection.commit()
+
+
 def _bootstrap_blockers(state: PlanningState) -> Iterable[ValidationMessage]:
     for message in state.validation_messages:
         if message.severity == "error":
@@ -3597,6 +4059,98 @@ def _projection_preflight_messages(
             str(error),
             target,
         )
+
+
+def _projection_rebuild_blockers(
+    state: PlanningState,
+    *,
+    database: Path,
+    state_fixture: dict[str, Any] | None,
+) -> Iterable[ValidationMessage]:
+    for message in state.validation_messages:
+        if message.severity == "error":
+            yield message
+    try:
+        _validate_projection_database_target(
+            state,
+            database,
+            state_fixture=state_fixture,
+        )
+    except ProtocolValidationError as error:
+        yield ValidationMessage(
+            "error",
+            "projection_target_policy_conflict",
+            str(error),
+            database,
+        )
+
+
+def _validate_projection_database_target(
+    state: PlanningState,
+    target: Path,
+    *,
+    state_fixture: dict[str, Any] | None,
+) -> None:
+    if ".." in target.parts:
+        raise ProtocolValidationError("projection target must not contain dot segments")
+    if target.suffix not in PROJECTION_DATABASE_SUFFIXES:
+        suffixes = ", ".join(sorted(PROJECTION_DATABASE_SUFFIXES))
+        raise ProtocolValidationError(
+            f"projection target must use one of these suffixes: {suffixes}"
+        )
+    if not target.parent.exists():
+        raise ProtocolValidationError(f"projection target parent is missing: {target.parent}")
+    if target.exists() and target.is_dir():
+        raise ProtocolValidationError(f"projection target is a directory: {target}")
+    policy = _effective_project_policy(state, state_fixture, target)
+    _validate_policy_target(
+        state,
+        target,
+        target_kind="projection",
+        policy=policy,
+        policy_value=policy.projection_policy if policy is not None else "missing",
+        policy_path=policy.projection_path if policy is not None else None,
+        source_path=policy.source_path if policy is not None else state.root.current_path,
+        operation="rebuild-projection --database",
+    )
+
+
+def _projection_rebuild_result(
+    state: PlanningState,
+    *,
+    database: Path,
+    status: str,
+    blockers: list[ValidationMessage],
+    projection: dict[str, Any] | None,
+) -> dict[str, Any]:
+    metadata = projection["metadata"] if projection is not None else None
+    return {
+        "protocol": {
+            "name": PROJECTION_SCHEMA_NAME,
+            "version": PROJECTION_SCHEMA_VERSION,
+            "command": "rebuild-projection",
+        },
+        "status": status,
+        "root": _planning_root_prefix(state),
+        "database": str(database),
+        "metadata": metadata,
+        "rows": _projection_row_counts(projection) if projection is not None else None,
+        "blockers": [_validation_message_object(message) for message in blockers],
+    }
+
+
+def _projection_row_counts(projection: dict[str, Any]) -> dict[str, int]:
+    metadata = projection["metadata"]
+    source_identity = metadata["source_identity"]
+    state_fixture_identity = metadata.get("state_fixture_identity")
+    source_artifact_count = len(source_identity["sources"])
+    if state_fixture_identity is not None:
+        source_artifact_count += 1
+    return {
+        "projection_metadata": len(metadata),
+        "source_artifacts": source_artifact_count,
+        "report_facts": len(projection["report_facts"]),
+    }
 
 
 def _effective_project_policy(
