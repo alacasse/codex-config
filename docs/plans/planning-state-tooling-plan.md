@@ -362,15 +362,38 @@ usable through current Planning Artifact Layout v1 rules.
 
 ## SQLite Projection Boundary
 
-SQLite can help answer operational questions that are awkward to answer by
-recursively scanning receipts and telemetry:
+SQLite now helps answer operational questions that are awkward to answer by
+recursively scanning receipts and telemetry while keeping Markdown and JSON
+canonical. The implemented projection workflow is explicit:
 
-- latest run for a program;
-- failed phases by reason;
-- context pressure by phase;
-- batch to dispatch/spec/receipt/commit-range lookup;
-- pending executable batches;
-- missing closeout evidence.
+```text
+python scripts/planning_state.py rebuild-projection --root <planning-root> --database <state.sqlite> [--state-file <state.json>] [--program <slug>] [--runner-artifact <artifact.json>] [--runner-artifact-manifest <manifest.json>]
+python scripts/planning_state.py report-projection --root <planning-root> --database <state.sqlite> --report <pending-batches|missing-closeout-evidence|batch-evidence|runner-latest-run|runner-failed-phases|runner-context-pressure> [--state-file <state.json>] [--program <slug>] [--batch-id <batch-id>] [--format text|json]
+```
+
+`rebuild-projection` replaces only the explicit `--database` target after a
+successful rebuild. It validates source identity, schema metadata, optional
+state fixture identity, optional program scope, project projection policy, and
+bounded runner source hashes. The database target can be a caller-provided temp
+proof path, or a durable path only when the resolved project policy allows that
+exact projection target. A database under the planning root, an undeclared
+durable location, a path escape, a directory, or another policy-incompatible
+target is rejected before the projection becomes workflow state.
+
+`--runner-artifact` accepts an explicit compact runner artifact JSON file.
+`--runner-artifact-manifest` accepts an explicit compact manifest JSON file that
+lists runner artifact paths. Both are optional projection inputs. Missing or
+stale runner artifacts block runner-specific reports that depend on them but do
+not make ordinary planning reports require runner data.
+
+The supported report names are:
+
+- `pending-batches`;
+- `missing-closeout-evidence`;
+- `batch-evidence` with `--batch-id`;
+- `runner-latest-run`;
+- `runner-failed-phases`;
+- `runner-context-pressure`.
 
 SQLite must be:
 
@@ -380,6 +403,12 @@ SQLite must be:
 - hidden behind tool/report commands;
 - limited to paths, metadata, compact summaries, statuses, and hashes.
 - written only to targets allowed by resolved project policy.
+
+Deleting the SQLite database is safe: rebuild it from Markdown planning
+artifacts, explicit JSON state fixtures, closeout evidence indexes, runner
+artifacts or manifests, and commits. Existing `current`, `validate`,
+`bootstrap-state`, transition, and closeout commands do not require a database,
+and agents should use `report-projection` output rather than SQL.
 
 SQLite must not store canonical program ledgers, dispatch packet prose, Batch
 Runway specs, closeout decisions, full prompts, long logs, or transcripts.
@@ -413,4 +442,4 @@ Runway specs, closeout decisions, full prompts, long logs, or transcripts.
 - Batch and artifact paths are allocated or checked by code.
 - Cross-batch obligations cannot disappear into old closeout prose.
 - Completed batches have bounded closeout evidence indexes.
-- SQLite reporting can be added later without changing the canonical contract.
+- SQLite reporting works without changing the canonical Markdown/JSON contract.

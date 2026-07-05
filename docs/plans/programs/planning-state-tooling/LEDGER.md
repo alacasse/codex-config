@@ -43,7 +43,7 @@ is planning-only; it does not implement code.
 - Run artifact root: not selected for this planning-only ledger.
 - Output root: not selected for this planning-only ledger.
 - Latest completed batch directory:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/`
 
 ## Findings Ledger
 
@@ -54,7 +54,7 @@ is planning-only; it does not implement code.
 | PST-3. Cross-batch obligations are not first-class state | Closed | `planning-state-write-transitions` | Feed explicit obligations into future closeout contracts | Enables fourth-batch cleanup without archaeology. Slice 4 added obligation records and validation. |
 | PST-4. Batch closeout lacks a bounded evidence-index contract | Closed | `planning-state-closeout-contract` | Require bounded pointer-first closeout evidence before batch closure | Closed by closeout contract, validation, rendering, and handoff docs. Completed-batch closeout must point to validation, review, completed-slices, commits, obligations, receipts when present, and cleanup residue evidence instead of embedding logs. |
 | PST-5. Existing planning roots need migration without losing human readability | Closed | `planning-state-migration-pilot` | Use bootstrap and migrated-fixture validation before any future runner/reporting layer consumes planning state | Closed by the migration-pilot closeout. `bootstrap-state` generates companion v1 JSON state from Layout v1 Markdown, preserves active-first pickup, registers co-located artifacts, and keeps Markdown as human-readable coordination state. `current`/`validate --state-file` reject drift, malformed obligations, artifact collisions, and unregistered active pointers. |
-| PST-6. Operational queries are awkward from files alone | Queued | `planning-state-sqlite-projection` | Execute the SQLite projection runway next | Do only after canonical state, rendering, and project state/projection ownership policy are stable. PST-8 is closed, so SQLite must now consume resolved project policy before choosing durable state or projection targets. |
+| PST-6. Operational queries are awkward from files alone | Closed | `planning-state-sqlite-projection` | Use `rebuild-projection` and `report-projection` for bounded operational reports when a caller provides a policy-compatible database target | Closed by optional SQLite projection rebuild, report commands, runner-artifact report coverage, validation, review, and pointer-first closeout evidence. SQLite is delete-safe and remains behind command/report interfaces. |
 | PST-7. Runner interoperability protocol is undefined | Closed | `planning-state-write-transitions` | Use command/file outputs as the runner boundary | Depends on PST-1 and informed PST-2/PST-3. Slice 1 defined JSON facts, Slice 3 added transition receipts, and Slice 4 added obligation facts without runner imports of planning-state internals. |
 | PST-8. Project planning-state ownership policy is implicit | Closed | `planning-state-project-policy` | Use resolved project policy for durable state/projection writes and SQLite work | Closed with validation, review, and closeout evidence. codex-config committed planning docs and ignored-local overlay examples are documented without becoming universal defaults; write-target preflights reject policy-incompatible durable JSON or SQLite outputs. |
 
@@ -67,43 +67,34 @@ is planning-only; it does not implement code.
 | planning-state-closeout-contract | PST-4 | Completed | Makes completed-batch evidence bounded and validateable | planning-state-write-transitions | Focused rendering/validation tests plus current/validate diagnostics | `docs/plans/programs/planning-state-tooling/batches/planning-state-closeout-contract/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-closeout-contract/runway.md` |
 | planning-state-migration-pilot | PST-5 | Completed | Bootstraps tool state from existing planning roots without hiding Markdown | planning-state-readonly-core; preferably planning-state-closeout-contract | Fixture migration tests, current/validate diagnostics, review, and closeout evidence | `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/runway.md` |
 | planning-state-project-policy | PST-8 | Completed | Makes state-file and projection ownership explicit per project before SQLite chooses targets | planning-state-migration-pilot | Project-policy parsing/validation tests, temp committed and ignored-local fixtures, current/validate diagnostics, and closeout evidence | `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/runway.md` |
-| planning-state-sqlite-projection | PST-6 | Queued | Adds fast operational reporting after canonical files and project policy are stable while keeping SQLite optional and rebuildable | planning-state-project-policy closed by `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/closeout.md` | SQLite rebuild/report tests, report CLI checks, current/validate diagnostics, and closeout evidence | `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/runway.md` |
+| planning-state-sqlite-projection | PST-6 | Completed | Adds fast operational reporting after canonical files and project policy are stable while keeping SQLite optional and rebuildable | planning-state-project-policy closed by `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/closeout.md` | SQLite rebuild/report tests, report CLI checks, current/validate diagnostics, review, and closeout evidence | `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/runway.md` |
 
 ## Latest Batch Brief
 
 Latest completed batch:
 
-- Batch: `planning-state-project-policy`
-- Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/dispatch.md`
-- Status: `Completed`
-- Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/runway.md`
-- Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/closeout.md`
-- Notes: PST-8 is closed. Project policy is a resolved project value, not a
-  hard-coded default; durable JSON state and SQLite projection targets must
-  match the declared policy before writes proceed.
-
-## Queued Batch Brief
-
-Queued batch:
-
 - Batch: `planning-state-sqlite-projection`
 - Dispatch:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/dispatch.md`
-- Status: `Queued`
+- Status: `Completed`
 - Runway:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/runway.md`
-- Notes: PST-6 can start now that PST-8 is closed. The SQLite runway must
-  consume resolved project policy and must not choose durable state or
-  projection ownership by itself.
+- Closeout:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/closeout.md`
+- Notes: PST-6 is closed. SQLite projection commands are optional,
+  policy-checked, bounded to compact facts, safe to delete and rebuild, and
+  exposed to agents through `report-projection` rather than SQL.
+
+## Queued Batch Brief
+
+Queued batch: `None`
 
 ## Recommended Work Order
 
-1. Execute `planning-state-sqlite-projection` from its queued runway.
-2. Keep SQLite optional, rebuildable, and bounded to targets allowed by
-   resolved project policy.
+1. Do not start another planning-state-tooling batch until a future user
+   request selects or creates one.
+2. For projection reporting, rebuild only to explicit temp or
+   policy-compatible database targets and keep Markdown/JSON canonical.
 
 ## Closeout Rules
 

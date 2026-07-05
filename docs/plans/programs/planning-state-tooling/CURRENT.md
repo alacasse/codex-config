@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -28,29 +27,27 @@
 
 ## Latest Completed Batch
 
-- Batch: `planning-state-project-policy`
-- Status: completed; project-owned state/projection policy is explicit before
-  durable JSON or SQLite targets are selected.
+- Batch: `planning-state-sqlite-projection`
+- Status: completed; SQLite projection rebuild/report commands are optional,
+  delete-safe, policy-checked, and bounded to command/report interfaces.
 - Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/dispatch.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/dispatch.md`
 - Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/runway.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/runway.md`
 - Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-project-policy/closeout.md`
-- Notes: `current`/`validate` report project policy, write/preflight commands
-  enforce state-file and projection target policy, and codex-config committed
-  docs plus ignored-local overlay examples are documented without making either
-  a universal default.
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/closeout.md`
+- Notes: `rebuild-projection` writes only an explicit policy-compatible
+  database target, `report-projection` answers planning and runner summary
+  questions from validated projection rows, and Markdown/JSON state remains
+  canonical when no database exists.
 
 ## Next Safe Action
 
 Use `python scripts/planning_state.py current --root docs/plans` and
 `python scripts/planning_state.py validate --root docs/plans` before broad
-planning tree scans. The next safe implementation action is to execute the
-queued SQLite projection runway, which must consume resolved project policy
-before choosing any durable state or projection target:
-
-`docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/runway.md`
+planning tree scans. There is no selected, active, or queued
+planning-state-tooling batch. A future user request should create or queue the
+next batch explicitly before implementation work starts.
 
 ## Stop Conditions
 
