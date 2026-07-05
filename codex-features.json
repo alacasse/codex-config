@@ -130,6 +130,23 @@
         }
       ]
     },
+    "planning-state": {
+      "version": "1.0.0",
+      "description": "Operational planning-state diagnostics, generated state fixtures, and optional projection reporting for agents.",
+      "requires": [
+        "planning-artifacts"
+      ],
+      "links": [
+        {
+          "source": "skills/planning-state",
+          "target": "skills/planning-state"
+        },
+        {
+          "source": "scripts/planning_state.py",
+          "target": "scripts/planning_state.py"
+        }
+      ]
+    },
     "agent-notifications": {
       "version": "1.0.0",
       "description": "Opt-in Codex Stop phone notification hook script and registration example.",

@@ -44,6 +44,48 @@ class CodexOwnerTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
+    def write_planning_state_manifest(self) -> tuple[Path, Path]:
+        skill_source = self.repo_root / "skills" / "planning-state"
+        script_source = self.repo_root / "scripts" / "planning_state.py"
+        skill_source.mkdir(parents=True)
+        script_source.parent.mkdir(parents=True)
+        (skill_source / "SKILL.md").write_text("# Planning State\n", encoding="utf-8")
+        script_source.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+        (self.repo_root / "codex-features.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "features": {
+                        "planning-state": {
+                            "version": "1.0.0",
+                            "requires": ["planning-artifacts"],
+                            "links": [
+                                {
+                                    "source": "skills/planning-state",
+                                    "target": "skills/planning-state",
+                                },
+                                {
+                                    "source": "scripts/planning_state.py",
+                                    "target": "scripts/planning_state.py",
+                                },
+                            ],
+                        },
+                        "planning-artifacts": {
+                            "version": "1.0.0",
+                            "links": [
+                                {
+                                    "source": "skills/planning-artifacts",
+                                    "target": "skills/planning-artifacts",
+                                }
+                            ],
+                        },
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        return skill_source, script_source
+
     def inspect(self, path: Path) -> dict[str, object]:
         completed = subprocess.run(
             [
@@ -153,6 +195,34 @@ class CodexOwnerTests(unittest.TestCase):
         self.assertEqual(result["status"], "missing")
         self.assertTrue(result["changelog_required"])
         self.assertTrue(result["git_status_required"])
+
+    def test_planning_state_linked_skill_reports_installed_owner(self) -> None:
+        skill_source, _ = self.write_planning_state_manifest()
+        target = self.codex_home / "skills" / "planning-state"
+        target.parent.mkdir(parents=True)
+        target.symlink_to(skill_source)
+
+        result = self.inspect(target)
+
+        self.assertEqual(result["manifest_owner"], "codex-config")
+        self.assertEqual(result["installed_owner"], "codex-config")
+        self.assertEqual(result["owner"], "codex-config")
+        self.assertEqual(result["feature"], "planning-state")
+        self.assertEqual(result["status"], "linked")
+
+    def test_planning_state_linked_script_reports_installed_owner(self) -> None:
+        _, script_source = self.write_planning_state_manifest()
+        target = self.codex_home / "scripts" / "planning_state.py"
+        target.parent.mkdir(parents=True)
+        target.symlink_to(script_source)
+
+        result = self.inspect(target)
+
+        self.assertEqual(result["manifest_owner"], "codex-config")
+        self.assertEqual(result["installed_owner"], "codex-config")
+        self.assertEqual(result["owner"], "codex-config")
+        self.assertEqual(result["feature"], "planning-state")
+        self.assertEqual(result["status"], "linked")
 
 
 if __name__ == "__main__":

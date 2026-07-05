@@ -8,9 +8,9 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `planning-state-skill-interface`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -27,28 +27,29 @@
 
 ## Latest Completed Batch
 
-- Batch: `planning-state-sqlite-projection`
-- Status: completed; SQLite projection rebuild/report commands are optional,
-  delete-safe, policy-checked, and bounded to command/report interfaces.
+- Batch: `planning-state-skill-interface`
+- Status: completed; the repo-owned `planning-state` skill now provides the
+  safe agent interface for current/validate diagnostics, generated state
+  fixtures, target-policy refusal, optional projection reporting, closeout
+  evidence, and runner-artifact projection inputs.
 - Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/dispatch.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/dispatch.md`
 - Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/runway.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/runway.md`
 - Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/closeout.md`
-- Notes: `rebuild-projection` writes only an explicit policy-compatible
-  database target, `report-projection` answers planning and runner summary
-  questions from validated projection rows, and Markdown/JSON state remains
-  canonical when no database exists.
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/closeout.md`
+- Notes: `planning-state` depends on `planning-artifacts`, keeps
+  `scripts/planning_state.py` as the command/file boundary, and leaves consumer
+  skill rewiring for the later `planning-state-consumer-integration` batch.
 
 ## Next Safe Action
 
 Use `python scripts/planning_state.py current --root docs/plans` and
 `python scripts/planning_state.py validate --root docs/plans` before broad
-planning tree scans. The queued `planning-state-skill-interface` batch should
-execute from
-`docs/plans/programs/planning-state-tooling/batches/planning-state-skill-interface/runway.md`
-when implementation work starts.
+planning tree scans. There is no selected, active, or queued
+planning-state-tooling batch. Create or queue
+`planning-state-consumer-integration` only when consumer skill rewiring is
+requested.
 
 ## Stop Conditions
 

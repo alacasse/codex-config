@@ -148,7 +148,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 4. Wire install metadata and close findings | pending | | | | Prove the feature installs, validation smokes pass, and PST-9 through PST-11 can close. | |
 
 ## Orchestration Anomalies
 
@@ -161,6 +160,7 @@ orchestration_anomalies: []
 | 1. Create planning-state skill entrypoint | this commit | Added `skills/planning-state/SKILL.md` with the read-only diagnostic hot path, command-boundary guardrails, Layout v1 delegation, policy refusal rules, and future reference pointers. | Validation: `current`, `validate`, hard-code grep, `git diff --check`; review: clean `runway_reviewer` result. |
 | 2. Add state-fixture and target-policy references | this commit | Added focused references for JSON state fixtures, transition receipts, and policy-driven target selection across stdout, `/tmp`, generated-only, committed, ignored-local, external, and none policies. | Validation: temp `bootstrap-state`, temp `validate --state-file`, expected durable-policy refusal for generated-only `--require-project-policy all`, hard-code grep, `git diff --check`; review: clean `runway_reviewer` result. |
 | 3. Add projection, closeout, and runner-artifact references | this commit | Added focused references for optional SQLite projection reports, pointer-first closeout evidence, optional runner artifact inputs, and cleanup-residue owner/removal-condition evidence. | Validation: temp projection rebuild, `pending-batches`, `batch-evidence`, hard-code grep, `git diff --check`; review: approved after cleanup-residue guidance fix. |
+| 4. Wire install metadata and close findings | this commit | Registered `planning-state` in `codex-features.json`, added focused manifest and owner tests, closed PST-9 through PST-11, cleared queued program state, and wrote pointer-first closeout evidence. | Validation: manifest/owner tests, JSON syntax, `current`, `validate`, temp state/projection smokes, hard-code grep, `git diff --check`, closeout validation; review: clean implementation review before coordinator closeout edits. |
 
 ## Slice 1. Create Planning-State Skill Entrypoint
 

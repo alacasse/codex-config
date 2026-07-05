@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state install metadata
+
+Problem: the new planning-state skill existed in the repository, but the
+manifest did not expose it as an installable repo-owned feature or identify the
+command boundary it depends on.
+
+Decision: add a `planning-state` feature that installs the skill and
+`scripts/planning_state.py`, depends on `planning-artifacts`, and extend focused
+manifest and ownership tests for the new links.
+
+Expected effect: agents can install or inspect the shared planning-state
+interface through the normal codex-config feature metadata without wiring
+consumer skills to depend on it yet.
+
 ### Planning-state projection and closeout references
 
 Problem: the planning-state skill pointed agents at optional projection and

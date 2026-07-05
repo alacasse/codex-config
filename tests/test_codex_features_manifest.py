@@ -78,6 +78,21 @@ class CodexFeaturesManifestTests(unittest.TestCase):
 
         self.assertEqual(selected, ["planning-artifacts", "batch-runway"])
 
+    def test_planning_state_installs_skill_and_command_boundary(self) -> None:
+        manifest = self.load_manifest()
+        planning_state = manifest["features"]["planning-state"]
+
+        self.assertIn("planning-artifacts", planning_state.get("requires", []))
+        self.assertEqual(
+            {link["source"] for link in planning_state["links"]},
+            {"skills/planning-state", "scripts/planning_state.py"},
+        )
+
+        args = Namespace(feature=["planning-state"], all_features=False)
+        selected = install_codex_config.selected_feature_names(args, manifest)
+
+        self.assertEqual(selected, ["planning-artifacts", "planning-state"])
+
     def test_custom_agent_toml_files_are_valid(self) -> None:
         manifest = self.load_manifest()
         custom_agents = manifest["features"]["custom-agents"]
