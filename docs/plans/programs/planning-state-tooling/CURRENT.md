@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/runway.md`
 - Latest closeout path:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/closeout.md`
 - Run artifact location: `None selected`
@@ -43,9 +44,12 @@
 
 ## Next Safe Action
 
-Use `planning-state-projection-consumers` as the next candidate only when asked
-to create the next planning-state-tooling batch. Do not create it as part of the
-projection-routing closeout.
+Execute the queued `planning-state-projection-consumers` runway from:
+
+`docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/runway.md`
+
+Do not create another planning-state-tooling batch until this queued runway is
+completed, blocked, superseded, or explicitly abandoned.
 
 ## Stop Conditions
 
