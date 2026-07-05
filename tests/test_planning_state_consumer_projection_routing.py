@@ -122,6 +122,48 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
             version_tuple("1.1.2"),
         )
 
+    def test_legacy_removal_routes_supported_reports_through_projection_guidance(
+        self,
+    ) -> None:
+        entrypoint = self.read("skills/legacy-removal/SKILL.md")
+
+        self.assertIn("../planning-state/references/projection-reporting.md", entrypoint)
+        self.assertIn("report-projection", entrypoint)
+        self.assertIn("projection_usage", entrypoint)
+        self.assertIn("projection_rebuild_authority", entrypoint)
+        self.assertIn("broad historical", entrypoint)
+        self.assertIn("scans", entrypoint)
+
+    def test_legacy_removal_keeps_authority_over_legacy_decisions(self) -> None:
+        entrypoint = self.read("skills/legacy-removal/SKILL.md")
+
+        self.assertIn("Planning State Diagnostic", entrypoint)
+        self.assertIn("current", entrypoint)
+        self.assertIn("validate", entrypoint)
+        self.assertIn("old model", entrypoint)
+        self.assertIn("canonical model", entrypoint)
+        self.assertIn("evidence value", entrypoint)
+        self.assertIn("compatibility decision", entrypoint)
+        self.assertIn("cleanup-residue classification", entrypoint)
+        self.assertIn("handoff target", entrypoint)
+        self.assertIn("planning-state context only", entrypoint)
+        self.assertIn("classify a legacy surface", entrypoint)
+        self.assertIn("prove liveness or deadness", entrypoint)
+
+    def test_legacy_removal_feature_depends_on_planning_state(self) -> None:
+        manifest = json.loads(
+            (REPO_ROOT / "codex-features.json").read_text(encoding="utf-8")
+        )
+
+        self.assertIn(
+            "planning-state",
+            manifest["features"]["legacy-removal"].get("requires", []),
+        )
+        self.assertGreaterEqual(
+            version_tuple(manifest["features"]["legacy-removal"]["version"]),
+            version_tuple("1.0.4"),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

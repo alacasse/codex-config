@@ -110,7 +110,7 @@
       ]
     },
     "legacy-removal": {
-      "version": "1.0.3",
+      "version": "1.0.4",
       "description": "Discovery and scoping workflow for evidence-backed legacy-removal ledgers.",
       "requires": [
         "planning-artifacts",

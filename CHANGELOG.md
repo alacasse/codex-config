@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Legacy-removal projection report routing
+
+Problem: Legacy Removal used planning-state diagnostics for Layout v1 active
+state, but supported history/reporting questions could still fall back to broad
+historical scans before checking projection policy.
+
+Decision: route supported Legacy Removal history/reporting questions through
+planning-state projection-reporting guidance and policy-compatible
+`report-projection` output while preserving Legacy Removal ownership of old and
+canonical model definition, evidence inventory, compatibility decisions,
+cleanup-residue classification, and handoff decisions.
+
+Expected effect: Legacy Removal agents use projection reports as read-only
+planning-state context for locating planning evidence, never as proof that a
+legacy surface is live, dead, removable, public, or deferred.
+
 ### Architecture-program projection report routing
 
 Problem: Architecture Program Runway used planning-state diagnostics for active
