@@ -67,8 +67,8 @@ create loose files under `plans/`, `planning/`, or the repository root.
 If a command needs to write durable JSON state or projections and the project
 has not declared a compatible policy, stop before writing. Read-only diagnostics
 may still operate from Markdown-only planning roots. Generic skills must not
-bake in `codex-config` committed paths, Graphify-style ignored overlay paths, or
-any other project-specific state location as a reusable default.
+bake in `codex-config` committed paths, ignored local overlay paths from another
+project, or any other project-specific state location as a reusable default.
 
 Preferred discovery order:
 
@@ -146,13 +146,17 @@ that exception.
 `CURRENT.md` files are for fresh-agent handoff. Keep them compact and current;
 they are not ledgers or transcripts.
 
-For ledger-driven pickup, batch selection, or "next batch/spec" requests under
-Planning Artifact Layout v1, active-state files are the first navigation path.
-After project instructions and local overlays, read the root `CURRENT.md`, then
-only the program `CURRENT.md` files named there before scanning historical
-planning files, generated reports, broad file listings, or source code. If a
-program `CURRENT.md` names a selected dispatch, active runway, or queued batch,
-treat that as the current coordination state until it is proven stale.
+For ledger-driven pickup, task selection, batch selection, or "next batch/spec"
+requests under Planning Artifact Layout v1, active-state files are the first
+navigation path. After project instructions and local overlays, read the root
+`CURRENT.md`, then only the program `CURRENT.md` files named there before broad
+exploration. If a program `CURRENT.md` names a selected dispatch, active runway,
+or queued batch, treat that as the current coordination state until it is
+proven stale.
+
+When `planning-state` is available, its Diagnostic-First Pickup rule owns the
+ordering between active-state reads and broader tools such as knowledge graphs,
+generated reports, repository-wide search, and source exploration.
 
 If active-state files are missing, contradictory, or insufficient for a specific
 decision, state the missing question before expanding the read set. Expansion

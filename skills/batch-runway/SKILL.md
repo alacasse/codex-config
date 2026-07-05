@@ -99,6 +99,8 @@ capsule and the relevant Batch Runway reference path in the subagent prompt.
    compact Planning State Diagnostic facts: planning root, current and validate
    status, active programs, selected dispatch, queued batch, active runway,
    blockers, warnings, and project policy.
+   For next-task, next-spec, pickup, or queued-work requests, follow
+   `planning-state` Diagnostic-First Pickup before broader exploration.
 4. Check the worktree and preserve unrelated dirty files.
 5. Choose `create-spec` or `execute-spec`.
 6. Choose `lean-runway` or `full-runway`.
@@ -198,8 +200,8 @@ In `create-spec` mode:
 1. Read `references/create-spec.md`.
 2. If the project uses Planning Artifact Layout v1, use `planning-state` first
    to collect Planning State Diagnostic facts, then read the root `CURRENT.md`
-   and relevant program `CURRENT.md` named by that diagnostic before historical
-   local plans, recent commits, generated reports, or broad source inspection.
+   and relevant program `CURRENT.md` named by that diagnostic before broader
+   exploration.
 3. If a selected dispatch, active runway, or queued batch exists in the
    diagnostic or active-state files, do not
    select another batch. Report the queued/active path, or create the missing

@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Ledger pickup before knowledge graphs
+
+Problem: in projects that also have a knowledge graph, agents could treat a
+ledger pickup or "next task" request as a codebase graph query and inspect
+generated graph context before reading the active `CURRENT.md` and program
+ledger.
+
+Decision: add a named `planning-state` Diagnostic-First Pickup rule for
+next-task, next-batch/spec, selected-dispatch, and queued-work requests. The
+consumer skills now point at that rule instead of each restating the full
+knowledge-graph/search ordering.
+
+Expected effect: fresh agents select or resume ledger work from root/program
+`CURRENT.md` and the active ledger first, then use graph/search tools only for
+specific evidence questions raised by the selected work.
+
 ### Planning-state consumer install dependencies
 
 Problem: Batch Runway, Architecture Program Runway, and Legacy Removal now call

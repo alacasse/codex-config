@@ -54,10 +54,10 @@ re-derive grouping from scratch after the ledger and batch queue exist.
 
 1. Read applicable repo instructions and local overlays.
 2. If Planning Artifact Layout v1 is active and the request is about pickup,
-   current state, selecting the next batch, creating the next runway, or working
-   from a queued batch, use `planning-state` current/validate diagnostics and
-   then the active-state fast path below before reading raw findings,
-   historical plans, broad generated reports, or source files.
+   current state, selecting the next task or batch, creating the next runway, or
+   working from a queued batch, use `planning-state` current/validate
+   diagnostics and then the active-state fast path below before broader
+   exploration.
 3. Read the findings, review, PRD, ADR, selected dispatch packet, or planning
    document needed for the chosen mode.
 4. Read active or recently completed related runway specs only enough to know
@@ -98,12 +98,13 @@ Artifact Layout v1 is active.
 10. Update the program `CURRENT.md` and `LEDGER.md`, then stop before coding
    unless the user explicitly asked to execute.
 
-Do not begin this mode with broad `find` or repository-wide `rg` scans over the
-planning tree, old flat dispatch/runway filenames, generated graph or report
-outputs, historical redirect ledgers, recent commits, or source modules. Those
-are escalation reads only after the active-state path is missing,
-contradictory, stale, or asks a specific unresolved question. If escalation is
-needed, state the question before continuing.
+Do not begin this mode with broad exploration: knowledge-graph queries, broad
+`find` or repository-wide `rg` scans over the planning tree, old flat
+dispatch/runway filenames, generated reports, historical redirect ledgers,
+recent commits, or source modules. Those are escalation reads only after the
+active-state path is missing, contradictory, stale, or asks a specific
+unresolved question. If escalation is needed, state the question before
+continuing.
 
 ## Modes
 

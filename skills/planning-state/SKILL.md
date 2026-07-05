@@ -48,6 +48,17 @@ layout.
    `state_file_policy`, `state_file_path`, `projection_policy`,
    `projection_path`, or `update_authority` for the requested operation.
 
+## Diagnostic-First Pickup
+
+For ledger-driven "next task", "next batch/spec", pickup, or queued-work
+requests, the Planning State Diagnostic is the first **Interface** to the
+planning root. It must run before knowledge-graph queries, generated
+graph/report reads, broad repository search, historical planning scans, or
+source-code exploration.
+
+Use those broader exploration tools only after `current`, `validate`, and the
+active ledger identify a concrete unresolved evidence question.
+
 Read-only diagnostics may operate from Markdown planning roots. Durable JSON
 state writes and SQLite projection writes require explicit project policy or
 caller-provided temporary proof targets. Temporary proof targets must be

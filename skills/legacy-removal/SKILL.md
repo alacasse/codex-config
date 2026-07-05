@@ -85,7 +85,9 @@ temporary transition period with a removal condition.
    existing plans, and public compatibility commitments.
    If Planning Artifact Layout v1 is active, use `planning-state` `current` and
    `validate` diagnostics before reading active ledgers or selected dispatch
-   state as authoritative.
+   state as authoritative. For next-task, next-batch, selected-dispatch, or
+   queued-work requests, follow `planning-state` Diagnostic-First Pickup before
+   broader exploration.
 2. Define the old model and candidate canonical model. If either is unclear,
    record the uncertainty instead of deleting or preserving by default.
 3. Inventory evidence across code, tests, docs, configs, generated artifacts,

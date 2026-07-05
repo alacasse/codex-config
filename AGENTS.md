@@ -1,9 +1,3 @@
-## Project-specific local instructions
-
-When working in `/home/alacasse/projects/graphify`, first use Codex's normal project instruction discovery, including the repo's committed `/home/alacasse/projects/graphify/AGENTS.md`. Then read `/home/alacasse/projects/graphify/my-docs/AGENTS.md` before doing project work.
-
-Treat `my-docs/AGENTS.md` as a local additive overlay, not a replacement for the committed repo `AGENTS.md`. If the two files conflict, prefer the local `my-docs/AGENTS.md` only for personal workflow/configuration details; prefer the committed repo `AGENTS.md` for upstream project rules unless the user explicitly says otherwise. The `my-docs/` directory is intentionally ignored and should not be committed.
-
 ## GitHub issues and comments
 
 When creating or updating GitHub issues, PR comments, or issue comments, keep the GitHub body compact and actionable. Use GitHub for the decision-oriented core: summary, why, proposed direction, acceptance criteria, and links or paths to detailed design artifacts.
