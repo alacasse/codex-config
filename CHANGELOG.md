@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state bootstrap generation
+
+Problem: agents could define the Layout v1 bootstrap contract but still had to
+hand-write explicit JSON state fixtures from Markdown planning roots.
+
+Decision: add `planning_state bootstrap-state` to generate a validated
+`planning-state-tool-state` v1 fixture from root/program `CURRENT.md` files and
+existing co-located batch artifacts, printing by default and writing only to an
+explicit JSON target outside the planning root.
+
+Expected effect: migration pilots can produce runner-consumable state fixtures
+without rewriting live planning Markdown or inferring active batches from
+historical flat files.
+
 ### Planning-state migration bootstrap contract
 
 Problem: future bootstrap work needed an explicit boundary for which Layout v1

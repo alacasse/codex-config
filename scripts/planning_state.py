@@ -536,6 +536,26 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         help="Optional explicit JSON state fixture with obligation records.",
     )
+    bootstrap_parser = subparsers.add_parser(
+        "bootstrap-state",
+        help="Generate explicit planning-state JSON from Layout v1 Markdown.",
+    )
+    bootstrap_parser.add_argument("--root", type=Path, required=True)
+    bootstrap_parser.add_argument(
+        "--program",
+        help="Optional active program slug to include. Defaults to all active programs.",
+    )
+    bootstrap_parser.add_argument(
+        "--state-file",
+        type=Path,
+        help="Explicit JSON fixture target. Omit to print without writing.",
+    )
+    bootstrap_parser.add_argument(
+        "--format",
+        choices=("json",),
+        default="json",
+        help="Output format. Only json is currently supported.",
+    )
     allocate_parser = subparsers.add_parser(
         "allocate-batch",
         help="Compute canonical Layout v1 paths for a program batch.",
@@ -654,6 +674,15 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 sys.stdout.write(format_validation_report(state))
             return exit_code
+        if args.command == "bootstrap-state":
+            state = load_planning_state(args.root)
+            document = bootstrap_state(
+                state,
+                program_slug=args.program,
+                state_file=args.state_file,
+            )
+            sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
+            return 0
         if args.command == "allocate-batch":
             state = load_planning_state(args.root)
             document = allocate_batch_paths(
@@ -828,6 +857,35 @@ def register_artifact(
         "artifact": registration,
         "would_write_state_file": str(state_file) if state_file and not dry_run else None,
     }
+
+
+def bootstrap_state(
+    state: PlanningState,
+    *,
+    program_slug: str | None,
+    state_file: Path | None,
+) -> dict[str, Any]:
+    """Generate a v1 explicit state fixture from Layout v1 Markdown facts."""
+
+    messages = list(_bootstrap_blockers(state))
+    programs = _bootstrap_programs(state, program_slug)
+    document = {
+        "protocol": {
+            "name": STATE_FIXTURE_SCHEMA_NAME,
+            "version": SUPPORTED_SCHEMA_VERSION,
+        },
+        "root": _planning_root_prefix(state),
+        "bootstrap": _bootstrap_contract_object(),
+        "programs": [_bootstrap_program_object(state, program) for program in programs],
+        "obligations": [],
+    }
+    if messages:
+        raise ProtocolValidationError(_format_bootstrap_blockers(messages))
+    validate_state_fixture_object(document)
+    if state_file is not None:
+        _validate_bootstrap_state_target(state, state_file)
+        _write_state_fixture(state_file, document)
+    return document
 
 
 def select_batch(
@@ -2535,6 +2593,187 @@ def _fixture_program_artifact_keys(program: dict[str, Any]) -> set[tuple[str, st
     return keys
 
 
+def _bootstrap_programs(
+    state: PlanningState,
+    program_slug: str | None,
+) -> tuple[ProgramState, ...]:
+    if program_slug is None:
+        for program in state.programs:
+            _safe_path_segment(program.slug, "program slug")
+        return state.programs
+    _safe_path_segment(program_slug, "program slug")
+    return (_find_program(state, program_slug),)
+
+
+def _bootstrap_program_object(
+    state: PlanningState,
+    program: ProgramState,
+) -> dict[str, Any]:
+    artifacts = _bootstrap_artifacts(state, program)
+    queued_batch = _bootstrap_queued_batch_value(state, program)
+    return {
+        "slug": program.slug,
+        "current": _path_under_planning_root(state, program.current_path),
+        "ledger": program.ledger.value,
+        "selected_dispatch": program.selected_dispatch.value,
+        "active_runway": program.active_runway.value,
+        "queued_batch": queued_batch,
+        "latest_closeout": program.latest_closeout.value,
+        "artifacts": artifacts,
+    }
+
+
+def _bootstrap_artifacts(
+    state: PlanningState,
+    program: ProgramState,
+) -> list[dict[str, str]]:
+    artifacts: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for pointer, artifact_type in (
+        (program.selected_dispatch, "dispatch"),
+        (program.active_runway, "runway"),
+        (program.queued_batch, "queued-runway"),
+        (program.latest_closeout, "closeout"),
+    ):
+        if pointer.value is None:
+            continue
+        batch_id = (
+            _batch_id_from_queued_batch_value(pointer.value)
+            if artifact_type == "queued-runway"
+            else _batch_id_from_path(pointer.value)
+        )
+        if not batch_id:
+            continue
+        _append_existing_batch_local_artifacts(
+            state,
+            program=program,
+            batch_id=batch_id,
+            artifacts=artifacts,
+            seen=seen,
+        )
+        if pointer.exists is True and artifact_type != "queued-runway":
+            _append_bootstrap_artifact(
+                artifacts,
+                seen,
+                artifact_type=artifact_type,
+                batch_id=batch_id,
+                path=pointer.value,
+            )
+    return artifacts
+
+
+def _bootstrap_queued_batch_value(
+    state: PlanningState,
+    program: ProgramState,
+) -> str | None:
+    value = program.queued_batch.value
+    if value is None:
+        return None
+    batch_id = _batch_id_from_path(value)
+    if batch_id:
+        return value
+    _safe_path_segment(value, "queued batch id")
+    return _canonical_batch_paths(state, program, value)["runway"]
+
+
+def _batch_id_from_queued_batch_value(value: str) -> str:
+    batch_id = _batch_id_from_path(value)
+    if batch_id:
+        return batch_id
+    _safe_path_segment(value, "queued batch id")
+    return value
+
+
+def _append_existing_batch_local_artifacts(
+    state: PlanningState,
+    *,
+    program: ProgramState,
+    batch_id: str,
+    artifacts: list[dict[str, str]],
+    seen: set[tuple[str, str, str]],
+) -> None:
+    paths = _canonical_batch_paths(state, program, batch_id)
+    for artifact_type in BATCH_LOCAL_ARTIFACTS:
+        artifact_path = paths[artifact_type]
+        if _resolve_pointer(state.root.root_path, artifact_path).exists():
+            _append_bootstrap_artifact(
+                artifacts,
+                seen,
+                artifact_type=artifact_type,
+                batch_id=batch_id,
+                path=artifact_path,
+            )
+
+
+def _append_bootstrap_artifact(
+    artifacts: list[dict[str, str]],
+    seen: set[tuple[str, str, str]],
+    *,
+    artifact_type: str,
+    batch_id: str,
+    path: str,
+) -> None:
+    key = (artifact_type, batch_id, path)
+    if key in seen:
+        return
+    seen.add(key)
+    artifacts.append(
+        {
+            "batch_id": batch_id,
+            "path": path,
+            "type": artifact_type,
+        }
+    )
+
+
+def _bootstrap_contract_object() -> dict[str, Any]:
+    return {
+        "source": BOOTSTRAP_SOURCE_MARKDOWN_LAYOUT_V1,
+        "selection_precedence": BOOTSTRAP_SELECTION_PRECEDENCE,
+        "writes_markdown": False,
+        "markdown_owned": sorted(BOOTSTRAP_MARKDOWN_OWNED_FIELDS),
+        "json_state_fields": sorted(BOOTSTRAP_JSON_STATE_FIELDS),
+        "registered_artifact_types": sorted(BATCH_LOCAL_ARTIFACTS),
+        "compatibility_evidence": sorted(BOOTSTRAP_COMPATIBILITY_EVIDENCE_CODES),
+    }
+
+
+def _bootstrap_blockers(state: PlanningState) -> Iterable[ValidationMessage]:
+    for message in state.validation_messages:
+        if message.severity == "error":
+            yield message
+
+
+def _format_bootstrap_blockers(messages: list[ValidationMessage]) -> str:
+    details = ", ".join(f"{message.code}: {message.message}" for message in messages)
+    return f"bootstrap blocked by existing active-state contradictions: {details}"
+
+
+def _validate_bootstrap_state_target(state: PlanningState, target: Path) -> None:
+    if ".." in target.parts:
+        raise ProtocolValidationError("state-file target must not contain dot segments")
+    if target.suffix != ".json":
+        raise ProtocolValidationError("state-file target must use a .json suffix")
+    target_parent = target.parent
+    if not target_parent.exists():
+        raise ProtocolValidationError(f"state-file parent is missing: {target_parent}")
+    planning_root = state.root.root_path.resolve()
+    resolved_target = (target_parent / target.name).resolve()
+    if resolved_target == planning_root or planning_root in resolved_target.parents:
+        raise ProtocolValidationError(
+            "state-file target must not be inside the planning root"
+        )
+
+
+def _path_under_planning_root(state: PlanningState, path: Path) -> str:
+    root = state.root.root_path
+    try:
+        relative = path.relative_to(root)
+    except ValueError:
+        return path.as_posix()
+    return str(PurePosixPath(_planning_root_prefix(state), *relative.parts))
+
+
 def _fixture_artifact_keys(data: dict[str, Any]) -> set[tuple[str, str, str]]:
     keys: set[tuple[str, str, str]] = set()
     programs = data.get("programs", [])
@@ -2811,7 +3050,14 @@ def _validate_state_fixture_root(
 def _write_state_fixture(path: Path | None, data: dict[str, Any]) -> None:
     if path is None:
         raise ProtocolValidationError("state-file is required")
-    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if not path.parent.exists():
+        raise ProtocolValidationError(f"state-file parent is missing: {path.parent}")
+    temp_path = path.with_name(f".{path.name}.tmp")
+    temp_path.write_text(
+        json.dumps(data, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    temp_path.replace(path)
 
 
 def _write_receipt_fixture(path: Path | None, data: dict[str, Any]) -> None:

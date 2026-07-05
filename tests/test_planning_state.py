@@ -648,6 +648,208 @@ def test_bootstrap_contract_represents_graphify_compatibility_evidence(
     }
 
 
+def test_bootstrap_state_command_prints_valid_fixture_without_writing(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "bootstrap-state.json"
+
+    result = _run_bootstrap_state(root, "--program", "planning-state-tooling")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert not state_file.exists()
+    assert validate_state_fixture_object(payload) == payload
+    assert payload["protocol"] == {
+        "name": "planning-state-tool-state",
+        "version": 1,
+    }
+    assert payload["root"] == "docs/plans"
+    assert [program["slug"] for program in payload["programs"]] == [
+        "planning-state-tooling"
+    ]
+    assert payload["programs"][0]["queued_batch"] == (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-readonly-core/runway.md"
+    )
+    assert payload["programs"][0]["artifacts"] == [
+        {
+            "batch_id": "planning-state-readonly-core",
+            "path": (
+                "docs/plans/programs/planning-state-tooling/batches/"
+                "planning-state-readonly-core/runway.md"
+            ),
+            "type": "runway",
+        }
+    ]
+
+
+def test_bootstrap_state_command_writes_only_explicit_valid_target(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    batch_root = _write_transition_batch(root)
+    for filename in ("closeout.md", "completed-slices.md"):
+        (
+            root
+            / "programs"
+            / "planning-state-tooling"
+            / "batches"
+            / "planning-state-write-transitions"
+            / filename
+        ).write_text(f"# {filename}\n", encoding="utf-8")
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued=f"{batch_root}/runway.md",
+        latest=f"{batch_root}/closeout.md",
+    )
+    state_file = tmp_path / "bootstrap-state.json"
+
+    result = _run_bootstrap_state(
+        root,
+        "--program",
+        "planning-state-tooling",
+        "--state-file",
+        str(state_file),
+    )
+    payload = json.loads(result.stdout)
+    written = json.loads(state_file.read_text(encoding="utf-8"))
+
+    assert result.returncode == 0
+    assert written == payload
+    assert validate_state_fixture_object(written) == written
+    assert written["programs"][0]["artifacts"] == [
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": f"{batch_root}/dispatch.md",
+            "type": "dispatch",
+        },
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": f"{batch_root}/runway.md",
+            "type": "runway",
+        },
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": f"{batch_root}/closeout.md",
+            "type": "closeout",
+        },
+        {
+            "batch_id": "planning-state-write-transitions",
+            "path": f"{batch_root}/completed-slices.md",
+            "type": "completed-slices",
+        },
+    ]
+
+
+def test_bootstrap_state_command_expands_id_only_queued_batch_artifacts(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    batch_id = "planning-state-write-transitions"
+    batch_root = _write_transition_batch(root)
+    for filename in ("closeout.md", "completed-slices.md"):
+        (
+            root
+            / "programs"
+            / "planning-state-tooling"
+            / "batches"
+            / batch_id
+            / filename
+        ).write_text(f"# {filename}\n", encoding="utf-8")
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued=batch_id,
+        latest="None",
+    )
+
+    result = _run_bootstrap_state(root, "--program", "planning-state-tooling")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert validate_state_fixture_object(payload) == payload
+    assert payload["programs"][0]["queued_batch"] == f"{batch_root}/runway.md"
+    assert payload["programs"][0]["artifacts"] == [
+        {
+            "batch_id": batch_id,
+            "path": f"{batch_root}/dispatch.md",
+            "type": "dispatch",
+        },
+        {
+            "batch_id": batch_id,
+            "path": f"{batch_root}/runway.md",
+            "type": "runway",
+        },
+        {
+            "batch_id": batch_id,
+            "path": f"{batch_root}/closeout.md",
+            "type": "closeout",
+        },
+        {
+            "batch_id": batch_id,
+            "path": f"{batch_root}/completed-slices.md",
+            "type": "completed-slices",
+        },
+    ]
+
+
+def test_bootstrap_state_command_rejects_invalid_targets_and_slugs(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    inside_root = _run_bootstrap_state(
+        root,
+        "--state-file",
+        str(root / "state.json"),
+    )
+    escaped = _run_bootstrap_state(root, "--state-file", "../state.json")
+    wrong_suffix = _run_bootstrap_state(
+        root,
+        "--state-file",
+        str(tmp_path / "state.txt"),
+    )
+    malformed_slug = _run_bootstrap_state(root, "--program", "planning/state-tooling")
+
+    assert inside_root.returncode == 2
+    assert "state-file target must not be inside the planning root" in inside_root.stderr
+    assert escaped.returncode == 2
+    assert "state-file target must not contain dot segments" in escaped.stderr
+    assert wrong_suffix.returncode == 2
+    assert "state-file target must use a .json suffix" in wrong_suffix.stderr
+    assert malformed_slug.returncode == 2
+    assert "program slug must be a single path segment" in malformed_slug.stderr
+
+
+def test_bootstrap_state_command_rejects_active_state_contradictions(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    batch_root = _write_transition_batch(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        selected=f"{batch_root}/dispatch.md",
+        queued=f"{batch_root}/runway.md",
+        latest="None",
+    )
+    state_file = tmp_path / "bootstrap-state.json"
+
+    result = _run_bootstrap_state(root, "--state-file", str(state_file))
+
+    assert result.returncode == 2
+    assert "bootstrap blocked by existing active-state contradictions" in result.stderr
+    assert "multiple_active_artifacts" in result.stderr
+    assert not state_file.exists()
+
+
 def test_receipt_fixture_schema_rejects_malformed_objects() -> None:
     valid_receipt = {
         "protocol": {
@@ -3239,6 +3441,26 @@ def _run_render_closeout(
             f"{batch_root}/receipts/queue-batch.json",
             "--transition-receipt-summary",
             "queue-batch receipt carried obligation facts",
+            *extra_args,
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+
+def _run_bootstrap_state(
+    root: Path,
+    *extra_args: str,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "bootstrap-state",
+            "--root",
+            str(root),
             *extra_args,
         ],
         cwd=REPO_ROOT,
