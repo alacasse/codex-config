@@ -89,7 +89,7 @@
         "path": "docs/plans/programs/planning-state-tooling/batches/planning-state-sqlite-projection/completed-slices.md",
         "type": "completed-slices"
       },
-      "summary": "Initial Slice 5 runway_reviewer result was changes_requested: closeout, runway, and completed-slices needed actual validation and review evidence before closure. This fix loop records that evidence for coordinator final review."
+      "summary": "Slice 5 runway_reviewer result approved the corrected closeout evidence after earlier changes_requested findings were addressed."
     }
   ],
   "root": "docs/plans",
@@ -100,8 +100,8 @@
         "docs/plans/planning-state-tooling-plan.md documents rebuild/report workflow, optional target rules, delete safety, runner-artifact inputs, and report names",
         "Program CURRENT.md has no selected, active, or queued planning-state-tooling batch after this closeout",
         "Slice 5 documentation closeout validation passed with explicit temp state and projection artifacts",
-        "Slice 5 first review requested evidence corrections; this fix loop records them for coordinator final review",
-        "Slice 5 documentation closeout commit is this commit"
+        "Slice 5 first review requested evidence corrections; final review approved the corrected closeout evidence",
+        "Slice 5 documentation closeout commit is c8f5e12"
       ],
       "title": "Completed Slices"
     }
