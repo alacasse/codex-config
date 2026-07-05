@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `planning-state-migration-pilot`
+- Queued batch path or ID:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/runway.md`
 - Latest closeout path:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-closeout-contract/closeout.md`
 - Run artifact location: `None selected`
@@ -32,9 +33,9 @@
 
 Use `python scripts/planning_state.py current --root docs/plans` and
 `python scripts/planning_state.py validate --root docs/plans` before broad
-planning tree scans. When the user asks for the next planning-state specs
-batch, create one concrete `planning-state-migration-pilot` dispatch and
-runway for PST-5, then stop before implementation.
+planning tree scans. When the user asks to work on the next planning-state
+batch, execute the queued `planning-state-migration-pilot` runway, starting at
+the first pending active-ledger row.
 
 ## Stop Conditions
 

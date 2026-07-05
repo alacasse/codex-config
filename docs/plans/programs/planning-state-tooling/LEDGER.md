@@ -64,7 +64,7 @@ is planning-only; it does not implement code.
 | planning-state-readonly-core | PST-1 | Completed | Establishes active-state precedence, stale-context warnings, and the safe tool boundary before any state writes | None | Focused Python unit tests and dry-run CLI checks against codex-config fixtures and the Graphify planning-root fixture | `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-readonly-core/runway.md` |
 | planning-state-write-transitions | PST-2, PST-3, PST-7 | Completed | Moves allocation, registration, selection, obligations, and runner-facing interop facts into commands | planning-state-readonly-core | Focused state/CLI tests, interop fixture tests, and Markdown round-trip checks | `docs/plans/programs/planning-state-tooling/batches/planning-state-write-transitions/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-write-transitions/runway.md` |
 | planning-state-closeout-contract | PST-4 | Completed | Makes completed-batch evidence bounded and validateable | planning-state-write-transitions | Focused rendering/validation tests plus current/validate diagnostics | `docs/plans/programs/planning-state-tooling/batches/planning-state-closeout-contract/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-closeout-contract/runway.md` |
-| planning-state-migration-pilot | PST-5 | Queued | Bootstraps tool state from existing planning roots without hiding Markdown | planning-state-readonly-core; preferably planning-state-closeout-contract | Fixture migration tests and docs-only readback | TBD | TBD |
+| planning-state-migration-pilot | PST-5 | Queued | Bootstraps tool state from existing planning roots without hiding Markdown | planning-state-readonly-core; preferably planning-state-closeout-contract | Fixture migration tests and docs-only readback | `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/runway.md` |
 | planning-state-sqlite-projection | PST-6 | Deferred | Adds fast operational reporting after canonical files are stable | planning-state-write-transitions; migration pilot evidence | SQLite rebuild/report tests | TBD | TBD |
 
 ## Latest Batch Brief
@@ -85,12 +85,14 @@ Latest completed batch:
 ### Queued Batch
 
 - Batch: `planning-state-migration-pilot`
-- Dispatch: `TBD`
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/dispatch.md`
 - Status: `Queued`
-- Runway: `TBD`
-- Notes: Next work should create a concrete PST-5 migration-pilot dispatch and
-  spec. Do not start implementation until that batch is explicitly selected.
-  Keep PST-6 as deferred optional reporting work.
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-migration-pilot/runway.md`
+- Notes: Next work should execute the queued PST-5 migration-pilot runway from
+  the first pending active-ledger row. Keep PST-6 as deferred optional
+  reporting work.
 
 ## Recommended Work Order
 
