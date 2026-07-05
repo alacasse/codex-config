@@ -268,6 +268,62 @@ def test_current_json_protocol_reports_root_program_warning_and_exit_facts(
     assert all("severity" in message for message in payload["validation_messages"])
 
 
+def test_current_json_reports_projection_routing_policy_facts(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _append_root_project_policy(
+        root,
+        state_file_policy="generated-only",
+        projection_policy="generated-only",
+        projection_usage="expected",
+        projection_rebuild_authority="command",
+    )
+
+    result = _run_current_json(root)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["projection_routing"] == {
+        "status": "expected",
+        "projection_usage": "expected",
+        "projection_policy": "generated-only",
+        "projection_path": None,
+        "projection_rebuild_authority": "command",
+        "report_availability": "available",
+        "rebuild_availability": "available",
+        "target_requirement": "explicit caller-provided temporary target",
+        "next_action": (
+            "run rebuild-projection, then report-projection with matching arguments"
+        ),
+        "blockers": [],
+    }
+
+
+def test_validate_text_reports_disabled_projection_routing_blocker_without_failing(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _append_root_project_policy(
+        root,
+        state_file_policy="generated-only",
+        projection_policy="none",
+        projection_usage="disabled",
+        projection_rebuild_authority="no-rebuild",
+    )
+
+    result = _run_validate(root)
+
+    assert result.returncode == 0
+    assert "projection_routing:" in result.stdout
+    assert "status: disabled" in result.stdout
+    assert "report_availability: blocked" in result.stdout
+    assert "target_requirement: none" in result.stdout
+    assert "projection_reporting_disabled: projection_usage is disabled" in result.stdout
+
+
 def test_current_text_reports_declared_project_policy(tmp_path: Path) -> None:
     root = tmp_path / "docs" / "plans"
     _write_codex_config_fixture(root)
@@ -1423,6 +1479,38 @@ def test_rebuild_projection_rejects_directory_and_missing_parent_targets(
     assert "projection target parent is missing" in (
         json.loads(missing_parent_result.stdout)["blockers"][0]["message"]
     )
+
+
+def test_ignored_local_policy_allows_explicit_temp_projection_report_smoke(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _append_root_project_policy(
+        root,
+        state_file_policy="generated-only",
+        projection_policy="ignored-local",
+        projection_path="docs/plans/outputs/planning-state.sqlite",
+        projection_usage="optional",
+        projection_rebuild_authority="ask-first",
+    )
+    database = tmp_path / "projection.sqlite"
+
+    rebuild = _run_rebuild_projection(root, database)
+    report = _run_report_projection(
+        root,
+        database,
+        "pending-batches",
+        "--format",
+        "json",
+    )
+    payload = json.loads(report.stdout)
+
+    assert rebuild.returncode == 0
+    assert report.returncode == 0
+    assert payload["status"] == "passed"
+    assert payload["report"] == "pending-batches"
+    assert payload["blockers"] == []
 
 
 def test_report_projection_outputs_pending_batches_and_json_protocol(

@@ -439,6 +439,7 @@ def format_current_state(state: PlanningState) -> str:
     for program in state.programs:
         lines.extend(_format_program(program))
     lines.extend(_format_project_policy(state.project_policy))
+    lines.extend(_format_projection_routing(state.project_policy))
     lines.extend(_format_obligations(state.obligations))
     lines.extend(_format_warnings(state.warnings, state.validation_messages))
     lines.extend(_format_blockers(state.validation_messages))
@@ -478,6 +479,7 @@ def format_validation_report(state: PlanningState) -> str:
         lines.insert(-1, "    []")
     else:
         lines[-1:-1] = _format_project_policy_body(state.project_policy)
+    lines[-1:-1] = _format_projection_routing(state.project_policy)
     lines.extend(_format_validation_messages(errors))
     lines.append("  warnings:")
     lines.extend(_format_validation_warnings(warnings))
@@ -2507,6 +2509,26 @@ def _format_project_policy_body(policy: ProjectPolicy) -> list[str]:
     ]
 
 
+def _format_projection_routing(policy: ProjectPolicy | None) -> list[str]:
+    routing = _projection_routing_object(policy)
+    lines = [
+        "  projection_routing:",
+        f"    status: {routing['status']}",
+        f"    report_availability: {routing['report_availability']}",
+        f"    rebuild_availability: {routing['rebuild_availability']}",
+        f"    target_requirement: {routing['target_requirement']}",
+        f"    next_action: {routing['next_action']}",
+        "    blockers:",
+    ]
+    blockers = routing["blockers"]
+    if not blockers:
+        lines.append("      []")
+    else:
+        for blocker in blockers:
+            lines.append(f"      - {blocker['code']}: {blocker['message']}")
+    return lines
+
+
 def _format_obligations(obligations: tuple[ObligationRecord, ...]) -> list[str]:
     lines = ["  obligations:"]
     if not obligations:
@@ -2650,6 +2672,7 @@ def _protocol_document(
         },
         "programs": [_program_object(program) for program in state.programs],
         "project_policy": _project_policy_object(state.project_policy),
+        "projection_routing": _projection_routing_object(state.project_policy),
         "obligations": [
             _obligation_object(obligation) for obligation in state.obligations
         ],
@@ -2698,6 +2721,83 @@ def _project_policy_object(policy: ProjectPolicy | None) -> dict[str, Any] | Non
         "update_authority": policy.update_authority,
         "committed_projection_exception": policy.committed_projection_exception,
         "source_path": str(policy.source_path),
+    }
+
+
+def _projection_routing_object(policy: ProjectPolicy | None) -> dict[str, Any]:
+    if policy is None:
+        return {
+            "status": "unavailable",
+            "projection_usage": None,
+            "projection_policy": None,
+            "projection_path": None,
+            "projection_rebuild_authority": None,
+            "report_availability": "blocked",
+            "rebuild_availability": "blocked",
+            "target_requirement": "declare project policy or use an explicit /tmp proof target",
+            "next_action": "stop before projection reporting; use current/validate for active state",
+            "blockers": [
+                {
+                    "code": "projection_policy_missing",
+                    "message": (
+                        "projection reporting requires project policy or an "
+                        "explicit caller-provided temporary target"
+                    ),
+                }
+            ],
+        }
+
+    blockers: list[dict[str, str]] = []
+    report_availability = "available"
+    rebuild_availability = "available"
+    target_requirement = "explicit policy-compatible projection target"
+    next_action = "run rebuild-projection, then report-projection with matching arguments"
+
+    if policy.projection_usage == "disabled":
+        report_availability = "blocked"
+        rebuild_availability = "blocked"
+        target_requirement = "none"
+        next_action = "do not use projection reports for this planning root"
+        blockers.append(
+            {
+                "code": "projection_reporting_disabled",
+                "message": "projection_usage is disabled",
+            }
+        )
+    elif policy.projection_rebuild_authority == "no-rebuild":
+        rebuild_availability = "blocked"
+        next_action = "use a compatible existing projection or stop"
+        blockers.append(
+            {
+                "code": "projection_rebuild_disabled",
+                "message": "projection_rebuild_authority is no-rebuild",
+            }
+        )
+    elif policy.projection_rebuild_authority == "external-owner":
+        rebuild_availability = "external-owner"
+        target_requirement = "compatible external projection target"
+        next_action = "use an externally rebuilt projection or stop"
+    elif policy.projection_rebuild_authority == "ask-first":
+        rebuild_availability = "requires-authority"
+        next_action = "ask for rebuild authority before running rebuild-projection"
+
+    if policy.projection_usage != "disabled":
+        if policy.projection_policy in {"generated-only", "none"}:
+            target_requirement = "explicit caller-provided temporary target"
+        elif policy.projection_path is not None:
+            target_requirement = f"projection_path: {policy.projection_path}"
+
+    return {
+        "status": policy.projection_usage,
+        "projection_usage": policy.projection_usage,
+        "projection_policy": policy.projection_policy,
+        "projection_path": policy.projection_path,
+        "projection_rebuild_authority": policy.projection_rebuild_authority,
+        "report_availability": report_availability,
+        "rebuild_availability": rebuild_availability,
+        "target_requirement": target_requirement,
+        "next_action": next_action,
+        "blockers": blockers,
     }
 
 
