@@ -1327,6 +1327,473 @@ def test_rebuild_projection_rejects_directory_and_missing_parent_targets(
     )
 
 
+def test_report_projection_outputs_pending_batches_and_json_protocol(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "planning-state.json"
+    batch_root = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-readonly-core"
+    )
+    _write_state_fixture(
+        state_file,
+        queued_batch=f"{batch_root}/runway.md",
+        artifacts=[
+            {
+                "batch_id": "planning-state-readonly-core",
+                "path": f"{batch_root}/dispatch.md",
+                "type": "dispatch",
+            },
+            {
+                "batch_id": "planning-state-readonly-core",
+                "path": f"{batch_root}/runway.md",
+                "type": "runway",
+            },
+        ],
+    )
+    database = tmp_path / "projection.sqlite"
+    rebuild = _run_rebuild_projection(root, database, "--state-file", str(state_file))
+
+    text = _run_report_projection(
+        root,
+        database,
+        "pending-batches",
+        "--state-file",
+        str(state_file),
+    )
+    json_result = _run_report_projection(
+        root,
+        database,
+        "pending-batches",
+        "--state-file",
+        str(state_file),
+        "--format",
+        "json",
+    )
+    payload = json.loads(json_result.stdout)
+
+    assert rebuild.returncode == 0
+    assert text.returncode == 0
+    assert "status: passed" in text.stdout
+    assert "planning-state-readonly-core" in text.stdout
+    assert json_result.returncode == 0
+    assert payload["protocol"] == {
+        "name": "planning-state-projection-report",
+        "version": 1,
+        "command": "report-projection",
+    }
+    assert payload["report"] == "pending-batches"
+    assert payload["rows"][0]["fact_type"] == "pending_batch"
+    assert payload["blockers"] == []
+
+
+def test_report_projection_outputs_missing_closeout_evidence(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "planning-state.json"
+    batch_root = (
+        "docs/plans/programs/planning-state-tooling/batches/"
+        "planning-state-readonly-core"
+    )
+    _write_state_fixture(
+        state_file,
+        queued_batch=f"{batch_root}/runway.md",
+        artifacts=[
+            {
+                "batch_id": "planning-state-readonly-core",
+                "path": f"{batch_root}/runway.md",
+                "type": "runway",
+            }
+        ],
+        obligations=[
+            {
+                "id": "closeout-proof",
+                "owner": "slice-5",
+                "source_batch": "planning-state-readonly-core",
+                "target_batch": None,
+                "close_condition": "closeout evidence exists",
+                "status": "open",
+                "evidence_path": None,
+            }
+        ],
+    )
+    database = tmp_path / "projection.sqlite"
+    _run_rebuild_projection(root, database, "--state-file", str(state_file))
+
+    result = _run_report_projection(
+        root,
+        database,
+        "missing-closeout-evidence",
+        "--state-file",
+        str(state_file),
+        "--format",
+        "json",
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["rows"] == [
+        {
+            "close_condition": "closeout evidence exists",
+            "evidence_path": None,
+            "fact_type": "obligation",
+            "obligation_id": "closeout-proof",
+            "owner": "slice-5",
+            "source_batch": "planning-state-readonly-core",
+            "status": "open",
+            "target_batch": None,
+        }
+    ]
+
+
+def test_report_projection_outputs_batch_evidence_lookup(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "planning-state.json"
+    batch_id = "planning-state-write-transitions"
+    batch_root = f"docs/plans/programs/planning-state-tooling/batches/{batch_id}"
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest=f"{batch_root}/closeout.md",
+    )
+    state_file.write_text(
+        json.dumps(_closeout_state_fixture(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    closeout = _closeout_evidence_index()
+    closeout["commit_evidence"]["commits"] = ["abc1234", "def5678"]
+    _write_closeout_file(root, f"{batch_root}/closeout.md", closeout)
+    database = tmp_path / "projection.sqlite"
+    _run_rebuild_projection(root, database, "--state-file", str(state_file))
+
+    result = _run_report_projection(
+        root,
+        database,
+        "batch-evidence",
+        "--batch-id",
+        batch_id,
+        "--state-file",
+        str(state_file),
+        "--format",
+        "json",
+    )
+    rows = json.loads(result.stdout)["rows"]
+    by_type = {row["artifact_type"]: row for row in rows}
+    commit_rows = [row for row in rows if row["artifact_type"] == "commit"]
+    non_commit_types = [
+        row["artifact_type"] for row in rows if row["artifact_type"] != "commit"
+    ]
+
+    assert result.returncode == 0
+    assert by_type["dispatch"]["path"] == f"{batch_root}/dispatch.md"
+    assert by_type["runway"]["path"] == f"{batch_root}/runway.md"
+    assert by_type["completed-slices"]["path"] == f"{batch_root}/completed-slices.md"
+    assert by_type["receipt"]["path"] == f"{batch_root}/receipts/queue-batch.json"
+    assert by_type["closeout"]["path"] == f"{batch_root}/closeout.md"
+    assert [row["commit"] for row in commit_rows] == ["abc1234", "def5678"]
+    assert {row["status"] for row in commit_rows} == {"registered"}
+    assert non_commit_types.count("dispatch") == 1
+    assert non_commit_types.count("runway") == 1
+    assert non_commit_types.count("closeout") == 1
+    assert non_commit_types.count("completed-slices") == 1
+    assert non_commit_types.count("receipt") == 1
+
+
+def test_report_projection_synthesizes_one_missing_commit_evidence_row(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "planning-state.json"
+    batch_id = "planning-state-write-transitions"
+    batch_root = f"docs/plans/programs/planning-state-tooling/batches/{batch_id}"
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest=f"{batch_root}/closeout.md",
+    )
+    state_file.write_text(
+        json.dumps(_closeout_state_fixture(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    database = tmp_path / "projection.sqlite"
+    _run_rebuild_projection(root, database, "--state-file", str(state_file))
+
+    result = _run_report_projection(
+        root,
+        database,
+        "batch-evidence",
+        "--batch-id",
+        batch_id,
+        "--state-file",
+        str(state_file),
+        "--format",
+        "json",
+    )
+    rows = json.loads(result.stdout)["rows"]
+    commit_rows = [row for row in rows if row["artifact_type"] == "commit"]
+
+    assert result.returncode == 0
+    assert commit_rows == [
+        {
+            "artifact_type": "commit",
+            "batch_id": batch_id,
+            "fact_type": "batch_evidence_lookup",
+            "status": "missing",
+            "summary": "commit evidence is not projected",
+        }
+    ]
+
+
+def test_report_projection_blockers_are_stable(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(root, "planning-state-tooling", queued="None", latest="None")
+    state_file = tmp_path / "planning-state.json"
+    _write_state_fixture(state_file)
+    database = tmp_path / "projection.sqlite"
+    _run_rebuild_projection(root, database, "--state-file", str(state_file))
+
+    missing = _run_report_projection(
+        root,
+        tmp_path / "missing.sqlite",
+        "pending-batches",
+        "--format",
+        "json",
+    )
+    schema = tmp_path / "schema.sqlite"
+    with sqlite3.connect(schema) as connection:
+        connection.execute("create table unrelated (id integer)")
+    root_mismatch = tmp_path / "root-mismatch.sqlite"
+    root_mismatch.write_bytes(database.read_bytes())
+    with sqlite3.connect(root_mismatch) as connection:
+        connection.execute(
+            "update projection_metadata set value = ? where key = 'planning_root'",
+            (json.dumps("my-docs/plans"),),
+        )
+    current = root / "programs" / "planning-state-tooling" / "CURRENT.md"
+    current.write_text(current.read_text(encoding="utf-8") + "\n- Note: stale\n", encoding="utf-8")
+    stale = _run_report_projection(
+        root,
+        database,
+        "pending-batches",
+        "--state-file",
+        str(state_file),
+        "--format",
+        "json",
+    )
+
+    assert _first_blocker_code(missing) == "projection_database_missing"
+    assert _first_blocker_code(
+        _run_report_projection(root, schema, "pending-batches", "--format", "json")
+    ) == "projection_schema_missing"
+    assert _first_blocker_code(
+        _run_report_projection(
+            root,
+            root_mismatch,
+            "pending-batches",
+            "--format",
+            "json",
+        )
+    ) == "projection_database_root_mismatch"
+    assert _first_blocker_code(stale) == "projection_database_stale"
+
+
+def test_report_projection_detects_stale_closeout_commit_evidence(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "planning-state.json"
+    batch_id = "planning-state-write-transitions"
+    batch_root = f"docs/plans/programs/planning-state-tooling/batches/{batch_id}"
+    closeout_path = f"{batch_root}/closeout.md"
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest=closeout_path,
+    )
+    state_file.write_text(
+        json.dumps(_closeout_state_fixture(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    _write_closeout_file(root, closeout_path, _closeout_evidence_index())
+    database = tmp_path / "projection.sqlite"
+    rebuild = _run_rebuild_projection(root, database, "--state-file", str(state_file))
+    changed_closeout = _closeout_evidence_index()
+    changed_closeout["commit_evidence"]["commits"] = ["def5678"]
+    _write_closeout_file(root, closeout_path, changed_closeout)
+
+    stale = _run_report_projection(
+        root,
+        database,
+        "batch-evidence",
+        "--batch-id",
+        batch_id,
+        "--state-file",
+        str(state_file),
+        "--format",
+        "json",
+    )
+
+    assert rebuild.returncode == 0
+    assert any(
+        source["kind"] == f"closeout-evidence:{batch_id}"
+        for source in json.loads(rebuild.stdout)["metadata"]["source_identity"]["sources"]
+    )
+    assert _first_blocker_code(stale) == "projection_database_stale"
+
+
+def test_report_projection_program_scope_ignores_unrelated_closeout_changes(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    state_file = tmp_path / "planning-state.json"
+    batch_id = "planning-state-write-transitions"
+    batch_root = f"docs/plans/programs/planning-state-tooling/batches/{batch_id}"
+    closeout_path = f"{batch_root}/closeout.md"
+    unrelated_batch = "architecture-runner-closeout"
+    unrelated_root = f"docs/plans/programs/architecture-program-runner/batches/{unrelated_batch}"
+    unrelated_closeout = f"{unrelated_root}/closeout.md"
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest=closeout_path,
+    )
+    _write_program_current(
+        root,
+        "architecture-program-runner",
+        queued="None",
+        latest=unrelated_closeout,
+    )
+    state_fixture = _closeout_state_fixture()
+    state_fixture["programs"].append(
+        {
+            "slug": "architecture-program-runner",
+            "current": "docs/plans/programs/architecture-program-runner/CURRENT.md",
+            "ledger": "docs/plans/programs/architecture-program-runner/LEDGER.md",
+            "selected_dispatch": None,
+            "active_runway": None,
+            "queued_batch": None,
+            "latest_closeout": unrelated_closeout,
+            "artifacts": [
+                {
+                    "batch_id": unrelated_batch,
+                    "path": unrelated_closeout,
+                    "type": "closeout",
+                }
+            ],
+        }
+    )
+    state_file.write_text(
+        json.dumps(state_fixture, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    _write_closeout_file(root, closeout_path, _closeout_evidence_index())
+    unrelated_file = root / Path(unrelated_closeout).relative_to("docs/plans")
+    unrelated_file.parent.mkdir(parents=True)
+    unrelated_file.write_text("# Unrelated closeout\n", encoding="utf-8")
+    database = tmp_path / "projection.sqlite"
+    rebuild = _run_rebuild_projection(
+        root,
+        database,
+        "--program",
+        "planning-state-tooling",
+        "--state-file",
+        str(state_file),
+    )
+    unrelated_file.write_text("# Unrelated closeout\n\nchanged\n", encoding="utf-8")
+
+    report = _run_report_projection(
+        root,
+        database,
+        "batch-evidence",
+        "--batch-id",
+        batch_id,
+        "--program",
+        "planning-state-tooling",
+        "--state-file",
+        str(state_file),
+        "--format",
+        "json",
+    )
+    payload = json.loads(report.stdout)
+
+    assert rebuild.returncode == 0
+    source_kinds = {
+        source["kind"]
+        for source in json.loads(rebuild.stdout)["metadata"]["source_identity"]["sources"]
+    }
+    assert f"closeout-evidence:{batch_id}" in source_kinds
+    assert f"closeout-evidence:{unrelated_batch}" not in source_kinds
+    assert report.returncode == 0
+    assert payload["blockers"] == []
+
+
+def test_report_projection_rejects_state_file_and_policy_mismatches(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(root, "planning-state-tooling", queued="None", latest="None")
+    state_file = tmp_path / "planning-state.json"
+    other_state_file = tmp_path / "other-planning-state.json"
+    _write_state_fixture(state_file)
+    _write_state_fixture(other_state_file)
+    other_state_file.write_text(
+        other_state_file.read_text(encoding="utf-8") + "\n",
+        encoding="utf-8",
+    )
+    database = tmp_path / "projection.sqlite"
+    _run_rebuild_projection(root, database, "--state-file", str(state_file))
+    committed_database = root / "projection.sqlite"
+    committed_database.write_bytes(database.read_bytes())
+
+    no_state = _run_report_projection(
+        root,
+        database,
+        "pending-batches",
+        "--format",
+        "json",
+    )
+    other_state = _run_report_projection(
+        root,
+        database,
+        "pending-batches",
+        "--state-file",
+        str(other_state_file),
+        "--format",
+        "json",
+    )
+    policy = _run_report_projection(
+        root,
+        committed_database,
+        "pending-batches",
+        "--state-file",
+        str(state_file),
+        "--format",
+        "json",
+    )
+
+    assert _first_blocker_code(no_state) == "projection_state_file_mismatch"
+    assert _first_blocker_code(other_state) == "projection_state_file_mismatch"
+    assert _first_blocker_code(policy) == "projection_target_policy_conflict"
+
+
 def test_state_fixture_schema_accepts_project_policy_contract() -> None:
     valid_state = {
         "protocol": {
@@ -4891,6 +5358,38 @@ def _run_rebuild_projection(
         text=True,
         capture_output=True,
     )
+
+
+def _run_report_projection(
+    root: Path,
+    database: Path,
+    report: str,
+    *extra_args: str,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(PLANNING_STATE_SCRIPT),
+            "report-projection",
+            "--root",
+            str(root),
+            "--database",
+            str(database),
+            "--report",
+            report,
+            *extra_args,
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+
+def _first_blocker_code(result: subprocess.CompletedProcess[str]) -> str:
+    payload = json.loads(result.stdout)
+    assert result.returncode == 1
+    return payload["blockers"][0]["code"]
 
 
 def _read_projection_database(database: Path) -> dict[str, object]:

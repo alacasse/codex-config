@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Planning-state SQLite projection reports
+
+Problem: agents could rebuild a bounded SQLite projection but still had no
+compact command interface for common operational questions without touching SQL.
+
+Decision: add `planning_state report-projection` for pending batches, missing
+closeout evidence, and batch evidence lookup, with text and JSON output plus
+projection identity, schema, stale-source, state-file, and policy blockers.
+Closeout evidence indexes used for projected report facts are included in source
+identity, and batch evidence reports preserve each commit evidence row.
+
+Expected effect: agents can query generated projection databases safely while
+Markdown/JSON planning artifacts remain canonical and reports stay read-only.
+
 ### Planning-state SQLite projection rebuild
 
 Problem: agents needed a bounded SQLite projection but no command existed to

@@ -26,6 +26,7 @@ STATE_FIXTURE_SCHEMA_NAME = "planning-state-tool-state"
 RECEIPT_FIXTURE_SCHEMA_NAME = "planning-state-transition-receipt"
 CLOSEOUT_EVIDENCE_INDEX_SCHEMA_NAME = "planning-state-closeout-evidence-index"
 PROJECTION_SCHEMA_NAME = "planning-state-sqlite-projection"
+PROJECTION_REPORT_PROTOCOL_NAME = "planning-state-projection-report"
 SUPPORTED_SCHEMA_VERSION = 1
 PROJECTION_SCHEMA_VERSION = 1
 ARTIFACT_REGISTRATION_PROTOCOL_NAME = "planning-state-artifact-registration"
@@ -152,6 +153,9 @@ PROJECTION_REPORT_FACT_FIELDS = {
     "batch_id",
     "close_condition",
     "code",
+    "commit",
+    "commit_range_from",
+    "commit_range_to",
     "count",
     "duration_ms",
     "evidence_path",
@@ -831,6 +835,42 @@ def main(argv: list[str] | None = None) -> int:
         default="json",
         help="Output format. Only json is currently supported.",
     )
+    report_projection_parser = subparsers.add_parser(
+        "report-projection",
+        help="Read compact reports from a validated SQLite projection.",
+    )
+    report_projection_parser.add_argument("--root", type=Path, required=True)
+    report_projection_parser.add_argument(
+        "--database",
+        type=Path,
+        required=True,
+        help="Explicit SQLite projection to validate and report from.",
+    )
+    report_projection_parser.add_argument(
+        "--report",
+        choices=("pending-batches", "missing-closeout-evidence", "batch-evidence"),
+        required=True,
+        help="Projection report kind to emit.",
+    )
+    report_projection_parser.add_argument(
+        "--state-file",
+        type=Path,
+        help="Optional explicit JSON state fixture used when the projection was rebuilt.",
+    )
+    report_projection_parser.add_argument(
+        "--program",
+        help="Optional active program slug to validate/report. Must match rebuild scope.",
+    )
+    report_projection_parser.add_argument(
+        "--batch-id",
+        help="Batch id for --report batch-evidence.",
+    )
+    report_projection_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Output format. Defaults to compact text for agent workflows.",
+    )
     allocate_parser = subparsers.add_parser(
         "allocate-batch",
         help="Compute canonical Layout v1 paths for a program batch.",
@@ -981,6 +1021,24 @@ def main(argv: list[str] | None = None) -> int:
             )
             sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
             return 0 if document["status"] == "rebuilt" else 1
+        if args.command == "report-projection":
+            state = load_planning_state(
+                args.root,
+                args.state_file,
+            )
+            document = report_projection(
+                state,
+                database=args.database,
+                report_kind=args.report,
+                state_file=args.state_file,
+                program_slug=args.program,
+                batch_id=args.batch_id,
+            )
+            if args.format == "json":
+                sys.stdout.write(json.dumps(document, indent=2, sort_keys=True) + "\n")
+            else:
+                sys.stdout.write(_format_projection_report(document))
+            return int(document["exit_code"])
         if args.command == "allocate-batch":
             state = load_planning_state(args.root)
             document = allocate_batch_paths(
@@ -1147,6 +1205,93 @@ def rebuild_projection(
         blockers=[],
         projection=projection,
     )
+
+
+def report_projection(
+    state: PlanningState,
+    *,
+    database: Path,
+    report_kind: str,
+    state_file: Path | None,
+    program_slug: str | None,
+    batch_id: str | None,
+) -> dict[str, Any]:
+    """Read a compact report from a validated SQLite projection."""
+
+    if report_kind == "batch-evidence" and not batch_id:
+        raise ProtocolValidationError("--batch-id is required for batch-evidence")
+    if report_kind != "batch-evidence" and batch_id:
+        raise ProtocolValidationError("--batch-id is only supported for batch-evidence")
+    state_fixture = (
+        _load_state_fixture(
+            state_file,
+            expected_root=_planning_root_prefix(state),
+            allow_malformed_project_policy=True,
+        )
+        if state_file is not None
+        else None
+    )
+    programs = _bootstrap_programs(state, program_slug)
+    blockers = list(
+        _projection_report_blockers(
+            state,
+            database=database,
+            state_file=state_file,
+            state_fixture=state_fixture,
+            programs=programs,
+        )
+    )
+    metadata: dict[str, Any] | None = None
+    facts: list[dict[str, Any]] = []
+    if not blockers:
+        try:
+            metadata, facts = _read_projection_database(database)
+        except ProtocolValidationError as error:
+            blockers.append(
+                ValidationMessage(
+                    "error",
+                    "projection_schema_missing",
+                    str(error),
+                    database,
+                )
+            )
+        if metadata is not None:
+            blockers.extend(
+                _projection_identity_blockers(
+                    state,
+                    metadata=metadata,
+                    state_file=state_file,
+                    programs=programs,
+                    state_fixture=state_fixture,
+                )
+            )
+    rows = (
+        []
+        if blockers
+        else _projection_report_rows(facts, report_kind=report_kind, batch_id=batch_id)
+    )
+    status = "blocked" if blockers else "passed"
+    return {
+        "protocol": {
+            "name": PROJECTION_REPORT_PROTOCOL_NAME,
+            "version": PROJECTION_SCHEMA_VERSION,
+            "command": "report-projection",
+        },
+        "status": status,
+        "exit_code": 0 if status == "passed" else 1,
+        "root": _planning_root_prefix(state),
+        "database": str(database),
+        "report": report_kind,
+        "batch_id": batch_id,
+        "metadata": metadata,
+        "rows": rows,
+        "warnings": [
+            _validation_message_object(message)
+            for message in state.validation_messages
+            if message.severity == "warning"
+        ],
+        "blockers": [_validation_message_object(message) for message in blockers],
+    }
 
 
 def register_artifact(
@@ -3622,7 +3767,11 @@ def _projection_document(
     metadata = {
         "schema_version": PROJECTION_SCHEMA_VERSION,
         "planning_root": _planning_root_prefix(state),
-        "source_identity": _projection_source_identity(state, programs),
+        "source_identity": _projection_source_identity(
+            state,
+            programs,
+            state_fixture=state_fixture,
+        ),
         "state_fixture_identity": (
             _projection_source_artifact("state-fixture", state_file)
             if state_file is not None
@@ -3655,6 +3804,8 @@ def _projection_document(
 def _projection_source_identity(
     state: PlanningState,
     programs: tuple[ProgramState, ...],
+    *,
+    state_fixture: dict[str, Any] | None,
 ) -> dict[str, Any]:
     sources = [_projection_source_artifact("root-current", state.root.current_path)]
     for program in programs:
@@ -3671,10 +3822,55 @@ def _projection_source_identity(
                     _resolve_pointer(state.root.root_path, program.ledger.value),
                 )
             )
+    sources.extend(
+        _projection_closeout_source_artifacts(
+            state,
+            state_fixture,
+            programs=programs,
+        )
+    )
     return {
         "planning_root": _planning_root_prefix(state),
         "sources": sorted(sources, key=lambda source: (source["kind"], source["path"])),
     }
+
+
+def _projection_closeout_source_artifacts(
+    state: PlanningState,
+    state_fixture: dict[str, Any] | None,
+    *,
+    programs: tuple[ProgramState, ...],
+) -> list[dict[str, Any]]:
+    if state_fixture is None:
+        return []
+    included_programs = {program.slug for program in programs}
+    sources: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for program in state_fixture.get("programs", []):
+        if not isinstance(program, dict):
+            continue
+        if program.get("slug") not in included_programs:
+            continue
+        for artifact in program.get("artifacts", []):
+            if not isinstance(artifact, dict) or artifact.get("type") != "closeout":
+                continue
+            batch_id = artifact.get("batch_id")
+            path = artifact.get("path")
+            if not isinstance(batch_id, str) or not isinstance(path, str):
+                continue
+            if path in seen:
+                continue
+            closeout_path = _resolve_pointer(state.root.root_path, path)
+            if not closeout_path.is_file():
+                continue
+            sources.append(
+                _projection_source_artifact(
+                    f"closeout-evidence:{batch_id}",
+                    closeout_path,
+                )
+            )
+            seen.add(path)
+    return sources
 
 
 def _projection_source_artifact(kind: str, path: Path | None) -> dict[str, Any]:
@@ -3727,7 +3923,12 @@ def _projection_report_facts(
     for program in programs:
         _append_program_projection_facts(state, facts, program)
     if state_fixture is not None:
-        _append_fixture_projection_facts(facts, state_fixture, programs=programs)
+        _append_fixture_projection_facts(
+            state,
+            facts,
+            state_fixture,
+            programs=programs,
+        )
     included_batches = _projection_program_batch_ids(programs)
     for obligation in state.obligations:
         if obligation.source_batch in included_batches or (
@@ -3820,6 +4021,7 @@ def _append_program_projection_facts(
 
 
 def _append_fixture_projection_facts(
+    state: PlanningState,
     facts: list[dict[str, Any]],
     state_fixture: dict[str, Any],
     *,
@@ -3871,6 +4073,19 @@ def _append_fixture_projection_facts(
                         "summary": "registered closeout evidence pointer",
                     }
                 )
+                closeout = _projection_closeout_evidence_index(
+                    state,
+                    state_fixture=state_fixture,
+                    closeout_path=path,
+                )
+                if closeout is not None:
+                    facts.extend(
+                        _projection_commit_evidence_facts(
+                            closeout,
+                            program=slug,
+                            batch_id=batch_id,
+                        )
+                    )
             if artifact_type == "receipt":
                 facts.append(
                     {
@@ -3898,6 +4113,69 @@ def _append_fixture_projection_facts(
                 "evidence_path": obligation.get("evidence_path"),
             }
         )
+
+
+def _projection_closeout_evidence_index(
+    state: PlanningState,
+    *,
+    state_fixture: dict[str, Any],
+    closeout_path: str,
+) -> dict[str, Any] | None:
+    messages: list[dict[str, str | None]] = []
+    closeout = _read_closeout_evidence_index(state, closeout_path, messages)
+    if closeout is None:
+        return None
+    try:
+        return validate_closeout_evidence_index_object(
+            closeout,
+            state_fixture=state_fixture,
+        )
+    except ProtocolValidationError:
+        return None
+
+
+def _projection_commit_evidence_facts(
+    closeout: dict[str, Any],
+    *,
+    program: str,
+    batch_id: str,
+) -> list[dict[str, Any]]:
+    commit_evidence = closeout.get("commit_evidence")
+    if not isinstance(commit_evidence, dict):
+        return []
+    commits = commit_evidence.get("commits")
+    if isinstance(commits, list):
+        return [
+            {
+                "fact_type": "batch_evidence_lookup",
+                "program": program,
+                "batch_id": batch_id,
+                "artifact_type": "commit",
+                "commit": commit,
+                "status": "registered",
+                "summary": "commit evidence pointer",
+            }
+            for commit in commits
+            if isinstance(commit, str)
+        ]
+    commit_range = commit_evidence.get("range")
+    if isinstance(commit_range, dict):
+        range_from = commit_range.get("from")
+        range_to = commit_range.get("to")
+        if isinstance(range_from, str) and isinstance(range_to, str):
+            return [
+                {
+                    "fact_type": "batch_evidence_lookup",
+                    "program": program,
+                    "batch_id": batch_id,
+                    "artifact_type": "commit",
+                    "commit_range_from": range_from,
+                    "commit_range_to": range_to,
+                    "status": "registered",
+                    "summary": "commit range evidence pointer",
+                }
+            ]
+    return []
 
 
 def _projection_program_batch_ids(programs: tuple[ProgramState, ...]) -> set[str]:
@@ -4151,6 +4429,304 @@ def _projection_row_counts(projection: dict[str, Any]) -> dict[str, int]:
         "source_artifacts": source_artifact_count,
         "report_facts": len(projection["report_facts"]),
     }
+
+
+def _projection_report_blockers(
+    state: PlanningState,
+    *,
+    database: Path,
+    state_file: Path | None,
+    state_fixture: dict[str, Any] | None,
+    programs: tuple[ProgramState, ...],
+) -> Iterable[ValidationMessage]:
+    for message in state.validation_messages:
+        if message.severity == "error":
+            yield message
+    try:
+        _validate_projection_database_target(
+            state,
+            database,
+            state_fixture=state_fixture,
+        )
+    except ProtocolValidationError as error:
+        yield ValidationMessage(
+            "error",
+            "projection_target_policy_conflict",
+            str(error),
+            database,
+        )
+    if not database.exists():
+        yield ValidationMessage(
+            "error",
+            "projection_database_missing",
+            f"projection database is missing: {database}",
+            database,
+        )
+        return
+    if not database.is_file():
+        yield ValidationMessage(
+            "error",
+            "projection_database_not_file",
+            f"projection database is not a file: {database}",
+            database,
+        )
+    if state_file is not None:
+        expected = _projection_source_artifact("state-fixture", state_file)
+        if state_fixture is None or expected["path"] != str(state_file):
+            yield ValidationMessage(
+                "error",
+                "projection_state_file_mismatch",
+                "state-file identity could not be validated",
+                state_file,
+            )
+    for program in programs:
+        _safe_path_segment(program.slug, "program slug")
+
+
+def _read_projection_database(database: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    try:
+        with sqlite3.connect(f"file:{database}?mode=ro", uri=True) as connection:
+            metadata_rows = list(
+                connection.execute(
+                    "select key, value from projection_metadata order by key"
+                )
+            )
+            fact_rows = list(
+                connection.execute(
+                    "select payload_json from report_facts order by id"
+                )
+            )
+    except sqlite3.Error as error:
+        raise ProtocolValidationError(
+            f"projection database is missing required schema: {database}"
+        ) from error
+    if not metadata_rows:
+        raise ProtocolValidationError(
+            f"projection database is missing required metadata: {database}"
+        )
+    try:
+        metadata = {key: json.loads(value) for key, value in metadata_rows}
+        facts = [json.loads(row[0]) for row in fact_rows]
+    except (TypeError, json.JSONDecodeError) as error:
+        raise ProtocolValidationError(
+            f"projection database contains invalid JSON metadata: {database}"
+        ) from error
+    if metadata.get("schema_version") != PROJECTION_SCHEMA_VERSION:
+        raise ProtocolValidationError(
+            "projection database schema version is missing or unsupported"
+        )
+    tables = metadata.get("tables")
+    if set(tables or []) != PROJECTION_SCHEMA_TABLES:
+        raise ProtocolValidationError("projection database metadata tables are incomplete")
+    for index, fact in enumerate(facts):
+        _validate_projection_report_fact(
+            _require_object(fact, f"report_facts[{index}]"),
+            f"report_facts[{index}]",
+        )
+    return metadata, facts
+
+
+def _projection_identity_blockers(
+    state: PlanningState,
+    *,
+    metadata: dict[str, Any],
+    state_file: Path | None,
+    programs: tuple[ProgramState, ...],
+    state_fixture: dict[str, Any] | None,
+) -> Iterable[ValidationMessage]:
+    expected_root = _planning_root_prefix(state)
+    if metadata.get("planning_root") != expected_root:
+        yield ValidationMessage(
+            "error",
+            "projection_database_root_mismatch",
+            f"projection root {metadata.get('planning_root')!r} does not match {expected_root!r}",
+            None,
+        )
+        return
+    expected_source_identity = _projection_source_identity(
+        state,
+        programs,
+        state_fixture=state_fixture,
+    )
+    yield from projection_staleness_blockers(metadata, expected_source_identity)
+    actual_state_fixture = metadata.get("state_fixture_identity")
+    if state_file is None:
+        if actual_state_fixture is not None:
+            yield ValidationMessage(
+                "error",
+                "projection_state_file_mismatch",
+                "projection was built with a state-file; pass the same --state-file",
+                None,
+            )
+        return
+    expected_state_fixture = _projection_source_artifact("state-fixture", state_file)
+    if actual_state_fixture != expected_state_fixture:
+        yield ValidationMessage(
+            "error",
+            "projection_state_file_mismatch",
+            "projection state-file identity does not match requested state-file",
+            state_file,
+        )
+
+
+def _projection_report_rows(
+    facts: list[dict[str, Any]],
+    *,
+    report_kind: str,
+    batch_id: str | None,
+) -> list[dict[str, Any]]:
+    if report_kind == "pending-batches":
+        rows = [fact for fact in facts if fact.get("fact_type") == "pending_batch"]
+    elif report_kind == "missing-closeout-evidence":
+        rows = [
+            fact
+            for fact in facts
+            if (
+                fact.get("fact_type") == "closeout_evidence_status"
+                and fact.get("status") in {"missing", "open"}
+            )
+            or (
+                fact.get("fact_type") == "obligation"
+                and fact.get("status") != "closed"
+                and not fact.get("evidence_path")
+            )
+        ]
+    elif report_kind == "batch-evidence":
+        rows = [
+            fact
+            for fact in facts
+            if fact.get("fact_type") in {"artifact_pointer", "batch_evidence_lookup"}
+            and fact.get("batch_id") == batch_id
+        ]
+        rows = _batch_evidence_rows(rows, batch_id=batch_id or "")
+    else:
+        raise ProtocolValidationError(f"unsupported projection report: {report_kind}")
+    unique_rows = list({json.dumps(row, sort_keys=True): row for row in rows}.values())
+    return sorted(
+        unique_rows,
+        key=lambda row: (
+            str(row.get("program") or ""),
+            str(row.get("batch_id") or ""),
+            str(row.get("artifact_type") or ""),
+            str(row.get("path") or ""),
+            str(row.get("commit") or ""),
+            str(row.get("commit_range_from") or ""),
+            str(row.get("commit_range_to") or ""),
+            str(row.get("obligation_id") or ""),
+        ),
+    )
+
+
+def _batch_evidence_rows(
+    rows: list[dict[str, Any]],
+    *,
+    batch_id: str,
+) -> list[dict[str, Any]]:
+    evidence_rows = [_batch_evidence_row(row) for row in rows]
+    evidence_rows = _dedupe_batch_evidence_rows(evidence_rows)
+    present_types = {
+        str(row.get("artifact_type"))
+        for row in evidence_rows
+        if row.get("artifact_type") is not None
+    }
+    complete_rows = list(evidence_rows)
+    for artifact_type in (
+        "dispatch",
+        "runway",
+        "closeout",
+        "completed-slices",
+        "receipt",
+        "commit",
+    ):
+        if artifact_type not in present_types:
+            complete_rows.append(
+                {
+                    "fact_type": "batch_evidence_lookup",
+                    "batch_id": batch_id,
+                    "artifact_type": artifact_type,
+                    "status": "missing",
+                    "summary": f"{artifact_type} evidence is not projected",
+                }
+            )
+    return complete_rows
+
+
+def _dedupe_batch_evidence_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    deduped: dict[str, dict[str, Any]] = {}
+    result: list[dict[str, Any]] = []
+    for row in rows:
+        artifact_type = row.get("artifact_type")
+        if artifact_type == "commit":
+            result.append(row)
+            continue
+        key = str(artifact_type)
+        existing = deduped.get(key)
+        if existing is None or _batch_evidence_preference(row) > _batch_evidence_preference(existing):
+            deduped[key] = row
+    result.extend(deduped.values())
+    return result
+
+
+def _batch_evidence_preference(row: dict[str, Any]) -> tuple[int, int]:
+    return (
+        1 if row.get("fact_type") == "batch_evidence_lookup" else 0,
+        1 if row.get("status") != "missing" else 0,
+    )
+
+
+def _batch_evidence_row(row: dict[str, Any]) -> dict[str, Any]:
+    artifact_type = row.get("artifact_type")
+    normalized_type = {
+        "active_runway": "runway",
+        "latest_closeout": "closeout",
+        "queued_batch": "runway",
+        "selected_dispatch": "dispatch",
+    }.get(str(artifact_type), artifact_type)
+    if normalized_type == artifact_type:
+        return row
+    return {
+        **row,
+        "fact_type": "batch_evidence_lookup",
+        "artifact_type": normalized_type,
+        "summary": f"{artifact_type} pointer",
+    }
+
+
+def _format_projection_report(document: dict[str, Any]) -> str:
+    lines = [
+        f"status: {document['status']}",
+        f"root: {document['root']}",
+        f"report: {document['report']}",
+    ]
+    if document.get("batch_id") is not None:
+        lines.append(f"batch_id: {document['batch_id']}")
+    blockers = document.get("blockers") or []
+    if blockers:
+        lines.append("blockers:")
+        for blocker in blockers:
+            lines.append(f"  - {blocker['code']}: {blocker['message']}")
+        return "\n".join(lines) + "\n"
+    rows = document.get("rows") or []
+    lines.append(f"rows: {len(rows)}")
+    for row in rows:
+        parts = [
+            str(row.get("program") or "-"),
+            str(row.get("batch_id") or "-"),
+            str(row.get("artifact_type") or row.get("fact_type") or "-"),
+            str(row.get("status") or "-"),
+        ]
+        if row.get("path"):
+            parts.append(str(row["path"]))
+        elif row.get("commit"):
+            parts.append(str(row["commit"]))
+        elif row.get("commit_range_from") and row.get("commit_range_to"):
+            parts.append(f"{row['commit_range_from']}..{row['commit_range_to']}")
+        elif row.get("evidence_path"):
+            parts.append(str(row["evidence_path"]))
+        elif row.get("summary"):
+            parts.append(str(row["summary"]))
+        lines.append("  - " + " | ".join(parts))
+    return "\n".join(lines) + "\n"
 
 
 def _effective_project_policy(
