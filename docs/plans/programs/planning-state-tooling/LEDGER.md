@@ -46,7 +46,8 @@ is planning-only; it does not implement code.
 - Run artifact root: not selected for this planning-only ledger.
 - Output root: not selected for this planning-only ledger.
 - Active closeout batch directory: `None`
-- Queued batch directory: `None`
+- Queued batch directory:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/`
 - Latest completed batch directory:
   `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/`
 
@@ -72,7 +73,7 @@ is planning-only; it does not implement code.
 | PST-16. Consumer skills consume active-state diagnostics but not projection reports | Closed | `planning-state-projection-consumers` | Use projection-report routing in Batch Runway, Architecture Program Runway, and Legacy Removal for supported history/reporting questions | Closed by the projection-consumers batch. Batch Runway, Architecture Program Runway, and Legacy Removal now route supported history/reporting questions through policy-compatible projection reports before broad historical scans while preserving consumer-owned decisions. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/closeout.md`. |
 | PST-17. Tests protect projection commands but not workflow obligations | Closed | `planning-state-projection-consumers` | Keep focused consumer-obligation tests aligned with workflow-skill behavior changes | Closed by `tests/test_planning_state_consumer_projection_routing.py`, manifest checks, final validation, and clean review. The regression surface protects the consumer-facing projection-report routing obligation and dependency assumptions. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/closeout.md`. |
 | PST-18. Batch Runway create-spec writes session-local mode into durable overrides | Closed | `batch-runway-create-spec-output-contract` | Use the closed batch closeout as the durable evidence pointer | Closed by Batch Runway create-spec guidance, focused regression coverage, bounded active/future runway scan evidence, and pointer-first closeout. Remaining scan matches are closed historical runway specs intentionally retained as evidence, not active/future artifacts or reusable guidance. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/closeout.md`. |
-| PST-19. Findings lack a Pending status for cut or active batch work | Open | None | Define and enforce a `Pending` finding status for work that has been cut into a queued or active batch but is not closed | `Open` currently covers both uncut intake and findings already assigned to a dispatch/runway, which invites late source-ledger scope edits after a batch is materialized. `Pending` should mean the finding is controlled by the batch artifacts until closeout, supersession, explicit abandonment, or an explicit amendment. |
+| PST-19. Findings lack a Pending status for cut or active batch work | Pending | `planning-state-finding-pending-status` | Execute the queued runway and close only after the reusable finding lifecycle vocabulary, update guidance, and regression coverage land | The finding is now controlled by the queued dispatch/runway. Do not widen PST-19 through source-ledger edits; use the queued batch, an explicit amendment, or a follow-up finding. |
 
 ## Batch Queue
 
@@ -89,13 +90,23 @@ is planning-only; it does not implement code.
 | planning-state-projection-routing | PST-14, PST-15 | Completed | Deepens the Planning State Diagnostic interface so declared projections become useful for history/reporting without becoming canonical active state | planning-state-consumer-integration | Skill/reference tests, project-policy parsing checks, current/validate/projection smoke tests against generated-only and ignored-local fixtures, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/runway.md` |
 | planning-state-projection-consumers | PST-16, PST-17 | Completed | Wires consumer skills and regression checks so projection reports are tried before broad historical scans when policy permits | planning-state-projection-routing | Skill wording tests, manifest/dependency checks, focused grep checks across consumer skills, current/validate diagnostics, review evidence, closeout evidence, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/runway.md` |
 | batch-runway-create-spec-output-contract | PST-18 | Completed | Keeps session-local create-spec history out of durable Batch Runway execution contracts | planning-state-projection-consumers closed, unless explicitly amended into the active runway | Batch Runway skill/reference wording tests, regression check for durable `Overrides`, focused grep across active templates/specs, current/validate diagnostics, closeout evidence, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md` |
-| planning-state-finding-pending-status | PST-19 | Candidate | Makes cut-but-not-closed finding state explicit so source ledgers stop being edited as raw intake once a dispatch/runway exists | planning-state-projection-consumers closed, unless selected as an explicit active-runway amendment | Ledger/template wording checks, optional planning-state validation if status vocabulary becomes machine-checked, current/validate diagnostics, and `git diff --check` | None | None |
+| planning-state-finding-pending-status | PST-19 | Queued | Makes cut-but-not-closed finding state explicit so source ledgers stop being edited as raw intake once a dispatch/runway exists | `batch-runway-create-spec-output-contract` closed PST-18; baseline `current` and `validate` diagnostics pass | Workflow-skill wording tests, ledger/template status-vocabulary checks, current/validate diagnostics, manifest/changelog alignment when workflow behavior changes, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md` |
 
 ## Queued Batch Brief
 
-Queued batch: `None`.
+Queued batch:
+`docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`.
 
-PST-19 remains the next candidate, but no dispatch or runway is selected for it.
+The queued batch covers PST-19. Keep selected dispatch and active runway as
+`None` until execution starts.
+
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/dispatch.md`
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`
+- Status: `Queued`.
+- Goal: define and enforce a Pending finding lifecycle status for cut or active
+  batch work without making Planning State commands own finding semantics.
 
 ## Latest Batch Brief
 
@@ -133,10 +144,12 @@ Previous completed batch:
 
 ## Recommended Work Order
 
-1. No planning-state-tooling batch is currently queued.
-2. PST-19 remains the next candidate if the user asks to create the next
-   planning-state-tooling batch.
-3. Do not select PST-19 unless explicitly asked to create/select the next batch.
+1. `planning-state-finding-pending-status` is queued for PST-19.
+2. If the user asks to work on the planning-state-tooling batch, execute the
+   queued runway at
+   `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`.
+3. Do not select another planning-state-tooling batch while this runway is
+   queued.
 4. For projection reporting, rebuild only to explicit temp or
    policy-compatible database targets and keep Markdown/JSON canonical.
 

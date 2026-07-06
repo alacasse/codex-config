@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`
 - Latest closeout path:
   `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/closeout.md`
 - Run artifact location: `None selected`
@@ -45,15 +46,21 @@
 
 ## Queued Batch
 
-- Batch: `None`.
-- Notes: PST-19 Pending-status modeling remains the next candidate, but it is
-  not selected or queued.
+- Batch: `planning-state-finding-pending-status`.
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/dispatch.md`
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`
+- Covers: PST-19.
+- Notes: queued for a future Batch Runway execution session. Keep selected
+  dispatch and active runway as `None` while the batch is only queued.
 
 ## Next Safe Action
 
-No planning-state-tooling batch is currently queued. PST-19 remains the next
-candidate; create a new dispatch/runway for it only when explicitly asked to
-select the next planning-state-tooling batch.
+Execute the queued
+`docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`
+only when explicitly asked to work on the planning-state-tooling batch. Do not
+select another planning-state-tooling batch while this runway is queued.
 
 ## Stop Conditions
 
