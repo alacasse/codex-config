@@ -128,7 +128,7 @@ Dirty-file constraints:
 |---|---|---|---|---|---|---|
 | 1. Tighten create-spec override guidance | Closed | this commit | `current`/`validate` passed with existing redirect warnings only; `git diff --check` passed; contract test is intentionally added in Slice 2 | `runway_reviewer` clean | Contract regression test fails before it passes | Create-spec guidance now keeps session-local mode and artifact-creation history out of durable execution `Overrides` and names baseline, assumptions, purpose, handoff notes, or active-state prose as the correct location. |
 | 2. Add regression and metadata alignment | Closed | this commit | Contract tests passed 3; manifest tests passed 6; `current`/`validate` passed with existing redirect warnings only; `git diff --check` passed | `runway_reviewer` clean after regex fix | Active/future runway scan is bounded | Added focused regression coverage for create-spec `Overrides`, the PST-18 queued runway, and the exact forbidden `implementation starts later` reminder; aligned changelog and Batch Runway feature version. |
-| 3. Audit affected runways and close PST-18 | Pending |  |  |  | Final validation and closeout evidence are complete |  |
+| 3. Audit affected runways and close PST-18 | Closed | this commit | Contract tests passed 3; manifest tests passed 6; `current`/`validate` passed with existing redirect warnings only; bounded scan found only closed historical runway residue; `git diff --check` passed | `runway_reviewer` clean | Final validation and closeout evidence are complete | Queue cleared without selecting PST-19. |
 
 ## Orchestration Anomalies
 
@@ -140,6 +140,7 @@ orchestration_anomalies: []
 |---|---|---|---|
 | 1. Tighten create-spec override guidance | this commit | Batch Runway create-spec guidance now limits durable `Overrides` to future execution-contract deviations and directs session-local create-spec context to non-override prose. | Validation: `python scripts/planning_state.py current --root docs/plans`, `python scripts/planning_state.py validate --root docs/plans`, `git diff --check`; review: clean `runway_reviewer` result against the Slice 1 diff. |
 | 2. Add regression and metadata alignment | this commit | Added targeted tests for durable create-spec `Overrides`, including the PST-18 queued runway and the exact forbidden `implementation starts later` wording; bumped Batch Runway feature metadata and changelog. | Validation: `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`, `python -m pytest tests/test_codex_features_manifest.py -q`, `python scripts/planning_state.py current --root docs/plans`, `python scripts/planning_state.py validate --root docs/plans`, `git diff --check`; review: clean `runway_reviewer` result after required regex fix. |
+| 3. Audit affected runways and close PST-18 | this commit | Closed PST-18 with bounded scan evidence, no active/future or reusable-guidance violations, program queue cleanup, completed-slice archive, and pointer-first closeout. | Validation: contract tests, manifest tests, planning-state `current`/`validate`, bounded scan, `git diff --check`; review: clean `runway_reviewer` result against the Slice 3 closeout diff. |
 
 ## Slice 1. Tighten Create-Spec Override Guidance
 

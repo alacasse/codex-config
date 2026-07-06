@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -28,42 +27,33 @@
 
 ## Latest Completed Batch
 
-- Batch: `planning-state-projection-consumers`
-- Status: completed; PST-16 and PST-17 are closed with completed consumer
-  routing updates, focused regression coverage, final validation, clean review,
-  and pointer-first closeout evidence.
-- Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/dispatch.md`
-- Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/runway.md`
-- Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/closeout.md`
-- Completed slices:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/completed-slices.md`
-- Notes: Batch Runway, Architecture Program Runway, and Legacy Removal now route
-  supported history/reporting questions through policy-compatible projection
-  reports before broad historical scans while preserving their own semantic
-  decisions.
-
-## Queued Batch
-
 - Batch: `batch-runway-create-spec-output-contract`
-- Status: queued; covers PST-18 only.
+- Status: completed; PST-18 is closed with tightened Batch Runway create-spec
+  output guidance, focused regression coverage, bounded active/future runway
+  scan evidence, final validation pointers, and pointer-first closeout evidence.
 - Dispatch:
   `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/dispatch.md`
 - Runway:
   `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md`
-- Notes: This batch fixes the Batch Runway create-spec output contract so
-  session-local mode history does not appear in durable execution `Overrides`.
-  PST-19 Pending-status modeling remains a separate candidate.
+- Closeout:
+  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/closeout.md`
+- Completed slices:
+  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/completed-slices.md`
+- Notes: Batch Runway create-spec guidance and regression coverage now keep
+  session-local mode history out of durable execution `Overrides`. The bounded
+  scan left only closed historical runway residue unchanged by design.
+
+## Queued Batch
+
+- Batch: `None`.
+- Notes: PST-19 Pending-status modeling remains the next candidate, but it is
+  not selected or queued.
 
 ## Next Safe Action
 
-Execute the queued
-`docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md`
-batch if asked to work on the planning-state-tooling batch. Do not select
-another planning-state-tooling batch until this queued batch closes or is
-explicitly superseded.
+No planning-state-tooling batch is currently queued. PST-19 remains the next
+candidate; create a new dispatch/runway for it only when explicitly asked to
+select the next planning-state-tooling batch.
 
 ## Stop Conditions
 
