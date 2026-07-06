@@ -46,6 +46,8 @@ is planning-only; it does not implement code.
 - Run artifact root: not selected for this planning-only ledger.
 - Output root: not selected for this planning-only ledger.
 - Active closeout batch directory: `None`
+- Queued batch directory:
+  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/`
 - Latest completed batch directory:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/`
 
@@ -70,7 +72,7 @@ is planning-only; it does not implement code.
 | PST-15. Projection target policy does not express expected projection usage | Closed | `planning-state-projection-routing` | Use explicit `projection_usage` and `projection_rebuild_authority` policy before rebuilding or reporting projections | Closed by the projection-routing batch. Project policy now distinguishes allowed projection targets from expected projection usage and rebuild authority without introducing downstream project paths or durable default databases. |
 | PST-16. Consumer skills consume active-state diagnostics but not projection reports | Closed | `planning-state-projection-consumers` | Use projection-report routing in Batch Runway, Architecture Program Runway, and Legacy Removal for supported history/reporting questions | Closed by the projection-consumers batch. Batch Runway, Architecture Program Runway, and Legacy Removal now route supported history/reporting questions through policy-compatible projection reports before broad historical scans while preserving consumer-owned decisions. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/closeout.md`. |
 | PST-17. Tests protect projection commands but not workflow obligations | Closed | `planning-state-projection-consumers` | Keep focused consumer-obligation tests aligned with workflow-skill behavior changes | Closed by `tests/test_planning_state_consumer_projection_routing.py`, manifest checks, final validation, and clean review. The regression surface protects the consumer-facing projection-report routing obligation and dependency assumptions. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/closeout.md`. |
-| PST-18. Batch Runway create-spec writes session-local mode into durable overrides | Open | None | Correct the Batch Runway create-spec output contract and add regression coverage after the active projection-consumers batch closes, unless explicitly amended into that runway | The stale `Treat this session as create-spec` line belongs to spec creation history, not durable execution-contract `Overrides`. Fix the write-side contract so generated runways keep only durable execution deviations in `Overrides`, patch affected active/future runways deliberately, and keep this out of `scripts/planning_state.py` because mode semantics belong to Batch Runway. |
+| PST-18. Batch Runway create-spec writes session-local mode into durable overrides | Open | `batch-runway-create-spec-output-contract` | Execute the queued Batch Runway spec for PST-18 | The stale `Treat this session as create-spec` line belongs to spec creation history, not durable execution-contract `Overrides`. Fix the write-side contract so generated runways keep only durable execution deviations in `Overrides`, patch affected active/future runways deliberately, and keep this out of `scripts/planning_state.py` because mode semantics belong to Batch Runway. Finding status remains `Open` until PST-19 defines cut-batch `Pending` semantics. |
 | PST-19. Findings lack a Pending status for cut or active batch work | Open | None | Define and enforce a `Pending` finding status for work that has been cut into a queued or active batch but is not closed | `Open` currently covers both uncut intake and findings already assigned to a dispatch/runway, which invites late source-ledger scope edits after a batch is materialized. `Pending` should mean the finding is controlled by the batch artifacts until closeout, supersession, explicit abandonment, or an explicit amendment. |
 
 ## Batch Queue
@@ -87,8 +89,25 @@ is planning-only; it does not implement code.
 | planning-state-consumer-integration | PST-12, PST-13 | Completed | Wires ledger-dependent skills and install metadata to the shared planning-state skill after the interface exists | planning-state-skill-interface | Skill validation, dependency-manifest JSON check, focused wording checks across consumer skills, current/validate diagnostics, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-consumer-integration/runway.md` |
 | planning-state-projection-routing | PST-14, PST-15 | Completed | Deepens the Planning State Diagnostic interface so declared projections become useful for history/reporting without becoming canonical active state | planning-state-consumer-integration | Skill/reference tests, project-policy parsing checks, current/validate/projection smoke tests against generated-only and ignored-local fixtures, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/runway.md` |
 | planning-state-projection-consumers | PST-16, PST-17 | Completed | Wires consumer skills and regression checks so projection reports are tried before broad historical scans when policy permits | planning-state-projection-routing | Skill wording tests, manifest/dependency checks, focused grep checks across consumer skills, current/validate diagnostics, review evidence, closeout evidence, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/runway.md` |
-| batch-runway-create-spec-output-contract | PST-18 | Candidate | Keeps session-local create-spec history out of durable Batch Runway execution contracts | planning-state-projection-consumers closed, unless explicitly amended into the active runway | Batch Runway skill/reference wording tests, regression check for durable `Overrides`, focused grep across active templates/specs, current/validate diagnostics, and `git diff --check` | None | None |
+| batch-runway-create-spec-output-contract | PST-18 | Queued | Keeps session-local create-spec history out of durable Batch Runway execution contracts | planning-state-projection-consumers closed, unless explicitly amended into the active runway | Batch Runway skill/reference wording tests, regression check for durable `Overrides`, focused grep across active templates/specs, current/validate diagnostics, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md` |
 | planning-state-finding-pending-status | PST-19 | Candidate | Makes cut-but-not-closed finding state explicit so source ledgers stop being edited as raw intake once a dispatch/runway exists | planning-state-projection-consumers closed, unless selected as an explicit active-runway amendment | Ledger/template wording checks, optional planning-state validation if status vocabulary becomes machine-checked, current/validate diagnostics, and `git diff --check` | None | None |
+
+## Queued Batch Brief
+
+Queued batch:
+
+- Batch: `batch-runway-create-spec-output-contract`
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/dispatch.md`
+- Status: `Queued`
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md`
+- Covers: PST-18.
+- Goal: tighten Batch Runway create-spec output guidance so session-local mode
+  history stays out of durable execution `Overrides`, with focused regression
+  coverage and a bounded active/future runway scan.
+- Notes: PST-19 is intentionally excluded and remains the next candidate after
+  this batch closes.
 
 ## Latest Batch Brief
 
@@ -127,10 +146,12 @@ Previous completed batch:
 
 ## Recommended Work Order
 
-1. No planning-state-tooling batch is active or queued.
-2. If asked to create the next batch, run planning-state `current` and
-   `validate`, then select exactly one candidate from this ledger.
-3. For projection reporting, rebuild only to explicit temp or
+1. The `batch-runway-create-spec-output-contract` batch is queued.
+2. If asked to work on the batch, execute the queued runway at
+   `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md`.
+3. Do not select PST-19 or another planning-state-tooling batch until PST-18
+   closes or the queued batch is explicitly superseded.
+4. For projection reporting, rebuild only to explicit temp or
    policy-compatible database targets and keep Markdown/JSON canonical.
 
 ## Closeout Rules

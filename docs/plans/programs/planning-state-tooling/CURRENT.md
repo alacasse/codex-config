@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md`
 - Latest closeout path:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/closeout.md`
 - Run artifact location: `None selected`
@@ -44,11 +45,25 @@
   reports before broad historical scans while preserving their own semantic
   decisions.
 
+## Queued Batch
+
+- Batch: `batch-runway-create-spec-output-contract`
+- Status: queued; covers PST-18 only.
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/dispatch.md`
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md`
+- Notes: This batch fixes the Batch Runway create-spec output contract so
+  session-local mode history does not appear in durable execution `Overrides`.
+  PST-19 Pending-status modeling remains a separate candidate.
+
 ## Next Safe Action
 
-No active or queued planning-state-tooling batch. If asked to create the next
-batch, run planning-state `current` and `validate`, then select exactly one
-candidate from `docs/plans/programs/planning-state-tooling/LEDGER.md`.
+Execute the queued
+`docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md`
+batch if asked to work on the planning-state-tooling batch. Do not select
+another planning-state-tooling batch until this queued batch closes or is
+explicitly superseded.
 
 ## Stop Conditions
 
