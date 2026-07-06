@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -28,39 +27,33 @@
 
 ## Latest Completed Batch
 
-- Batch: `batch-runway-create-spec-output-contract`
-- Status: completed; PST-18 is closed with tightened Batch Runway create-spec
-  output guidance, focused regression coverage, bounded active/future runway
-  scan evidence, final validation pointers, and pointer-first closeout evidence.
-- Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/dispatch.md`
-- Runway:
-  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md`
-- Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/closeout.md`
-- Completed slices:
-  `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/completed-slices.md`
-- Notes: Batch Runway create-spec guidance and regression coverage now keep
-  session-local mode history out of durable execution `Overrides`. The bounded
-  scan left only closed historical runway residue unchanged by design.
-
-## Queued Batch
-
-- Batch: `planning-state-finding-pending-status`.
+- Batch: `planning-state-finding-pending-status`
+- Status: completed; PST-19 is closed with reusable Pending finding lifecycle
+  vocabulary, update-rule regression coverage, validation, clean review, feature
+  metadata alignment, and pointer-first closeout evidence.
 - Dispatch:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/dispatch.md`
 - Runway:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`
-- Covers: PST-19.
-- Notes: queued for a future Batch Runway execution session. Keep selected
-  dispatch and active runway as `None` while the batch is only queued.
+- Closeout:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/closeout.md`
+- Completed slices:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/completed-slices.md`
+- Notes: Architecture Program Runway now distinguishes `Pending` findings from
+  raw `Open` intake and requires explicit closeout, amendment, supersession,
+  abandonment, split, or follow-up evidence for Pending scope changes.
+
+## Queued Batch
+
+- Batch: `None`.
+- Notes: no planning-state-tooling batch is selected, queued, or active after
+  `planning-state-finding-pending-status` closeout.
 
 ## Next Safe Action
 
-Execute the queued
-`docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`
-only when explicitly asked to work on the planning-state-tooling batch. Do not
-select another planning-state-tooling batch while this runway is queued.
+Use `docs/plans/programs/planning-state-tooling/LEDGER.md` before selecting any
+future planning-state-tooling batch. This closeout intentionally does not select
+the next batch.
 
 ## Stop Conditions
 
