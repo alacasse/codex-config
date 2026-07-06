@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Planning-state projection language and migration
+
+Problem: projection-backed reporting was implemented and wired into consumers,
+but agent-facing wording still made supported reports sound merely optional and
+existing Layout v1 projects lacked a reusable adoption checklist.
+
+Decision: describe projection reports as the policy-gated normal route for
+supported history/reporting questions, add portable adoption guidance for
+generated-only and ignored-local projection policies, and bump affected
+installable workflow features.
+
+Expected effect: fresh agents use `current` and `validate` for SQLite-free
+active-state pickup, then use command-level projection reports before broad
+historical scans when project policy permits, without hard-coding downstream
+paths or durable database defaults.
+
 ### Architecture-program Pending finding update rules
 
 Problem: Pending architecture findings could be controlled by selected,

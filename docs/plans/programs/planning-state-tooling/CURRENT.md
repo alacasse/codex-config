@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -28,41 +27,37 @@
 
 ## Latest Completed Batch
 
-- Batch: `planning-state-finding-pending-status`
-- Status: completed; PST-19 is closed with reusable Pending finding lifecycle
-  vocabulary, update-rule regression coverage, validation, clean review, feature
-  metadata alignment, and pointer-first closeout evidence.
-- Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/dispatch.md`
-- Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`
-- Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/closeout.md`
-- Completed slices:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/completed-slices.md`
-- Notes: Architecture Program Runway now distinguishes `Pending` findings from
-  raw `Open` intake and requires explicit closeout, amendment, supersession,
-  abandonment, split, or follow-up evidence for Pending scope changes.
-
-## Queued Batch
-
-- Batch: `planning-state-projection-language-and-migration`.
-- Status: queued; PST-20 and PST-21 are Pending under the co-located dispatch
-  and runway artifacts.
+- Batch: `planning-state-projection-language-and-migration`
+- Status: completed; PST-20 and PST-21 are closed with projection-reporting
+  wording tightened across reusable workflow skills, reusable adoption guidance
+  for Layout v1 roots, fixture coverage, feature metadata alignment, validation,
+  clean review evidence for implementation slices, and pointer-first closeout
+  evidence.
 - Dispatch:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/dispatch.md`
 - Runway:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`
-- Notes: this batch clarifies projection-backed reporting language and
-  adoption/migration guidance while preserving Markdown/JSON as canonical and
-  SQLite as command-only reporting projection.
+- Closeout:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/closeout.md`
+- Completed slices:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/completed-slices.md`
+- Notes: Projection-backed reporting is now described as the policy-gated
+  normal route for supported history/reporting questions while `current` and
+  `validate` remain SQLite-independent.
+
+## Queued Batch
+
+- Batch: `None`
+- Status: no planning-state-tooling batch is currently selected, queued, or
+  active.
+- Notes: do not select a successor batch unless explicitly asked.
 
 ## Next Safe Action
 
-Execute or hand off
-`docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`
-when asked to work on the planning-state-tooling batch. Do not select another
-planning-state-tooling batch while this runway is queued.
+No planning-state-tooling batch is selected or queued. If asked for new
+planning-state-tooling work, start from this `CURRENT.md` and
+`docs/plans/programs/planning-state-tooling/LEDGER.md` before creating exactly
+one successor batch.
 
 ## Stop Conditions
 

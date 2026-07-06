@@ -46,10 +46,9 @@ is planning-only; it does not implement code.
 - Run artifact root: not selected for this planning-only ledger.
 - Output root: not selected for this planning-only ledger.
 - Active closeout batch directory: `None`
-- Queued batch directory:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/`
+- Queued batch directory: `None`
 - Latest completed batch directory:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/`
 
 ## Findings Ledger
 
@@ -74,8 +73,8 @@ is planning-only; it does not implement code.
 | PST-17. Tests protect projection commands but not workflow obligations | Closed | `planning-state-projection-consumers` | Keep focused consumer-obligation tests aligned with workflow-skill behavior changes | Closed by `tests/test_planning_state_consumer_projection_routing.py`, manifest checks, final validation, and clean review. The regression surface protects the consumer-facing projection-report routing obligation and dependency assumptions. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/closeout.md`. |
 | PST-18. Batch Runway create-spec writes session-local mode into durable overrides | Closed | `batch-runway-create-spec-output-contract` | Use the closed batch closeout as the durable evidence pointer | Closed by Batch Runway create-spec guidance, focused regression coverage, bounded active/future runway scan evidence, and pointer-first closeout. Remaining scan matches are closed historical runway specs intentionally retained as evidence, not active/future artifacts or reusable guidance. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/closeout.md`. |
 | PST-19. Findings lack a Pending status for cut or active batch work | Closed | `planning-state-finding-pending-status` | Use the closed batch closeout as the durable evidence pointer | Closed by reusable Architecture Program Runway `Pending` vocabulary, Pending source-scope update rules, focused status-vocabulary tests, manifest validation, final planning-state diagnostics, clean review, and pointer-first closeout evidence. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/closeout.md`. |
-| PST-20. Agent-facing SQLite language still makes normal projection reporting sound optional | Pending | `planning-state-projection-language-and-migration` | Execute the queued runway and close with pointer-first evidence | The current implementation already keeps `current` and `validate` SQLite-independent, forbids direct SQL, and routes supported history/reporting through `rebuild-projection`/`report-projection` when policy permits. The problem is wording drift: the `planning-state` skill description/intro and ledger direction still say "optional" in places, which lets fresh agents answer that SQLite/reporting is "not yet" or merely optional instead of expected when `projection_usage` and `projection_rebuild_authority` allow it. Fix must preserve the real guardrails: SQLite is not canonical, not always-on, not directly queried by agents, not a generic durable default, and not required for active-state pickup. Dispatch: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/dispatch.md`; runway: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`. |
-| PST-21. Existing ledger workflows need a reusable projection-reporting adoption migration | Pending | `planning-state-projection-language-and-migration` | Execute the queued runway and close with pointer-first evidence | This is an operational workflow migration, not a data-store migration: canonical Markdown/JSON stays in place and SQLite remains rebuildable. The migration must be reusable by any project that already uses the current ledger/batching setup: inventory root/program `CURRENT.md` files, program ledgers, batch queues, redirect ledgers, consumer skills, installed-skill state, and project overlays; add or verify `projection_usage` and `projection_rebuild_authority`; document how generated-only projects use explicit temp targets and ignored-local projects use declared projection paths; rebuild/report only through commands; and keep project-specific paths outside generic skills. It should also decide whether current codex-config `CURRENT.md` needs explicit projection usage/rebuild fields to match `current --format json`, and provide a repeatable checklist plus fixture/dry-run evidence for at least one non-codex-config Layout v1 root shape without hard-coding that project into shared workflow code. Dispatch: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/dispatch.md`; runway: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`. |
+| PST-20. Agent-facing SQLite language still makes normal projection reporting sound optional | Closed | `planning-state-projection-language-and-migration` | Use the closed batch closeout as the durable evidence pointer | Closed by workflow-skill language that describes projection-backed reporting as the policy-gated normal route for supported history/reporting questions while preserving SQLite-independent active-state pickup, canonical Markdown/JSON, command/report-only access, and no generic durable database default. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/closeout.md`. |
+| PST-21. Existing ledger workflows need a reusable projection-reporting adoption migration | Closed | `planning-state-projection-language-and-migration` | Use the closed batch closeout as the durable evidence pointer | Closed by reusable Layout v1 adoption guidance covering root/program `CURRENT.md` files, ledgers, batch queues, redirect ledgers, consumer skills, installed-skill state, generated-only temp targets, ignored-local declared projection paths, downstream overlays, and fixture proof without hard-coding downstream project paths into generic skills. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/closeout.md`. |
 
 ## Batch Queue
 
@@ -93,28 +92,42 @@ is planning-only; it does not implement code.
 | planning-state-projection-consumers | PST-16, PST-17 | Completed | Wires consumer skills and regression checks so projection reports are tried before broad historical scans when policy permits | planning-state-projection-routing | Skill wording tests, manifest/dependency checks, focused grep checks across consumer skills, current/validate diagnostics, review evidence, closeout evidence, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/runway.md` |
 | batch-runway-create-spec-output-contract | PST-18 | Completed | Keeps session-local create-spec history out of durable Batch Runway execution contracts | planning-state-projection-consumers closed, unless explicitly amended into the active runway | Batch Runway skill/reference wording tests, regression check for durable `Overrides`, focused grep across active templates/specs, current/validate diagnostics, closeout evidence, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md` |
 | planning-state-finding-pending-status | PST-19 | Completed | Makes cut-but-not-closed finding state explicit so source ledgers stop being edited as raw intake once a dispatch/runway exists | `batch-runway-create-spec-output-contract` closed PST-18; baseline `current` and `validate` diagnostics pass | Workflow-skill wording tests, ledger/template status-vocabulary checks, current/validate diagnostics, manifest/changelog alignment, clean review, closeout evidence, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`; closeout: `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/closeout.md`; completed slices: `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/completed-slices.md` |
-| planning-state-projection-language-and-migration | PST-20, PST-21 | Queued | Pair the wording fix with the reusable adoption migration because the ambiguity and the migration gap reinforce each other | planning-state-projection-consumers and planning-state-finding-pending-status closed; baseline `current` and `validate` diagnostics pass | Skill wording tests, consumer-skill obligation tests, project-policy fixture tests for generated-only and ignored-local projection routing, migration checklist/readback validation against codex-config plus a non-codex-config Layout v1 root shape, installed-skill ownership check, changelog/manifest alignment, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md` |
+| planning-state-projection-language-and-migration | PST-20, PST-21 | Completed | Pair the wording fix with the reusable adoption migration because the ambiguity and the migration gap reinforce each other | planning-state-projection-consumers and planning-state-finding-pending-status closed; baseline `current` and `validate` diagnostics pass | Skill wording tests, consumer-skill obligation tests, project-policy fixture tests for generated-only and ignored-local projection routing, migration checklist/readback validation against codex-config plus a non-codex-config Layout v1 root shape, installed-skill ownership check, changelog/manifest alignment, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`; closeout: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/closeout.md`; completed slices: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/completed-slices.md` |
 
 ## Queued Batch Brief
 
-Queued batch: `planning-state-projection-language-and-migration`.
+Queued batch: `None`.
 
-- Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/dispatch.md`
-- Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`
-- Covers: PST-20 and PST-21.
-- Status: queued. Do not select another planning-state-tooling batch until this
-  runway is completed, superseded, abandoned, or explicitly amended.
+- Status: no planning-state-tooling batch is currently selected, queued, or
+  active.
+- Notes: do not select a successor batch unless explicitly asked.
 
 ## Latest Batch Brief
 
 Latest completed batch:
 
-- Batch: `planning-state-finding-pending-status`
+- Batch: `planning-state-projection-language-and-migration`
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/dispatch.md`
+- Status: `Completed`
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`
+- Closeout:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/closeout.md`
+- Completed slices:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/completed-slices.md`
+- Covers: PST-20 and PST-21.
+- Goal: make projection-backed reporting read as the policy-gated normal route
+  for supported history/reporting questions and document reusable Layout v1
+  adoption guidance.
+- Notes: PST-20 and PST-21 are closed with workflow wording tests, portable
+  fixture coverage, metadata alignment, validation, clean review evidence for
+  implementation slices, and closeout pointers.
+
+Previous completed batch:
+
 - Dispatch:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/dispatch.md`
-- Status: `Completed`
 - Runway:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`
 - Closeout:
@@ -128,7 +141,7 @@ Latest completed batch:
   regression tests, metadata evidence, validation, review, and closeout
   pointers.
 
-Previous completed batch:
+Earlier completed batch:
 
 - Dispatch:
   `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/dispatch.md`
@@ -160,13 +173,11 @@ Earlier completed batch:
 
 ## Recommended Work Order
 
-1. The queued planning-state-tooling batch is
-   `planning-state-projection-language-and-migration`.
-2. Work on
-   `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`
-   when asked to execute the current planning-state-tooling batch.
-3. Do not select another planning-state-tooling batch until the queued runway is
-   completed, superseded, abandoned, or explicitly amended.
+1. No planning-state-tooling batch is currently selected, queued, or active.
+2. If asked for the next planning-state-tooling batch, use this ledger and
+   `CURRENT.md` to create exactly one successor batch.
+3. Do not select a successor batch as part of
+   `planning-state-projection-language-and-migration` closeout.
 4. For projection reporting, rebuild only to explicit temp or
    policy-compatible database targets and keep Markdown/JSON canonical.
 
