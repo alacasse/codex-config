@@ -10,7 +10,7 @@
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -27,23 +27,23 @@
 
 ## Latest Completed Batch
 
-- Batch: `planning-state-projection-language-and-migration`
-- Status: completed; PST-20 and PST-21 are closed with projection-reporting
-  wording tightened across reusable workflow skills, reusable adoption guidance
-  for Layout v1 roots, fixture coverage, feature metadata alignment, validation,
-  clean review evidence for implementation slices, and pointer-first closeout
-  evidence.
+- Batch: `workflow-skill-interface-deepening`
+- Status: completed; PST-22 through PST-25 are closed with single-owner pickup
+  guidance, layout-vs-pickup separation, program-vs-runway ledger boundaries,
+  discovery-skill role boundaries, feature metadata alignment, validation, and
+  pointer-first closeout evidence.
 - Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/dispatch.md`
+  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/dispatch.md`
 - Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`
+  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/runway.md`
 - Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`
 - Completed slices:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/completed-slices.md`
-- Notes: Projection-backed reporting is now described as the policy-gated
-  normal route for supported history/reporting questions while `current` and
-  `validate` remain SQLite-independent.
+  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/completed-slices.md`
+- Notes: Reusable workflow skills now route Layout v1 pickup through Planning
+  State, keep artifact placement in Planning Artifacts, split program ledgers
+  from concrete runway ledgers, and prevent discovery skills from becoming
+  parallel planning systems by default.
 
 ## Queued Batch
 

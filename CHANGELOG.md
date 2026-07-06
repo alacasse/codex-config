@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Discovery skill role boundaries
+
+Problem: specialized discovery skills could read as parallel planning systems
+that produce durable program ledgers, queue state, or selected-batch state by
+default.
+
+Decision: define Legacy Removal role selection before durable ledgers and make
+Dead Surface Audit an evidence-only auxiliary skill, with feature metadata
+bumped for both reusable workflow surfaces.
+
+Expected effect: discovery skills can produce evidence and dispatch handoff
+material without bypassing program-level selection, grouping, queueing, or
+Batch Runway execution ownership.
+
 ### Planning-state projection language and migration
 
 Problem: projection-backed reporting was implemented and wired into consumers,

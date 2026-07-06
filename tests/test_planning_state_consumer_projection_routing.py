@@ -315,6 +315,49 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
             version_tuple("1.0.4"),
         )
 
+    def test_specialized_discovery_skills_do_not_create_parallel_planning_systems(
+        self,
+    ) -> None:
+        legacy = self.read("skills/legacy-removal/SKILL.md")
+        dead_surface = self.read("skills/dead-surface-audit/SKILL.md")
+
+        self.assertIn("evidence producer", legacy)
+        self.assertIn("handoff source", legacy)
+        self.assertIn("explicitly selected program owner", legacy)
+        self.assertIn("before writing\ndurable ledgers", legacy)
+        self.assertIn("does not create\ndurable program queue state", legacy)
+        self.assertIn("selected-batch state", legacy)
+        self.assertIn("parallel program\nledgers", legacy)
+        self.assertIn("program owner for", legacy)
+        self.assertIn("selection", legacy)
+
+        self.assertIn("evidence producer only", dead_surface)
+        self.assertIn("does not create durable program ledgers", dead_surface)
+        self.assertIn("selected-batch\nstate", dead_surface)
+        self.assertIn("evidence\nhandoff material", dead_surface)
+
+    def test_legacy_removal_gates_selected_dispatch_and_batch_runway_handoff(
+        self,
+    ) -> None:
+        legacy = self.read("skills/legacy-removal/SKILL.md")
+
+        self.assertNotIn(
+            "Use this section only if one next batch is clear.",
+            legacy,
+        )
+        self.assertNotIn(
+            "Use `batch-runway create-spec` after this skill only when the "
+            "selected dispatch\npacket identifies exactly one bounded batch.",
+            legacy,
+        )
+        self.assertIn("dispatch handoff material for the program owner", legacy)
+        self.assertIn("Do\nnot treat it as queued or selected program state", legacy)
+        self.assertIn("Use it as a selected dispatch packet only when", legacy)
+        self.assertIn("explicitly the\nprogram owner", legacy)
+        self.assertIn("already accepted or selected", legacy)
+        self.assertIn("Use `batch-runway create-spec` after this skill only when", legacy)
+        self.assertIn("another program owner has already accepted or selected", legacy)
+
 
 if __name__ == "__main__":
     unittest.main()

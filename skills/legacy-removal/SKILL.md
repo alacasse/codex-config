@@ -6,8 +6,15 @@ description: Identify, scope, and track project-agnostic legacy-removal work bef
 # Legacy Removal
 
 Use this skill as discovery and scoping before concrete execution planning. It
-produces legacy findings, evidence, decisions, and optionally one selected
-dispatch packet.
+can act as a domain evidence producer, an explicitly selected program owner, or
+a handoff source for another planning workflow. Decide that role before writing
+durable ledgers.
+
+By default, Legacy Removal produces legacy findings, evidence, compatibility
+decisions, batch candidates, and dispatch handoff material. It does not create
+durable program queue state, selected-batch state, or competing program ledgers
+unless project instructions, local overlays, or active planning docs explicitly
+name Legacy Removal as the owning program workflow.
 
 When project instructions, local overlays, or active planning docs select
 Planning Artifact Layout v1, read `../planning-artifacts/SKILL.md` before
@@ -42,7 +49,7 @@ Responsibility boundary:
 
 ```text
 legacy-removal
-  owns: ledger, scope, canonical model, compatibility decisions, batch candidates, selected dispatch packet
+  owns: domain evidence, scope, canonical model, compatibility decisions, cleanup-residue classification, batch candidates, dispatch handoff material
 
 planning-state
   owns: current/validate diagnostics, active-state handoff facts, target-policy status, optional projection/report commands
@@ -113,8 +120,13 @@ temporary transition period with a removal condition.
    require named reasons; `defer` also requires a removal condition; `remove`
    requires evidence that the behavior is obsolete or internal.
 6. Group findings into batch candidates only far enough to expose scope,
-   sequencing, risk, validation class, and likely slice shape.
-7. Create the selected dispatch packet only when one next batch is clear.
+   sequencing, risk, validation class, and likely slice shape. If this effort is
+   not explicitly the owning program workflow, keep those candidates as source
+   evidence for the program owner instead of writing queue state.
+7. Create dispatch handoff material only when one next batch is clear. Write
+   selected-batch state only when Legacy Removal is explicitly the owning
+   program workflow; otherwise hand the candidate to the program owner for
+   selection.
 8. Hand off:
    - Use `architecture-program-runway` when the ledger spans multiple findings,
      seams, risk classes, or possible batches.
@@ -211,18 +223,27 @@ finding for `architecture-program-runway`.
 
 ## Ledger Rules
 
-Write a durable Markdown ledger in the target repository's planning location.
-If no planning location is defined, ask or use the smallest repo-local location
+Write a durable Markdown evidence ledger only when the target repository has a
+planning location and the current role calls for durable evidence. If no
+planning location is defined, ask or use the smallest repo-local location
 consistent with project instructions.
 
 Under Planning Artifact Layout v1, a legacy-removal effort that spans more than
-one finding, decision, or possible batch should own a program directory:
+one finding, decision, or possible batch should own a program directory only
+when Legacy Removal has been explicitly selected as the program owner:
 
 ```text
 <planning-root>/programs/<program-slug>/LEDGER.md
 ```
 
-When one next batch is clear, put its selected dispatch packet under:
+When Legacy Removal is only an evidence producer or handoff source, do not
+create or update program queue state, selected-batch state, or parallel program
+ledgers. Preserve the legacy evidence and dispatch handoff material, then let
+`architecture-program-runway` reconcile grouping, prioritization, and selected
+batch state.
+
+When one next batch is clear and Legacy Removal is the selected program owner,
+put its selected dispatch packet under:
 
 ```text
 <program-root>/batches/<batch-id>-<batch-slug>/dispatch.md
@@ -331,9 +352,16 @@ old-vocabulary taxonomy, aliases, facades, or temporary scaffolding.
 | --- | --- | --- | --- | --- | --- | --- |
 | LR-B1 | <goal> | L1, L2 | L3 | focused/unit/harness/docs/manual | low/medium/high | 3-5 compact slice ideas |
 
-## Selected dispatch packet
+## Dispatch handoff or selected dispatch packet
 
-Use this section only if one next batch is clear.
+Use this section as dispatch handoff material for the program owner when one
+next batch is clear and Legacy Removal is not the explicit program owner. Do
+not treat it as queued or selected program state until the program owner accepts
+or selects it.
+
+Use it as a selected dispatch packet only when Legacy Removal is explicitly the
+program owner, or when another program owner has already accepted or selected
+the handoff.
 
 - Batch ID:
 - Source ledger path:
@@ -373,10 +401,11 @@ program-level grouping, prioritization, sequencing, or multi-batch closeout
 reconciliation. The legacy ledger is source evidence; the architecture-program
 ledger owns the batch queue and selected dispatch state.
 
-Use `batch-runway create-spec` after this skill only when the selected dispatch
-packet identifies exactly one bounded batch. The Batch Runway spec owns
-execution contracts, slice boundaries, validation profile details, delegation,
-commits, and closeout workflow.
+Use `batch-runway create-spec` after this skill only when Legacy Removal is the
+explicit program owner and the selected dispatch packet identifies exactly one
+bounded batch, or when another program owner has already accepted or selected
+the dispatch. The Batch Runway spec owns execution contracts, slice boundaries,
+validation profile details, delegation, commits, and closeout workflow.
 
 Do not duplicate full Architecture Program Runway or Batch Runway contracts in
 the legacy ledger. Preserve only enough evidence and decision context for those

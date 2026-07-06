@@ -83,7 +83,7 @@ state only; it does not update or close GitHub issues.
 - Active closeout batch directory: `None`
 - Queued batch directory: `None`
 - Latest completed batch directory:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/`
+  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/`
 
 ## Findings Ledger
 
@@ -110,10 +110,10 @@ state only; it does not update or close GitHub issues.
 | PST-19. Findings lack a Pending status for cut or active batch work | Closed | `planning-state-finding-pending-status` | Use the closed batch closeout as the durable evidence pointer | Closed by reusable Architecture Program Runway `Pending` vocabulary, Pending source-scope update rules, focused status-vocabulary tests, manifest validation, final planning-state diagnostics, clean review, and pointer-first closeout evidence. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/closeout.md`. |
 | PST-20. Agent-facing SQLite language still makes normal projection reporting sound optional | Closed | `planning-state-projection-language-and-migration` | Use the closed batch closeout as the durable evidence pointer | Closed by workflow-skill language that describes projection-backed reporting as the policy-gated normal route for supported history/reporting questions while preserving SQLite-independent active-state pickup, canonical Markdown/JSON, command/report-only access, and no generic durable database default. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/closeout.md`. |
 | PST-21. Existing ledger workflows need a reusable projection-reporting adoption migration | Closed | `planning-state-projection-language-and-migration` | Use the closed batch closeout as the durable evidence pointer | Closed by reusable Layout v1 adoption guidance covering root/program `CURRENT.md` files, ledgers, batch queues, redirect ledgers, consumer skills, installed-skill state, generated-only temp targets, ignored-local declared projection paths, downstream overlays, and fixture proof without hard-coding downstream project paths into generic skills. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/closeout.md`. |
-| PST-22. Workflow skills repeat the planning pickup interface | Open | None | Make `planning-state` the only pickup Interface for Layout v1 state, then shrink consumer skill pickup prose | The smell is that `architecture-program-runway`, `batch-runway`, `legacy-removal`, and related skills all restate how to run `current`/`validate`, inspect active files, use projection reports, and avoid broad scans. That makes each consumer skill's Interface look almost the same. The intended depth is: `planning-state` owns pickup facts and target policy; consumers receive compact facts and own only their semantic decision. |
-| PST-23. Layout placement and operational pickup share a fuzzy seam | Open | None | Keep `planning-artifacts` focused on artifact shape and make operational pickup delegate to `planning-state` | `planning-artifacts` should define where `CURRENT.md`, `LEDGER.md`, dispatches, runways, archives, run artifacts, and outputs belong. `planning-state` should define how an agent validates and starts from those files. Today both describe active-state navigation, so agents can treat layout guidance as another competing pickup algorithm. |
-| PST-24. Program ledger updates and concrete runway ledger updates are easy to conflate | Open | None | Clarify the handoff where `architecture-program-runway` owns Program Ledger state and `batch-runway` owns concrete runway execution state | The intended seam is: program findings, grouping, queue, selected dispatch, and closeout reconciliation live with `architecture-program-runway`; concrete 3-5 slice specs, execution ledgers, validation, review, commit receipts, and completed-slice archives live with `batch-runway`. Current wording in both skills still says "ledger updates" broadly enough that an agent may edit the wrong ledger or treat both skills as competing ledger managers. |
-| PST-25. Specialized discovery skills can become parallel planning systems | Open | None | Define whether specialized skills are evidence producers, selected program owners, or handoff sources before they create durable ledgers | `legacy-removal` and similar skills can classify evidence, create findings, and draft dispatch packets, which is useful but overlaps with `architecture-program-runway` when more than one finding or batch exists. The safer model is: specialized skills own domain judgment such as canonical-model and compatibility decisions; program-level selection, grouping, queueing, and selected-batch state stay in the Program Ledger unless the specialized skill is explicitly the owning program. |
+| PST-22. Workflow skills repeat the planning pickup interface | Closed | `workflow-skill-interface-deepening` | Use the closed batch closeout as the durable evidence pointer | Closed by consumer skill guidance that routes Layout v1 pickup through Planning State Diagnostic-First Pickup while preserving consumer-owned semantic decisions. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`. |
+| PST-23. Layout placement and operational pickup share a fuzzy seam | Closed | `workflow-skill-interface-deepening` | Use the closed batch closeout as the durable evidence pointer | Closed by Planning Artifacts/Planning State guidance that keeps placement, naming, file shape, archives, and roots separate from operational pickup, validation, target-policy checks, and projection routing. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`. |
+| PST-24. Program ledger updates and concrete runway ledger updates are easy to conflate | Closed | `workflow-skill-interface-deepening` | Use the closed batch closeout as the durable evidence pointer | Closed by Architecture Program Runway and Batch Runway handoff guidance that separates program findings, selected dispatch, queue state, and closeout reconciliation from concrete runway ledgers, validation/review routing, commits, and completed-slice archives. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`. |
+| PST-25. Specialized discovery skills can become parallel planning systems | Closed | `workflow-skill-interface-deepening` | Use the closed batch closeout as the durable evidence pointer | Closed by Legacy Removal role guidance and Dead Surface Audit evidence-only guidance: discovery skills can produce evidence and dispatch handoff material without creating program queue or selected-batch state by default. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`. |
 
 ## Batch Queue
 
@@ -132,7 +132,7 @@ state only; it does not update or close GitHub issues.
 | batch-runway-create-spec-output-contract | PST-18 | Completed | Keeps session-local create-spec history out of durable Batch Runway execution contracts | planning-state-projection-consumers closed, unless explicitly amended into the active runway | Batch Runway skill/reference wording tests, regression check for durable `Overrides`, focused grep across active templates/specs, current/validate diagnostics, closeout evidence, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/batch-runway-create-spec-output-contract/runway.md` |
 | planning-state-finding-pending-status | PST-19 | Completed | Makes cut-but-not-closed finding state explicit so source ledgers stop being edited as raw intake once a dispatch/runway exists | `batch-runway-create-spec-output-contract` closed PST-18; baseline `current` and `validate` diagnostics pass | Workflow-skill wording tests, ledger/template status-vocabulary checks, current/validate diagnostics, manifest/changelog alignment, clean review, closeout evidence, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`; closeout: `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/closeout.md`; completed slices: `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/completed-slices.md` |
 | planning-state-projection-language-and-migration | PST-20, PST-21 | Completed | Pair the wording fix with the reusable adoption migration because the ambiguity and the migration gap reinforce each other | planning-state-projection-consumers and planning-state-finding-pending-status closed; baseline `current` and `validate` diagnostics pass | Skill wording tests, consumer-skill obligation tests, project-policy fixture tests for generated-only and ignored-local projection routing, migration checklist/readback validation against codex-config plus a non-codex-config Layout v1 root shape, installed-skill ownership check, changelog/manifest alignment, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`; closeout: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/closeout.md`; completed slices: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/completed-slices.md` |
-| workflow-skill-interface-deepening | PST-22, PST-23, PST-24, PST-25 | Candidate | Deepens the workflow-skill seams so agents have one pickup Interface and do not confuse layout, planning-state diagnostics, program selection, batch execution, or specialized evidence classification | No queued planning-state-tooling batch; should run before more consumer-skill rewiring or skill-cleanup work that depends on pickup behavior | Skill wording tests or grep checks proving one pickup owner, consumer-owned semantic decisions, explicit program-vs-runway ledger handoff, current/validate diagnostics, and `git diff --check` | TBD | TBD |
+| workflow-skill-interface-deepening | PST-22, PST-23, PST-24, PST-25 | Completed | Deepens the workflow-skill seams so agents have one pickup Interface and do not confuse layout, planning-state diagnostics, program selection, batch execution, or specialized evidence classification | `planning-state-projection-language-and-migration` closed; baseline `current` and `validate` diagnostics pass | Skill wording tests proving one pickup owner, consumer-owned semantic decisions, explicit program-vs-runway ledger handoff, discovery role boundaries, current/validate diagnostics, manifest/changelog alignment, closeout evidence, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/runway.md`; closeout: `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`; completed slices: `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/completed-slices.md` |
 
 ## Queued Batch Brief
 
@@ -145,6 +145,26 @@ Queued batch: `None`.
 ## Latest Batch Brief
 
 Latest completed batch:
+
+- Batch: `workflow-skill-interface-deepening`
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/dispatch.md`
+- Status: `Completed`
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/runway.md`
+- Closeout:
+  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`
+- Completed slices:
+  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/completed-slices.md`
+- Covers: PST-22, PST-23, PST-24, and PST-25.
+- Goal: deepen reusable workflow-skill seams so agents have one pickup
+  Interface, one placement owner, explicit program-vs-runway ledger ownership,
+  and clear specialized-discovery skill roles.
+- Notes: PST-22 through PST-25 are closed with workflow wording tests,
+  metadata alignment, validation, clean review evidence for implementation
+  slices, and closeout pointers.
+
+Previous completed batch:
 
 - Batch: `planning-state-projection-language-and-migration`
 - Dispatch:
@@ -214,13 +234,11 @@ Earlier completed batch:
 ## Recommended Work Order
 
 1. No planning-state-tooling batch is currently selected, queued, or active.
-2. If asked for the next planning-state-tooling batch, prefer
-   `workflow-skill-interface-deepening` unless the user asks for a narrower
-   issue-specific batch.
-3. Use this ledger and `CURRENT.md` to create exactly one successor batch.
-4. Do not select a successor batch as part of
-   `planning-state-projection-language-and-migration` closeout.
-5. For projection reporting, rebuild only to explicit temp or
+2. If asked for the next planning-state-tooling batch, start from this ledger
+   and `CURRENT.md` before creating exactly one successor batch.
+3. Do not select a successor batch as part of
+   `workflow-skill-interface-deepening` closeout.
+4. For projection reporting, rebuild only to explicit temp or
    policy-compatible database targets and keep Markdown/JSON canonical.
 
 ## Closeout Rules

@@ -9,6 +9,11 @@ Use this skill to find Modules that are dead or obsolete but hidden behind tests
 
 Core rule: tests are not automatically liveness evidence. A test can be the only thing keeping a shallow Module present.
 
+Role boundary: this skill is an evidence producer only. It may feed
+legacy-removal, architecture-program-runway, or batch-runway handoffs, but it
+does not create durable program ledgers, program queue state, selected-batch
+state, dispatch packets, batch runways, commits, or closeout records.
+
 ## Workflow
 
 ### 1. Establish the Intended Contract
@@ -74,7 +79,9 @@ retention such as `migrate-tests-first` or `human-contract-decision`.
 
 ## Report Format
 
-Lead with findings, ordered by deletion confidence:
+Lead with findings, ordered by deletion confidence. Keep reports as evidence
+handoff material; do not turn them into program selection, queue, or concrete
+execution state.
 
 ```markdown
 ## Findings

@@ -100,7 +100,7 @@
       ]
     },
     "dead-surface-audit": {
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "Audit code surfaces that are kept alive only by test-retained compatibility or topology assertions.",
       "links": [
         {
@@ -110,7 +110,7 @@
       ]
     },
     "legacy-removal": {
-      "version": "1.0.5",
+      "version": "1.0.6",
       "description": "Discovery and scoping workflow for evidence-backed legacy-removal ledgers.",
       "requires": [
         "planning-artifacts",
