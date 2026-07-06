@@ -98,6 +98,7 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         }.items():
             with self.subTest(surface=surface):
                 self.assertIn("Planning State Diagnostic", text)
+                self.assertIn("Diagnostic-First Pickup", text)
                 self.assertIn("current", text)
                 self.assertIn("validate", text)
 
@@ -151,6 +152,7 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         entrypoint = self.read("skills/architecture-program-runway/SKILL.md")
 
         self.assertIn("Planning State Diagnostic", entrypoint)
+        self.assertIn("Diagnostic-First Pickup", entrypoint)
         self.assertIn("current", entrypoint)
         self.assertIn("validate", entrypoint)
         self.assertIn("must not select batches", entrypoint)
@@ -218,6 +220,7 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         entrypoint = self.read("skills/legacy-removal/SKILL.md")
 
         self.assertIn("Planning State Diagnostic", entrypoint)
+        self.assertIn("Diagnostic-First Pickup", entrypoint)
         self.assertIn("current", entrypoint)
         self.assertIn("validate", entrypoint)
         self.assertIn("old model", entrypoint)
@@ -229,6 +232,38 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         self.assertIn("planning-state context only", entrypoint)
         self.assertIn("classify a legacy surface", entrypoint)
         self.assertIn("prove liveness or deadness", entrypoint)
+
+    def test_consumer_pickup_guidance_keeps_planning_state_single_owner(self) -> None:
+        surfaces = [
+            "skills/batch-runway/SKILL.md",
+            "skills/batch-runway/references/create-spec.md",
+            "skills/batch-runway/references/execute-spec.md",
+            "skills/architecture-program-runway/SKILL.md",
+            "skills/legacy-removal/SKILL.md",
+        ]
+
+        for surface in surfaces:
+            with self.subTest(surface=surface):
+                text = self.read(surface)
+                self.assertIn("Diagnostic-First Pickup", text)
+                self.assertIn("current", text)
+                self.assertIn("validate", text)
+                if "broader exploration" in text:
+                    self.assertLess(
+                        text.index("Diagnostic-First Pickup"),
+                        text.index("broader exploration"),
+                    )
+
+        architecture = self.read("skills/architecture-program-runway/SKILL.md")
+        self.assertIn("semantic program decision", architecture)
+        self.assertNotIn(
+            "run its read-only `current` and `validate` commands",
+            architecture,
+        )
+
+        legacy = self.read("skills/legacy-removal/SKILL.md")
+        self.assertNotIn("python scripts/planning_state.py current --root", legacy)
+        self.assertIn("old model", legacy)
 
     def test_legacy_removal_feature_depends_on_planning_state(self) -> None:
         manifest = json.loads(

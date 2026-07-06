@@ -16,17 +16,11 @@ artifacts, generated outputs, archives, or active-state files.
 
 Use `../planning-state/SKILL.md` before creating, consuming, validating, or
 reorganizing Layout v1 legacy-removal ledgers, selected dispatch packets, or
-active planning state. Run the Planning State Diagnostic hot path with the
-project's resolved planning root:
-
-```bash
-python scripts/planning_state.py current --root <planning-root>
-python scripts/planning_state.py validate --root <planning-root>
-```
-
-Carry forward only compact handoff facts such as selected paths, queued batch,
-blockers, redirect warnings, and next safe action. Planning-state diagnostics
-do not decide the old model, canonical model, evidence value, compatibility
+active planning state. Invoke its Diagnostic-First Pickup Interface and carry
+forward only compact Planning State Diagnostic facts such as planning root,
+current and validate status, selected paths, queued batch, blockers, redirect
+warnings, next safe action, and project policy. Planning-state diagnostics do
+not decide the old model, canonical model, evidence value, compatibility
 decision, cleanup-residue classification, or whether legacy code is kept or
 removed.
 

@@ -6,15 +6,14 @@ Steps:
 
 1. Read applicable project instructions and local overlays first.
 2. If the project uses Planning Artifact Layout v1 or another ledger-driven
-   planning root, read `../../planning-state/SKILL.md`, run its current and
-   validate hot path, and carry forward compact Planning State Diagnostic facts:
-   planning root, current and validate status, active programs, selected
-   dispatch, queued batch, active runway, blockers, warnings, and project
-   policy.
-3. For Planning Artifact Layout v1, read the root `CURRENT.md` and the relevant
-   program `CURRENT.md` files named by the diagnostic before scanning
-   historical local plans, old dispatch/runway filenames, generated reports,
-   recent commits, or source modules.
+   planning root, read `../../planning-state/SKILL.md` and invoke its
+   Diagnostic-First Pickup Interface. Carry forward only compact Planning State
+   Diagnostic facts: planning root, current and validate status, active
+   programs, selected dispatch, queued batch, active runway, blockers, warnings,
+   and project policy.
+3. For Planning Artifact Layout v1, consume those diagnostic facts before
+   reading the root `CURRENT.md`, relevant program `CURRENT.md`, historical
+   planning files, generated reports, recent commits, or source modules.
 4. If a selected dispatch, active runway, or queued batch already exists in the
    diagnostic or active-state files, do not
    select a second batch. Report or use that path according to the request.

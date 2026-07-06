@@ -11,10 +11,11 @@ for compatibility questions, non-routine execution, recovery, and finalization.
 
 1. Read project instructions, local overlays, and the full spec.
 2. If the spec is Layout v1 or otherwise ledger-driven, read
-   `../../planning-state/SKILL.md`, run its current and validate hot path, and
-   carry forward compact Planning State Diagnostic facts: planning root, current
-   and validate status, active programs, selected dispatch, queued batch, active
-   runway, blockers, warnings, and project policy.
+   `../../planning-state/SKILL.md` and invoke its Diagnostic-First Pickup
+   Interface. Carry forward only compact Planning State Diagnostic facts:
+   planning root, current and validate status, active programs, selected
+   dispatch, queued batch, active runway, blockers, warnings, and project
+   policy.
 3. Consume active-state files, selected dispatches, queued specs, active
    runways, blockers, and target policy only after that diagnostic handoff.
    Batch Runway still owns execution orchestration, pending-row selection,

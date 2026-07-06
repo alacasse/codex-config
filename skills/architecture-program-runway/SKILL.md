@@ -15,8 +15,8 @@ creating or reorganizing program ledgers, selected dispatch packets, batch
 directories, run artifact locations, generated-output locations, archives, or
 `CURRENT.md` active-state files under that convention.
 
-When Layout v1 is active, read `../planning-state/SKILL.md` and run its
-current/validate hot path before consuming active-state files, selected
+When Layout v1 is active, read `../planning-state/SKILL.md` and invoke its
+Diagnostic-First Pickup Interface before consuming active-state files, selected
 dispatches, queued batches, active runways, blockers, closeout evidence, or
 target policy. Treat the result as compact Planning State Diagnostic facts:
 planning root, current and validate status, active programs, selected dispatch,
@@ -67,9 +67,9 @@ re-derive grouping from scratch after the ledger and batch queue exist.
 1. Read applicable repo instructions and local overlays.
 2. If Planning Artifact Layout v1 is active and the request is about pickup,
    current state, selecting the next task or batch, creating the next runway, or
-   working from a queued batch, use `planning-state` current/validate
-   diagnostics and then the active-state fast path below before broader
-   exploration.
+   working from a queued batch, use `planning-state` Diagnostic-First Pickup
+   before broader exploration, then make the program decision from the compact
+   diagnostic facts.
 3. If the request is about program history/reporting, pending-batch inventory,
    missing closeout evidence, runner summaries, or bounded backlog/history
    reports, use planning-state projection-reporting guidance and
@@ -87,41 +87,30 @@ If the planning location, active ledger, status vocabulary, or relationship to
 `batch-runway` is unclear, stop and ask for the missing value instead of
 creating a speculative plan.
 
-## Active-State Fast Path
+## Active-State Handoff
 
-Use this path for normal ledger-driven "next batch", "create the next specs",
-"create the next runway", "work on the batch", and pickup requests when Planning
-Artifact Layout v1 is active.
+Use `planning-state` Diagnostic-First Pickup for normal ledger-driven "next
+batch", "create the next specs", "create the next runway", "work on the
+batch", and pickup requests when Planning Artifact Layout v1 is active.
 
-1. Read `../planning-state/SKILL.md`, resolve the project planning root, then
-   run its read-only `current` and `validate` commands for that root.
-2. Carry forward only compact Planning State Diagnostic facts: planning root,
-   current and validate status, active programs, selected dispatch, queued
-   batch, active runway, blockers, warnings, and project policy.
-3. Read the root `CURRENT.md` named by the diagnostic.
-4. Read only the program `CURRENT.md` files listed by the diagnostic or root
-   active state.
-5. If any relevant program has a selected dispatch, active runway, or queued
-   batch, stop selection. Report, create the missing concrete spec from that
-   dispatch, or execute the queued runway according to the user request.
-6. If no selected or queued batch exists, choose the relevant program from the
-   validated active state and request language.
-7. Read that program's `LEDGER.md` and select exactly one next batch from its
-   active queue or explicitly deferred queue.
-8. Read only the source packet, finding note, or deepening note named by the
-   selected ledger row.
-9. Write or update the co-located batch directory for that one selected batch:
-   `dispatch.md` first, then `runway.md` only in `create-next-runway` mode.
-10. Update the program `CURRENT.md` and `LEDGER.md`, then stop before coding
-   unless the user explicitly asked to execute.
+After that handoff, this skill makes the semantic program decision:
 
-Do not begin this mode with broad exploration: knowledge-graph queries, broad
-`find` or repository-wide `rg` scans over the planning tree, old flat
-dispatch/runway filenames, generated reports, historical redirect ledgers,
-recent commits, or source modules. Those are escalation reads only after the
-active-state path is missing, contradictory, stale, or asks a specific
-unresolved question. If escalation is needed, state the question before
-continuing.
+- If a selected dispatch, active runway, or queued batch is present, stop
+  selection and report, create the missing concrete spec, or execute the queued
+  runway according to the request.
+- If no selected or queued batch is present, choose the relevant program from
+  the diagnostic facts and request language, then read the minimum ledger row
+  and source packet needed to select exactly one next batch.
+- Write or update the co-located batch directory for that one selected batch:
+  `dispatch.md` first, then `runway.md` only in `create-next-runway` mode.
+- Update the program `CURRENT.md` and `LEDGER.md`, then stop before coding
+  unless the user explicitly asked to execute.
+
+Knowledge-graph queries, broad `find` or repository-wide `rg` scans over the
+planning tree, old flat dispatch/runway filenames, generated reports,
+historical redirect ledgers, recent commits, or source modules are escalation
+reads only after the Planning State Diagnostic and active ledger expose a
+specific unresolved evidence question. State that question before continuing.
 
 ## Modes
 
@@ -328,9 +317,8 @@ When creating the selected concrete batch:
 
 1. Load and follow `batch-runway` in create-spec mode.
 2. If Planning Artifact Layout v1 is active, start from Planning State
-   Diagnostic facts, then root and program `CURRENT.md` files, then the selected
-   dispatch packet. Do not reselect a batch while a selected dispatch, active
-   runway, or queued runway already exists.
+   Diagnostic facts and the selected dispatch packet. Do not reselect a batch
+   while a selected dispatch, active runway, or queued runway already exists.
 3. Start from the selected batch brief, not from the full raw findings source,
    unless the brief is missing or stale.
 4. Create exactly one local runway spec unless the user explicitly asks for
