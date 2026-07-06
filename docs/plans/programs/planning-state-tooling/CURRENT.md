@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -28,28 +27,28 @@
 
 ## Latest Completed Batch
 
-- Batch: `planning-state-projection-routing`
-- Status: completed; planning-state diagnostics now expose projection usage and
-  rebuild-authority routing for history/reporting questions while preserving
-  SQLite-independent `current` and `validate` active-state checks.
+- Batch: `planning-state-projection-consumers`
+- Status: completed; PST-16 and PST-17 are closed with completed consumer
+  routing updates, focused regression coverage, final validation, clean review,
+  and pointer-first closeout evidence.
 - Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/dispatch.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/dispatch.md`
 - Runway:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/runway.md`
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/runway.md`
 - Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-routing/closeout.md`
-- Notes: PST-14 and PST-15 are closed with completed commits, validation,
-  review, and projection smoke evidence. PST-16 and PST-17 remain open for the
-  next candidate batch, `planning-state-projection-consumers`.
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/closeout.md`
+- Completed slices:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/completed-slices.md`
+- Notes: Batch Runway, Architecture Program Runway, and Legacy Removal now route
+  supported history/reporting questions through policy-compatible projection
+  reports before broad historical scans while preserving their own semantic
+  decisions.
 
 ## Next Safe Action
 
-Execute the queued `planning-state-projection-consumers` runway from:
-
-`docs/plans/programs/planning-state-tooling/batches/planning-state-projection-consumers/runway.md`
-
-Do not create another planning-state-tooling batch until this queued runway is
-completed, blocked, superseded, or explicitly abandoned.
+No active or queued planning-state-tooling batch. If asked to create the next
+batch, run planning-state `current` and `validate`, then select exactly one
+candidate from `docs/plans/programs/planning-state-tooling/LEDGER.md`.
 
 ## Stop Conditions
 
