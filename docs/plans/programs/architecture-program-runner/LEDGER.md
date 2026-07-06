@@ -105,6 +105,10 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | APR-24. Worker adapter seam is Codex-only in production | Closed | `ec58657`; `scripts/architecture_program_runner_workers.py`; `scripts/architecture_program_runner.py`; focused worker tests | None | Production Codex phase execution now routes through `CodexExecWorker` and `execute_phase_with_worker` while preserving `execute_codex_phase` compatibility and **Runner Facade** behavior. |
 | APR-25. Shell-only workflow regression coverage is missing | Closed | `7a375b4`; `ShellCommandWorker`; `tests/test_architecture_program_runner.py` | None | Shell worker coverage proves an argv-based command can produce a compact phase result that existing validation, receipt equality, and **Phase Transition** rules consume without Codex or Batch Runway prompt language. |
 | APR-26. Separate `phase-runner` repository split is premature | Candidate | `docs/plans/phase-runner-repo-split-issue-12-plan.md`; `docs/plans/phase-runner-business-logic-contract.md`; APR-22 through APR-25 closeout evidence | Create a bounded contract-first business-logic extraction batch | The target direction is an external OSS Go runner, but the next safe step is still protocol extraction: package basics, shared schemas, planning-state interop, golden fixtures, and facade compatibility before moving code or creating a repo skeleton. |
+| APR-27. Local runner has no branch-per-batch isolation mode | Open | GitHub issue #11 | Design after APR-26 clarifies the generic runner boundary | `--batch-branch-mode none|create|require`, deterministic batch branch naming, state/receipt branch metadata, and closeout commit-range evidence remain unimplemented. Keep this separate from repo-split work and PR automation. |
+| APR-28. Runner extraction lacks a contract-drift review skill | Open | GitHub issue #14; `docs/plans/phase-runner-business-logic-contract.md`; APR/PBC sources | Create a focused `contract-drift-review` skill when extraction work begins to drift across boundaries | The requested skill does not exist. It should compare runner extraction changes against APR/PBC contracts, facade compatibility, generic-core boundaries, and stale-plan/archive risks without duplicating the full contract text. |
+| APR-29. Future runner adapters lack authoring guidance | Open | GitHub issue #16; APR-24 worker seam evidence | Create a `runner-adapter-authoring` skill after APR-26 fixes the generic worker/runtime boundary | `CodexExecWorker` and `ShellCommandWorker` prove the seam, but provider-adapter authoring guidance does not exist. Keep provider quirks out of generic runner core and cover result, receipt, transition, artifact, observation, and input-inventory boundaries. |
+| APR-30. Baton dogfood CLIs are unimplemented | Open | GitHub issues #17, #18, #19 | Sequence after APR-26 unless a diagnostic need blocks extraction | `baton-context-map`, `baton-doctor`, and `baton-receipt-inspector` do not exist. Treat them as dogfood diagnostics/reporting surfaces over planned batch context, repo readiness, and runner receipts rather than chat-transcript reconstruction. |
 
 ## Batch Queue
 
@@ -118,6 +122,9 @@ Use `CONTEXT.md` as the terminology source for this ledger. In particular:
 | input-inventory-contract | APR-21 | Closed | Gives **Input Inventory** an enforced shape and artifact linkage | APR-16; APR-20 satisfied | Unit tests with synthetic inventories and prompt checks plus dry-run smoke | `docs/plans/archive/dispatch/input-inventory-contract-dispatch.md` | `docs/plans/archive/codex-config-architecture-program-runner-input-inventory-contract-runway.md` |
 | phase-runner-extraction-prep | APR-22, APR-23, APR-24, APR-25 | Closed | Closed the issue #12 wait condition before any repo split: planning root/archive, generic workflow contract, Codex adapter seam, and shell-worker proof | Closed concept-owner batches; issue #12 decision note | Project-harness production with docs-only overrides for planning slices | `plans/dispatch/phase-runner-extraction-prep-dispatch.md` | `plans/codex-config-phase-runner-extraction-prep-runway.md` |
 | phase-runner-business-logic-extraction | APR-26 | Candidate | Define the implementation-neutral runner contracts, Go/OSS package boundary, and planning-state interop protocol before repo/package moves | APR-22 through APR-25 closed; issue #12 reassessment; `docs/plans/phase-runner-business-logic-contract.md` | Contract tests for workflow/state/result/receipt/worker/artifact behavior, planning-state interop fixture tests, focused facade compatibility tests, dry-run smoke, ruff, `git diff --check` | TBD under `docs/plans/programs/architecture-program-runner/batches/phase-runner-business-logic-extraction/dispatch.md` | TBD under `docs/plans/programs/architecture-program-runner/batches/phase-runner-business-logic-extraction/runway.md` |
+| branch-per-batch-isolation | APR-27 | Future candidate | Adds reviewable batch isolation after the generic/extraction boundary is clearer | APR-26 preferred | Focused runner state/receipt/worktree tests, branch command tests, dry-run smoke, ruff, `git diff --check` | TBD | TBD |
+| runner-contract-review-skills | APR-28, APR-29 | Future candidate | Adds support skills for extraction drift review and future provider adapter authoring | APR-26 preferred | Skill owner checks, manifest tests, focused docs/reference tests, and contract-source grep checks | TBD | TBD |
+| baton-dogfood-diagnostics | APR-30 | Future candidate | Groups context-map, doctor, and receipt-inspector CLIs because all read runner/planning artifacts and produce compact operational diagnostics | APR-26 preferred; split if one diagnostic becomes urgent | Focused CLI tests over fixture planning roots and runner artifacts, no transcript reconstruction, ruff, `git diff --check` | TBD | TBD |
 
 ## Selected Next Candidate
 
@@ -174,6 +181,12 @@ Remaining:
 1. `phase-runner-business-logic-extraction`: use the port-by-contract artifact
    to define package basics, target contracts, and a facade compatibility layer
    before any repo skeleton or runtime move.
+2. `branch-per-batch-isolation`: revisit issue #11 after APR-26 clarifies
+   whether branch policy belongs in `codex-config`, Baton, or an adapter.
+3. `runner-contract-review-skills`: create issue #14/#16 support skills only
+   after the contract source map is stable enough to keep the skills compact.
+4. `baton-dogfood-diagnostics`: create issue #17/#18/#19 CLIs as dogfood
+   diagnostics once runner artifacts and planning-state interop are stable.
 
 ## Closeout Rules
 
@@ -203,6 +216,19 @@ Remaining:
 - Promote APR-26 only when extraction-prep evidence supports a repo-split
   decision, and keep Go package basics, protocol schemas, planning-state
   interop, and facade compatibility explicit before moving code.
+- Mark APR-27 closed only after branch mode parsing, deterministic branch
+  create/reuse, require-mode refusal, state/receipt branch metadata, and
+  closeout branch/commit-range evidence are covered without changing default
+  runner behavior.
+- Mark APR-28 closed only after `contract-drift-review` exists, names its
+  APR/PBC sources, distinguishes generic-core drift from `codex-config`
+  integration drift, and validates without duplicating the full contract text.
+- Mark APR-29 closed only after `runner-adapter-authoring` exists, points to
+  the current worker seam and APR/PBC contract sources, and covers adapter
+  boundary, test-pattern, limitation, and failure-mode guidance.
+- Mark APR-30 closed only after the requested Baton dogfood diagnostics either
+  exist with fixture-backed CLI tests or are split with explicit rationale; none
+  may reconstruct execution from chat transcripts as canonical evidence.
 
 ## Validation Snapshot
 
