@@ -97,6 +97,15 @@ Overrides:
 - <only list deviations from the standard contract>
 ```
 
+Use `Overrides` only for durable execution-contract deviations that future
+execution sessions must obey. Do not use `Overrides` for session-local
+create-spec context, artifact creation history, or mode reminders such as
+"treat this session as create-spec" or "implementation starts later"; those
+claims describe the planning session, not an execution-contract deviation.
+Place create-spec task context in the current baseline, assumptions, purpose,
+handoff notes, or active-state prose where it explains how the artifact was
+created without changing the future execution contract.
+
 For lean specs, do not repeat full command blocks in every slice if a validation
 profile covers them. Reference the selected profile file under
 `references/validation-profiles/` and list only slice-specific commands or

@@ -126,7 +126,7 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 1. Tighten create-spec override guidance | Pending |  |  |  | Contract regression test fails before it passes |  |
+| 1. Tighten create-spec override guidance | Closed | this commit | `current`/`validate` passed with existing redirect warnings only; `git diff --check` passed; contract test is intentionally added in Slice 2 | `runway_reviewer` clean | Contract regression test fails before it passes | Create-spec guidance now keeps session-local mode and artifact-creation history out of durable execution `Overrides` and names baseline, assumptions, purpose, handoff notes, or active-state prose as the correct location. |
 | 2. Add regression and metadata alignment | Pending |  |  |  | Active/future runway scan is bounded |  |
 | 3. Audit affected runways and close PST-18 | Pending |  |  |  | Final validation and closeout evidence are complete |  |
 
@@ -136,7 +136,9 @@ orchestration_anomalies: []
 
 ## Completed Slice Archive
 
-No completed slices yet.
+| Slice | Commit | Outcome | Audit references |
+|---|---|---|---|
+| 1. Tighten create-spec override guidance | this commit | Batch Runway create-spec guidance now limits durable `Overrides` to future execution-contract deviations and directs session-local create-spec context to non-override prose. | Validation: `python scripts/planning_state.py current --root docs/plans`, `python scripts/planning_state.py validate --root docs/plans`, `git diff --check`; review: clean `runway_reviewer` result against the Slice 1 diff. |
 
 ## Slice 1. Tighten Create-Spec Override Guidance
 
