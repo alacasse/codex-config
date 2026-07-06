@@ -20,6 +20,10 @@ active-state file shape, program/batch directory conventions, archive
 semantics, run artifact roots, and output roots. This skill validates and
 reports state and target policy; it does not redefine artifact layout.
 
+For pickup questions, use this skill first. Planning Artifacts remains the layout
+and shape owner, while Planning State owns the operational ordering for pickup,
+validation, target-policy checks, and projection routing.
+
 ## Routine Hot Path
 
 1. Read applicable repository instructions and local overlays.

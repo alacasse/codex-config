@@ -265,6 +265,22 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         self.assertNotIn("python scripts/planning_state.py current --root", legacy)
         self.assertIn("old model", legacy)
 
+    def test_planning_artifacts_and_state_keep_layout_pickup_boundary(self) -> None:
+        artifacts = self.read("skills/planning-artifacts/SKILL.md")
+        state = self.read("skills/planning-state/SKILL.md")
+
+        self.assertIn("placement, naming, file shape", artifacts)
+        self.assertIn("Planning State Diagnostic-First Pickup", artifacts)
+        self.assertIn("competing pickup algorithm", artifacts)
+        self.assertNotIn("first navigation path", artifacts)
+        self.assertNotIn("before broad exploration", artifacts)
+
+        self.assertIn("For pickup questions, use this skill first", state)
+        self.assertIn("does not redefine artifact layout", state)
+        self.assertIn("operational ordering for pickup", state)
+        self.assertIn("target-policy checks", state)
+        self.assertIn("projection routing", state)
+
     def test_legacy_removal_feature_depends_on_planning_state(self) -> None:
         manifest = json.loads(
             (REPO_ROOT / "codex-features.json").read_text(encoding="utf-8")

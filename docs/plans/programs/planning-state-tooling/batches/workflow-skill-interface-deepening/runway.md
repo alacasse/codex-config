@@ -134,7 +134,7 @@ Dirty-file constraints:
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
 | 1. Make pickup single-owned | Closed | this commit | `consumer_projection_routing.py` 12 passed; `current`; `validate`; `git diff --check` | Clean review | Planning Artifacts placement seam remains. | Consumer workflow skills now route Layout v1 pickup through Planning State Diagnostic-First Pickup while preserving consumer-owned semantic decisions. |
-| 2. Re-separate layout and pickup | pending | | | | Program-vs-runway ledger handoff remains. | |
+| 2. Re-separate layout and pickup | Closed | this commit | `consumer_projection_routing.py` 13 passed; `current`; `validate`; `git diff --check` | Clean review after focused phrase-wrap recovery | Program-vs-runway ledger handoff remains. | Planning Artifacts now owns placement and active-state file shape without acting as a competing pickup algorithm; Planning State is the first-use owner for pickup, validation, target policy, and projection routing. |
 | 3. Clarify program/runway handoff | pending | | | | Specialized discovery role boundaries remain. | |
 | 4. Define discovery roles and closeout | pending | | | | Final metadata and planning closeout. | |
 
@@ -147,6 +147,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1. Make pickup single-owned | this commit | Batch Runway, Architecture Program Runway, and Legacy Removal now invoke Planning State Diagnostic-First Pickup as the single Layout v1 operational pickup Interface while retaining their own semantic decisions; focused tests guard against reintroducing duplicate pickup guidance. | Validation: `python -m pytest tests/test_planning_state_consumer_projection_routing.py -q`, `python scripts/planning_state.py current --root docs/plans`, `python scripts/planning_state.py validate --root docs/plans`, `git diff --check`; review: clean `runway_reviewer` result against the Slice 1 diff. |
+| 2. Re-separate layout and pickup | this commit | Planning Artifacts now defines placement, naming, file shape, archives, and roots while directing operational pickup through Planning State; Planning State explicitly owns pickup ordering, validation, target-policy checks, and projection routing without redefining artifact layout. | Validation: `python -m pytest tests/test_planning_state_consumer_projection_routing.py -q`, `python scripts/planning_state.py current --root docs/plans`, `python scripts/planning_state.py validate --root docs/plans`, `git diff --check`; review: clean `runway_reviewer` result after focused phrase-wrap recovery. |
 
 ## Slice 1. Make Pickup Single-Owned
 

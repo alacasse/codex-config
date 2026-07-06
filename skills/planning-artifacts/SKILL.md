@@ -8,7 +8,12 @@ description: Define project-agnostic placement and naming conventions for durabl
 Use this skill when a workflow needs to decide where durable planning artifacts
 belong. The convention is project-agnostic: project instructions, local
 overlays, active specs, or explicit user direction choose the actual root path.
-This skill defines the shape under that root.
+This skill defines placement, naming, file shape, batch directory conventions,
+archives, run artifact roots, and output roots under that root.
+
+For operational pickup, validation, target policy, and projection routing, use
+`../planning-state/SKILL.md` first when it is available. Planning State consumes
+the layout described here; this skill does not replace its pickup diagnostic.
 
 Do not hard-code a downstream project name, local path, validation command, or
 personal overlay into reusable skills. If a project has not declared a planning
@@ -144,25 +149,19 @@ that exception.
 ## Active-State Files
 
 `CURRENT.md` files are for fresh-agent handoff. Keep them compact and current;
-they are not ledgers or transcripts.
+they are not ledgers, transcripts, or a competing pickup algorithm.
 
-For ledger-driven pickup, task selection, batch selection, or "next batch/spec"
-requests under Planning Artifact Layout v1, active-state files are the first
-navigation path. After project instructions and local overlays, read the root
-`CURRENT.md`, then only the program `CURRENT.md` files named there before broad
-exploration. If a program `CURRENT.md` names a selected dispatch, active runway,
-or queued batch, treat that as the current coordination state until it is
-proven stale.
+This section defines the required shape of active-state files. For
+ledger-driven pickup, task selection, batch selection, or "next batch/spec"
+requests under Planning Artifact Layout v1, use Planning State Diagnostic-First Pickup
+to validate and order reads of these files before broader tools such as
+knowledge graphs, generated reports, repository-wide search, or source exploration.
 
-When `planning-state` is available, its Diagnostic-First Pickup rule owns the
-ordering between active-state reads and broader tools such as knowledge graphs,
-generated reports, repository-wide search, and source exploration.
-
-If active-state files are missing, contradictory, or insufficient for a specific
-decision, state the missing question before expanding the read set. Expansion
-should be targeted: read the relevant program ledger, then the source packet or
-deepening note named by the selected ledger row. Do not infer active work from
-old filenames while a Layout v1 `CURRENT.md` path exists.
+When Planning State reports that active-state files are missing,
+contradictory, or insufficient for a specific decision, keep any expansion
+targeted to the relevant program ledger and the source packet or deepening note
+named by the selected ledger row. Do not infer active work from old filenames
+while a Layout v1 `CURRENT.md` path exists.
 
 The root `CURRENT.md` should include:
 
