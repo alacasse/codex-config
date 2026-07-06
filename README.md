@@ -2,24 +2,119 @@
 
 Personal Codex configuration, workflows, skills, agents, and operating procedures.
 
-This repository contains the source-controlled portion of my Codex environment. It is intended to capture reusable agent behavior, workflow evolution, and operational knowledge while keeping runtime state, logs, caches, sessions, and secrets outside version control.
+This repository contains the source-controlled portion of my Codex environment.
+It captures reusable agent behavior, workflow evolution, and operational
+knowledge while keeping runtime state, logs, caches, sessions, and secrets
+outside version control.
+
+The repo is not a generic starter kit. It is a working configuration system for
+agent-assisted software development: skills, custom agents, rules, hooks,
+planning conventions, validation protocols, and installer metadata that can be
+reviewed and improved like production code.
 
 ## Purpose
 
-This repository serves as:
+This repository exists to make agent-assisted engineering more explicit,
+repeatable, and inspectable.
+
+It serves as:
 
 * The source of truth for personal Codex skills and agents.
 * A versioned history of workflow improvements.
 * A place to evolve agent orchestration patterns.
 * A reproducible configuration that can be installed on a new machine.
+* A durable record of decisions about validation, delegation, planning, and
+  recovery behavior.
 
-It is not intended to store runtime state.
+It is intentionally not a place for runtime state, private credentials, model
+caches, local sessions, or generated logs.
 
-## Philosophy
+## Principles
 
-Treat agent workflows as software.
+### Treat agent workflows as software
 
-Skills, agents, prompts, execution contracts, validation profiles, and operating procedures are maintained, reviewed, versioned, and improved like any other codebase.
+Skills, agents, prompts, execution contracts, validation profiles, and operating
+procedures are maintained, reviewed, versioned, and improved like any other
+codebase.
+
+### Prefer durable process over repeated instruction
+
+When a useful behavior is repeatedly explained to an agent, it should become a
+skill, rule, validation check, planning artifact, or documented protocol.
+The system should accumulate reusable procedures instead of rediscovering them
+from chat context.
+
+### Keep reusable workflows project-neutral
+
+Repo-owned skills are reusable workflow code. They should not hard-code one
+project's paths, commands, cache locations, issue policy, or planning layout.
+Project-specific behavior belongs in that project's instructions, local overlay,
+active spec, or reference document.
+
+### Separate source-controlled behavior from runtime state
+
+This repo tracks configuration and workflow contracts. The live Codex runtime is
+kept separate so local sessions, secrets, generated databases, and caches do not
+become hidden dependencies of the source tree.
+
+### Make validation part of the workflow
+
+Changes should leave behind enough evidence for another agent or human reader to
+understand what changed, why it changed, and how the behavior was checked.
+
+### Optimize for resumption
+
+Planning state, ledgers, closeout notes, and changelog entries are used so work
+can be resumed without relying on a single conversation transcript.
+
+## Repository Contents
+
+The repository is organized around the parts of my Codex setup that are stable
+enough to version and reuse:
+
+* reusable skills for multi-slice implementation, review, planning, porting,
+  legacy cleanup, and test-quality review
+* custom agents for focused exploration, implementation, and review roles
+* ownership tooling for distinguishing repo-owned Codex files from vendor-owned
+  or unmanaged runtime files
+* planning-state tooling for active work discovery, queueing, closeout evidence,
+  and optional reporting projections
+* architecture-runner and planning-runner contracts that are being shaped here
+  before extraction into a reusable implementation
+* installation tooling that links repo-owned features into `~/.codex` while
+  preserving ownership boundaries
+* changelog discipline focused on problem, decision, and expected effect
+
+## Skills
+
+Repo-owned skills live under `skills/` and are installed into Codex through the
+feature manifest. They are written as reusable workflows: each skill defines
+when it should be used, what context it must read, what it owns, and where it
+must stop instead of guessing.
+
+| Skill | Purpose | How it is used |
+| --- | --- | --- |
+| `batch-runway` | Creates or executes bounded multi-slice runway specs with per-slice validation, commits, ledger updates, and implementation/review delegation. | Used when work needs to be split into small, reviewable slices or when an existing runway spec should be executed one slice at a time. |
+| `architecture-program-runway` | Turns broad architecture findings into sequenced batches while preserving a durable program ledger. | Used before `batch-runway` when there are many related findings and the agent must group, prioritize, select, or close out batches. |
+| `port-by-contract` | Extracts implementation-neutral behavior contracts before a rewrite, migration, or port. | Used when moving behavior across languages, runtimes, or product boundaries without copying accidental source structure. |
+| `test-quality-review` | Reviews tests for behavioral confidence, regression protection, assertion strength, fixture friction, and design signals. | Used for changed tests, focused test audits, or larger test-suite reviews where coverage percentage is not the main question. |
+| `dead-surface-audit` | Finds code surfaces kept alive by tests that assert imports, aliases, topology, or compatibility shape rather than behavior. | Used when auditing legacy wrappers, facades, root modules, compatibility aliases, or suspected test-retained dead code. |
+| `legacy-removal` | Scopes evidence-backed legacy cleanup before implementation planning. | Used when obsolete paths, fallback behavior, stale names, compatibility shims, or cleanup residues need classification and a removal plan. |
+| `planning-artifacts` | Defines project-agnostic placement and naming conventions for durable planning docs, ledgers, dispatch packets, run artifacts, outputs, and archives. | Used when creating, migrating, or interpreting planning roots and workflow artifacts across projects. |
+| `planning-state` | Discovers, validates, bootstraps, projects, and reports current planning state before ledger-driven workflows consume it. | Used as the diagnostic hot path for active work pickup, queued batches, closeout evidence, and safe state/projection target checks. |
+
+## Future Runner Extraction
+
+Some runner-related work currently lives in this repository because it is still
+being shaped against the Codex workflow environment. The long-term direction is
+to extract the reusable runner core into a separate Go project so it can support
+other automation and orchestration use cases without depending on this personal
+Codex configuration.
+
+This repo should keep the contracts, planning artifacts, and Codex-specific
+integration guidance needed to use that runner from Codex. The future Go project
+should own the portable runner implementation, command surface, and reusable
+runtime behavior.
 
 The goal is to continuously reduce:
 
@@ -35,6 +130,19 @@ while improving:
 * validation quality
 * agent autonomy
 
+## How To Read This Repo
+
+Start with:
+
+* `README.md` for the project model and install flow.
+* `codex-features.json` for the manifest of repo-owned installable features.
+* `skills/` for the reusable workflows listed above.
+* `agents/` for custom role definitions.
+* `rules/` for shared policy and guidance.
+* `hooks/` for lifecycle automation.
+* `docs/plans/` for durable planning-state and workflow design artifacts.
+* `CHANGELOG.md` for the decision history behind meaningful workflow changes.
+
 ## Repository Structure
 
 ```text
@@ -47,6 +155,9 @@ codex-config/
 ├── skills/
 ├── agents/
 ├── rules/
+├── hooks/
+├── docs/
+├── tests/
 └── .codex/
 ```
 
