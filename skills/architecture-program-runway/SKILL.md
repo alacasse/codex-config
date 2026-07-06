@@ -206,6 +206,14 @@ queued runway, or active concrete spec:
 Do not mark a finding `Closed` because a related spec exists. Close only from
 completed implementation evidence.
 
+Do not widen or rewrite a `Pending` finding through ordinary source-ledger
+edits after selected, queued, or active batch artifacts control its scope.
+Allowed scope changes must be explicit: closeout evidence, supersession,
+abandonment, split, a named amendment, or a new follow-up finding. If the
+selected dispatch or concrete runway no longer matches the source finding,
+record the amendment or follow-up before continuing; do not hide the change in
+narrative notes.
+
 ## Program Ledger Shape
 
 For a detailed reusable template, read

@@ -82,6 +82,14 @@ without making `Pending` a batch queue status.
 - `Superseded`: made irrelevant by a different accepted change.
 - `Split`: decomposed into smaller findings.
 
+Do not widen or rewrite a `Pending` finding through ordinary source-ledger
+edits after selected, queued, or active batch artifacts control its scope.
+Allowed scope changes must be explicit: closeout evidence, supersession,
+abandonment, split, a named amendment, or a new follow-up finding. If the
+selected dispatch or concrete runway no longer matches the source finding,
+record the amendment or follow-up before continuing; do not hide the change in
+narrative notes.
+
 ## Batch Queue
 
 | Batch | Findings | Status | Why grouped | Depends on | Validation class | Dispatch | Spec |
@@ -231,6 +239,9 @@ so the program ledger stays readable.
   missing question before reopening it.
 - Every generated runway must name which findings it covers and which remain
   open.
+- Do not widen or rewrite `Pending` finding scope through ordinary
+  source-ledger edits; use closeout evidence, supersession, abandonment, split,
+  a named amendment, or a new follow-up finding.
 - Mark a finding `Prepared` when tests or seams improve but the production
   finding remains.
 - Mark a finding `Closed` only after implementation, validation, review, and

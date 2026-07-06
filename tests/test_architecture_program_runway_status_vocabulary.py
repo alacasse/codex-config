@@ -50,6 +50,34 @@ class ArchitectureProgramRunwayStatusVocabularyTests(unittest.TestCase):
         self.assertIn("amendment, supersession, split, abandonment,\n  or follow-up", lifecycle)
         self.assertNotIn("`Pending`", queue_statuses)
 
+    def test_pending_scope_changes_must_be_explicit(self) -> None:
+        skill_statuses = section(SKILL.read_text(encoding="utf-8"), "Ledger Statuses")
+        template_lifecycle = section(
+            TEMPLATE.read_text(encoding="utf-8"), "Finding Lifecycle Statuses"
+        )
+
+        for source_name, text in (
+            ("skill", skill_statuses),
+            ("template", template_lifecycle),
+        ):
+            with self.subTest(source=source_name):
+                self.assertIn(
+                    "Do not widen or rewrite a `Pending` finding through ordinary "
+                    "source-ledger\nedits",
+                    text,
+                )
+                self.assertIn(
+                    "Allowed scope changes must be explicit: closeout evidence, "
+                    "supersession,\nabandonment, split, a named amendment, or a new "
+                    "follow-up finding.",
+                    text,
+                )
+                self.assertIn(
+                    "record the amendment or follow-up before continuing; do not hide "
+                    "the change in\nnarrative notes.",
+                    text,
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

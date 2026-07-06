@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Architecture-program Pending finding update rules
+
+Problem: Pending architecture findings could be controlled by selected,
+queued, or active batch artifacts while later source-ledger edits silently
+changed the finding scope.
+
+Decision: require explicit closeout evidence, supersession, abandonment, split,
+named amendments, or follow-up findings for Pending scope changes, with focused
+regression coverage and a feature version bump.
+
+Expected effect: Architecture Program Runway ledgers keep cut batch scope
+stable and make post-selection scope changes visible before agents continue.
+
 ### Batch-runway create-spec override contract
 
 Problem: Batch Runway create-spec guidance could let session-local planning
