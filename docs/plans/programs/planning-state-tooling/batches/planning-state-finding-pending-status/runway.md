@@ -126,7 +126,7 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 1. Define Pending finding vocabulary | Pending |  |  | Status-vocabulary regression fails before it passes | Pending is documented as a finding lifecycle status, not a batch artifact state. |
+| 1. Define Pending finding vocabulary | Completed | this commit | `pytest ...status_vocabulary.py -q`; `current`; `validate`; `git diff --check` | Clean review | Pending is documented as a finding lifecycle status, not a batch artifact state. |
 | 2. Protect Pending update rules | Pending |  |  | Program ledger/current closeout can use the new status safely | Tests and guidance prevent silent source-ledger scope edits for Pending findings. |
 | 3. Reconcile ledger and close PST-19 | Pending |  |  | Final validation and closeout evidence are complete | PST-19 closes only after status vocabulary, tests, and pointer-first closeout are complete. |
 
@@ -138,7 +138,7 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
-| 1. Define Pending finding vocabulary |  |  |  |
+| 1. Define Pending finding vocabulary | this commit | Added `Pending` to Architecture Program Runway finding lifecycle guidance and template, with focused vocabulary coverage. | `skills/architecture-program-runway/SKILL.md`; `skills/architecture-program-runway/references/program-ledger-template.md`; `tests/test_architecture_program_runway_status_vocabulary.py` |
 | 2. Protect Pending update rules |  |  |  |
 | 3. Reconcile ledger and close PST-19 |  |  |  |
 

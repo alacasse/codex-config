@@ -184,10 +184,17 @@ separate candidate.
 
 ## Ledger Statuses
 
-Use these statuses unless a project already defines its own:
+Use these finding lifecycle statuses unless a project already defines its own.
+Keep them separate from batch artifact state such as a selected dispatch,
+queued runway, or active concrete spec:
 
-- `Open`: real finding, not yet assigned to a runway.
-- `Ready`: selected or near-selected for the next runway.
+- `Open`: real finding, not yet assigned to selected, queued, or active batch
+  artifacts.
+- `Ready`: near-selected for the next runway, but not yet controlled by a
+  selected, queued, or active batch artifact.
+- `Pending`: cut or active batch work controlled by selected, queued, or active
+  batch artifacts until closeout, amendment, supersession, split, abandonment,
+  or follow-up.
 - `Blocked`: waiting on another finding, decision, or external constraint.
 - `Prepared`: tests, seams, or caller evidence improved, but the production
   finding is not closed.

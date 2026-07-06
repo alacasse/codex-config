@@ -61,6 +61,27 @@ deferred_legacy_followups: []
 |---|---|---|---|---|
 | 1. <finding> | Open | None | <next concrete action> | <main files, risk, guardrails> |
 
+## Finding Lifecycle Statuses
+
+Keep finding lifecycle status separate from batch artifact state. A selected
+dispatch packet, queued runway, or active concrete spec can control a finding
+without making `Pending` a batch queue status.
+
+- `Open`: real finding, not yet assigned to selected, queued, or active batch
+  artifacts.
+- `Ready`: near-selected for the next runway, but not yet controlled by a
+  selected, queued, or active batch artifact.
+- `Pending`: cut or active batch work controlled by selected, queued, or active
+  batch artifacts until closeout, amendment, supersession, split, abandonment,
+  or follow-up.
+- `Blocked`: waiting on another finding, decision, or external constraint.
+- `Prepared`: tests, seams, or caller evidence improved, but the production
+  finding is not closed.
+- `In runway`: covered by an active concrete runway spec.
+- `Closed`: implementation, validation, review, and ledger closeout are done.
+- `Superseded`: made irrelevant by a different accepted change.
+- `Split`: decomposed into smaller findings.
+
 ## Batch Queue
 
 | Batch | Findings | Status | Why grouped | Depends on | Validation class | Dispatch | Spec |
@@ -245,8 +266,8 @@ After a concrete runway finishes:
    warnings, or fallback decisions.
 3. Read the completed slice archive, commits, validation notes, and review
    result.
-4. For each covered finding, decide: `Closed`, `Prepared`, `Open`, `Split`, or
-   `Superseded`.
+4. For each covered finding, decide: `Closed`, `Prepared`, `Open`, `Pending`,
+   `Split`, or `Superseded`.
 5. Update `Covered by` with spec path and commit evidence.
 6. Update the batch queue row to `Completed` or explain remaining work.
 7. Select or refresh the next `Ready` batch only if evidence supports it.
