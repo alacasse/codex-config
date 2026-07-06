@@ -27,14 +27,15 @@ handoff to `batch-runway`, and closeout reconciliation.
 
 For program history/reporting questions not answered by the active-state
 diagnostic, read `../planning-state/references/projection-reporting.md` and use
-policy-compatible `report-projection` output before broad historical planning
-scans. This applies to pending-batch inventory, missing closeout evidence,
-batch evidence, runner summary, and bounded backlog/history reports when
-`projection_usage` and `projection_rebuild_authority` permit it. Missing,
-blocked, stale, or policy-incompatible projection reports are explicit blockers,
-warnings, or fallback decisions; projection output is read-only planning-state
-context and must not select batches, replace program ledgers or selected
-dispatch packets, or close findings.
+policy-compatible `report-projection` command output as the normal route before
+broad historical planning scans. This applies to pending-batch inventory,
+missing closeout evidence, batch evidence, runner summary, and bounded
+backlog/history reports when `projection_usage` and
+`projection_rebuild_authority` permit it. Missing, blocked, stale, or
+policy-incompatible projection reports are explicit blockers, warnings, or
+fallback decisions before broad scans; projection output is read-only
+planning-state context and must not select batches, replace program ledgers or
+selected dispatch packets, query SQLite directly, or close findings.
 
 ## Core Rule
 
@@ -72,7 +73,8 @@ re-derive grouping from scratch after the ledger and batch queue exist.
 3. If the request is about program history/reporting, pending-batch inventory,
    missing closeout evidence, runner summaries, or bounded backlog/history
    reports, use planning-state projection-reporting guidance and
-   policy-compatible `report-projection` output before broad historical scans.
+   policy-compatible `report-projection` command output as the normal route
+   before broad historical scans.
 4. Read the findings, review, PRD, ADR, selected dispatch packet, or planning
    document needed for the chosen mode.
 5. Read active or recently completed related runway specs only enough to know

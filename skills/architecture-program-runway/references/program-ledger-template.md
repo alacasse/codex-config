@@ -218,16 +218,17 @@ so the program ledger stays readable.
   dispatches, queued batches, active runways, blockers, closeout evidence, or
   target policy.
 - Treat Planning State Diagnostic output as operational facts only. Program
-  grouping, queue state, selected dispatch packets, and closeout reconciliation
-  remain owned by `architecture-program-runway`; placement remains owned by
-  `planning-artifacts`.
-- For program history/reporting, pending-batch inventory, missing closeout
+  grouping, queue state, selected dispatch packets, ledger decisions, and
+  closeout reconciliation remain owned by `architecture-program-runway`;
+  placement remains owned by `planning-artifacts`.
+- For supported pending-batch inventory, missing closeout evidence, batch
   evidence, runner summaries, or bounded backlog/history reports, read
   `../../planning-state/references/projection-reporting.md` and use
-  policy-compatible `report-projection` output before broad historical planning
-  scans when `projection_usage` and `projection_rebuild_authority` allow it.
-  Missing, blocked, stale, or policy-incompatible projection reports must be
-  recorded as explicit blockers, warnings, or fallback decisions.
+  policy-compatible `report-projection` command output as the normal route
+  before broad historical scans when `projection_usage` and
+  `projection_rebuild_authority` allow it. If policy is missing, stale, or
+  incompatible, stop or record an explicit fallback decision before scanning.
+  Do not query SQLite directly.
 - Projection reports are read-only planning-state context. They do not select
   architecture batches, replace the program ledger or selected dispatch packet,
   or close findings.
@@ -272,9 +273,12 @@ After a concrete runway finishes:
    plans or generated outputs.
 2. For missing closeout evidence, batch evidence, runner-summary, or bounded
    history/reporting questions, follow planning-state projection-reporting
-   guidance and use policy-compatible `report-projection` output before broad
-   historical scans; treat projection blockers as explicit closeout blockers,
-   warnings, or fallback decisions.
+   guidance and use policy-compatible `report-projection` command output as the
+   normal route before broad historical scans when `projection_usage` and
+   `projection_rebuild_authority` allow it. Treat missing, blocked, stale, or
+   policy-incompatible projection reports as explicit closeout blockers,
+   warnings, or fallback decisions before scanning. Do not query SQLite
+   directly.
 3. Read the completed slice archive, commits, validation notes, and review
    result.
 4. For each covered finding, decide: `Closed`, `Prepared`, `Open`, `Pending`,

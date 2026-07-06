@@ -4,11 +4,15 @@ Use this reference when a workflow needs generated projection reports. Markdown
 planning files and explicit JSON state fixtures remain canonical; the SQLite
 database is a replaceable reporting projection.
 
-Use projection reports for supported history/reporting questions before broad
-historical planning scans when project policy says projection reporting is
-`expected` or when `optional`/`caller-directed` usage has explicit caller or
-spec authority. Do not use projection reports when `projection_usage` is
-`disabled`.
+For supported history/reporting questions, projection-backed reporting is the
+policy-gated normal route before broad historical planning scans. Use
+projection reports when project policy says projection reporting is `expected`
+or when `optional`/`caller-directed` usage has explicit caller or spec
+authority. If `projection_usage` is `disabled`, or `projection_usage` /
+`projection_rebuild_authority` are missing, stale, or incompatible with the
+requested report, stop or record an explicit fallback decision. Broad
+historical scans are a fallback only after that blocker or fallback decision is
+explicit.
 
 `current` and `validate` remain the routine active-state hot path. They do not
 need SQLite, do not rebuild projections, and should be used before projection
@@ -39,8 +43,8 @@ policy facts.
    python scripts/planning_state.py report-projection --root <planning-root> --database <projection.sqlite> --report pending-batches
    ```
 
-5. Consume the command output. Do not open the database, issue SQL queries, or
-   rely on projection table names in an agent workflow.
+5. Consume the command output. Do not query SQLite directly, open the database,
+   issue SQL queries, or rely on projection table names in an agent workflow.
 
 ## Supported Reports
 

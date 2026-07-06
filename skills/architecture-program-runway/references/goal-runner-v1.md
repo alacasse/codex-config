@@ -43,12 +43,13 @@ For each batch until `max_batches` is reached:
 3. For runner-summary, pending-batch inventory, missing closeout evidence, or
    bounded backlog/history questions, read
    `../../planning-state/references/projection-reporting.md` and use
-   policy-compatible `report-projection` output before broad historical scans
-   when `projection_usage` and `projection_rebuild_authority` allow it. Treat
-   missing, blocked, stale, or policy-incompatible projection reports as
-   explicit blockers, warnings, or fallback decisions; do not let projection
-   reports select batches, replace the program ledger or selected dispatch
-   packet, or close findings.
+   policy-compatible `report-projection` command output as the normal route
+   before broad historical scans when `projection_usage` and
+   `projection_rebuild_authority` allow it. Treat missing, blocked, stale, or
+   policy-incompatible projection reports as explicit blockers, warnings, or
+   fallback decisions before scanning; do not let projection reports select
+   batches, replace the program ledger or selected dispatch packet, query
+   SQLite directly, or close findings.
 4. Read active or recently completed related runway specs only enough to know
    what is already closed, prepared, or open.
 5. Check the worktree and preserve unrelated dirty files.

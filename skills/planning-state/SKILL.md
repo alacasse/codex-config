@@ -71,17 +71,19 @@ this skill.
 
 ## Projection-Backed Reporting
 
-For history, reporting, backlog inventory, closeout-evidence lookup, or runner
-summary questions that are not answered by the active-state hot path, check
-whether projection reports are policy-compatible before broad historical scans.
-Read `references/projection-reporting.md`, then use command output from
-`rebuild-projection` and `report-projection`; do not query SQLite directly.
+For supported history, reporting, backlog inventory, closeout-evidence lookup,
+or runner summary questions that are not answered by the active-state hot path,
+projection-backed reporting is the policy-gated normal route before broad
+historical scans. Read `references/projection-reporting.md`, then use command
+output from `rebuild-projection` and `report-projection`; do not query SQLite
+directly.
 
 Projection-backed reporting requires compatible `projection_usage` and
 `projection_rebuild_authority` policy. If policy is missing, disabled,
 external-owner only, stale, or incompatible with the requested report, stop with
-that blocker or ask for an explicit target/rebuild authority instead of silently
-scraping historical planning files.
+that blocker or ask for an explicit target/rebuild authority. Broad historical
+scans are a fallback only after that blocker or fallback decision is explicit;
+do not silently scrape historical planning files.
 
 ## Progressive Disclosure
 

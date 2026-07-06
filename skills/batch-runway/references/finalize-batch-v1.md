@@ -14,9 +14,10 @@ for final batch reporting.
 5. For missing closeout evidence, batch evidence, runner summaries, or bounded
    history/reporting checks, read
    `../../planning-state/references/projection-reporting.md` and use
-   policy-compatible `report-projection` command output before broad historical
-   scans. Stop on missing or incompatible `projection_usage` or
-   `projection_rebuild_authority`, or record an explicit fallback decision.
+   policy-compatible `report-projection` command output as the normal route
+   before broad historical scans. Stop on missing or incompatible
+   `projection_usage` or `projection_rebuild_authority`, or record an explicit
+   fallback decision before scanning. Do not query SQLite directly.
 6. Report skipped validation clearly when a command cannot run.
 
 ## Final Report

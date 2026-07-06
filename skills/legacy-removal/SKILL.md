@@ -34,13 +34,15 @@ Read `../planning-state/references/projection-reporting.md` before broad
 historical scans for supported legacy-removal history/reporting questions such
 as pending-batch inventory, missing closeout evidence, batch evidence, bounded
 backlog/history reports, or runner summaries that affect handoff context. Use
-policy-compatible `report-projection` output only when `projection_usage` and
+policy-compatible `report-projection` command output as the normal route before
+broad historical scans when `projection_usage` and
 `projection_rebuild_authority` permit it. Missing, blocked, stale, or
 policy-incompatible projection reports are blockers, warnings, or explicit
-fallback decisions. Projection output is read-only planning-state context; it
-must not decide the old model, canonical model, evidence value, compatibility
-decision, cleanup-residue classification, handoff target, or whether legacy
-code is kept or removed.
+fallback decisions before scanning. Projection output is read-only
+planning-state context; agents must not query SQLite directly, and projection
+output must not decide the old model, canonical model, evidence value,
+compatibility decision, cleanup-residue classification, handoff target, or
+whether legacy code is kept or removed.
 
 Responsibility boundary:
 
@@ -102,7 +104,8 @@ temporary transition period with a removal condition.
    broader exploration.
    For supported history/reporting questions not answered by active-state
    diagnostics, use planning-state projection-reporting guidance and
-   policy-compatible `report-projection` output before broad historical scans.
+   policy-compatible `report-projection` command output as the normal route
+   before broad historical scans.
 2. Define the old model and candidate canonical model. If either is unclear,
    record the uncertainty instead of deleting or preserving by default.
 3. Inventory evidence across code, tests, docs, configs, generated artifacts,

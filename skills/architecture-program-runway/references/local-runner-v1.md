@@ -19,10 +19,12 @@ For questions about runner summaries, pending-batch inventory, missing closeout
 evidence, or bounded backlog/history outside a direct runner invocation, use
 the Architecture Program Runway entrypoint and
 `../../planning-state/references/projection-reporting.md`: policy-compatible
-`report-projection` output should be tried before broad historical scans when
-`projection_usage` and `projection_rebuild_authority` allow it. Projection
-reports are read-only planning-state context; they must not select batches,
-replace the program ledger or selected dispatch packet, or close findings.
+`report-projection` command output is the normal route before broad historical
+scans when `projection_usage` and `projection_rebuild_authority` allow it.
+Missing, stale, or incompatible policy requires an explicit blocker or fallback
+decision before scanning. Projection reports are read-only planning-state
+context; they must not select batches, replace the program ledger or selected
+dispatch packet, query SQLite directly, or close findings.
 
 The runner is project-neutral. It does not know project-specific validation
 tools, package managers, caches, network expectations, or fallback commands.
@@ -279,9 +281,11 @@ processes.
 When the runner stops, it prints a final JSON summary. The invoking agent should
 report that summary instead of reconstructing fields from conversation memory.
 If later reporting needs broader runner history, use planning-state
-projection-reporting guidance and policy-compatible `report-projection` output
-before broad historical scans; stale, blocked, or policy-incompatible reports
-are explicit blockers, warnings, or fallback decisions.
+projection-reporting guidance and policy-compatible `report-projection` command
+output as the normal route before broad historical scans when
+`projection_usage` and `projection_rebuild_authority` allow it. Missing, stale,
+blocked, or policy-incompatible reports are explicit blockers, warnings, or
+fallback decisions before scanning. Do not query SQLite directly.
 
 The summary contains:
 

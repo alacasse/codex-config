@@ -16,6 +16,16 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
     def read(self, relative_path: str) -> str:
         return (REPO_ROOT / relative_path).read_text(encoding="utf-8")
 
+    def section_between(
+        self,
+        text: str,
+        start: str,
+        end: str | None,
+    ) -> str:
+        section_start = text.index(start)
+        section_end = len(text) if end is None else text.index(end, section_start)
+        return text[section_start:section_end]
+
     def test_batch_runway_routes_supported_reports_through_projection_guidance(
         self,
     ) -> None:
@@ -35,6 +45,44 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
                 self.assertIn("projection_rebuild_authority", text)
                 self.assertIn("broad historical", text)
                 self.assertIn("scans", text)
+                self.assertIn("normal route", text)
+                self.assertRegex(text, r"fallback\s+decision")
+                self.assertRegex(text, r"command\s+output")
+
+    def test_architecture_program_closeout_and_runner_history_blocks_are_gated(
+        self,
+    ) -> None:
+        ledger_template = self.read(
+            "skills/architecture-program-runway/references/program-ledger-template.md"
+        )
+        local_runner = self.read(
+            "skills/architecture-program-runway/references/local-runner-v1.md"
+        )
+        closeout = self.section_between(
+            ledger_template,
+            "## Closeout Checklist",
+            None,
+        )
+        runner_history = self.section_between(
+            local_runner,
+            "## Final Summary Contract",
+            "The summary contains:",
+        )
+
+        for surface, text in {
+            "closeout-checklist": closeout,
+            "runner-history": runner_history,
+        }.items():
+            with self.subTest(surface=surface):
+                self.assertIn("projection-reporting", text)
+                self.assertIn("projection_usage", text)
+                self.assertIn("projection_rebuild_authority", text)
+                self.assertIn("report-projection", text)
+                self.assertRegex(text, r"command\s+output")
+                self.assertIn("normal route", text)
+                self.assertIn("broad historical scans", text)
+                self.assertRegex(text, r"fallback\s+decisions before scanning")
+                self.assertRegex(text, r"Do not query SQLite\s+directly")
 
     def test_batch_runway_keeps_active_pickup_on_planning_state_diagnostic(
         self,
@@ -95,6 +143,9 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
                 self.assertIn("projection_rebuild_authority", text)
                 self.assertIn("broad historical", text)
                 self.assertIn("scans", text)
+                self.assertIn("normal route", text)
+                self.assertRegex(text, r"fallback\s+decision")
+                self.assertIn("command output", text)
 
     def test_architecture_program_keeps_authority_over_program_state(self) -> None:
         entrypoint = self.read("skills/architecture-program-runway/SKILL.md")
@@ -103,7 +154,8 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         self.assertIn("current", entrypoint)
         self.assertIn("validate", entrypoint)
         self.assertIn("must not select batches", entrypoint)
-        self.assertIn("replace program ledgers or selected", entrypoint)
+        self.assertIn("replace program ledgers", entrypoint)
+        self.assertIn("selected dispatch", entrypoint)
         self.assertIn("close findings", entrypoint)
 
     def test_architecture_program_feature_depends_on_planning_state(self) -> None:
@@ -133,6 +185,34 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         self.assertIn("projection_rebuild_authority", entrypoint)
         self.assertIn("broad historical", entrypoint)
         self.assertIn("scans", entrypoint)
+        self.assertIn("normal route", entrypoint)
+        self.assertRegex(entrypoint, r"fallback\s+decisions before scanning")
+        self.assertIn("command output", entrypoint)
+
+    def test_planning_state_projection_reporting_contract_keeps_sqlite_noncanonical(
+        self,
+    ) -> None:
+        entrypoint = self.read("skills/planning-state/SKILL.md")
+        reference = self.read("skills/planning-state/references/projection-reporting.md")
+
+        for surface, text in {
+            "entrypoint": entrypoint,
+            "projection-reporting": reference,
+        }.items():
+            with self.subTest(surface=surface):
+                self.assertIn("current", text)
+                self.assertIn("validate", text)
+                self.assertIn("active-state hot path", text)
+                self.assertIn("projection_usage", text)
+                self.assertIn("projection_rebuild_authority", text)
+                self.assertIn("report-projection", text)
+                self.assertIn("normal route", text)
+                self.assertRegex(
+                    text,
+                    r"[Bb]road\s+historical\s+scans are a fallback",
+                )
+                self.assertIn("Do not", text)
+                self.assertIn("query SQLite directly", text)
 
     def test_legacy_removal_keeps_authority_over_legacy_decisions(self) -> None:
         entrypoint = self.read("skills/legacy-removal/SKILL.md")

@@ -146,7 +146,7 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 1. Tighten projection language | Pending |  |  |  | Wording and tests prove projection reports are normal when policy permits. | Preserve SQLite-independent active-state pickup. |
+| 1. Tighten projection language | Closed | this commit | `consumer_projection_routing.py` 11 passed; `current`; `validate`; `git diff --check` | Clean review after stale-block fix loop | Checklist and fixture adoption proof remain. | Projection reporting is now described as the policy-gated normal route for supported reports while preserving SQLite-independent active-state pickup. |
 | 2. Add adoption checklist and fixtures | Pending |  |  |  | Checklist covers existing Layout v1 roots and generated-only/ignored-local policy shapes. | Keep downstream paths out of generic guidance. |
 | 3. Reconcile metadata and closeout evidence | Pending |  |  |  | Manifest/changelog/current/ledger state is aligned and closeout is pointer-first. | Do not select a successor batch. |
 
@@ -158,6 +158,7 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
+| 1. Tighten projection language | this commit | Planning State, Batch Runway, Architecture Program Runway, and Legacy Removal now route supported history/reporting questions through policy-compatible `report-projection` command output as the normal pre-scan route, with explicit fallback/blocker handling and direct-SQL guards. | Validation: `python -m pytest tests/test_planning_state_consumer_projection_routing.py -q`, `python scripts/planning_state.py current --root docs/plans`, `python scripts/planning_state.py validate --root docs/plans`, `git diff --check`; review: clean `runway_reviewer` result after required stale-block fixes. |
 
 ## Slice 1. Tighten Projection Language
 

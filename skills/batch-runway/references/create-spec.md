@@ -24,10 +24,11 @@ Steps:
    For pending-batch inventory, missing closeout evidence, bounded
    backlog/history reports, or other supported history/reporting questions,
    read `../../planning-state/references/projection-reporting.md` and use
-   policy-compatible `report-projection` command output before broad historical
-   scans. If `projection_usage` or `projection_rebuild_authority` is missing or
-   incompatible, stop with that blocker or record an explicit fallback decision;
-   do not silently scrape historical planning files.
+   policy-compatible `report-projection` command output as the normal route
+   before broad historical scans. If `projection_usage` or
+   `projection_rebuild_authority` is missing or incompatible, stop with that
+   blocker or record an explicit fallback decision before scanning; do not
+   query SQLite directly or silently scrape historical planning files.
 6. Pick 3-5 tightly related slices that can execute sequentially.
 7. Keep each slice independently testable and committable.
 8. Store the spec in the project's local planning location.
