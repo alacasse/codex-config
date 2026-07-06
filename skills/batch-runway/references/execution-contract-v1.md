@@ -13,11 +13,12 @@ Rules:
   A spawned `runway_worker` is already the required coding subagent for its
   assigned slice; it must implement that slice directly and must not spawn,
   delegate to, or wait on additional coding or review agents.
-- The coordinator owns validation, review delegation, ledger updates, commits,
-  and subagent lifecycle unless a spec explicitly says otherwise.
+- The coordinator owns validation, review delegation, concrete
+  execution-ledger updates, completed-slice archive movement, commits, and
+  subagent lifecycle unless a spec explicitly says otherwise.
 - The main agent is coordinator only.
 - The main agent must not implement code changes directly except for updating
-  the ledger and making commits.
+  the concrete execution ledger and making commits.
 - Each slice implementation must be delegated to a coding subagent.
 - Each completed slice must be reviewed by a separate review subagent before
   commit.
@@ -35,8 +36,8 @@ Rules:
   - review result
   - exact inspection commands, usually `git show --stat <hash>` and
     `git show <hash>`
-- Update the ledger after each slice with status, commit hash, focused
-  validation, review result, review commands, and notes.
+- Update the concrete execution ledger after each slice with status, commit
+  hash, focused validation, review result, review commands, and notes.
 - After reporting a commit receipt, continue to the next pending slice unless
   the user explicitly asks to stop or a stop condition remains active.
 - If execution is interrupted by an approval request, permission issue,

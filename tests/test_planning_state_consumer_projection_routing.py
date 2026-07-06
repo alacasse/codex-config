@@ -160,6 +160,26 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         self.assertIn("selected dispatch", entrypoint)
         self.assertIn("close findings", entrypoint)
 
+    def test_program_and_runway_handoff_has_one_ledger_owner_per_layer(self) -> None:
+        architecture = self.read("skills/architecture-program-runway/SKILL.md")
+        batch = self.read("skills/batch-runway/SKILL.md")
+
+        self.assertIn("## Program/Runway Handoff Boundary", architecture)
+        self.assertIn("program-level ledger\nupdates", architecture)
+        self.assertIn("selected dispatch packet", architecture)
+        self.assertIn("closeout reconciliation", architecture)
+        self.assertIn("does not reselect the program batch", architecture)
+        self.assertIn("program findings ledger", architecture)
+
+        self.assertIn("## Architecture Program Handoff", batch)
+        self.assertIn("concrete execution state", batch)
+        self.assertIn("concrete execution-ledger updates", batch)
+        self.assertIn("completed-slice archives", batch)
+        self.assertIn("Architecture Program Runway owns program state", batch)
+        self.assertIn("program-level ledger updates", batch)
+        self.assertIn("closeout reconciliation across batches", batch)
+        self.assertIn("Do not use Batch Runway routine execution to reselect", batch)
+
     def test_architecture_program_feature_depends_on_planning_state(self) -> None:
         manifest = json.loads(
             (REPO_ROOT / "codex-features.json").read_text(encoding="utf-8")

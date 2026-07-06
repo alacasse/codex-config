@@ -44,9 +44,9 @@ coordinator's expected slice state.
    replace them unless the user explicitly asks.
 5. If reconciliation requires changing tracked source, test, spec, or generated
    content, delegate that cleanup to `runway_worker` or stop for user direction.
-   The coordinator may inspect diffs, update ledgers, stage intended files, and
-   make commits, but must not hand-edit or reverse-patch tracked content as
-   implementation cleanup.
+   The coordinator may inspect diffs, update concrete execution ledgers, stage
+   intended files, and make commits, but must not hand-edit or reverse-patch
+   tracked content as implementation cleanup.
 6. If the drift can be isolated without content edits, preserve it outside the
    commit path and document the dirty-file constraint.
 7. After reconciliation, re-run the focused validation affected by the changed

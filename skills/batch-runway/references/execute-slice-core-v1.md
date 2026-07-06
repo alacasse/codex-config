@@ -59,7 +59,8 @@ appropriate.
 ## Coordinator Invariants
 
 - Keep the main agent coordinator-only.
-- Do not implement code directly except ledger updates and commits.
+- Do not implement code directly except concrete execution-ledger updates and
+  commits.
 - Delegate implementation to `runway_worker`.
 - Delegate review to a separate `runway_reviewer`.
 - Run triggered specialist support reviewers only when the task-scoped diff
@@ -86,8 +87,8 @@ appropriate.
    its current and validate hot path, and keep compact Planning State Diagnostic
    facts before consuming active-state files, selected dispatches, queued specs,
    active runways, blockers, or target policy. Batch Runway still owns
-   pending-row selection, validation, subagent routing, ledger updates, and
-   commits.
+   pending-row selection, validation, subagent routing, concrete
+   execution-ledger updates, completed-slice archives, and commits.
 3. If broad source, test, memory, prior-spec, or architecture exploration would
    otherwise be needed in coordinator context, spawn one batch-scoped
    `fast_explorer` with the compact support handoff below. Reuse its compact
@@ -124,7 +125,8 @@ Dirty-file constraints: <constraints>.
 Validation profile: <selected profile path or expanded profile>.
 You are already the required coding subagent for this slice. Do not spawn,
 delegate to, or wait on additional subagents. Implement only this slice.
-The coordinator handles validation, review delegation, ledger updates, and commits.
+The coordinator handles validation, review delegation, concrete execution-ledger
+updates, completed-slice archives, and commits.
 Do not run project-level integration harnesses, index/search/graph refreshes,
 generated-doc refreshes, final validation, or cleanup commands unless this handoff
 explicitly assigns them.

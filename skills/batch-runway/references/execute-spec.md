@@ -19,7 +19,8 @@ for compatibility questions, non-routine execution, recovery, and finalization.
 3. Consume active-state files, selected dispatches, queued specs, active
    runways, blockers, and target policy only after that diagnostic handoff.
    Batch Runway still owns execution orchestration, pending-row selection,
-   validation profile handling, subagent routing, ledger updates, and commits.
+   validation profile handling, subagent routing, concrete execution-ledger
+   updates, completed-slice archives, and commits.
    When execution needs pending-batch inventory, missing closeout evidence,
    batch evidence, runner summaries, or bounded backlog/history reports beyond
    the active diagnostic, read

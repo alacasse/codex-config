@@ -1,6 +1,6 @@
 ---
 name: batch-runway
-description: Create and execute multi-slice runway specs with per-slice scope, validation, ledger updates, commits, and mandatory coding/review subagent delegation. Use when the user asks to create a batch runway spec, execute a runway spec, streamline sequential slices, work from project-local plans, commit after each slice, reduce long-running context use, or keep the main agent as coordinator only while subagents implement and review.
+description: Create and execute multi-slice runway specs with per-slice scope, validation, concrete execution-ledger updates, commits, and mandatory coding/review subagent delegation. Use when the user asks to create a batch runway spec, execute a spec, streamline sequential slices, work from project-local plans, commit after each slice, reduce long-running context use, or keep the main agent as coordinator only while subagents implement and review.
 ---
 
 # Batch Runway
@@ -49,8 +49,9 @@ reference file by default.
   files, selected dispatches, queued specs, active runways, blockers, or target
   policy. Invoke its Diagnostic-First Pickup Interface and carry forward only
   Planning State Diagnostic facts for this workflow; Batch Runway still owns
-  spec creation, execution orchestration, validation selection, subagent
-  routing, ledger updates, and commits.
+  concrete runway spec creation, execution orchestration, validation selection,
+  subagent routing, execution-ledger updates, completed-slice archives, and
+  commits.
 - `../planning-state/references/projection-reporting.md`: read before broad
   history/reporting scans for pending-batch inventory, missing closeout
   evidence, batch evidence, runner summaries, or bounded backlog/history
@@ -135,11 +136,12 @@ Non-negotiable execution rules:
   assigned slice; it must implement that slice directly and must not spawn,
   delegate to, or wait on additional coding or review agents.
 - The coordinator owns validation, project-level refresh/harness decisions,
-  review delegation, ledger updates, commits, and subagent lifecycle unless a
-  spec explicitly says otherwise.
+  review delegation, concrete execution-ledger updates, completed-slice
+  archives, commits, and subagent lifecycle unless a spec explicitly says
+  otherwise.
 - The main agent is coordinator only.
 - The main agent must not implement code changes directly except for updating
-  the ledger and making commits.
+  the concrete execution ledger and making commits.
 - Each slice implementation must be delegated to a coding subagent.
 - Each completed slice must be reviewed by a separate review subagent before
   commit.
@@ -201,11 +203,31 @@ Keep live orchestration context small enough for long batches.
   command output, normal validation logs, clean reviews, or implementation
   chronology.
 - Use compact YAML for routine worker results, reviewer results, commit
-  receipts, convergence, and ledger updates.
+  receipts, convergence, and concrete execution-ledger updates.
 - Move completed slice details out of the active ledger and into the completed
   slice archive.
 - Store detailed commands, logs, transcripts, and generated reports in commits
   or artifacts, then reference them.
+
+## Architecture Program Handoff
+
+When a runway is created from an `architecture-program-runway` selected
+dispatch, treat that dispatch as the program-level selection contract. Batch
+Runway consumes the dispatch and minimum program-ledger excerpt needed for
+traceability, then writes one concrete `runway.md` with its own active ledger
+and completed-slice archive.
+
+Batch Runway owns concrete execution state: slice rows, validation selection,
+review routing, commit receipts, orchestration anomalies, and completed-slice
+archive movement. Architecture Program Runway owns program state: finding
+grouping, selected dispatch, batch queue, program-level ledger updates, and
+closeout reconciliation across batches.
+
+Do not use Batch Runway routine execution to reselect the architecture program
+batch, rewrite finding lifecycle statuses, or close program findings directly.
+At finalization, preserve compact evidence from the concrete runway so an
+`architecture-program-runway closeout-runway` pass can reconcile the program
+ledger.
 
 ## Create-Spec Summary
 
@@ -248,7 +270,7 @@ In `execute-spec` mode:
 6. Execute from the next incomplete ledger row.
 7. For each routine slice: spawn coding subagent, validate, spawn separate review
    subagent, commit if clean, record any orchestration anomalies, report
-   receipt, update ledger/archive, close subagents, continue.
+   receipt, update the concrete ledger/archive, close subagents, continue.
 8. If validation fails, review finds issues, blockers appear, or escalation is
    needed, read `references/execute-recovery-v1.md`.
 9. After the last slice, read `references/finalize-batch-v1.md`, run final

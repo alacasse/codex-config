@@ -6,8 +6,9 @@ description: Manage broad architecture findings, review ledgers, and multi-works
 # Architecture Program Runway
 
 Use this skill above `batch-runway`. This skill owns the program ledger,
-finding grouping, sequencing, and closeout reconciliation. `batch-runway` owns
-the concrete 3-5 slice execution spec and per-slice execution workflow.
+program-level finding statuses, finding grouping, sequencing, selected dispatch
+packet, batch queue state, and closeout reconciliation. `batch-runway` owns the
+concrete 3-5 slice execution spec and per-slice execution workflow.
 
 Use Planning Artifact Layout v1 when project instructions, local overlays, or
 active planning docs select it. Read `../planning-artifacts/SKILL.md` before
@@ -61,6 +62,33 @@ re-derive grouping from scratch after the ledger and batch queue exist.
 - Fresh spec-creation agents do not own global program prioritization. They
   consume one selected dispatch packet and produce one concrete Batch Runway
   spec.
+
+## Program/Runway Handoff Boundary
+
+Keep program ledgers and concrete runway ledgers separate.
+`architecture-program-runway` owns the program ledger and program-level ledger
+updates when a finding is grouped, selected, queued, superseded, split,
+prepared, or closed. It also owns the selected dispatch packet and the batch
+queue state that point a fresh `batch-runway create-spec` pass at exactly one
+selected batch.
+
+`batch-runway` owns the concrete runway artifact after that selected dispatch
+is handed off: the 3-5 slice spec, validation profile selection, slice active
+ledger, completed-slice archive, review routing, commit receipts, and per-slice
+execution workflow. It may name covered and deferred program findings in the
+runway for traceability, but it does not reselect the program batch or mutate
+the program findings ledger as part of routine spec creation or slice
+execution.
+
+The normal flow is:
+
+1. This skill selects one batch and writes or refreshes `dispatch.md`.
+2. A fresh `batch-runway create-spec` pass consumes that dispatch and writes
+   `runway.md`.
+3. `batch-runway execute-spec` completes slices, validation, review, commits,
+   and the concrete execution ledger/archive.
+4. This skill consumes compact closeout evidence from the completed concrete
+   runway and reconciles the program ledger before selecting another batch.
 
 ## Required First Steps
 

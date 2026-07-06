@@ -16,7 +16,8 @@ Slice anchor: <heading text or line number>.
 Read the full slice and applicable execution contract in the spec.
 You are already the required coding subagent for this slice. Do not spawn,
 delegate to, or wait on additional subagents. Implement only this slice.
-The coordinator handles validation, review delegation, ledger updates, and commits.
+The coordinator handles validation, review delegation, concrete execution-ledger
+updates, completed-slice archives, and commits.
 Do not run project-level integration harnesses, index/search/graph refreshes,
 generated-doc refreshes, final validation, or cleanup commands unless this handoff
 explicitly assigns them.
