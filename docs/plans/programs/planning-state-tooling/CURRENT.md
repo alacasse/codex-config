@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`
 - Latest closeout path:
   `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/closeout.md`
 - Run artifact location: `None selected`
@@ -45,15 +46,23 @@
 
 ## Queued Batch
 
-- Batch: `None`.
-- Notes: no planning-state-tooling batch is selected, queued, or active after
-  `planning-state-finding-pending-status` closeout.
+- Batch: `planning-state-projection-language-and-migration`.
+- Status: queued; PST-20 and PST-21 are Pending under the co-located dispatch
+  and runway artifacts.
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/dispatch.md`
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`
+- Notes: this batch clarifies projection-backed reporting language and
+  adoption/migration guidance while preserving Markdown/JSON as canonical and
+  SQLite as command-only reporting projection.
 
 ## Next Safe Action
 
-Use `docs/plans/programs/planning-state-tooling/LEDGER.md` before selecting any
-future planning-state-tooling batch. This closeout intentionally does not select
-the next batch.
+Execute or hand off
+`docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`
+when asked to work on the planning-state-tooling batch. Do not select another
+planning-state-tooling batch while this runway is queued.
 
 ## Stop Conditions
 
