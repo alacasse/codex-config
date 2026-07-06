@@ -301,6 +301,82 @@ def test_current_json_reports_projection_routing_policy_facts(
     }
 
 
+def test_portable_layout_v1_fixture_routes_generated_only_projection_to_temp_target(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "project-notes" / "planning"
+    _write_portable_layout_v1_fixture(
+        root,
+        display_root="project-notes/planning",
+        program_slug="delivery-quality",
+    )
+    _append_root_project_policy(
+        root,
+        planning_root="project-notes/planning/",
+        run_artifact_root="project-notes/runs/",
+        output_root="project-notes/outputs/",
+        state_file_policy="generated-only",
+        projection_policy="generated-only",
+        projection_usage="expected",
+        projection_rebuild_authority="command",
+    )
+
+    result = _run_current_json(root)
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["root"]["planning_root"] == "project-notes/planning/"
+    assert payload["programs"][0]["slug"] == "delivery-quality"
+    assert payload["projection_routing"]["projection_policy"] == "generated-only"
+    assert payload["projection_routing"]["target_requirement"] == (
+        "explicit caller-provided temporary target"
+    )
+    assert payload["projection_routing"]["next_action"] == (
+        "run rebuild-projection, then report-projection with matching arguments"
+    )
+    assert payload["blockers"] == []
+
+
+def test_portable_layout_v1_fixture_accepts_ignored_local_projection_path(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "project-notes" / "planning"
+    _write_portable_layout_v1_fixture(
+        root,
+        display_root="project-notes/planning",
+        program_slug="delivery-quality",
+    )
+    projection_path = "project-notes/planning/.local/planning-state.sqlite"
+    _append_root_project_policy(
+        root,
+        planning_root="project-notes/planning/",
+        run_artifact_root="project-notes/runs/",
+        output_root="project-notes/outputs/",
+        state_file_policy="ignored-local",
+        state_file_path="project-notes/planning/.local/state.json",
+        projection_policy="ignored-local",
+        projection_path=projection_path,
+        projection_usage="caller-directed",
+        projection_rebuild_authority="ask-first",
+        update_authority="ask-first",
+    )
+    target = root / ".local" / "planning-state.sqlite"
+
+    result = _run_validate_json(root, "--projection-target", str(target))
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["projection_routing"]["projection_policy"] == "ignored-local"
+    assert payload["projection_routing"]["projection_path"] == projection_path
+    assert payload["projection_routing"]["target_requirement"] == (
+        f"projection_path: {projection_path}"
+    )
+    assert payload["projection_routing"]["rebuild_availability"] == (
+        "requires-authority"
+    )
+    assert payload["blockers"] == []
+
+
 def test_validate_text_reports_disabled_projection_routing_blocker_without_failing(
     tmp_path: Path,
 ) -> None:
@@ -5576,6 +5652,99 @@ Next safe action: select a new batch only from the relevant program `CURRENT.md`
     )
     _write_redirect(root, legacy)
     _write_redirect(root, tqa)
+
+
+def _write_portable_layout_v1_fixture(
+    root: Path,
+    *,
+    display_root: str,
+    program_slug: str,
+) -> None:
+    (root / "programs" / program_slug / "batches" / "adoption-proof").mkdir(
+        parents=True
+    )
+    (root / "CURRENT.md").write_text(
+        f"""# Planning Current State
+
+## Layout
+
+- Layout: Planning Artifact Layout v1
+- Planning root: `{display_root}/`
+- Run artifact root: `project-notes/runs/`
+- Output root: `project-notes/outputs/`
+- One-shot intake: `None`
+- Program archive root: `{display_root}/archive/`
+
+## Active Programs
+
+| Program | Current state |
+|---|---|
+| `{program_slug}` | `{display_root}/programs/{program_slug}/CURRENT.md` |
+
+## Next Safe Action
+
+Use the relevant program `CURRENT.md` before reading ledgers.
+""",
+        encoding="utf-8",
+    )
+    _write_portable_program_current(
+        root,
+        display_root=display_root,
+        slug=program_slug,
+        queued=f"{display_root}/programs/{program_slug}/batches/adoption-proof/runway.md",
+    )
+    (root / "programs" / program_slug / "LEDGER.md").write_text(
+        "# Ledger\n",
+        encoding="utf-8",
+    )
+    (
+        root
+        / "programs"
+        / program_slug
+        / "batches"
+        / "adoption-proof"
+        / "runway.md"
+    ).write_text("# Runway\n", encoding="utf-8")
+
+
+def _write_portable_program_current(
+    root: Path,
+    *,
+    display_root: str,
+    slug: str,
+    queued: str,
+) -> None:
+    (root / "programs" / slug / "CURRENT.md").write_text(
+        f"""# {slug} Current State
+
+Program slug: `{slug}`
+
+Purpose: portable fixture program.
+
+## Active State
+
+- Current ledger:
+  `{display_root}/programs/{slug}/LEDGER.md`
+- Selected dispatch path: `None selected`
+- Active Batch Runway spec path: `None selected`
+- Queued batch path or ID: `{queued}`
+- Latest closeout:
+  `None`
+- Run artifact location:
+  `project-notes/runs/batch-runway/{slug}/`
+- Program archive location:
+  `{display_root}/programs/{slug}/archive/`
+
+## Next Safe Action
+
+Use the current ledger only.
+
+## Stop Conditions
+
+- Stop on fixture contradiction.
+""",
+        encoding="utf-8",
+    )
 
 
 def _write_program_current(

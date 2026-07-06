@@ -53,3 +53,8 @@ that exact durable target. `/tmp` is valid for smoke checks and generated-only
 proof output. Reusable workflow code must resolve the caller's project policy or
 stop with the missing policy value; it must not bake in another repository's
 planning layout.
+
+When fixtures model Layout v1 adoption, use portable project shapes and generic
+paths. A generated-only fixture should prove that projection rebuilds need an
+explicit temp target. An ignored-local fixture should prove that the declared
+policy path is accepted without making that path a shared default.

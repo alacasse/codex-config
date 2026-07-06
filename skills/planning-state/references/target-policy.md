@@ -82,3 +82,9 @@ validate JSON state targets against policy. `validate --require-project-policy`
 is read-only and should be used to prove policy presence before a workflow asks
 for durable writes. Dry-run and stdout commands are the safest way to inspect
 what would happen without creating state.
+
+For Layout v1 adoption, generated-only projection reporting needs a fresh
+explicit temp database target supplied by the caller or active spec. Ignored-local
+projection reporting needs a declared `projection_path` from project policy or a
+project overlay; the path is project-local, not a reusable default for other
+repositories.

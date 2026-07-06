@@ -147,7 +147,7 @@ Dirty-file constraints:
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
 | 1. Tighten projection language | Closed | this commit | `consumer_projection_routing.py` 11 passed; `current`; `validate`; `git diff --check` | Clean review after stale-block fix loop | Checklist and fixture adoption proof remain. | Projection reporting is now described as the policy-gated normal route for supported reports while preserving SQLite-independent active-state pickup. |
-| 2. Add adoption checklist and fixtures | Pending |  |  |  | Checklist covers existing Layout v1 roots and generated-only/ignored-local policy shapes. | Keep downstream paths out of generic guidance. |
+| 2. Add adoption checklist and fixtures | Closed | this commit | `test_planning_state.py` 176 passed; `current`; `validate`; `git diff --check` | Clean review | Metadata, changelog, current/ledger, closeout evidence remain. | Adoption checklist and portable Layout v1 fixture tests cover generated-only temp targets and ignored-local declared projection paths without downstream defaults. |
 | 3. Reconcile metadata and closeout evidence | Pending |  |  |  | Manifest/changelog/current/ledger state is aligned and closeout is pointer-first. | Do not select a successor batch. |
 
 ## Orchestration Anomalies
@@ -159,6 +159,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1. Tighten projection language | this commit | Planning State, Batch Runway, Architecture Program Runway, and Legacy Removal now route supported history/reporting questions through policy-compatible `report-projection` command output as the normal pre-scan route, with explicit fallback/blocker handling and direct-SQL guards. | Validation: `python -m pytest tests/test_planning_state_consumer_projection_routing.py -q`, `python scripts/planning_state.py current --root docs/plans`, `python scripts/planning_state.py validate --root docs/plans`, `git diff --check`; review: clean `runway_reviewer` result after required stale-block fixes. |
+| 2. Add adoption checklist and fixtures | this commit | Added a reusable Layout v1 projection-reporting adoption checklist plus portable command-level fixture coverage for generated-only and ignored-local projection policy routing. | Validation: `python -m pytest tests/test_planning_state.py -q`, `python scripts/planning_state.py current --root docs/plans`, `python scripts/planning_state.py validate --root docs/plans`, `git diff --check`; review: clean `runway_reviewer` result against the Slice 2 diff. |
 
 ## Slice 1. Tighten Projection Language
 
