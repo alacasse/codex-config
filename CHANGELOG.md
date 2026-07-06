@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Batch-runway create-spec override contract
+
+Problem: Batch Runway create-spec guidance could let session-local planning
+mode notes appear in durable execution `Overrides`, making future execution
+contracts carry artifact-creation context.
+
+Decision: limit create-spec `Overrides` to durable execution-contract
+deviations, add focused regression coverage for the guidance and PST-18 queued
+runway, and bump the installable Batch Runway feature version.
+
+Expected effect: generated runway specs keep create-spec session context in
+baseline, assumptions, purpose, handoff, or active-state prose instead of
+future execution `Overrides`.
+
 ### Legacy-removal projection report routing
 
 Problem: Legacy Removal used planning-state diagnostics for Layout v1 active
