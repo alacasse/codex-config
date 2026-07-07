@@ -358,6 +358,49 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         self.assertIn("Use `batch-runway create-spec` after this skill only when", legacy)
         self.assertIn("another program owner has already accepted or selected", legacy)
 
+    def test_test_quality_review_is_review_support_not_primary_planning_command(
+        self,
+    ) -> None:
+        entrypoint = self.read("skills/test-quality-review/SKILL.md")
+        integration = self.read("skills/batch-runway/references/test-quality-review.md")
+        execute_spec = self.read("skills/batch-runway/references/execute-spec.md")
+
+        self.assertIn("agent-facing review support skill", entrypoint)
+        self.assertRegex(entrypoint, r"not a primary human planning\s+command")
+        self.assertRegex(entrypoint, r"directly\s+requestable for focused audits")
+
+        self.assertIn("tests changed: `test-quality-review`", execute_spec)
+        self.assertIn("review information only", integration)
+        self.assertRegex(
+            integration,
+            r"Do not\s+automatically modify execution flow",
+        )
+
+    def test_work_batch_and_review_reject_unsupported_legacy_preservation_by_default(
+        self,
+    ) -> None:
+        work_batch = self.read("skills/work-batch/SKILL.md")
+        reviewer_guidance = self.read(
+            "skills/batch-runway/references/subagent-briefs.md"
+        )
+        legacy = self.read("skills/legacy-removal/SKILL.md")
+        dead_surface = self.read("skills/dead-surface-audit/SKILL.md")
+
+        for surface, text in {
+            "work-batch": work_batch,
+            "subagent-briefs": reviewer_guidance,
+            "legacy-removal": legacy,
+        }.items():
+            with self.subTest(surface=surface):
+                self.assertRegex(text, r"default\s+implementation and review")
+                self.assertIn("external contract", text)
+                self.assertIn("removal condition", text)
+
+        self.assertIn("not a normal human-facing cleanup command", legacy)
+        self.assertIn("exceptional residue", dead_surface)
+        self.assertRegex(dead_surface, r"does not create\s+durable program ledgers")
+        self.assertRegex(dead_surface, r"human-facing cleanup\s+command")
+
 
 if __name__ == "__main__":
     unittest.main()

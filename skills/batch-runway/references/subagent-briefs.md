@@ -107,6 +107,12 @@ Tests that only assert absence, import topology, alias identity, facade shape,
 or wrapper retention are suspicious unless they protect a documented external
 contract.
 
+Unsupported legacy preservation is a default implementation and review defect.
+Do not keep compatibility, aliases, wrappers, facades, migration scaffolding, or
+old paths merely because they existed before or because tests assert their
+shape. Keep them only with a named external contract, explicit user instruction,
+or temporary removal condition.
+
 Cleanup residues such as test-only compatibility markers, historical-evidence
 buckets, migration guards, old-vocabulary taxonomy, aliases, facades, or
 temporary scaffolding must be removed, kept with a named reason, or deferred

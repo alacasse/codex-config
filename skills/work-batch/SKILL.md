@@ -13,6 +13,12 @@ queued runway, execute its slices under the runway contract, keep changes within
 slice scope, run focused validation, and stop on blockers that make the active
 batch unsafe to continue.
 
+During normal execution, unsupported legacy preservation is a default
+implementation and review defect. Remove unsupported compatibility, or keep it
+only with a named external contract, explicit user instruction, or temporary
+removal condition. Use legacy and dead-surface support only for exceptional
+residue investigations that the active runway or review route requires.
+
 Before consuming Layout v1 planning state, use `../planning-state/SKILL.md` to
 run the current and validate hot path. Use `../planning-artifacts/SKILL.md`
 when interpreting active-state files or completed-slice archives.

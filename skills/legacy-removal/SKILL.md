@@ -6,8 +6,9 @@ description: Identify, scope, and track project-agnostic legacy-removal work bef
 # Legacy Removal
 
 Use this skill as discovery and scoping before concrete execution planning. It
-can act as a domain evidence producer, an explicitly selected program owner, or
-a handoff source for another planning workflow. Decide that role before writing
+is not a normal human-facing cleanup command or a ritual to run during every
+batch. It can act as a domain evidence producer, an explicitly selected program owner,
+or a handoff source for another planning workflow. Decide that role before writing
 durable ledgers.
 
 By default, Legacy Removal produces legacy findings, evidence, compatibility
@@ -72,6 +73,8 @@ orchestrate workers/reviewers.
 - Do not delete code merely because it looks old.
 - Do not delete tests merely because they are inconvenient.
 - Do not preserve compatibility merely because it existed before.
+- Treat preventive legacy control as a default implementation and review
+  obligation in normal workflows.
 - Speculative compatibility is a defect.
 - Require scope and evidence before deletion.
 - Require a concrete reason before keeping compatibility.

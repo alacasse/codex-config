@@ -9,10 +9,11 @@ Use this skill to find Modules that are dead or obsolete but hidden behind tests
 
 Core rule: tests are not automatically liveness evidence. A test can be the only thing keeping a shallow Module present.
 
-Role boundary: this skill is an evidence producer only. It may feed
-legacy-removal, architecture-program-runway, or batch-runway handoffs, but it
-does not create durable program ledgers, program queue state, selected-batch
-state, dispatch packets, batch runways, commits, or closeout records.
+Role boundary: this skill is an evidence producer only for exceptional residue
+or test-retained surface investigations. It may feed legacy-removal,
+architecture-program-runway, or batch-runway handoffs, but it does not create durable program ledgers, program queue state, selected-batch
+state, dispatch packets, batch runways, commits, closeout records, or a
+human-facing cleanup command.
 
 ## Workflow
 
