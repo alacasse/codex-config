@@ -16,7 +16,7 @@
 
 - Slice 1 commit: `fdaf2cf` (`Add command-owner skill surfaces`)
 - Slice 2 commit: `43118fc` (`Clarify support skill boundaries`)
-- Slice 3 commit: this closeout commit
+- Slice 3 commit: `0e45abe` (`Reconcile command skill migration`)
 - Slice 1 validation: `python -m pytest tests/test_codex_features_manifest.py -q`;
   `current`; `validate`; `git diff --check`
 - Slice 2 validation: focused support-boundary wording tests; `current`;

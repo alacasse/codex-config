@@ -2,7 +2,7 @@
 
 ## Slice 1. Add Command-Owner Skill Surfaces
 
-Status: completed; commit pending.
+Status: completed; commit `fdaf2cf`.
 
 Files:
 - `skills/add-to-ledger/`
@@ -26,7 +26,7 @@ Notes:
 
 ## Slice 2. Tighten Support-Skill Boundaries
 
-Status: completed; commit pending.
+Status: completed; commit `43118fc`.
 
 Files:
 - `skills/test-quality-review/SKILL.md`
@@ -57,7 +57,7 @@ Notes:
 
 ## Slice 3. Reconcile Catalog And Migration State
 
-Status: completed; commit pending.
+Status: completed; commit `0e45abe`.
 
 Files:
 - `README.md`
