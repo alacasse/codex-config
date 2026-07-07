@@ -91,7 +91,7 @@ Focused validation commands:
 |---|---|---|---|---|---|---|
 | 1. Add command-owner skill surfaces | Completed | pending commit receipt | `current` passed; `validate` passed; manifest tests passed; `git diff --check` passed | Approved; no required fixes | Slice archived in `completed-slices.md`. |
 | 2. Tighten support-skill boundaries | Completed | pending commit receipt | `current` passed; `validate` passed; wording tests passed; `git diff --check` passed | Approved; no required fixes | Slice archived in `completed-slices.md`. |
-| 3. Reconcile catalog and migration state | Pending |  |  |  | Align README, manifest, changelog, tests, planning state, and closeout evidence. |
+| 3. Reconcile catalog and migration state | Completed | pending commit receipt | `current` passed; `validate` passed; manifest tests passed; `git diff --check` passed | Coordinator review pending | Slice archived in `completed-slices.md`; batch closeout written. |
 
 ## Slice 1. Add Command-Owner Skill Surfaces
 

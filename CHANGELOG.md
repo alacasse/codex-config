@@ -11,8 +11,9 @@ agent-facing support.
 
 Decision: accept `add-to-ledger`, `plan-batch`, and `work-batch` as the
 human-facing command-owner migration target, keep `port-by-contract` as a
-direct user command, and queue a copy-first migration batch that preserves the
-existing runtime skills until the new surface is proven.
+direct user command, and complete a copy-first migration batch that preserves
+the existing runtime skills as current workflow surfaces rather than the target
+user interface.
 
 Expected effect: users can invoke the main workflow commands by name, while
 planning-state, planning-artifacts, test-quality review, and legacy prevention

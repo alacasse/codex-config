@@ -150,6 +150,40 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 self.assertIn("## Copy-First Bridge", skill_text)
                 self.assertIn(f"Use ${skill_name}", ui_text)
 
+    def test_manifest_catalog_distinguishes_user_and_agent_facing_skills(
+        self,
+    ) -> None:
+        manifest = self.load_manifest()
+        features = manifest["features"]
+
+        for skill_name in (
+            "add-to-ledger",
+            "plan-batch",
+            "work-batch",
+            "port-by-contract",
+        ):
+            with self.subTest(skill=skill_name):
+                description = features[skill_name]["description"]
+                self.assertIn("User-facing command-owner skill", description)
+
+        for skill_name in (
+            "batch-runway",
+            "architecture-program-runway",
+            "test-quality-review",
+            "dead-surface-audit",
+            "legacy-removal",
+            "planning-artifacts",
+            "planning-state",
+        ):
+            with self.subTest(skill=skill_name):
+                self.assertIn("Agent-facing", features[skill_name]["description"])
+
+        readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("## Skills", readme)
+        self.assertIn("### User-Facing Workflow Commands", readme)
+        self.assertIn("### Agent-Facing Support And Runtime Surfaces", readme)
+        self.assertIn("rather than the target user interface", readme)
+
     def test_custom_agent_toml_files_are_valid(self) -> None:
         manifest = self.load_manifest()
         custom_agents = manifest["features"]["custom-agents"]

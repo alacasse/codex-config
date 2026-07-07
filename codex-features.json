@@ -13,7 +13,7 @@
     },
     "add-to-ledger": {
       "version": "1.0.0",
-      "description": "User-facing command for adding findings and work requests to planning ledgers.",
+      "description": "User-facing command-owner skill for adding findings and work requests to planning ledgers.",
       "requires": [
         "planning-artifacts",
         "planning-state",
@@ -29,7 +29,7 @@
     },
     "plan-batch": {
       "version": "1.0.0",
-      "description": "User-facing command for selecting bounded ledger work and writing one concrete batch spec.",
+      "description": "User-facing command-owner skill for selecting bounded ledger work and writing one concrete batch spec.",
       "requires": [
         "planning-artifacts",
         "planning-state",
@@ -45,7 +45,7 @@
     },
     "work-batch": {
       "version": "1.0.0",
-      "description": "User-facing command for executing the current queued or active batch runway.",
+      "description": "User-facing command-owner skill for executing the current queued or active batch runway.",
       "requires": [
         "planning-artifacts",
         "planning-state",
@@ -60,7 +60,7 @@
     },
     "batch-runway": {
       "version": "1.3.11",
-      "description": "Coordinator workflow for multi-slice runway execution.",
+      "description": "Agent-facing runtime workflow for multi-slice runway execution.",
       "requires": [
         "planning-artifacts",
         "planning-state"
@@ -74,7 +74,7 @@
     },
     "architecture-program-runway": {
       "version": "1.1.4",
-      "description": "Program-level workflow for turning broad architecture findings into sequenced Batch Runway specs.",
+      "description": "Agent-facing program workflow for turning broad architecture findings into sequenced Batch Runway specs.",
       "requires": [
         "planning-artifacts",
         "planning-state"
@@ -92,7 +92,7 @@
     },
     "port-by-contract": {
       "version": "1.0.0",
-      "description": "Contract-first workflow for implementation-neutral rewrites and ports.",
+      "description": "User-facing command-owner skill for implementation-neutral rewrites and ports.",
       "links": [
         {
           "source": "skills/port-by-contract",
@@ -102,7 +102,7 @@
     },
     "test-quality-review": {
       "version": "1.0.0",
-      "description": "Review tests for behavioral confidence, regression protection, and design friction.",
+      "description": "Agent-facing review support for behavioral test confidence, regression protection, and design friction.",
       "links": [
         {
           "source": "skills/test-quality-review",
@@ -148,7 +148,7 @@
     },
     "dead-surface-audit": {
       "version": "1.0.2",
-      "description": "Audit code surfaces that are kept alive only by test-retained compatibility or topology assertions.",
+      "description": "Agent-facing evidence audit for code surfaces kept alive only by test-retained compatibility or topology assertions.",
       "links": [
         {
           "source": "skills/dead-surface-audit",
@@ -158,7 +158,7 @@
     },
     "legacy-removal": {
       "version": "1.0.6",
-      "description": "Discovery and scoping workflow for evidence-backed legacy-removal ledgers.",
+      "description": "Agent-facing discovery and scoping workflow for evidence-backed legacy-removal ledgers.",
       "requires": [
         "planning-artifacts",
         "planning-state"
@@ -172,7 +172,7 @@
     },
     "planning-artifacts": {
       "version": "1.0.0",
-      "description": "Project-agnostic planning artifact layout and naming convention.",
+      "description": "Agent-facing project-agnostic planning artifact layout and naming convention.",
       "links": [
         {
           "source": "skills/planning-artifacts",
@@ -182,7 +182,7 @@
     },
     "planning-state": {
       "version": "1.0.1",
-      "description": "Operational planning-state diagnostics, generated state fixtures, and policy-gated projection reporting for agents.",
+      "description": "Agent-facing operational planning-state diagnostics, generated state fixtures, and policy-gated projection reporting.",
       "requires": [
         "planning-artifacts"
       ],

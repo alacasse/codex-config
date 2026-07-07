@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`
+  `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -28,40 +27,35 @@
 
 ## Latest Completed Batch
 
-- Batch: `workflow-skill-interface-deepening`
-- Status: completed; PST-22 through PST-25 are closed with single-owner pickup
-  guidance, layout-vs-pickup separation, program-vs-runway ledger boundaries,
-  discovery-skill role boundaries, feature metadata alignment, validation, and
-  pointer-first closeout evidence.
-- Dispatch:
-  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/dispatch.md`
-- Runway:
-  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/runway.md`
-- Closeout:
-  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`
-- Completed slices:
-  `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/completed-slices.md`
-- Notes: Reusable workflow skills now route Layout v1 pickup through Planning
-  State, keep artifact placement in Planning Artifacts, split program ledgers
-  from concrete runway ledgers, and prevent discovery skills from becoming
-  parallel planning systems by default.
-
-## Queued Batch
-
 - Batch: `command-owner-skill-migration`
-- Status: queued; PST-26 through PST-29 are cut for copy-first migration to
-  human-facing command-owner skills.
+- Status: completed; PST-26 through PST-29 are closed with user-facing
+  command-owner skills, preserved runtime workflow surfaces, narrow
+  agent-facing support roles, manifest/catalog alignment, validation, and
+  pointer-first closeout evidence.
 - Dispatch:
   `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/dispatch.md`
 - Runway:
   `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/runway.md`
-- Notes: execute only when the user asks to work the queued batch.
+- Closeout:
+  `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/closeout.md`
+- Completed slices:
+  `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/completed-slices.md`
+- Notes: `add-to-ledger`, `plan-batch`, `work-batch`, and `port-by-contract`
+  are the preferred direct user-facing command set. Existing names such as
+  `architecture-program-runway`, `batch-runway`, `legacy-removal`,
+  `dead-surface-audit`, and `test-quality-review` remain installed as current
+  workflow surfaces or agent-facing support, not the target user interface.
+
+## Queued Batch
+
+- Batch: `None`
+- Status: no successor planning-state-tooling batch is selected.
+- Notes: select a successor only when explicitly requested.
 
 ## Next Safe Action
 
-Run the queued `command-owner-skill-migration` batch only if asked to work the
-batch. Do not select a successor batch until this queued batch closes or is
-explicitly superseded.
+No planning-state-tooling successor batch is selected. Choose one only after an
+explicit request.
 
 ## Stop Conditions
 

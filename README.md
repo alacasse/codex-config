@@ -92,11 +92,29 @@ feature manifest. They are written as reusable workflows: each skill defines
 when it should be used, what context it must read, what it owns, and where it
 must stop instead of guessing.
 
+### User-Facing Workflow Commands
+
+These are the preferred command-owner skills to invoke directly for the main
+planning and execution workflow.
+
+| Skill | Purpose | How it is used |
+| --- | --- | --- |
+| `add-to-ledger` | Adds findings and work requests to a durable planning ledger. | Used when the user wants to capture a new issue, improvement, or investigation request without selecting a batch yet. |
+| `plan-batch` | Selects bounded ledger work and writes one concrete batch spec. | Used when the user wants the next executable batch planned from current ledger state, then wants the agent to stop before implementation. |
+| `work-batch` | Executes the current queued or active batch runway. | Used when the user wants the agent to resume planned batch work through implementation, validation, review, and closeout. |
+| `port-by-contract` | Extracts implementation-neutral behavior contracts before a rewrite, migration, or port. | Used directly when moving behavior across languages, runtimes, or product boundaries without copying accidental source structure. |
+
+### Agent-Facing Support And Runtime Surfaces
+
+These skills remain installed because current workflows still depend on them.
+During the command-owner migration, names such as `batch-runway` and
+`architecture-program-runway` describe existing runtime surfaces and
+agent-facing internals rather than the target user interface.
+
 | Skill | Purpose | How it is used |
 | --- | --- | --- |
 | `batch-runway` | Creates or executes bounded multi-slice runway specs with per-slice validation, commits, ledger updates, and implementation/review delegation. | Used when work needs to be split into small, reviewable slices or when an existing runway spec should be executed one slice at a time. |
 | `architecture-program-runway` | Turns broad architecture findings into sequenced batches while preserving a durable program ledger. | Used before `batch-runway` when there are many related findings and the agent must group, prioritize, select, or close out batches. |
-| `port-by-contract` | Extracts implementation-neutral behavior contracts before a rewrite, migration, or port. | Used when moving behavior across languages, runtimes, or product boundaries without copying accidental source structure. |
 | `test-quality-review` | Reviews tests for behavioral confidence, regression protection, assertion strength, fixture friction, and design signals. | Used for changed tests, focused test audits, or larger test-suite reviews where coverage percentage is not the main question. |
 | `dead-surface-audit` | Finds code surfaces kept alive by tests that assert imports, aliases, topology, or compatibility shape rather than behavior. | Used when auditing legacy wrappers, facades, root modules, compatibility aliases, or suspected test-retained dead code. |
 | `legacy-removal` | Scopes evidence-backed legacy cleanup before implementation planning. | Used when obsolete paths, fallback behavior, stale names, compatibility shims, or cleanup residues need classification and a removal plan. |

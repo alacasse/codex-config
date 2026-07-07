@@ -54,3 +54,32 @@ Notes:
 - Preventive legacy control is a normal implementation/review obligation.
 - Legacy/dead-surface support remains available for exceptional residue
   investigations without adding a human-facing cleanup command.
+
+## Slice 3. Reconcile Catalog And Migration State
+
+Status: completed; commit pending.
+
+Files:
+- `README.md`
+- `CHANGELOG.md`
+- `codex-features.json`
+- `tests/test_codex_features_manifest.py`
+- `docs/plans/programs/planning-state-tooling/CURRENT.md`
+- `docs/plans/programs/planning-state-tooling/LEDGER.md`
+- `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/runway.md`
+- `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/completed-slices.md`
+- `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/closeout.md`
+
+Validation:
+- `python scripts/planning_state.py current --root docs/plans`
+- `python scripts/planning_state.py validate --root docs/plans`
+- `python -m pytest tests/test_codex_features_manifest.py -q`
+- `git diff --check`
+
+Review: approved by `runway_reviewer`; no required fixes.
+
+Notes:
+- README and manifest metadata now distinguish the direct command-owner skills
+  from agent-facing support and current runtime workflow surfaces.
+- PST-26 through PST-29 are closed in the program ledger.
+- No successor planning-state-tooling batch is selected.
