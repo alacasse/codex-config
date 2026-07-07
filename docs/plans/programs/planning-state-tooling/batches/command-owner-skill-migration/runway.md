@@ -89,7 +89,7 @@ Focused validation commands:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 1. Add command-owner skill surfaces | Pending |  |  |  | Create `add-to-ledger`, `plan-batch`, and `work-batch` beside current runtime skills. |
+| 1. Add command-owner skill surfaces | Completed | pending commit receipt | `current` passed; `validate` passed; manifest tests passed; `git diff --check` passed | Approved; no required fixes | Slice archived in `completed-slices.md`. |
 | 2. Tighten support-skill boundaries | Pending |  |  |  | Make test review and preventive legacy control agent-facing support/default obligations. |
 | 3. Reconcile catalog and migration state | Pending |  |  |  | Align README, manifest, changelog, tests, planning state, and closeout evidence. |
 

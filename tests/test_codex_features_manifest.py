@@ -105,6 +105,51 @@ class CodexFeaturesManifestTests(unittest.TestCase):
 
         self.assertEqual(selected, ["planning-artifacts", "planning-state"])
 
+    def test_command_owner_skills_are_directly_invokable(self) -> None:
+        manifest = self.load_manifest()
+        features = manifest["features"]
+
+        expected = {
+            "add-to-ledger": [
+                "planning-artifacts",
+                "planning-state",
+                "architecture-program-runway",
+                "legacy-removal",
+            ],
+            "plan-batch": [
+                "planning-artifacts",
+                "planning-state",
+                "architecture-program-runway",
+                "batch-runway",
+            ],
+            "work-batch": [
+                "planning-artifacts",
+                "planning-state",
+                "batch-runway",
+            ],
+        }
+
+        for skill_name, required_features in expected.items():
+            with self.subTest(skill=skill_name):
+                feature = features[skill_name]
+                self.assertEqual(feature.get("requires", []), required_features)
+                self.assertEqual(
+                    {link["source"] for link in feature["links"]},
+                    {f"skills/{skill_name}"},
+                )
+
+                skill_text = (
+                    REPO_ROOT / f"skills/{skill_name}/SKILL.md"
+                ).read_text(encoding="utf-8")
+                ui_text = (
+                    REPO_ROOT / f"skills/{skill_name}/agents/openai.yaml"
+                ).read_text(encoding="utf-8")
+
+                self.assertIn(f"name: {skill_name}", skill_text)
+                self.assertIn("## Stops", skill_text)
+                self.assertIn("## Copy-First Bridge", skill_text)
+                self.assertIn(f"Use ${skill_name}", ui_text)
+
     def test_custom_agent_toml_files_are_valid(self) -> None:
         manifest = self.load_manifest()
         custom_agents = manifest["features"]["custom-agents"]

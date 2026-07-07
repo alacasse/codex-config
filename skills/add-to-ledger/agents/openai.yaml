@@ -1,0 +1,4 @@
+interface:
+  display_name: "Add To Ledger"
+  short_description: "Add work to planning ledgers"
+  default_prompt: "Use $add-to-ledger to add a finding, review note, or work request to the right planning ledger."

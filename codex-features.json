@@ -11,6 +11,53 @@
         }
       ]
     },
+    "add-to-ledger": {
+      "version": "1.0.0",
+      "description": "User-facing command for adding findings and work requests to planning ledgers.",
+      "requires": [
+        "planning-artifacts",
+        "planning-state",
+        "architecture-program-runway",
+        "legacy-removal"
+      ],
+      "links": [
+        {
+          "source": "skills/add-to-ledger",
+          "target": "skills/add-to-ledger"
+        }
+      ]
+    },
+    "plan-batch": {
+      "version": "1.0.0",
+      "description": "User-facing command for selecting bounded ledger work and writing one concrete batch spec.",
+      "requires": [
+        "planning-artifacts",
+        "planning-state",
+        "architecture-program-runway",
+        "batch-runway"
+      ],
+      "links": [
+        {
+          "source": "skills/plan-batch",
+          "target": "skills/plan-batch"
+        }
+      ]
+    },
+    "work-batch": {
+      "version": "1.0.0",
+      "description": "User-facing command for executing the current queued or active batch runway.",
+      "requires": [
+        "planning-artifacts",
+        "planning-state",
+        "batch-runway"
+      ],
+      "links": [
+        {
+          "source": "skills/work-batch",
+          "target": "skills/work-batch"
+        }
+      ]
+    },
     "batch-runway": {
       "version": "1.3.11",
       "description": "Coordinator workflow for multi-slice runway execution.",
