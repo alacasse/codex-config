@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/planning-state-tooling/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/`
 - Latest closeout path:
   `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`
 - Run artifact location: `None selected`
@@ -47,17 +48,20 @@
 
 ## Queued Batch
 
-- Batch: `None`
-- Status: no planning-state-tooling batch is currently selected, queued, or
-  active.
-- Notes: do not select a successor batch unless explicitly asked.
+- Batch: `command-owner-skill-migration`
+- Status: queued; PST-26 through PST-29 are cut for copy-first migration to
+  human-facing command-owner skills.
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/dispatch.md`
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/runway.md`
+- Notes: execute only when the user asks to work the queued batch.
 
 ## Next Safe Action
 
-No planning-state-tooling batch is selected or queued. If asked for new
-planning-state-tooling work, start from this `CURRENT.md` and
-`docs/plans/programs/planning-state-tooling/LEDGER.md` before creating exactly
-one successor batch.
+Run the queued `command-owner-skill-migration` batch only if asked to work the
+batch. Do not select a successor batch until this queued batch closes or is
+explicitly superseded.
 
 ## Stop Conditions
 

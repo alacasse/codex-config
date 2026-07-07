@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+### Human-facing command-owner skills
+
+Problem: the main ledger and batch workflows were exposed through historical
+runtime skill names like `architecture-program-runway` and `batch-runway`, which
+made it unclear which skills the user should invoke directly and which were
+agent-facing support.
+
+Decision: accept `add-to-ledger`, `plan-batch`, and `work-batch` as the
+human-facing command-owner migration target, keep `port-by-contract` as a
+direct user command, and queue a copy-first migration batch that preserves the
+existing runtime skills until the new surface is proven.
+
+Expected effect: users can invoke the main workflow commands by name, while
+planning-state, planning-artifacts, test-quality review, and legacy prevention
+remain narrow agent-facing support or default workflow obligations.
+
+### Default-agent subagent delegation
+
+Problem: the global subagent-delegation instruction allowed main agents and
+workflow orchestrators to delegate, but did not explicitly name the normal
+default/principal Codex agent.
+
+Decision: clarify that the default/principal agent is included in the standing
+delegation permission and may orchestrate configured subagents as needed, while
+still acknowledging that higher-priority runtime tool policy can require fresh
+user permission.
+
+Expected effect: normal Codex sessions carry the user's default preference for
+subagent orchestration without introducing a separate `orchestrator` custom
+agent or weakening narrower worker and reviewer role boundaries.
+
 ### Discovery skill role boundaries
 
 Problem: specialized discovery skills could read as parallel planning systems

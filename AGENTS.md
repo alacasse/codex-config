@@ -12,6 +12,12 @@ improve implementation, review, exploration, or context management. Use the
 registered role that matches the work, keep prompts scoped, and close completed
 subagents when the workflow requires it.
 
+This includes the default/principal agent in a normal Codex session. Treat this
+as the user's standing preference that the default agent may orchestrate
+subagents as needed, without requiring the user to restate "use subagents" for
+each task, unless a higher-priority runtime tool policy explicitly requires
+fresh user permission.
+
 This standing permission does not override narrower spawned-agent role
 boundaries. If a worker, reviewer, or explorer role says not to spawn or
 delegate to additional subagents, that role-specific instruction still applies

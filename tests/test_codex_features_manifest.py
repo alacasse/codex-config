@@ -119,6 +119,19 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 self.assertIsInstance(data.get("description"), str)
                 self.assertIsInstance(data.get("developer_instructions"), str)
 
+    def test_global_instructions_include_default_agent_delegation(self) -> None:
+        manifest = self.load_manifest()
+        global_instructions = manifest["features"]["global-instructions"]
+        sources = {link["source"] for link in global_instructions["links"]}
+
+        self.assertIn("AGENTS.md", sources)
+
+        instructions = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+        self.assertIn("default/principal agent", instructions)
+        self.assertIn("standing preference", instructions)
+        self.assertIn("higher-priority runtime tool policy", instructions)
+
 
 if __name__ == "__main__":
     unittest.main()

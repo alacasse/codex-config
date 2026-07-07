@@ -109,6 +109,112 @@ surface for Planning Artifact Layout v1 roots. It answers what planning state
 exists and whether it is structurally valid; it does not execute phases.
 _Avoid_: runner core, phase runner, state store
 
+**Skill Ownership Ambiguity**:
+Unclear responsibility boundaries between reusable workflow skills, especially
+when more than one skill appears able to trigger, select work, write planning
+state, create handoffs, or execute a batch.
+_Avoid_: messy skills, too much prose, documentation cleanup
+
+**Skill Invocation Audience**:
+The intended caller for a reusable workflow skill: a human explicitly selecting
+a workflow, an agent applying a support capability during another workflow, or a
+workflow orchestrator enforcing a required step.
+_Avoid_: who uses this, agent skill, user skill
+
+**Workflow Command Phrase**:
+A human-facing instruction such as "put this issue in the ledger", "create a
+specs batch", or "work on the batch" that agents route to one or more reusable
+workflow skills.
+_Avoid_: skill name, trigger word, invocation syntax
+
+**Ledger Intake**:
+The workflow action that records a finding, issue, cleanup need, or improvement
+candidate in a durable program ledger with enough context for later selection.
+_Avoid_: architecture program, batch, task list
+
+**Batch Spec Creation**:
+The workflow action that turns one selected ledger item or batch brief into a
+concrete slice-by-slice execution spec.
+_Avoid_: ledger intake, implementation, program planning
+
+**Batch Planning**:
+The human-facing workflow action that selects suitable ledger work when needed
+and creates the concrete slice-by-slice execution spec for the next bounded
+batch.
+_Avoid_: batch selection, batch spec creation, implementation
+
+**Agent-Routed Workflow**:
+A reusable workflow skill that the user normally reaches through a workflow
+command phrase while the agent selects the concrete skill, mode, and handoff
+sequence.
+_Avoid_: user skill, hidden skill, automatic skill
+
+**Human-Facing Skill Name**:
+A skill name that is suitable for direct human invocation because it names the
+job the user thinks they are asking for.
+_Avoid_: internal workflow label, implementation nickname, clever name
+
+**User-Bounded Batch**:
+A batch of agent work that starts from explicit user intent and remains limited
+to the selected ledger item, batch brief, or current batch rather than handing
+open-ended backlog ownership to the agent.
+_Avoid_: autonomous backlog sweep, all remaining work, agent-owned program
+
+**Skill Runtime Identifier**:
+The stable machine-facing identifier used to install, link, or route a reusable
+workflow skill. It may be less descriptive than the human-facing skill name.
+_Avoid_: public name, user command, workflow purpose
+
+**Preventive Legacy Control**:
+Agent behavior that avoids preserving obsolete names, compatibility paths,
+fallbacks, or topology through new code or tests unless there is explicit
+support evidence.
+_Avoid_: legacy cleanup, removal pass, test-preserved compatibility
+
+**Review Support Skill**:
+A skill intended for reviewer or workflow-agent invocation as part of normal
+quality checks rather than as a primary human command.
+_Avoid_: user command, optional cleanup, standalone workflow
+
+**Default Workflow Obligation**:
+A rule that implementation and review workflows must enforce during normal
+work without requiring the user to invoke a separate skill.
+_Avoid_: optional skill, cleanup request, manual reminder
+
+**Workflow Command Set**:
+The small set of human-facing skill commands the user is expected to invoke
+directly for normal planning and execution work.
+_Avoid_: full skill inventory, internal skill list, implementation routing map
+
+**Command Wrapper Skill**:
+A thin human-facing installed skill whose name matches a workflow command and
+whose job is to route the request to lower-level runtime skills without
+duplicating their detailed procedures.
+_Avoid_: alias note, duplicate workflow, renamed internals
+
+**Routing Complexity**:
+Maintenance cost introduced when a human-facing command has to coordinate too
+many lower-level skills, modes, state checks, or handoff rules before doing its
+job.
+_Avoid_: simple wrapper, hidden architecture, convenient alias
+
+**Command Owner Skill**:
+A human-facing skill that owns one workflow command end-to-end instead of only
+delegating to historically named lower-level skills.
+_Avoid_: command wrapper, alias, facade
+
+**Copy-First Skill Migration**:
+A migration approach that creates new command-owner skills beside existing
+runtime skills, proves the new workflow surface, and only then retires or
+rewrites the old skills.
+_Avoid_: in-place rename, permanent compatibility layer, rewrite while active
+
+**Agent-Facing Support Skill**:
+A reusable skill used behind a command-owner skill to keep agent procedures
+focused, shared, and maintainable without expanding the human-facing command
+set.
+_Avoid_: hidden user command, duplicate command owner, broad workflow facade
+
 ## Relationships
 
 - The **Runner Facade** may preserve externally visible behavior while its internal shape changes.
@@ -144,6 +250,50 @@ _Avoid_: runner core, phase runner, state store
 - A **Planning State Diagnostic** may feed an **External Runner
   Implementation** through an explicit adapter/protocol, but it is not part of
   the runner core.
+- **Skill Ownership Ambiguity** is resolved by assigning one primary trigger,
+  responsibility boundary, and handoff/output contract to each reusable
+  workflow skill.
+- A **Skill Invocation Audience** should be explicit when a skill can be both
+  directly selected by a human and invoked as support by another workflow.
+- A **Workflow Command Phrase** may route through multiple **Agent-Routed
+  Workflows** before producing the requested ledger update, batch spec, review,
+  or implementation result.
+- **Ledger Intake** happens before **Batch Spec Creation** when the work is not
+  already selected and bounded.
+- **Batch Spec Creation** consumes selected ledger context; it should not be
+  described as adding tasks to the ledger.
+- **Batch Planning** may combine selection and spec creation for the user while
+  preserving separate internal checks when selection is ambiguous.
+- A **Human-Facing Skill Name** should be stable enough for the user to invoke
+  directly and plain enough that the workflow's job is clear without reading
+  its internals.
+- A **User-Bounded Batch** prevents routine agent workflows from silently taking
+  ownership of unrelated ledger work.
+- A **Skill Runtime Identifier** should not be treated as the user-facing name
+  when it is opaque or historically named.
+- **Preventive Legacy Control** should run before legacy accumulates; cleanup
+  workflows handle residue that already exists.
+- A **Review Support Skill** can be directly requested by a human, but its
+  normal audience is an agent performing implementation or review work.
+- **Preventive Legacy Control** is a **Default Workflow Obligation**, not a
+  normal human-facing cleanup command.
+- The current **Workflow Command Set** is `add-to-ledger`, `plan-batch`,
+  `work-batch`, and `port-by-contract`.
+- `add-to-ledger`, `plan-batch`, and `work-batch` should be
+  **Command Wrapper Skills** rather than documentation-only aliases.
+- **Command Wrapper Skills** should reduce user-facing complexity without
+  creating unbounded **Routing Complexity** behind the command.
+- The target architecture for `add-to-ledger`, `plan-batch`, and `work-batch`
+  is **Command Owner Skills**, not permanent wrappers over opaque runtime
+  identifiers.
+- **Copy-First Skill Migration** lets new **Command Owner Skills** move faster
+  without forcing every intermediate edit to preserve the old skill interface.
+- **Agent-Facing Support Skills** may sit behind **Command Owner Skills** when
+  they reduce duplication or isolate review, validation, discovery, or routing
+  logic.
+- **Agent-Facing Support Skills** should have narrow reusable jobs; they should
+  not preserve vague historical workflow names behind clearer command-owner
+  skills.
 
 ## Example dialogue
 

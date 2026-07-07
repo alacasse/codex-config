@@ -17,6 +17,8 @@ is planning-only; it does not implement code.
   of SQLite.
 - Keep agents at the workflow command level; agents should not write SQL or
   mutate backing stores directly.
+- Move the main user workflow surface toward command-owner skills:
+  `add-to-ledger`, `plan-batch`, and `work-batch`.
 - Keep generic tooling project-neutral. Project-specific paths, validation
   commands, and overlays belong in project instructions or active specs.
 - Keep planning-state tooling separate from the future OSS Go runner. Interop
@@ -28,6 +30,8 @@ is planning-only; it does not implement code.
 - Decision note: `docs/plans/planning-state-tooling-plan.md`
 - Planning Artifact Layout v1:
   `skills/planning-artifacts/SKILL.md`
+- Command-owner skill decision:
+  `docs/adr/0002-human-facing-command-owner-skills.md`
 - Architecture Program Runway:
   `skills/architecture-program-runway/SKILL.md`
 - First real fixture: Graphify local planning root at
@@ -81,7 +85,8 @@ state only; it does not update or close GitHub issues.
 - Run artifact root: not selected for this planning-only ledger.
 - Output root: not selected for this planning-only ledger.
 - Active closeout batch directory: `None`
-- Queued batch directory: `None`
+- Queued batch directory:
+  `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/`
 - Latest completed batch directory:
   `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/`
 
@@ -114,6 +119,10 @@ state only; it does not update or close GitHub issues.
 | PST-23. Layout placement and operational pickup share a fuzzy seam | Closed | `workflow-skill-interface-deepening` | Use the closed batch closeout as the durable evidence pointer | Closed by Planning Artifacts/Planning State guidance that keeps placement, naming, file shape, archives, and roots separate from operational pickup, validation, target-policy checks, and projection routing. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`. |
 | PST-24. Program ledger updates and concrete runway ledger updates are easy to conflate | Closed | `workflow-skill-interface-deepening` | Use the closed batch closeout as the durable evidence pointer | Closed by Architecture Program Runway and Batch Runway handoff guidance that separates program findings, selected dispatch, queue state, and closeout reconciliation from concrete runway ledgers, validation/review routing, commits, and completed-slice archives. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`. |
 | PST-25. Specialized discovery skills can become parallel planning systems | Closed | `workflow-skill-interface-deepening` | Use the closed batch closeout as the durable evidence pointer | Closed by Legacy Removal role guidance and Dead Surface Audit evidence-only guidance: discovery skills can produce evidence and dispatch handoff material without creating program queue or selected-batch state by default. Closeout evidence: `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`. |
+| PST-26. Human-facing workflow commands are hidden behind opaque runtime skill names | Pending | `command-owner-skill-migration` | Execute the queued batch to add command-owner skills beside existing runtime skills | The accepted command set is `add-to-ledger`, `plan-batch`, `work-batch`, and `port-by-contract`; current names such as `architecture-program-runway` and `batch-runway` are not clear enough as the main user interface. ADR: `docs/adr/0002-human-facing-command-owner-skills.md`. |
+| PST-27. In-place renaming would disrupt active workflow skills | Pending | `command-owner-skill-migration` | Use copy-first migration and keep old runtime skills available until the new surface is proven | The migration should avoid rebuilding active workflows in place and should not create permanent compatibility wrappers as the target architecture. |
+| PST-28. Command-owner skills need narrow support-skill boundaries | Pending | `command-owner-skill-migration` | Add or preserve only focused agent-facing support skills behind command owners | Support skills are acceptable for planning-state, placement, review, evidence, and validation lenses, but vague historical mega-skills should not remain hidden behind clearer command names forever. |
+| PST-29. Legacy and test-quality concerns need agent-facing placement | Pending | `command-owner-skill-migration` | Make test review support and preventive legacy control part of normal review/workflow obligations | `review-tests` is primarily agent-facing review support, and unsupported legacy preservation should be prevented during normal implementation/review instead of advertised as a normal cleanup command. |
 
 ## Batch Queue
 
@@ -133,14 +142,21 @@ state only; it does not update or close GitHub issues.
 | planning-state-finding-pending-status | PST-19 | Completed | Makes cut-but-not-closed finding state explicit so source ledgers stop being edited as raw intake once a dispatch/runway exists | `batch-runway-create-spec-output-contract` closed PST-18; baseline `current` and `validate` diagnostics pass | Workflow-skill wording tests, ledger/template status-vocabulary checks, current/validate diagnostics, manifest/changelog alignment, clean review, closeout evidence, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/runway.md`; closeout: `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/closeout.md`; completed slices: `docs/plans/programs/planning-state-tooling/batches/planning-state-finding-pending-status/completed-slices.md` |
 | planning-state-projection-language-and-migration | PST-20, PST-21 | Completed | Pair the wording fix with the reusable adoption migration because the ambiguity and the migration gap reinforce each other | planning-state-projection-consumers and planning-state-finding-pending-status closed; baseline `current` and `validate` diagnostics pass | Skill wording tests, consumer-skill obligation tests, project-policy fixture tests for generated-only and ignored-local projection routing, migration checklist/readback validation against codex-config plus a non-codex-config Layout v1 root shape, installed-skill ownership check, changelog/manifest alignment, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/runway.md`; closeout: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/closeout.md`; completed slices: `docs/plans/programs/planning-state-tooling/batches/planning-state-projection-language-and-migration/completed-slices.md` |
 | workflow-skill-interface-deepening | PST-22, PST-23, PST-24, PST-25 | Completed | Deepens the workflow-skill seams so agents have one pickup Interface and do not confuse layout, planning-state diagnostics, program selection, batch execution, or specialized evidence classification | `planning-state-projection-language-and-migration` closed; baseline `current` and `validate` diagnostics pass | Skill wording tests proving one pickup owner, consumer-owned semantic decisions, explicit program-vs-runway ledger handoff, discovery role boundaries, current/validate diagnostics, manifest/changelog alignment, closeout evidence, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/runway.md`; closeout: `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/closeout.md`; completed slices: `docs/plans/programs/planning-state-tooling/batches/workflow-skill-interface-deepening/completed-slices.md` |
+| command-owner-skill-migration | PST-26, PST-27, PST-28, PST-29 | Queued | Introduces the accepted human-facing command-owner skill surface while keeping the migration copy-first and support skills narrow | `workflow-skill-interface-deepening` closed; ADR 0002 accepted; baseline `current` and `validate` diagnostics pass | Skill validation, manifest/dependency checks, focused wording tests, planning-state current/validate diagnostics, and `git diff --check` | `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/dispatch.md` | `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/runway.md` |
 
 ## Queued Batch Brief
 
-Queued batch: `None`.
+Queued batch: `command-owner-skill-migration`.
 
-- Status: no planning-state-tooling batch is currently selected, queued, or
-  active.
-- Notes: do not select a successor batch unless explicitly asked.
+- Dispatch:
+  `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/dispatch.md`
+- Status: queued.
+- Runway:
+  `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/runway.md`
+- Covers: PST-26, PST-27, PST-28, and PST-29.
+- Goal: add human-facing command-owner skills through copy-first migration while
+  keeping support skills narrow and agent-facing.
+- Notes: execute only when the user asks to work the batch.
 
 ## Latest Batch Brief
 
@@ -233,11 +249,12 @@ Earlier completed batch:
 
 ## Recommended Work Order
 
-1. No planning-state-tooling batch is currently selected, queued, or active.
-2. If asked for the next planning-state-tooling batch, start from this ledger
-   and `CURRENT.md` before creating exactly one successor batch.
-3. Do not select a successor batch as part of
-   `workflow-skill-interface-deepening` closeout.
+1. The queued planning-state-tooling batch is
+   `command-owner-skill-migration`.
+2. If asked to work the batch, execute that runway from its queued dispatch and
+   spec.
+3. Do not select a successor batch until `command-owner-skill-migration` closes
+   or is explicitly superseded.
 4. For projection reporting, rebuild only to explicit temp or
    policy-compatible database targets and keep Markdown/JSON canonical.
 
@@ -329,6 +346,18 @@ Earlier completed batch:
 - Mark PST-25 `Closed` only after specialized discovery skills state whether
   they are evidence producers, selected program owners, or dispatch handoff
   sources, and stop short of becoming parallel planning systems by default.
+- Mark PST-26 `Closed` only after `add-to-ledger`, `plan-batch`, and
+  `work-batch` are installed command-owner skills with clear direct-user
+  ownership and stop conditions.
+- Mark PST-27 `Closed` only after the migration proves the new command-owner
+  surface beside existing runtime skills without removing, renaming, or
+  depending on permanent wrapper compatibility as the target architecture.
+- Mark PST-28 `Closed` only after support skills behind command owners have
+  narrow reusable jobs and tests or wording checks prevent vague historical
+  mega-skills from becoming hidden permanent owners.
+- Mark PST-29 `Closed` only after test-quality review is positioned as
+  agent-facing review support and preventive legacy control is enforced as a
+  normal workflow obligation rather than a user-facing cleanup command.
 
 ## Planning Rules
 
