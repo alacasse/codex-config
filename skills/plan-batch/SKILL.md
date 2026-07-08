@@ -14,6 +14,15 @@ runway, but it must not silently create new ledger findings from fresh user work
 text. If no suitable ledger finding exists, stop and report that
 `add-to-ledger` must run first.
 
+This skill reads executable work only from the current program ledger, selected
+dispatch, queued batch, or active runway. External specs, ADRs, GitHub issues,
+issue tracker tickets, CONTEXT.md updates, archived plans, chat transcripts,
+review notes, and external engineering-skill outputs are evidence only when an
+existing ledger row points to them.
+
+Do not scan external sources to discover new work. If useful work exists
+outside the ledger, stop and report that `add-to-ledger` must ingest it first.
+
 This skill owns the planning decision for one batch: inspect current planning
 state, use the selected dispatch when one exists, select bounded ledger work
 only when none is already selected, and write one concrete runway spec with

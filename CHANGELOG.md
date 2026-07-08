@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Executable work source boundary
+
+Problem: external engineering skills, GitHub issues, ADRs, specs, review notes,
+and chat transcripts can all contain candidate work, but agents should not
+treat them as parallel executable backlogs for `plan-batch`.
+
+Decision: define `add-to-ledger` as the explicit ingestion boundary for named
+external/candidate sources and keep the program ledger as the only normal
+executable backlog source for `plan-batch`.
+
+Expected effect: agents may ingest external tickets or skill outputs when
+explicitly requested, but planning remains ledger-driven and avoids broad
+source hunting.
+
 ### Command-owner input contract
 
 Problem: command-owner routing was clarified, but command input semantics

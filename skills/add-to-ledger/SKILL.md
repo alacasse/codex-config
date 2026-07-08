@@ -12,9 +12,20 @@ This is the normal entrypoint for fresh user-provided work/finding text. It
 turns that input into durable ledger state so later planning can select bounded
 work from the ledger instead of inventing scope from chat.
 
+This skill is the explicit ingestion boundary for fresh or candidate work. It
+may ingest user-provided text, GitHub issues, external tickets, ADR follow-ups,
+specs, review notes, chat transcripts, or outputs from external engineering
+skills when the user explicitly names or provides that source.
+
+It records selected work into the canonical program ledger without selecting,
+planning, or executing a batch.
+
 This skill owns intake quality: identify the target planning root, preserve the
 source evidence, write or update the ledger row, assign the initial status, and
 leave enough context for a later batch-planning pass.
+
+When ingesting external tickets, preserve source identity such as issue number,
+URL, title, labels/status, and relevant evidence pointers.
 
 This skill owns ledger-intake user intent. It may route to support/runtime
 skills for diagnostics, placement, grouping, or evidence scoping, but it does

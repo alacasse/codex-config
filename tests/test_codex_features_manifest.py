@@ -179,6 +179,32 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("must not silently create new ledger findings", plan_batch)
         self.assertIn("current queued or active runway", work_batch)
 
+    def test_executable_work_source_boundary_is_explicit(self) -> None:
+        routing_contract = (REPO_ROOT / "docs/skill-routing-contract.md").read_text(
+            encoding="utf-8"
+        )
+        add_to_ledger = (REPO_ROOT / "skills/add-to-ledger/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        plan_batch = (REPO_ROOT / "skills/plan-batch/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("## Executable Work Source", routing_contract)
+        self.assertIn(
+            "program ledger is the only normal executable backlog source for\n"
+            "`plan-batch`",
+            routing_contract,
+        )
+        self.assertIn("explicit ingestion boundary", add_to_ledger)
+        self.assertIn("GitHub issues", add_to_ledger)
+        self.assertIn("external tickets", add_to_ledger)
+        self.assertIn("Do not scan external sources to discover new work", plan_batch)
+        self.assertIn(
+            "evidence only when an\nexisting ledger row points to them",
+            plan_batch,
+        )
+
     def test_manifest_catalog_distinguishes_user_and_agent_facing_skills(
         self,
     ) -> None:

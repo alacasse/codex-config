@@ -39,6 +39,29 @@ ledger findings. If no suitable ledger finding exists, stop and report that
 new ledger findings, select new ledger work, or create a new runway unless
 explicit recovery instructions require replanning.
 
+## Executable Work Source
+
+The program ledger is the only normal executable backlog source for
+`plan-batch`.
+
+External engineering skills, GitHub issues, issue tracker tickets, ADRs,
+CONTEXT.md updates, specs, review notes, and chat transcripts may provide
+candidate work or evidence, but they are not executable backlog until
+`add-to-ledger` records the selected work in the program ledger.
+
+`add-to-ledger` may read external task sources only when the user explicitly
+names the source or provides the source content. When ingesting external
+tickets, preserve source identity such as issue number, URL, title,
+labels/status, and relevant evidence pointers.
+
+`plan-batch` must not scan GitHub issues, ADRs, CONTEXT.md, archived plans,
+specs, external tickets, or external engineering-skill outputs to discover new
+work unless an existing ledger row explicitly points there as evidence for
+already-ingested work.
+
+If useful work exists outside the ledger, `plan-batch` must stop and report
+that `add-to-ledger` must ingest it first.
+
 ## Routing Table
 
 | User command/input | Primary skill | Input source | Output | Runtime/support skills |
