@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Single codex-config planning ledger
+
+Problem: codex-config planning had two active program ledgers, making pickup
+ambiguous between runner work and planning-state/skill cleanup work.
+
+Decision: consolidate actionable APR and PST backlog into
+`docs/plans/programs/codex-config/LEDGER.md` with neutral `CCFG-N` IDs, keep
+only `codex-config` active in `docs/plans/CURRENT.md`, and archive the old APR
+and PST ledger snapshots as evidence.
+
+Expected effect: future agents start from one active codex-config ledger, while
+closed APR/PST history remains findable without acting as a parallel backlog.
+
 ### Block external implement skill
 
 Problem: the external `implement` skill can take over ordinary spec-based

@@ -99,6 +99,10 @@ support routing, conflict rules, and stop conditions.
 For end-to-end workflow usage, including how external engineering skills feed
 the canonical ledger-driven workflow, see `docs/workflow-guide.md`.
 
+The active codex-config planning ledger is
+`docs/plans/programs/codex-config/LEDGER.md`; archived APR/PST ledgers are
+evidence only, not parallel pickup sources.
+
 ### User-Facing Workflow Commands
 
 These are the preferred command-owner skills to invoke directly for the main

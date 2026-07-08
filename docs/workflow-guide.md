@@ -90,7 +90,8 @@ the normal direct commands for the ledger-driven workflow.
 ## Rules
 
 - The program ledger is the only normal executable backlog source for
-  `plan-batch`.
+  `plan-batch`; in this repo it is
+  `docs/plans/programs/codex-config/LEDGER.md`.
 - External skills and GitHub issues are candidate/evidence sources until
   ingested.
 - `plan-batch` must not discover new work by scanning external sources.

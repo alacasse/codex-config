@@ -70,7 +70,8 @@ A runner-owned operational file scoped to one selected batch within a run.
 _Avoid_: run artifact, source plan, dispatch packet
 
 **Program Ledger**:
-The durable source of architecture findings and batch status that the runner coordinates around.
+The durable source of codex-config findings, backlog candidates, selected
+batch status, and closeout pointers that workflow commands coordinate around.
 _Avoid_: run state, run manifest, source code
 
 **Batch**:
@@ -241,6 +242,8 @@ _Avoid_: hidden user command, duplicate command owner, broad workflow facade
 - A **Phase Transition** consumes a valid **Phase Result** after its matching **Phase Receipt** is verified.
 - A **Run Artifact** belongs to exactly one architecture-program run.
 - A **Batch Artifact** belongs to exactly one selected batch within one architecture-program run.
+- The active codex-config **Program Ledger** is
+  `docs/plans/programs/codex-config/LEDGER.md`.
 - A **Program Ledger** may contain many **Batches**.
 - A **Dispatch Packet** describes exactly one selected **Batch**.
 - A **Run State** records the active **Batch** when one has been selected.
@@ -339,7 +342,7 @@ _Avoid_: hidden user command, duplicate command owner, broad workflow facade
 > **Dev:** "Is the first `select-dispatch` receipt a **Batch Artifact**?"
 > **Domain expert:** "No — before a batch is selected it is a **Run Artifact**; later batch-local receipts are **Batch Artifacts**."
 > **Dev:** "Does the runner own the **Program Ledger**?"
-> **Domain expert:** "No — it coordinates around the **Program Ledger** and records runner-owned evidence beside it."
+> **Domain expert:** "No — workflow commands coordinate around the **Program Ledger**; runner-owned evidence stays beside the selected batch or run."
 > **Dev:** "Should a completed runway plan remain active coordination material?"
 > **Domain expert:** "No — after it is completed or superseded it belongs in the **Plan Archive**."
 > **Dev:** "Should the runner automatically move completed plans into the **Plan Archive**?"

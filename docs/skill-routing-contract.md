@@ -44,10 +44,15 @@ explicit recovery instructions require replanning.
 The program ledger is the only normal executable backlog source for
 `plan-batch`.
 
-External engineering skills, GitHub issues, issue tracker tickets, ADRs,
-CONTEXT.md updates, specs, review notes, and chat transcripts may provide
-candidate work or evidence, but they are not executable backlog until
-`add-to-ledger` records the selected work in the program ledger.
+For this repository, the active program ledger is
+`docs/plans/programs/codex-config/LEDGER.md`. Archived APR/PST ledgers,
+GitHub issues, ADRs, CONTEXT.md updates, specs, review notes, and chat
+transcripts may provide candidate work or evidence, but they are not executable
+backlog until represented in the active codex-config ledger.
+
+External engineering skills and issue tracker tickets may provide candidate
+work or evidence, but they are not executable backlog until `add-to-ledger`
+records the selected work in the program ledger.
 
 `add-to-ledger` may read external task sources only when the user explicitly
 names the source or provides the source content. When ingesting external

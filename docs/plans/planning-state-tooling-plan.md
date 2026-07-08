@@ -25,8 +25,8 @@ runner core.
 - GitHub issue #10: generic phase-runner product idea.
 - GitHub issue #12: phase-runner repo split and dogfooding boundary.
 - Planning Artifact Layout v1 in `skills/planning-artifacts/SKILL.md`.
-- Planning-state tooling ledger:
-  `docs/plans/programs/planning-state-tooling/LEDGER.md`.
+- Active codex-config ledger:
+  `docs/plans/programs/codex-config/LEDGER.md`.
 - Architecture Program Runway guidance in
   `skills/architecture-program-runway/SKILL.md`.
 - Current runner state, receipt, artifact, telemetry, and input-inventory owners

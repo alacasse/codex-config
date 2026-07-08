@@ -31,8 +31,10 @@ moved into the Planning Root or Plan Archive.
 
 ## Consequences
 
-- The active architecture-program runner Program Ledger is
-  `docs/plans/programs/architecture-program-runner/LEDGER.md`.
+- As of the 2026-07-08 consolidation, the active codex-config Program Ledger is
+  `docs/plans/programs/codex-config/LEDGER.md`. Earlier architecture-program
+  runner and planning-state-tooling ledger snapshots are archive evidence, not
+  active pickup sources.
 - Future architecture-program runner invocations should use `docs/plans/`
   paths for active planning inputs.
 - Completed and superseded material can be archived mechanically without
