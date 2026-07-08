@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Command-owner bridge routing contract
+
+Problem: command-owner skills were installed, but agents could still confuse
+human intent ownership with runtime procedure ownership.
+
+Decision: add `docs/skill-routing-contract.md` with routing, conflict, stop,
+and bridge-state rules, then point the command-owner skills at it.
+
+Expected effect: future agents choose the command-owner skill for user intent,
+then use runtime/support skills only as selected procedures.
+
 ### Command-owner support boundary completion
 
 Problem: the new command-owner skills were installed, but old runtime skill

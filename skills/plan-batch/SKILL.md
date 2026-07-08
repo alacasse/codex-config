@@ -13,6 +13,13 @@ state, use the selected dispatch when one exists, select bounded ledger work
 only when none is already selected, and write one concrete runway spec with
 clear scope, validation, allowed files, and slice boundaries.
 
+This skill owns the user's request to plan one bounded batch. Use
+`../planning-state/SKILL.md` first for current state,
+`../architecture-program-runway/SKILL.md` only for program selection and
+dispatch ownership, and `../batch-runway/SKILL.md` only in `create-spec` mode
+for the concrete spec procedure. Stop before implementation. When routing
+ambiguity exists, follow `../../docs/skill-routing-contract.md`.
+
 Before consuming Layout v1 planning state, use `../planning-state/SKILL.md` to
 run the current and validate hot path. Use `../planning-artifacts/SKILL.md`
 when choosing planning locations or interpreting Layout v1 artifacts.

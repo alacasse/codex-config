@@ -12,7 +12,7 @@
       ]
     },
     "add-to-ledger": {
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "User-facing command-owner skill for adding findings and work requests to planning ledgers.",
       "requires": [
         "planning-artifacts",
@@ -28,7 +28,7 @@
       ]
     },
     "plan-batch": {
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "User-facing command-owner skill for selecting bounded ledger work and writing one concrete batch spec.",
       "requires": [
         "planning-artifacts",
@@ -44,7 +44,7 @@
       ]
     },
     "work-batch": {
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "User-facing command-owner skill for executing the current queued or active batch runway.",
       "requires": [
         "planning-artifacts",
@@ -91,7 +91,7 @@
       ]
     },
     "port-by-contract": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "User-facing command-owner skill for implementation-neutral rewrites and ports.",
       "links": [
         {

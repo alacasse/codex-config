@@ -13,6 +13,13 @@ queued runway, execute its slices under the runway contract, keep changes within
 slice scope, run focused validation, and stop on blockers that make the active
 batch unsafe to continue.
 
+This skill owns the user's request to execute the current batch. It must not
+select a new batch, and it must not create a new runway unless recovery
+instructions explicitly require replanning. Use `../planning-state/SKILL.md`
+first when Layout v1 state is involved, then use `../batch-runway/SKILL.md` in
+`execute-spec` mode for the detailed execution procedure. When routing
+ambiguity exists, follow `../../docs/skill-routing-contract.md`.
+
 During normal execution, unsupported legacy preservation is a default
 implementation and review defect. Remove unsupported compatibility, or keep it
 only with a named external contract, explicit user instruction, or temporary

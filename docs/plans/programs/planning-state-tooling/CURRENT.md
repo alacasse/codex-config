@@ -45,7 +45,9 @@
   `architecture-program-runway`, `batch-runway`, `legacy-removal`,
   `dead-surface-audit`, and `test-quality-review` remain installed as
   agent-facing support/runtime dependencies behind those commands, not as
-  preferred direct user commands.
+  preferred direct user commands. Bridge-state routing and stop rules now live
+  in `docs/skill-routing-contract.md`; the command-owner migration is
+  interface-complete, not architecture-complete.
 
 ## Queued Batch
 

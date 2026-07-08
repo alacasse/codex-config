@@ -10,6 +10,13 @@ without copying accidental source structure into the target. The goal is to
 produce compact, implementation-neutral contracts that a fresh implementation
 agent can build from.
 
+This skill is not a general cleanup or rewrite shortcut. It must extract
+contracts before creating a runway or target design. For command-owner skill
+migration, use it only after a future explicitly selected batch decides to
+rewrite one command-owner skill from behavior contracts; do not use it in a
+stabilization batch to rewrite the skill system. When routing ambiguity exists,
+follow `../../docs/skill-routing-contract.md`.
+
 ## Core Rule
 
 Do not translate files directly by default. Extract behavior, contracts, state

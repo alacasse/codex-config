@@ -108,6 +108,9 @@ class CodexFeaturesManifestTests(unittest.TestCase):
     def test_command_owner_skills_are_directly_invokable(self) -> None:
         manifest = self.load_manifest()
         features = manifest["features"]
+        routing_contract = (REPO_ROOT / "docs/skill-routing-contract.md").read_text(
+            encoding="utf-8"
+        )
 
         expected = {
             "add-to-ledger": [
@@ -148,7 +151,13 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 self.assertIn(f"name: {skill_name}", skill_text)
                 self.assertIn("## Stops", skill_text)
                 self.assertIn("## Agent-Facing Support", skill_text)
+                self.assertIn("docs/skill-routing-contract.md", skill_text)
                 self.assertIn(f"Use ${skill_name}", ui_text)
+
+        self.assertIn("## Routing Table", routing_contract)
+        self.assertIn("## Conflict Rule", routing_contract)
+        self.assertIn("## Stop Rule", routing_contract)
+        self.assertIn("## Bridge-State Rule", routing_contract)
 
     def test_manifest_catalog_distinguishes_user_and_agent_facing_skills(
         self,
@@ -183,6 +192,16 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("### User-Facing Workflow Commands", readme)
         self.assertIn("### Agent-Facing Support And Runtime Surfaces", readme)
         self.assertIn("not the preferred direct commands", readme)
+        self.assertIn("docs/skill-routing-contract.md", readme)
+
+    def test_port_by_contract_is_not_general_rewrite_shortcut(self) -> None:
+        skill_text = (REPO_ROOT / "skills/port-by-contract/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("not a general cleanup or rewrite shortcut", skill_text)
+        self.assertIn("contracts before creating a runway", skill_text)
+        self.assertIn("docs/skill-routing-contract.md", skill_text)
 
     def test_direct_request_prompts_preserve_command_owner_boundary(self) -> None:
         manifest = self.load_manifest()

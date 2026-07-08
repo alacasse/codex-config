@@ -92,6 +92,10 @@ feature manifest. They are written as reusable workflows: each skill defines
 when it should be used, what context it must read, what it owns, and where it
 must stop instead of guessing.
 
+During the command-owner migration, use
+`docs/skill-routing-contract.md` to resolve human intent ownership, runtime
+support routing, conflict rules, and stop conditions.
+
 ### User-Facing Workflow Commands
 
 These are the preferred command-owner skills to invoke directly for the main

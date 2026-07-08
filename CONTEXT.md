@@ -210,6 +210,11 @@ user-facing metadata while keeping required support contracts installed when
 current workflows still depend on them.
 _Avoid_: in-place rename, permanent compatibility layer, rewrite while active
 
+**Transitional Bridge Skill**:
+A human-facing command-owner skill that currently routes to runtime/support
+skills while the copy-first migration is still underway.
+_Avoid_: final owner, deprecated runtime skill, permanent wrapper
+
 **Agent-Facing Support Skill**:
 A reusable skill used behind a command-owner skill to keep agent procedures
 focused, shared, and maintainable without expanding the human-facing command
@@ -289,6 +294,9 @@ _Avoid_: hidden user command, duplicate command owner, broad workflow facade
   identifiers.
 - **Copy-First Skill Migration** lets the command-owner skills move faster
   without forcing every intermediate edit to preserve the old skill interface.
+- A **Transitional Bridge Skill** may route to a runtime workflow skill, but it
+  still owns the human-facing intent and stop condition until the final
+  architecture changes.
 - **Agent-Facing Support Skills** may sit behind **Command Owner Skills** when
   they reduce duplication or isolate review, validation, discovery, or routing
   logic.

@@ -12,6 +12,11 @@ This skill owns intake quality: identify the target planning root, preserve the
 source evidence, write or update the ledger row, assign the initial status, and
 leave enough context for a later batch-planning pass.
 
+This skill owns ledger-intake user intent. It may route to support/runtime
+skills for diagnostics, placement, grouping, or evidence scoping, but it does
+not select a batch, create a runway, or execute implementation. When routing
+ambiguity exists, follow `../../docs/skill-routing-contract.md`.
+
 Before consuming Layout v1 planning state, use `../planning-state/SKILL.md` to
 run the current and validate hot path. Use `../planning-artifacts/SKILL.md`
 when placement, program ledgers, selected dispatch packets, or archive

@@ -122,6 +122,7 @@ state only; it does not update or close GitHub issues.
 | PST-27. In-place renaming would disrupt active workflow skills | Closed | `command-owner-skill-migration` | Keep old runtime contracts available as agent-facing support behind command owners | Closed by command-owner migration that preserves `architecture-program-runway`, `batch-runway`, `legacy-removal`, and `dead-surface-audit` as support dependencies while demoting their metadata and UI prompts away from direct command recommendations. Closeout: `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/closeout.md`. |
 | PST-28. Command-owner skills need narrow support-skill boundaries | Closed | `command-owner-skill-migration` | Keep support skills narrow and agent-facing behind command owners | Closed by support-boundary wording and focused regression checks for planning, review, evidence, and validation lenses. Closeout: `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/closeout.md`. |
 | PST-29. Legacy and test-quality concerns need agent-facing placement | Closed | `command-owner-skill-migration` | Treat test-quality review as review support and preventive legacy control as a normal workflow obligation | Closed by wording and tests that keep test-quality review agent-facing support while preventing unsupported legacy preservation during implementation/review instead of advertising a normal cleanup command. Closeout: `docs/plans/programs/planning-state-tooling/batches/command-owner-skill-migration/closeout.md`. |
+| PST-30. Command-owner bridge state lacks an explicit routing contract | Closed | `docs/skill-routing-contract.md` | Use `docs/skill-routing-contract.md` before interpreting command-owner versus runtime skill ownership | Closed by a compact routing contract, README/CONTEXT pointers, command-owner skill pointers, manifest version bumps, focused wording coverage, planning-state validation, and `git diff --check`. The command-owner migration is documented as bridge-state, not architecture-complete. |
 
 ## Batch Queue
 
@@ -367,6 +368,10 @@ Earlier completed batch:
 - Mark PST-29 `Closed` only after test-quality review is positioned as
   agent-facing review support and preventive legacy control is enforced as a
   normal workflow obligation rather than a user-facing cleanup command.
+- Mark PST-30 `Closed` only after the bridge-state routing contract exists,
+  command-owner skills point to it, conflict and stop rules are explicit, and
+  validation proves the wording is findable without treating runtime skills as
+  deprecated.
 
 ## Planning Rules
 
