@@ -165,8 +165,8 @@ Commit message:
 
 Scope:
 - Update README/catalog language so the user-facing command set is clear.
-- Keep old runtime skill names described as current migration internals or
-  existing workflow surfaces, not the target user interface.
+- Keep old runtime skill names described as agent-facing support dependencies
+  behind command-owner skills, not as the target user interface.
 - Update `CHANGELOG.md`, manifest tests, planning-state ledger/current state,
   closeout, and completed-slices evidence.
 

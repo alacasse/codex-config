@@ -147,7 +147,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
 
                 self.assertIn(f"name: {skill_name}", skill_text)
                 self.assertIn("## Stops", skill_text)
-                self.assertIn("## Copy-First Bridge", skill_text)
+                self.assertIn("## Agent-Facing Support", skill_text)
                 self.assertIn(f"Use ${skill_name}", ui_text)
 
     def test_manifest_catalog_distinguishes_user_and_agent_facing_skills(
@@ -182,7 +182,57 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("## Skills", readme)
         self.assertIn("### User-Facing Workflow Commands", readme)
         self.assertIn("### Agent-Facing Support And Runtime Surfaces", readme)
-        self.assertIn("rather than the target user interface", readme)
+        self.assertIn("not the preferred direct commands", readme)
+
+    def test_direct_request_prompts_preserve_command_owner_boundary(self) -> None:
+        manifest = self.load_manifest()
+        features = manifest["features"]
+        primary_command_owners = {
+            "add-to-ledger",
+            "plan-batch",
+            "work-batch",
+            "port-by-contract",
+        }
+        directly_requestable_support = {"test-quality-review"}
+
+        manifest_command_owners = {
+            feature_name
+            for feature_name, feature in features.items()
+            if feature["description"].startswith("User-facing command-owner skill")
+        }
+        direct_prompt_skills = set()
+        for prompt_file in (REPO_ROOT / "skills").glob("*/agents/openai.yaml"):
+            if "Use $" in prompt_file.read_text(encoding="utf-8"):
+                direct_prompt_skills.add(prompt_file.parents[1].name)
+
+        self.assertEqual(manifest_command_owners, primary_command_owners)
+        self.assertEqual(
+            direct_prompt_skills,
+            primary_command_owners | directly_requestable_support,
+        )
+        self.assertIn("Agent-facing", features["test-quality-review"]["description"])
+
+    def test_agent_facing_support_skills_are_not_ui_commands(self) -> None:
+        support_skills = (
+            "batch-runway",
+            "architecture-program-runway",
+            "legacy-removal",
+            "dead-surface-audit",
+        )
+
+        for skill_name in support_skills:
+            with self.subTest(skill=skill_name):
+                skill_text = (
+                    REPO_ROOT / f"skills/{skill_name}/SKILL.md"
+                ).read_text(encoding="utf-8")
+                ui_text = (
+                    REPO_ROOT / f"skills/{skill_name}/agents/openai.yaml"
+                ).read_text(encoding="utf-8")
+                frontmatter = skill_text.split("---", 2)[1]
+
+                self.assertIn("Agent-facing", frontmatter)
+                self.assertNotIn("Use when the user asks", frontmatter)
+                self.assertNotIn(f"Use ${skill_name}", ui_text)
 
     def test_custom_agent_toml_files_are_valid(self) -> None:
         manifest = self.load_manifest()

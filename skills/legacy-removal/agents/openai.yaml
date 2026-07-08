@@ -1,4 +1,4 @@
 interface:
   display_name: "Legacy Removal"
-  short_description: "Scope safe legacy cleanup ledgers"
-  default_prompt: "Use $legacy-removal to identify and scope legacy-removal work before planning implementation."
+  short_description: "Scope exceptional legacy residues"
+  default_prompt: "For agents: scope evidence-backed legacy residues only when a command, review route, or explicit investigation needs it."

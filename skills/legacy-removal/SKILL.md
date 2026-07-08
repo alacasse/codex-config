@@ -1,14 +1,15 @@
 ---
 name: legacy-removal
-description: Identify, scope, and track project-agnostic legacy-removal work before concrete implementation planning, optionally using dead-surface-audit for test-retained surface evidence. Use when a repository or workstream shows obsolete internal design such as compatibility shims, deprecated aliases, fallback branches for removed behavior, dual old/new paths, transitional wrappers, obsolete entry points, stale names, tests or docs preserving superseded behavior, or agents preserving compatibility the user did not request; also use before internal breaking refactors, migration cleanup, module/API consolidation, temporary compatibility-layer removal, canonical-model replacement, or Batch Runway planning when legacy-cleanup scope is still unclear. Do not use for ordinary bug fixes, small features, already scoped runway execution, explicitly required public API compatibility, required phased migration compatibility, broad deletion without evidence, style-only cleanup, or speculative rewrites.
+description: Agent-facing evidence and scoping support for exceptional legacy-removal residues, obsolete compatibility paths, stale names, and cleanup handoffs before concrete implementation planning.
 ---
 
 # Legacy Removal
 
-Use this skill as discovery and scoping before concrete execution planning. It
-is not a normal human-facing cleanup command or a ritual to run during every
+Agent-facing discovery and scoping support before concrete execution planning.
+It is not a normal human-facing cleanup command or a ritual to run during every
 batch. It can act as a domain evidence producer, an explicitly selected program owner,
-or a handoff source for another planning workflow. Decide that role before writing
+or a handoff source for another planning workflow. Decide that role
+before writing
 durable ledgers.
 
 By default, Legacy Removal produces legacy findings, evidence, compatibility

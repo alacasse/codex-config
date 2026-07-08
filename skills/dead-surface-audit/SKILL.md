@@ -1,11 +1,12 @@
 ---
 name: dead-surface-audit
-description: Find code surfaces that appear alive only because tests assert imports, aliases, topology, or compatibility rather than externally observable behavior. Use when auditing dead code, compatibility facades, legacy wrappers, root modules, public surfaces, or tests that may preserve migration debt.
+description: Agent-facing evidence audit for code surfaces that appear alive only because tests assert imports, aliases, topology, or compatibility rather than externally observable behavior.
 ---
 
 # Dead Surface Audit
 
-Use this skill to find Modules that are dead or obsolete but hidden behind tests that keep asserting the old surface exists.
+Agent-facing evidence support for finding Modules that are dead or obsolete but
+hidden behind tests that keep asserting the old surface exists.
 
 Core rule: tests are not automatically liveness evidence. A test can be the only thing keeping a shallow Module present.
 

@@ -1,12 +1,15 @@
 ---
 name: batch-runway
-description: Create and execute multi-slice runway specs with per-slice scope, validation, concrete execution-ledger updates, commits, and mandatory coding/review subagent delegation. Use when the user asks to create a batch runway spec, execute a spec, streamline sequential slices, work from project-local plans, commit after each slice, reduce long-running context use, or keep the main agent as coordinator only while subagents implement and review.
+description: Agent-facing runtime support used by plan-batch and work-batch for multi-slice runway spec mechanics, execution contracts, per-slice validation, commits, ledger updates, and implementation/review delegation.
 ---
 
 # Batch Runway
 
-Use this skill for a controlled sequence of small, independently committable
-slices. Keep the main agent as coordinator; delegate implementation and review.
+Agent-facing runtime support for `plan-batch` and `work-batch`. Do not present
+this as the normal human command for ledger-driven planning or execution; use
+the command-owner skill first, then apply this workflow for the controlled
+sequence of small, independently committable slices. Keep the main agent as
+coordinator; delegate implementation and review.
 
 ## Modes
 

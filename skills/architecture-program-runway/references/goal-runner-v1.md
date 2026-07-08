@@ -23,8 +23,9 @@ relationship to `batch-runway` is unclear.
 
 ## Goal Prompt Shape
 
-Use a short `/goal` prompt that points at this file instead of pasting the full
-protocol into the composer:
+This is an agent-facing runner prompt shape for the specialized local runner,
+not the normal user-facing batch command. Use a short `/goal` prompt that
+points at this file instead of pasting the full protocol into the composer:
 
 ```text
 /goal Use $architecture-program-runway. Follow skills/architecture-program-runway/references/goal-runner-v1.md with program_ledger=<path>, max_batches=1, and execute_batches=<false|true>.

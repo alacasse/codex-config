@@ -1,14 +1,16 @@
 ---
 name: architecture-program-runway
-description: Manage broad architecture findings, review ledgers, and multi-workstream improvement programs by grouping findings into sequenced Batch Runway specs. Use when a document contains many unrelated or partially related findings, when Codex must decide what should become one batch versus multiple batches, when updating an overarching findings ledger after a runway closes, or when selecting the next batch from a larger architecture backlog.
+description: Agent-facing program-ledger support used by add-to-ledger and plan-batch for broad finding intake, grouping, sequencing, selected dispatch packets, queue state, and closeout reconciliation.
 ---
 
 # Architecture Program Runway
 
-Use this skill above `batch-runway`. This skill owns the program ledger,
-program-level finding statuses, finding grouping, sequencing, selected dispatch
-packet, batch queue state, and closeout reconciliation. `batch-runway` owns the
-concrete 3-5 slice execution spec and per-slice execution workflow.
+Agent-facing program-ledger support for `add-to-ledger` and `plan-batch`. Do
+not present this as the normal human command for ledger intake or batch
+planning; use the command-owner skill first, then apply this workflow when
+program-level grouping, sequencing, selected dispatch packets, queue state, or
+closeout reconciliation are needed. `batch-runway` owns the concrete 3-5 slice
+execution spec and per-slice execution workflow.
 
 Use Planning Artifact Layout v1 when project instructions, local overlays, or
 active planning docs select it. Read `../planning-artifacts/SKILL.md` before

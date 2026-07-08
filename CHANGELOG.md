@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Command-owner support boundary completion
+
+Problem: the new command-owner skills were installed, but old runtime skill
+entrypoints and UI prompts still read like direct commands, leaving the
+migration halfway between the old names and the new command set.
+
+Decision: demote `batch-runway`, `architecture-program-runway`,
+`legacy-removal`, and `dead-surface-audit` in their skill frontmatter and UI
+prompts, replace copy-first bridge wording with stable agent-facing support
+boundaries, and add regression coverage for the catalog split.
+
+Expected effect: users invoke `add-to-ledger`, `plan-batch`, `work-batch`, or
+`port-by-contract` for normal work, while old runtime surfaces remain installed
+only as support dependencies behind those commands.
+
 ### Human-facing command-owner skills
 
 Problem: the main ledger and batch workflows were exposed through historical

@@ -24,9 +24,9 @@ locations matter.
 - Do not execute implementation slices.
 - Do not close findings without closeout evidence.
 
-## Copy-First Bridge
+## Agent-Facing Support
 
-Until this command has a fully separate intake procedure, use
-`../architecture-program-runway/SKILL.md` only for program-ledger intake and
-grouping behavior. Use `../legacy-removal/SKILL.md` first only when the user is
-asking to scope evidence-backed legacy-removal findings before ledger intake.
+Use `../architecture-program-runway/SKILL.md` only for program-ledger intake and
+grouping mechanics behind this command. Use `../legacy-removal/SKILL.md` first
+only when evidence-backed legacy-removal scoping is needed before ledger
+intake.

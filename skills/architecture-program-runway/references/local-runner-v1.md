@@ -50,8 +50,8 @@ final summary after it stops.
 ## How To Use It
 
 Skills are instruction bundles. They do not launch this runner by themselves,
-but `$architecture-program-runway` defines the agent behavior for local runner
-requests. The runner is the executable interface:
+but the architecture-program-runway support workflow defines the agent behavior
+for local runner requests. The runner is the executable interface:
 
 ```bash
 ~/.codex/scripts/architecture_program_runner.py \
@@ -70,8 +70,10 @@ Run a dry preview first:
   --all-batches
 ```
 
-Through the skill, minimal user prompts default to all executable batches unless
-the user gives a count:
+This is an agent-facing runner path, not the normal user-facing batch command.
+When deliberately invoking the specialized local runner support workflow,
+minimal prompts default to all executable batches unless the request gives a
+count:
 
 ```text
 Use $architecture-program-runway. Run the local runner on <program-ledger-path>.
@@ -257,8 +259,8 @@ commit and before the architecture runner can proceed to `closeout`.
 
 ## Batch Count Intent
 
-When a user asks through `$architecture-program-runway`, infer the batch bound
-before invoking the CLI:
+When this support workflow receives a local-runner request, infer the batch
+bound before invoking the CLI:
 
 - `run one batch` or `run 1 batch`: pass `--max-batches 1`.
 - `run two batches`, `run 2 batches`, or `run max 2 batches`: pass
@@ -354,18 +356,18 @@ for fields that are not applicable, including `stop_reason`, `batch_id`,
 
 ## Phase Responsibilities
 
-`select-dispatch` uses `$architecture-program-runway` to select exactly one
-next executable batch and create or refresh one compact dispatch packet. It
-does not create a Batch Runway spec or execute code.
+`select-dispatch` uses the architecture-program-runway support workflow to
+select exactly one next executable batch and create or refresh one compact
+dispatch packet. It does not create a Batch Runway spec or execute code.
 
-`create-spec` uses `$architecture-program-runway` in `create-next-runway` mode.
-It reads the dispatch packet as primary input, reads only minimum ledger
-context, creates exactly one concrete `$batch-runway` spec, and does not
-execute code.
+`create-spec` uses the architecture-program-runway support workflow in
+`create-next-runway` mode. It reads the dispatch packet as primary input, reads
+only minimum ledger context, creates exactly one concrete Batch Runway spec, and
+does not execute code.
 
-`execute` uses `$batch-runway execute-spec` on exactly the generated spec. It
-preserves normal `runway_worker` and `runway_reviewer` delegation. Execution
-success does not increment `batches_completed`.
+`execute` uses the batch-runway runtime support workflow on exactly the
+generated spec. It preserves normal `runway_worker` and `runway_reviewer`
+delegation. Execution success does not increment `batches_completed`.
 
 When `execute` stops on validation, receipts should summarize the canonical
 command lines attempted, whether runner env override keys were present in the
@@ -374,7 +376,7 @@ without disclosing values, whether fallback validation was attempted and passed,
 the likely failure class such as DNS/cache/permission/lockfile/test failure,
 and any dirty files remaining.
 
-`closeout` uses `$architecture-program-runway closeout-runway` to reconcile
+`closeout` uses the architecture-program-runway support workflow to reconcile
 compact execution evidence into the program ledger. It does not paste logs into
 the ledger. Closeout telemetry is file-based closeout telemetry: write compact
 ledger, receipt, or evidence-file updates directly, without launching another

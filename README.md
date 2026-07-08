@@ -106,18 +106,17 @@ planning and execution workflow.
 
 ### Agent-Facing Support And Runtime Surfaces
 
-These skills remain installed because current workflows still depend on them.
-During the command-owner migration, names such as `batch-runway` and
-`architecture-program-runway` describe existing runtime surfaces and
-agent-facing internals rather than the target user interface.
+These skills remain installed because command-owner workflows use them as
+agent-facing support. They are not the preferred direct commands for the main
+ledger and batch workflow.
 
 | Skill | Purpose | How it is used |
 | --- | --- | --- |
-| `batch-runway` | Creates or executes bounded multi-slice runway specs with per-slice validation, commits, ledger updates, and implementation/review delegation. | Used when work needs to be split into small, reviewable slices or when an existing runway spec should be executed one slice at a time. |
-| `architecture-program-runway` | Turns broad architecture findings into sequenced batches while preserving a durable program ledger. | Used before `batch-runway` when there are many related findings and the agent must group, prioritize, select, or close out batches. |
-| `test-quality-review` | Reviews tests for behavioral confidence, regression protection, assertion strength, fixture friction, and design signals. | Used for changed tests, focused test audits, or larger test-suite reviews where coverage percentage is not the main question. |
-| `dead-surface-audit` | Finds code surfaces kept alive by tests that assert imports, aliases, topology, or compatibility shape rather than behavior. | Used when auditing legacy wrappers, facades, root modules, compatibility aliases, or suspected test-retained dead code. |
-| `legacy-removal` | Scopes evidence-backed legacy cleanup before implementation planning. | Used when obsolete paths, fallback behavior, stale names, compatibility shims, or cleanup residues need classification and a removal plan. |
+| `batch-runway` | Provides bounded multi-slice runway spec mechanics, per-slice validation, commits, ledger updates, and implementation/review delegation. | Invoked behind `plan-batch` or `work-batch` when a command-owned batch needs concrete spec creation or execution contracts. |
+| `architecture-program-runway` | Provides program-ledger grouping, sequencing, selected dispatch, queue state, and closeout reconciliation. | Invoked behind `add-to-ledger` or `plan-batch` when broad findings need durable grouping or selected-batch state. |
+| `test-quality-review` | Reviews tests for behavioral confidence, regression protection, assertion strength, fixture friction, and design signals. | Invoked by review routes or directly for focused test audits where coverage percentage is not the main question. |
+| `dead-surface-audit` | Finds code surfaces kept alive by tests that assert imports, aliases, topology, or compatibility shape rather than behavior. | Invoked as evidence support when legacy, review, or planning work needs proof about test-retained dead surfaces. |
+| `legacy-removal` | Scopes evidence-backed legacy cleanup before implementation planning. | Invoked only for exceptional obsolete paths, fallback behavior, stale names, compatibility shims, or cleanup residues that need classification and a removal handoff. |
 | `planning-artifacts` | Defines project-agnostic placement and naming conventions for durable planning docs, ledgers, dispatch packets, run artifacts, outputs, and archives. | Used when creating, migrating, or interpreting planning roots and workflow artifacts across projects. |
 | `planning-state` | Discovers, validates, bootstraps, projects, and reports current planning state before ledger-driven workflows consume it. | Used as the diagnostic hot path for active work pickup, queued batches, closeout evidence, and safe state/projection target checks. |
 

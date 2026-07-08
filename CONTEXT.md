@@ -205,8 +205,9 @@ _Avoid_: command wrapper, alias, facade
 
 **Copy-First Skill Migration**:
 A migration approach that creates new command-owner skills beside existing
-runtime skills, proves the new workflow surface, and only then retires or
-rewrites the old skills.
+runtime skills, proves the new workflow surface, and then demotes old
+user-facing metadata while keeping required support contracts installed when
+current workflows still depend on them.
 _Avoid_: in-place rename, permanent compatibility layer, rewrite while active
 
 **Agent-Facing Support Skill**:
@@ -279,14 +280,14 @@ _Avoid_: hidden user command, duplicate command owner, broad workflow facade
   normal human-facing cleanup command.
 - The current **Workflow Command Set** is `add-to-ledger`, `plan-batch`,
   `work-batch`, and `port-by-contract`.
-- `add-to-ledger`, `plan-batch`, and `work-batch` should be
-  **Command Wrapper Skills** rather than documentation-only aliases.
-- **Command Wrapper Skills** should reduce user-facing complexity without
+- `add-to-ledger`, `plan-batch`, and `work-batch` are **Command Owner Skills**
+  rather than documentation-only aliases.
+- **Command Owner Skills** should reduce user-facing complexity without
   creating unbounded **Routing Complexity** behind the command.
 - The target architecture for `add-to-ledger`, `plan-batch`, and `work-batch`
   is **Command Owner Skills**, not permanent wrappers over opaque runtime
   identifiers.
-- **Copy-First Skill Migration** lets new **Command Owner Skills** move faster
+- **Copy-First Skill Migration** lets the command-owner skills move faster
   without forcing every intermediate edit to preserve the old skill interface.
 - **Agent-Facing Support Skills** may sit behind **Command Owner Skills** when
   they reduce duplication or isolate review, validation, discovery, or routing

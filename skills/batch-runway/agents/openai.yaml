@@ -1,4 +1,4 @@
 interface:
   display_name: "Batch Runway"
-  short_description: "Plan and execute slice batches"
-  default_prompt: "Use $batch-runway to create or execute a multi-slice runway spec."
+  short_description: "Runtime support for batch commands"
+  default_prompt: "For agents: apply batch-runway spec creation or execution contracts behind $plan-batch or $work-batch."

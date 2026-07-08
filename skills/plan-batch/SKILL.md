@@ -25,9 +25,9 @@ when choosing planning locations or interpreting Layout v1 artifacts.
 - Do not run project-level integration harnesses unless the spec explicitly
   assigns them.
 
-## Copy-First Bridge
+## Agent-Facing Support
 
-Until this command has a fully separate planning procedure, use
-`../architecture-program-runway/SKILL.md` for selecting or refreshing the
-program-level batch dispatch, then use `../batch-runway/SKILL.md` in create-spec
-mode to write exactly one concrete runway.
+Use `../architecture-program-runway/SKILL.md` for selected-dispatch mechanics
+when ledger work still needs grouping or queue-state updates. Use
+`../batch-runway/SKILL.md` in create-spec mode only as runtime support for
+writing exactly one concrete runway behind this command.

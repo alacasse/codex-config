@@ -43,8 +43,9 @@
 - Notes: `add-to-ledger`, `plan-batch`, `work-batch`, and `port-by-contract`
   are the preferred direct user-facing command set. Existing names such as
   `architecture-program-runway`, `batch-runway`, `legacy-removal`,
-  `dead-surface-audit`, and `test-quality-review` remain installed as current
-  workflow surfaces or agent-facing support, not the target user interface.
+  `dead-surface-audit`, and `test-quality-review` remain installed as
+  agent-facing support/runtime dependencies behind those commands, not as
+  preferred direct user commands.
 
 ## Queued Batch
 

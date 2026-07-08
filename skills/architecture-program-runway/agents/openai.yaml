@@ -1,4 +1,4 @@
 interface:
   display_name: "Architecture Program Runway"
-  short_description: "Manage architecture findings into batch runways"
-  default_prompt: "Use $architecture-program-runway to organize architecture findings into sequenced batch runways."
+  short_description: "Program-ledger support for commands"
+  default_prompt: "For agents: apply program-ledger grouping, dispatch, queue, and closeout support behind $add-to-ledger or $plan-batch."

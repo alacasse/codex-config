@@ -31,8 +31,7 @@ when interpreting active-state files or completed-slice archives.
 - Do not broaden slice scope beyond the active runway.
 - Do not reconcile the program ledger after closeout unless explicitly asked.
 
-## Copy-First Bridge
+## Agent-Facing Support
 
-Until this command has a fully separate execution procedure, use
-`../batch-runway/SKILL.md` in execute-spec mode for the current queued or active
-runway.
+Use `../batch-runway/SKILL.md` in execute-spec mode as runtime support for the
+current queued or active runway behind this command.

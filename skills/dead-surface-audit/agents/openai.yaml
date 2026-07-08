@@ -1,4 +1,4 @@
 interface:
   display_name: "Dead Surface Audit"
-  short_description: "Find code kept alive only by tests"
-  default_prompt: "Use $dead-surface-audit to find code surfaces that may be dead but preserved by tests."
+  short_description: "Evidence for test-retained surfaces"
+  default_prompt: "For agents: produce evidence about test-retained dead surfaces when legacy, review, or planning support needs it."
