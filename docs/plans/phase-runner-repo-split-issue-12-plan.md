@@ -16,15 +16,15 @@ for `codex-config` and the Go runner to interoperate through files, schemas,
 commands, fixtures, and exit codes.
 
 The current **Runner Facade** has enough concept ownership to make the split
-worth planning. It is not yet shaped as a generic `phase-runner` **Module**.
-Its public **Interface** is still architecture-program and Codex-specific:
+worth planning. It is not yet shaped as a generic `phase-runner` module.
+Its public interface is still architecture-program and Codex-specific:
 fixed `select-dispatch -> create-spec -> execute -> closeout` **Phases**,
 `--program-ledger`, `--execute-batches`, Batch Runway language, Codex prompts,
 Codex output-schema constraints, sandbox/model flags, and skill references.
 
 ## Current State
 
-Generic-looking **Modules**:
+Generic-looking control-plane areas:
 
 - **Run State**: resumable progress, artifact paths, active batch, stop reason.
 - **Phase Result** and **Phase Receipt**: schema-valid result and persisted
@@ -42,7 +42,7 @@ Still `codex-config`-specific:
 - **Phase Contract** content names `architecture-program-runway` and
   `batch-runway`.
 - **Phase Environment** points at repo skill references and Codex schema files.
-- The production `codex exec` path now crosses an internal worker **Seam**
+- The production `codex exec` path now crosses the **Worker Adapter Boundary**
   through `CodexExecWorker`, and `ShellCommandWorker` proves the same
   validation, receipt, and transition rules without Codex prompts.
 - Active planning now lives under `docs/plans/`; **Planning Root** and
@@ -90,8 +90,9 @@ Split after these conditions are true:
 2. A generic workflow model exists in code, not only in
    `docs/plans/generic-phase-runner-product-idea.md`: **Workflow**, **Phase**,
    **Worker**, **Receipt**, **State**, and **Artifact**.
-3. A real worker **Adapter** **Seam** exists with at least two adapters,
-   initially `shell` and `codex-exec`. One adapter is only a hypothetical seam.
+3. A real **Worker Adapter Boundary** exists with at least two workers,
+   initially `shell` and `codex-exec`. A single worker would leave the boundary
+   unproven.
 4. `codex-config` consumes the generic core through a Codex adapter/example
    layer while keeping `architecture-program-runway`, `batch-runway`, personal
    plans, and Graphify workflow state in `codex-config`.
@@ -104,18 +105,19 @@ Split after these conditions are true:
 
 ## Smallest Useful Extraction Prep Batch
 
-Goal: make the generic **Interface** visible without moving code to a new repo.
+Goal: make the generic workflow boundary visible without moving code to a new
+repo.
 
 1. Record the **Planning Root** ADR and migrate active planning to
    `docs/plans/` with completed material under `docs/plans/archive/`.
 2. Add a generic workflow contract document beside the product idea. It should
    map current runner concepts to generic names and explicitly name what stays
    in `codex-config`.
-3. Introduce a minimal internal generic worker **Seam** in the current runner:
+3. Introduce a minimal internal **Worker Adapter Boundary** in the current runner:
    a shell worker contract plus the existing Codex execution as a Codex
-   **Adapter**. Keep the **Runner Facade** behavior unchanged.
+   adapter. Keep the **Runner Facade** behavior unchanged.
 4. Add tests that prove a simple shell-only workflow can pass through the same
-   **State**, **Receipt**, and **Transition** rules without Batch Runway skill
+   **State**, **Receipt**, and transition rules without Batch Runway skill
    language.
 5. Reassess issue #12 after that batch. If the shell workflow and Codex adapter
    both cross the same seam cleanly and planning-state interop is explicit,
@@ -123,15 +125,15 @@ Goal: make the generic **Interface** visible without moving code to a new repo.
 
 ## Deepening Opportunities
 
-1. **Worker Adapter Seam**
+1. **Worker Adapter Boundary**
 
    - Files: `scripts/architecture_program_runner.py`,
      `scripts/architecture_program_runner_command.py`, future generic workflow
      tests.
    - Problem: `phase_executor` is a useful test seam, but production execution
-     is Codex-only. The **Interface** is still the command-building details.
-   - Solution: introduce a small worker **Seam** that can run a shell command
-     or Codex phase and return a **Phase Result**.
+     is Codex-only. The public interface is still the command-building details.
+   - Solution: introduce a small **Worker Adapter Boundary** that can run a
+     shell command or Codex phase and return a **Phase Result**.
    - Benefits: higher **Leverage** because workflow execution stops depending
      on Codex command construction; better **Locality** because provider quirks
      live in adapters.
@@ -145,7 +147,7 @@ Goal: make the generic **Interface** visible without moving code to a new repo.
      runner still treats the architecture-program sequence as the only shape.
    - Solution: document and then code a generic workflow shape while mapping
      the current architecture program onto it.
-   - Benefits: better **Depth** at the workflow **Interface** and easier tests
+   - Benefits: better **Depth** at the workflow boundary and easier tests
      that do not need Codex, Batch Runway, or a project ledger.
 
 3. **Planning Root Cleanup**

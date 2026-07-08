@@ -37,6 +37,12 @@ _Avoid_: prompt text, output schema, Codex command
 The runner-supplied launch and prompt context for one phase.
 _Avoid_: env vars, shell config, prompt-only facts
 
+**Worker Adapter Boundary**:
+The runner boundary where provider-specific phase workers return phase results
+while validation, receipt checks, transitions, and state updates stay
+runner-owned.
+_Avoid_: worker seam, test seam, phase executor
+
 **Phase Result**:
 The schema-valid JSON object returned by a runner-launched phase process.
 _Avoid_: receipt, phase output file
@@ -231,6 +237,9 @@ _Avoid_: hidden user command, duplicate command owner, broad workflow facade
 - A **Phase Contract** belongs to exactly one **Phase**.
 - A **Phase Environment** belongs to exactly one launched **Phase**.
 - A **Phase Environment** supplies facts and settings used to satisfy a **Phase Contract**.
+- A **Worker Adapter Boundary** lets provider-specific phase workers return
+  **Phase Result** objects without owning **Phase Result** validation,
+  **Phase Receipt** checks, **Phase Transition**, or **Run State** updates.
 - A **Phase Result** is returned by exactly one **Phase**.
 - A **Phase Receipt** persists exactly one **Phase Result** for one **Phase**.
 - A **Phase Observation** records what the runner observed about one **Phase**.
