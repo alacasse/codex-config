@@ -159,6 +159,26 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("## Stop Rule", routing_contract)
         self.assertIn("## Bridge-State Rule", routing_contract)
 
+    def test_command_owner_input_contracts_are_explicit(self) -> None:
+        routing_contract = (REPO_ROOT / "docs/skill-routing-contract.md").read_text(
+            encoding="utf-8"
+        )
+        add_to_ledger = (REPO_ROOT / "skills/add-to-ledger/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        plan_batch = (REPO_ROOT / "skills/plan-batch/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        work_batch = (REPO_ROOT / "skills/work-batch/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("## Command Input Contract", routing_contract)
+        self.assertIn("fresh user-provided work/finding text", add_to_ledger)
+        self.assertIn("existing ledger state/work", plan_batch)
+        self.assertIn("must not silently create new ledger findings", plan_batch)
+        self.assertIn("current queued or active runway", work_batch)
+
     def test_manifest_catalog_distinguishes_user_and_agent_facing_skills(
         self,
     ) -> None:

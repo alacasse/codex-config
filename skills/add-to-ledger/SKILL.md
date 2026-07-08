@@ -8,14 +8,18 @@ description: Add new findings, review notes, or work requests to the appropriate
 Use this skill when the user asks to add a finding, review result, bug, cleanup
 need, or proposed work item to a project planning ledger.
 
+This is the normal entrypoint for fresh user-provided work/finding text. It
+turns that input into durable ledger state so later planning can select bounded
+work from the ledger instead of inventing scope from chat.
+
 This skill owns intake quality: identify the target planning root, preserve the
 source evidence, write or update the ledger row, assign the initial status, and
 leave enough context for a later batch-planning pass.
 
 This skill owns ledger-intake user intent. It may route to support/runtime
 skills for diagnostics, placement, grouping, or evidence scoping, but it does
-not select a batch, create a runway, or execute implementation. When routing
-ambiguity exists, follow `../../docs/skill-routing-contract.md`.
+not select a batch, create a dispatch/runway, or execute implementation. When
+routing ambiguity exists, follow `../../docs/skill-routing-contract.md`.
 
 Before consuming Layout v1 planning state, use `../planning-state/SKILL.md` to
 run the current and validate hot path. Use `../planning-artifacts/SKILL.md`
@@ -25,7 +29,7 @@ locations matter.
 ## Stops
 
 - Do not select the next batch.
-- Do not create a concrete runway spec.
+- Do not create a dispatch or concrete runway spec.
 - Do not execute implementation slices.
 - Do not close findings without closeout evidence.
 

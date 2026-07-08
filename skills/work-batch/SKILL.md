@@ -8,15 +8,19 @@ description: Execute the current planned batch runway without selecting a differ
 Use this skill when the user asks to work on the batch, execute the current
 runway, or continue a queued or active batch through its implementation slices.
 
+This skill consumes the current queued or active runway. It executes that
+runway only; it does not create ledger findings, select new ledger work, or
+create a new runway unless explicit recovery instructions require replanning.
+
 This skill owns execution of the current planned batch: confirm the active or
 queued runway, execute its slices under the runway contract, keep changes within
 slice scope, run focused validation, and stop on blockers that make the active
 batch unsafe to continue.
 
 This skill owns the user's request to execute the current batch. It must not
-select a new batch, and it must not create a new runway unless recovery
-instructions explicitly require replanning. Use `../planning-state/SKILL.md`
-first when Layout v1 state is involved, then use `../batch-runway/SKILL.md` in
+select a new batch, and it must not create a new runway unless explicit
+recovery instructions require replanning. Use `../planning-state/SKILL.md` first
+when Layout v1 state is involved, then use `../batch-runway/SKILL.md` in
 `execute-spec` mode for the detailed execution procedure. When routing
 ambiguity exists, follow `../../docs/skill-routing-contract.md`.
 
@@ -32,7 +36,9 @@ when interpreting active-state files or completed-slice archives.
 
 ## Stops
 
+- Do not create ledger findings.
 - Do not select a new batch.
+- Do not select new ledger work.
 - Do not create a new runway spec unless recovery instructions explicitly
   require replanning.
 - Do not broaden slice scope beyond the active runway.

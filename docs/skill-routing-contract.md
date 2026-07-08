@@ -25,14 +25,28 @@ into true end-to-end owners, but that is not the current state.
 - **Transitional bridge skill**: a command-owner skill that currently routes to
   runtime skills while the migration is copy-first.
 
+## Command Input Contract
+
+`add-to-ledger` is the normal command-owner skill that turns fresh
+user-provided work/finding text into a new or updated ledger finding.
+
+`plan-batch` consumes existing ledger state. It may accept user preference
+about which existing finding to prioritize, but it must not silently create new
+ledger findings. If no suitable ledger finding exists, stop and report that
+`add-to-ledger` must run first.
+
+`work-batch` consumes the current queued or active runway. It must not create
+new ledger findings, select new ledger work, or create a new runway unless
+explicit recovery instructions require replanning.
+
 ## Routing Table
 
-| User intent | Primary command-owner skill | Runtime/support skills |
-| --- | --- | --- |
-| Capture a finding, issue, cleanup need, or work request in a durable ledger | `add-to-ledger` | `planning-state`, `planning-artifacts`, `architecture-program-runway`; `legacy-removal` only for evidence-backed legacy scoping |
-| Plan the next bounded batch/spec from current ledger state | `plan-batch` | `planning-state`, `planning-artifacts`, `architecture-program-runway`, then `batch-runway` in `create-spec` mode |
-| Execute the current queued or active batch runway | `work-batch` | `planning-state`, `planning-artifacts`, then `batch-runway` in `execute-spec` mode |
-| Extract behavior contracts before a rewrite, migration, or port | `port-by-contract` | `batch-runway` or `architecture-program-runway` only after contract artifacts exist |
+| User command/input | Primary skill | Input source | Output | Runtime/support skills |
+| --- | --- | --- | --- | --- |
+| Capture fresh work/finding text, review results, bugs, cleanup needs, or work requests | `add-to-ledger` | User-provided work/finding text plus project planning state | New or updated ledger finding | `planning-state`, `planning-artifacts`, `architecture-program-runway`; `legacy-removal` only for evidence-backed legacy scoping |
+| Plan the next bounded batch/spec from existing ledger work | `plan-batch` | Existing ledger state, selected dispatch, or user preference pointing at existing ledger work | One dispatch/runway; no implementation | `planning-state`, `planning-artifacts`, `architecture-program-runway`, then `batch-runway` in `create-spec` mode |
+| Execute the current queued or active batch runway | `work-batch` | Current queued or active runway state | Executed slices, validation/review evidence, commits, and closeout evidence | `planning-state`, `planning-artifacts`, then `batch-runway` in `execute-spec` mode |
+| Extract behavior contracts before a rewrite, migration, or port | `port-by-contract` | Current implementation and durable domain context | Implementation-neutral contract artifacts before any runway | `batch-runway` or `architecture-program-runway` only after contract artifacts exist |
 
 ## Conflict Rule
 

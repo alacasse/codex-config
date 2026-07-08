@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Command-owner input contract
+
+Problem: command-owner routing was clarified, but command input semantics
+remained ambiguous; agents could still treat `plan-batch` as allowed to invent
+or add ledger work.
+
+Decision: add a command input contract distinguishing fresh user-provided work
+text, existing ledger work, and queued/active runway execution.
+
+Expected effect: agents use `add-to-ledger` for new work text, `plan-batch` for
+existing ledger work, and `work-batch` for queued/active runway execution.
+
 ### Command-owner bridge routing contract
 
 Problem: command-owner skills were installed, but agents could still confuse

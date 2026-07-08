@@ -8,6 +8,12 @@ description: Select bounded ledger work when needed and write one concrete batch
 Use this skill when the user asks to create the next specs batch, plan a batch,
 turn selected ledger work into a runway, or prepare implementation slices.
 
+This skill consumes existing ledger state/work. It may accept a user preference
+pointing at an existing finding, selected dispatch, queued batch, or active
+runway, but it must not silently create new ledger findings from fresh user work
+text. If no suitable ledger finding exists, stop and report that
+`add-to-ledger` must run first.
+
 This skill owns the planning decision for one batch: inspect current planning
 state, use the selected dispatch when one exists, select bounded ledger work
 only when none is already selected, and write one concrete runway spec with
@@ -28,6 +34,7 @@ when choosing planning locations or interpreting Layout v1 artifacts.
 
 - Do not implement any slice.
 - Do not create more than one batch spec.
+- Do not create new ledger findings from fresh user work text.
 - Do not bypass an existing selected dispatch, queued batch, or active runway.
 - Do not run project-level integration harnesses unless the spec explicitly
   assigns them.
