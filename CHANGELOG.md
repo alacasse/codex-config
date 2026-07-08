@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Block external implement skill
+
+Problem: the external `implement` skill can take over ordinary spec-based
+repo work and impose workflow steps such as review delegation and commits that
+may not match this repo's command-owner routing.
+
+Decision: remove `implement` from the external skills lock, remove it from the
+workflow guide's shaping-skill examples, and add regression coverage so it is
+not treated as an installed external workflow here.
+
+Expected effect: future agents should route implementation requests through
+repo instructions and command-owner workflows instead of invoking the Matt
+Pocock `implement` skill automatically.
+
 ### Workflow usage guide
 
 Problem: external engineering skills and repo-owned command-owner skills could

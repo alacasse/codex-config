@@ -11,6 +11,7 @@ from scripts import install_codex_config
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = REPO_ROOT / "codex-features.json"
+SKILLS_LOCK = REPO_ROOT / "skills-lock.json"
 
 
 class CodexFeaturesManifestTests(unittest.TestCase):
@@ -256,6 +257,15 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             workflow_guide,
         )
         self.assertIn("docs/skill-routing-contract.md", readme)
+
+    def test_external_skill_lock_blocks_implement_skill(self) -> None:
+        skills_lock = json.loads(SKILLS_LOCK.read_text(encoding="utf-8"))
+        workflow_guide = (REPO_ROOT / "docs/workflow-guide.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertNotIn("implement", skills_lock["skills"])
+        self.assertNotIn("- `implement`", workflow_guide)
 
     def test_port_by_contract_is_not_general_rewrite_shortcut(self) -> None:
         skill_text = (REPO_ROOT / "skills/port-by-contract/SKILL.md").read_text(

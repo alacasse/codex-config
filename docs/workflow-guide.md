@@ -36,7 +36,6 @@ Examples from `skills-lock.json` include:
 - `to-tickets`
 - `triage`
 - `wayfinder`
-- `implement`
 - `code-review`
 
 ### Codex-Config Command-Owner Skills
