@@ -47,9 +47,9 @@ Still `codex-config`-specific:
   validation, receipt, and transition rules without Codex prompts.
 - Active planning now lives under `docs/plans/`; **Planning Root** and
   **Plan Archive** are recorded in ADR 0001. The closed extraction-prep runway
-  spec and dispatch remain under `plans/` as historical compatibility
-  artifacts; future active dispatch/spec work should be created under
-  `docs/plans/`.
+  spec and dispatch are archived under
+  `docs/plans/archive/compatibility/root-plans/`; future active dispatch/spec
+  work should be created under `docs/plans/`.
 
 ## Post-Prep Reassessment
 

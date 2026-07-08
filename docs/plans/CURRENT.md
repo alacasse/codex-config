@@ -28,12 +28,13 @@
 - Historical files under `docs/plans/archive/` and old program batch
   directories retain their original references and are not active coordination
   state.
-- `plans/codex-config-phase-runner-extraction-prep-runway.md` and
-  `plans/dispatch/phase-runner-extraction-prep-dispatch.md` are historical
-  compatibility artifacts from the closed extraction-prep batch.
+- Repository-root `plans/` is retired. Do not create or use it for active,
+  semi-active, or compatibility planning.
+- The closed extraction-prep compatibility artifacts now live under
+  `docs/plans/archive/compatibility/root-plans/`.
 
 ## Next Safe Action
 
 Use `docs/plans/programs/codex-config/CURRENT.md` before reading the canonical
 ledger. Do not infer selected work from old flat filenames, old APR/PST program
-directories, archived ledgers, or archive contents.
+directories, archived ledgers, retired planning paths, or archive contents.

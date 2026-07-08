@@ -15,6 +15,19 @@ and PST ledger snapshots as evidence.
 Expected effect: future agents start from one active codex-config ledger, while
 closed APR/PST history remains findable without acting as a parallel backlog.
 
+### Retire repository-root plans directory
+
+Problem: the repository-root `plans/` directory still held historical
+compatibility artifacts from a closed batch, making it look like a semi-active
+planning location beside `docs/plans/`.
+
+Decision: move the closed extraction-prep dispatch and runway under
+`docs/plans/archive/compatibility/root-plans/`, remove the root `plans/`
+directory, and document that agents must not recreate or use it.
+
+Expected effect: `docs/plans/` is the only active planning root, while the
+closed compatibility artifacts remain findable in the archive.
+
 ### Block external implement skill
 
 Problem: the external `implement` skill can take over ordinary spec-based

@@ -7,7 +7,7 @@
   `docs/plans/codex-config-architecture-program-runner-findings.md`
 - Source decision note: `docs/plans/phase-runner-repo-split-issue-12-plan.md`
 - Expected spec:
-  `plans/codex-config-phase-runner-extraction-prep-runway.md`
+  `docs/plans/archive/compatibility/root-plans/codex-config-phase-runner-extraction-prep-runway.md`
 
 ## Included Findings
 
@@ -36,8 +36,9 @@ The batch crosses two adjacent seams that must stay explicitly connected:
 
 - Planning location seam: active architecture-runner planning lives under
   `docs/plans/`, with completed or superseded material under
-  `docs/plans/archive/`. This dispatch and its active runway spec remain under
-  `plans/` only as a temporary compatibility exception until the batch closes.
+  `docs/plans/archive/`. This dispatch and its runway spec are closed
+  compatibility artifacts archived under
+  `docs/plans/archive/compatibility/root-plans/`.
 - Phase worker seam: runner phase execution should be expressed through a
   small worker adapter interface, initially with `codex-exec` and `shell`
   adapters, while preserving the current **Runner Facade** behavior.

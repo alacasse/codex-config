@@ -13,12 +13,11 @@ both `codex-exec` and `shell` workers.
 - Current Program Ledger:
   `docs/plans/codex-config-architecture-program-runner-findings.md`
 - Dispatch packet:
-  `plans/dispatch/phase-runner-extraction-prep-dispatch.md`
+  `docs/plans/archive/compatibility/root-plans/dispatch/phase-runner-extraction-prep-dispatch.md`
 - Issue #12 decision note:
   `docs/plans/phase-runner-repo-split-issue-12-plan.md`
-- Active planning now lives under `docs/plans/`; the current executing runway
-  spec and dispatch remain under `plans/` only to avoid mid-batch recovery
-  ambiguity.
+- Active planning now lives under `docs/plans/`; this closed runway spec and
+  its dispatch are archived compatibility artifacts.
 - The current **Runner Facade** is
   `scripts/architecture_program_runner.py`.
 - Current concept owners include state, validation, command, artifacts, phase
@@ -65,11 +64,8 @@ Overrides:
 - This is a full-runway spec because later slices touch runner phase execution
   behavior.
 - Documentation-only slices may use `docs-only` validation overrides.
-- If the planning-root migration moves this active spec, the coordinator must
-  preserve the active spec path in its own orchestration notes and update any
-  runner state or ledger references before continuing. Prefer leaving this
-  active spec in `plans/` until closeout if moving it would make recovery
-  ambiguous.
+- This archived spec is closed evidence only. Do not resume it or recreate a
+  repository-root `plans/` directory from it.
 
 ## Validation Profile
 

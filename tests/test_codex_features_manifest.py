@@ -267,6 +267,16 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertNotIn("implement", skills_lock["skills"])
         self.assertNotIn("- `implement`", workflow_guide)
 
+    def test_repository_root_plans_directory_is_not_recreated(self) -> None:
+        self.assertFalse(
+            (REPO_ROOT / "plans").exists(),
+            "repository-root plans/ is retired; use docs/plans/CURRENT.md",
+        )
+
+        current = (REPO_ROOT / "docs/plans/CURRENT.md").read_text(encoding="utf-8")
+        self.assertIn("Repository-root `plans/` is retired", current)
+        self.assertIn("docs/plans/archive/compatibility/root-plans/", current)
+
     def test_port_by_contract_is_not_general_rewrite_shortcut(self) -> None:
         skill_text = (REPO_ROOT / "skills/port-by-contract/SKILL.md").read_text(
             encoding="utf-8"

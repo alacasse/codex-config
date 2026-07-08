@@ -31,9 +31,14 @@ Compatibility redirects:
 
 - `codex-config-architecture-program-runner-findings.md`
 - `planning-state-tooling-ledger.md`
-- `plans/codex-config-phase-runner-extraction-prep-runway.md` and
-  `plans/dispatch/phase-runner-extraction-prep-dispatch.md` remain historical
-  compatibility artifacts from a closed batch.
+
+Use `docs/plans/CURRENT.md` for active planning-root policy.
+
+Closed compatibility artifacts from the retired repository-root planning
+location are archived under:
+
+- `archive/compatibility/root-plans/codex-config-phase-runner-extraction-prep-runway.md`
+- `archive/compatibility/root-plans/dispatch/phase-runner-extraction-prep-dispatch.md`
 
 Archived program-ledger snapshots:
 

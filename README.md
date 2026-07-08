@@ -103,6 +103,8 @@ The active codex-config planning ledger is
 `docs/plans/programs/codex-config/LEDGER.md`; archived APR/PST ledgers are
 evidence only, not parallel pickup sources.
 
+Use `docs/plans/CURRENT.md` for active planning-root policy.
+
 ### User-Facing Workflow Commands
 
 These are the preferred command-owner skills to invoke directly for the main

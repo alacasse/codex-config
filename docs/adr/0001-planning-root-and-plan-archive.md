@@ -20,10 +20,9 @@ Use `docs/plans/archive/` as the **Plan Archive** for completed or superseded
 planning documents that should remain readable but should not be treated as
 active instructions.
 
-The currently executing phase-runner extraction-prep runway spec and dispatch
-packet remain under `plans/` until that batch closes, because moving them
-mid-execution would make coordinator recovery ambiguous. They are the only
-intentional active-planning compatibility exception.
+The historical phase-runner extraction-prep runway spec and dispatch packet are
+archived under `docs/plans/archive/compatibility/root-plans/`. Use
+`docs/plans/CURRENT.md` for active planning-root policy.
 
 Runtime runner artifacts, cache files, sessions, logs, ignored local artifacts,
 and `architecture-program-runs/` are not planning documents and must not be
@@ -39,5 +38,4 @@ moved into the Planning Root or Plan Archive.
   paths for active planning inputs.
 - Completed and superseded material can be archived mechanically without
   rewriting its historical content unless path/readability updates are needed.
-- The old `plans/` root is a temporary compatibility location for the active
-  extraction-prep spec and dispatch only, not the future active Planning Root.
+- Use `docs/plans/CURRENT.md` for active planning-root policy.
