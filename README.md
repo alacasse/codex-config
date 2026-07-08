@@ -96,6 +96,9 @@ During the command-owner migration, use
 `docs/skill-routing-contract.md` to resolve human intent ownership, runtime
 support routing, conflict rules, and stop conditions.
 
+For end-to-end workflow usage, including how external engineering skills feed
+the canonical ledger-driven workflow, see `docs/workflow-guide.md`.
+
 ### User-Facing Workflow Commands
 
 These are the preferred command-owner skills to invoke directly for the main

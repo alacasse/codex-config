@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Workflow usage guide
+
+Problem: external engineering skills and repo-owned command-owner skills could
+still be read as competing ways to create executable work.
+
+Decision: add a concise workflow guide that explains external shaping sources,
+`add-to-ledger` ingestion, ledger-driven batch planning, runway execution, and
+the agent-facing support skill boundary.
+
+Expected effect: agents and humans can route vague ideas, GitHub tickets,
+ADRs, CONTEXT follow-ups, and review findings into the canonical ledger path
+without treating those sources as parallel active backlogs.
+
 ### Executable work source boundary
 
 Problem: external engineering skills, GitHub issues, ADRs, specs, review notes,

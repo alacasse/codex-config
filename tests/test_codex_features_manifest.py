@@ -234,10 +234,27 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 self.assertIn("Agent-facing", features[skill_name]["description"])
 
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        workflow_guide = (REPO_ROOT / "docs/workflow-guide.md").read_text(
+            encoding="utf-8"
+        )
         self.assertIn("## Skills", readme)
+        self.assertIn("docs/workflow-guide.md", readme)
         self.assertIn("### User-Facing Workflow Commands", readme)
         self.assertIn("### Agent-Facing Support And Runtime Surfaces", readme)
         self.assertIn("not the preferred direct commands", readme)
+        self.assertIn("## Canonical Pipeline", workflow_guide)
+        self.assertIn("-> add-to-ledger", workflow_guide)
+        self.assertIn("-> program ledger", workflow_guide)
+        self.assertIn("-> plan-batch", workflow_guide)
+        self.assertIn("-> work-batch", workflow_guide)
+        self.assertIn(
+            "program ledger is the only normal executable backlog source",
+            workflow_guide,
+        )
+        self.assertIn(
+            "External skills and GitHub issues are candidate/evidence sources",
+            workflow_guide,
+        )
         self.assertIn("docs/skill-routing-contract.md", readme)
 
     def test_port_by_contract_is_not_general_rewrite_shortcut(self) -> None:
