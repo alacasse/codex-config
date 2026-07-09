@@ -131,7 +131,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 2. Protect command-owner/runtime-owner boundaries | Pending |  |  |  | Metadata and docs alignment are bounded | Add focused tests proving `plan-batch` stays user-facing while `architecture-program-runway` and `batch-runway` remain runtime dependencies. |
 | 3. Align docs, metadata, and closeout evidence | Pending |  |  |  | Final validation and closeout can reconcile CCFG-12 | Update only necessary user-facing docs, feature metadata, changelog, and planning closeout evidence. |
 
 ## Orchestration Anomalies
@@ -143,6 +142,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1. Deepen plan-batch command contract | `d6644a4` | success; added explicit command contract, state decision table, ledger-only source rule, one-spec output, and stop-before-implementation boundary | `python -m pytest tests/test_codex_features_manifest.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; reviewer `runway_reviewer` clean |
+| 2. Protect command-owner/runtime-owner boundaries | `0d68954` | success; added focused manifest/skill contract assertions for direct invocation, runtime-owner dependencies, state routing, ledger-only source, and one-spec/no-implementation rules | `python -m pytest tests/test_codex_features_manifest.py -q`; `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; test-quality review clean; reviewer `runway_reviewer` clean |
 
 ## Slice 1. Deepen Plan-Batch Command Contract
 
