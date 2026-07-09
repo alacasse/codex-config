@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -31,7 +30,7 @@
 ## Active Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Active rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and CCFG-15.
+- Active rows: CCFG-2 through CCFG-6 and CCFG-9 through CCFG-11.
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:
@@ -41,27 +40,26 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md`
+- Queued batch: `None`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-14-batch-kind-slice-risk`
+- Latest completed batch: `ccfg-15-vague-ledger-row-splitting`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/closeout.md`
-- Covers: CCFG-14, completed as batch-kind, slice-risk, and approval-gate
-  classification for Batch Runway create-spec guidance and focused contract
-  tests.
+  `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/closeout.md`
+- Covers: CCFG-15, completed as split, block, or narrow-scope guidance for
+  vague or mixed-risk ledger rows before selected dispatch and concrete runway
+  creation, with focused text-contract tests and CCFG-11 planning evidence.
   Runtime behavior did not change.
 
 ## Next Safe Action
 
-CCFG-15 is the queued batch for vague or mixed-risk ledger-row splitting before
-runway expansion. A future explicit `work-batch` request can execute
-`docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md`.
+No batch is currently selected, queued, or active. A future explicit
+`plan-batch` request can select one bounded batch from the canonical
+codex-config ledger.
 
 CCFG-11 remains open, but its displaced runway is superseded planning evidence;
 do not execute it as active state without a future regenerated or amended runway
@@ -74,7 +72,7 @@ narrow-scope decision before selected dispatch and concrete runway creation.
 - Stop if work would select from archived APR/PST ledgers instead of the
   canonical codex-config ledger.
 - Stop if work would select successor work, create another dispatch, or create
-  another runway while CCFG-15 is queued.
+  another runway without an explicit future `plan-batch` request.
 - Stop if work would execute the displaced CCFG-11 runway as active state
   without a future regenerated or amended runway.
 - Stop if work would regenerate or execute CCFG-11 without validation-command
