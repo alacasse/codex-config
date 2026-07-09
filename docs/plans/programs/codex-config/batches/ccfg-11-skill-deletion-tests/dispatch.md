@@ -61,11 +61,21 @@ dependencies_satisfied:
 dependencies_blocking:
   - CCFG-13 must handle validation-command status classification before this
     batch is planned or executed again.
+  - CCFG-14 must handle batch-kind and destructive-slice risk gates before this
+    batch is planned or executed again.
 supersession:
   replacement_batch: ccfg-13-validation-command-status
   replacement_dispatch: docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/dispatch.md
   replacement_spec: docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md
   reason: The original CCFG-11 runway listed known-red and implementation-created validation commands without status classes.
+risk_gate_supersession:
+  status: blocked-before-future-execution
+  prerequisite_batch: ccfg-14-batch-kind-slice-risk
+  required_before_execution:
+    - declare one batch kind for the regenerated or amended CCFG-11 batch
+    - declare a risk class for every slice that could migrate, narrow, demote, or delete a skill surface
+    - include explicit approval gates before destructive-cleanup or contract-narrowing slices execute
+  note: This displaced dispatch remains superseded planning evidence and is not active queue state.
 suggested_slices:
   - Add a focused deletion-test inventory over installed/user-facing/support skill metadata and existing evidence vocabulary.
   - Add regression coverage that classifies command-owner, support-only, no-op, sediment, and obsolete-surface cases without broad Markdown snapshots.

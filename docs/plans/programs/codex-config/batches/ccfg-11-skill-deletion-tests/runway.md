@@ -6,7 +6,8 @@ This runway is no longer queued active state. It was displaced by
 `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md`
 because its validation section listed known-red and implementation-created
 commands without status classes. CCFG-11 remains open in the program ledger and
-must be planned or amended after CCFG-13 closes before execution resumes.
+must be regenerated or amended after CCFG-13 and CCFG-14 close before execution
+resumes.
 
 ## Displaced Validation Gate Amendment
 
@@ -27,6 +28,23 @@ Do not execute this displaced runway as-is. A future CCFG-11 runway must make
 every focused validation command explicit as `required-green`,
 `known-red-baseline`, `implementation-created`, `conditional`, or
 `diagnostic-only` before it becomes active.
+
+## Displaced Risk Gate Amendment
+
+Future CCFG-11 planning must also regenerate or amend this runway with
+Batch Runway risk metadata before execution. This displaced spec predates the
+CCFG-14 batch-kind and destructive-slice gate requirements, so it must remain
+superseded planning evidence until a future CCFG-11 artifact:
+
+- declares one batch kind for the batch;
+- declares slice risk classes for any slice that could migrate, narrow, demote,
+  or delete a skill surface; and
+- includes explicit approval gates before any `destructive-cleanup` or
+  `contract-narrowing` slice executes.
+
+Do not treat this amendment as selecting, queuing, executing, or regenerating
+CCFG-11. CCFG-14 remains the queued prerequisite batch until its closeout
+reconciles program state.
 
 ## Purpose
 
