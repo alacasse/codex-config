@@ -163,7 +163,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 2. Deduplicate command-owner routing prose | pending |  |  |  | command-owner skills retain human-facing decisions and reference owners for mechanics | Preserve direct invocation behavior. |
 | 3. Deduplicate runtime/support mechanics prose | pending |  |  |  | support skills keep mechanics ownership and reference routing contract where useful | Preserve runtime behavior. |
 | 4. Align cross-doc references and closeout state | pending |  |  |  | docs/tests/current/validate clean and closeout evidence ready | No successor selection. |
 
@@ -176,6 +175,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1. Inventory duplicated rules and owners | fc2b307 | Added exact-owner rule map and focused ownership-boundary tests; review fix tightened single-owner table parsing and selected/queued/active artifact-state coverage. | Validation: `python -m pytest tests/test_skill_routing_rule_ownership.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`. Review: clean after fix loop with `test_quality_delta`. |
+| 2. Deduplicate command-owner routing prose | pending commit | Trimmed duplicated procedure/mechanics prose in `add-to-ledger`, `plan-batch`, and `work-batch` while preserving direct command contracts and stop points. | Validation: `python -m pytest tests/test_skill_routing_rule_ownership.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`. Review: pass with `contract_change` and `docs_only_change`. |
 
 ## Slice 1. Inventory Duplicated Rules And Owners
 

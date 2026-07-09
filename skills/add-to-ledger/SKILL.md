@@ -20,22 +20,19 @@ skills when the user explicitly names or provides that source.
 It records selected work into the canonical program ledger without selecting,
 planning, or executing a batch.
 
-This skill owns intake quality: identify the target planning root, preserve the
-source evidence, write or update the ledger row, assign the initial status, and
-leave enough context for a later batch-planning pass.
-
-When ingesting external tickets, preserve source identity such as issue number,
-URL, title, labels/status, and relevant evidence pointers.
+This skill owns the caller-visible intake contract: preserve source identity,
+record enough evidence for later planning, and leave the finding in ledger state
+without selecting downstream work.
 
 This skill owns ledger-intake user intent. It may route to support/runtime
 skills for diagnostics, placement, grouping, or evidence scoping, but it does
 not select a batch, create a dispatch/runway, or execute implementation. When
 routing ambiguity exists, follow `../../docs/skill-routing-contract.md`.
 
-Before consuming Layout v1 planning state, use `../planning-state/SKILL.md` to
-run the current and validate hot path. Use `../planning-artifacts/SKILL.md`
-when placement, program ledgers, selected dispatch packets, or archive
-locations matter.
+Use `../planning-state/SKILL.md` for the current/validate diagnostic before
+consuming Layout v1 planning state. Use `../planning-artifacts/SKILL.md` for
+layout vocabulary and locations; use `../architecture-program-runway/SKILL.md`
+for program-ledger intake mechanics.
 
 ## Stops
 
@@ -46,7 +43,6 @@ locations matter.
 
 ## Agent-Facing Support
 
-Use `../architecture-program-runway/SKILL.md` only for program-ledger intake and
-grouping mechanics behind this command. Use `../legacy-removal/SKILL.md` first
-only when evidence-backed legacy-removal scoping is needed before ledger
-intake.
+Use `../architecture-program-runway/SKILL.md` only behind this command for
+program-ledger intake and grouping mechanics. Use `../legacy-removal/SKILL.md`
+first only when evidence-backed legacy-removal scoping is needed before intake.
