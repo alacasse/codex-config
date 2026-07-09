@@ -143,9 +143,17 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
             execute_spec_text,
         )
         self.assertIn(
-            "For routine slices, read `execute-slice-core-v1.md` and only the "
-            "selected validation profile file.",
+            "For routine slice execution, use `execute-slice-core-v1.md` and "
+            "the selected validation profile file.",
             execute_spec_text,
+        )
+        self.assertIn(
+            "For routine slices, follow "
+            "`references/execute-slice-core-v1.md`; it owns the "
+            "worker/reviewer handoffs, validation/review loop, commit "
+            "receipt, ledger/archive update, anomaly logging, and "
+            "continuation.",
+            skill_text,
         )
         self.assert_not_mandatory_for_routine_slices(SKILL, skill_text)
         self.assert_not_mandatory_for_routine_slices(EXECUTE_SPEC, execute_spec_text)
@@ -198,10 +206,10 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
                 r"Read the full Batch Runway reference files named by the spec "
                 r"only when the spec is full-runway, the slice is non-routine"
             ),
-            r"Invoke specialist support reviewers only when triggered .* "
-            r"using `subagent-briefs\.md` for routing",
-            r"If focused validation fails, read `execute-recovery-v1\.md`",
-            r"If review finds issues, read `execute-recovery-v1\.md`",
+            r"Use `subagent-briefs\.md` for triggered specialist-review "
+            r"routing",
+            r"Read `execute-recovery-v1\.md` when validation fails, review "
+            r"finds issues",
             r"Read `finalize-batch-v1\.md` before closing the batch",
         )
 

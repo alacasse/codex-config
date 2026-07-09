@@ -271,9 +271,9 @@ In `execute-spec` mode:
    commit strategy, density mode, convergence state, active ledger rows, and
    completed slice archive.
 6. Execute from the next incomplete ledger row.
-7. For each routine slice: spawn coding subagent, validate, spawn separate review
-   subagent, commit if clean, record any orchestration anomalies, report
-   receipt, update the concrete ledger/archive, close subagents, continue.
+7. For routine slices, follow `references/execute-slice-core-v1.md`; it owns
+   the worker/reviewer handoffs, validation/review loop, commit receipt,
+   ledger/archive update, anomaly logging, and continuation.
 8. If validation fails, review finds issues, blockers appear, or escalation is
    needed, read `references/execute-recovery-v1.md`.
 9. After the last slice, read `references/finalize-batch-v1.md`, run final

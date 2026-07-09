@@ -65,81 +65,39 @@ for compatibility questions, non-routine execution, recovery, and finalization.
    configuration yet, stop and ask for a restart or new thread rather than
    falling back to main-agent implementation.
 
-## Per-Slice Loop
+## Routine Slice Routing
 
-Use `execute-slice-core-v1.md` for the normal version of this loop.
+For routine slice execution, use `execute-slice-core-v1.md` and the selected
+validation profile file. That core owns the normal worker handoff, focused
+validation, selected-profile validation, triggered specialist-review check,
+final reviewer handoff, commit receipt, concrete ledger/archive update,
+orchestration anomaly logging, subagent closure, and continuation to the next
+pending ledger row.
 
-1. Spawn a coding subagent with `agent_type="runway_worker"`.
-2. In lean mode, pass the absolute spec path, repo cwd, slice number, slice
-   anchor, allowed files, dirty-file constraints, slice-specific overrides, and
-   a role-scoped contract capsule or the relevant Batch Runway reference path.
-   The capsule must say the spawned worker is already the required coding
-   subagent, must implement only its assigned slice, must not spawn, delegate to,
-   or wait on additional subagents, and must not run project-level integration
-   harnesses, index/search/graph refreshes, generated-doc refreshes, final
-   validation, or cleanup commands unless the handoff explicitly assigns them.
-   Do not paste the full slice unless needed.
-3. Require the coding result to follow `Compact Report Contract v1`.
-4. Run or verify focused validation from the coordinator session when practical.
-5. Apply the active validation profile.
-6. If the slice is test-only and uses `test-only-topology`, do not run the
-   project-specific integration harness, index/search/graph refresh,
-   generated-doc refresh, or final validation per slice unless the slice changes
-   harness execution behavior, direct-runner coverage, runtime import/path
-   assumptions, generated artifacts, or the spec explicitly requires it.
-7. If the slice touches production code or behavior that the active project
-   profile marks as harness-affecting, run the project-specific integration
-   harness for that slice before review and before commit unless the validation
-   profile explicitly defers it.
-8. Treat module moves, runtime import cleanup, compatibility facade changes,
-   report or summary generation changes, runtime path handling, artifact-shape
-   handling, and changes to code imported by project harness entrypoints as
-   harness-affecting when the active project profile says so.
-9. Use an explicit fresh harness output path whenever the project-specific
-   harness writes artifacts.
-10. Before doing broad coordinator exploration, delegate read-only discovery to
-    one batch-scoped `fast_explorer` and retain only compact findings, unless
-    this is recovery, blocker analysis, finalization, stale-spec analysis,
-    subagent-report verification, or uncertainty that prevents safe delegation.
-    Use multiple explorers only for independent questions where parallel speedup
-    is worth duplicated read context. Do not pass live support-agent handles to
-    workers or reviewers.
-11. If focused validation fails, read `execute-recovery-v1.md`.
-12. Re-run validation after in-scope fixes.
-13. Stop only when the failure is ambiguous, out of scope, repeatedly
-    unresolved, or indicates a dirty-file conflict.
-14. Before final review, run triggered specialist support reviewers when the
-    task-scoped diff changes the relevant surface:
-    - tests changed: `test-quality-review`
-    - local import topology changed: `import_topology_reviewer`
-    - legacy or compatibility cleanup: `dead-surface-audit`
-    - test-retained topology, absence/importability/topology tests, aliases,
-      wrappers, facades, compatibility surfaces, cleanup residues,
-      historical-evidence markers, or cleanup-candidate inventories kept alive
-      by tests: `dead-surface-audit`
-    Contract, validation, and security concerns are non-registered review
-    lenses handled by the final `runway_reviewer`, not spawnable specialist
-    reviewers. Keep specialist outputs compact. Support reviewers must not spawn
-    other reviewers or replace the final verdict.
-15. Spawn a separate review subagent with `agent_type="runway_reviewer"`.
-16. In lean mode, pass the absolute spec path, repo cwd, slice number, slice
-    anchor, exact diff basis, task-scoped diff context, review focus, any
-    triggered specialist-review findings, and a short contract capsule or
-    relevant Batch Runway reference path. Require reviewer YAML to include the
-    inspected `diff_basis` and `lenses_applied`. Do not paste the full slice
-    unless needed.
-17. If review finds issues, read `execute-recovery-v1.md`.
-18. Commit only the files intentionally changed for that slice once validation
-    and review are clean.
-19. Record any orchestration anomalies using `Orchestration Anomaly Log v1`.
-20. Immediately report a YAML commit receipt using `Compact Report Contract v1`.
-21. Include compact convergence in routine commit receipts. Use the expanded
-    convergence template only when scope is expanding, significant uncertainty
-    exists, blockers are present, or final batch reporting is being produced.
-22. Update the active ledger with only the state needed for remaining work. Move
-    completed slice audit references to the completed slice archive.
-23. Close completed subagents before continuing to avoid thread-limit failures.
-24. Continue directly to the next pending ledger row.
+Keep using this file only to decide whether the slice is still routine. Read the
+deeper owner references when the active spec is full-runway, the slice is
+non-routine, compatibility needs auditing, or canonical contract semantics are
+being changed.
+
+## Non-Routine Triggers
+
+Read `execute-recovery-v1.md` when validation fails, review finds issues,
+blockers appear, workspace state or review evidence stops matching the expected
+diff, escalation is required, or execution otherwise leaves the normal path.
+
+Use `subagent-briefs.md` for triggered specialist-review routing, full brief
+variants, support-agent guidance, or non-routine subagent prompting. Contract,
+validation, and security concerns are non-registered review lenses handled by
+the final `runway_reviewer`, not spawnable specialist reviewers.
+
+Apply the selected validation profile for routine validation. Run project-level
+harnesses or generated/index refreshes per slice only when the active profile,
+spec, or changed surface requires them; use explicit fresh output paths when a
+harness writes artifacts.
+
+Use the expanded convergence template only when scope is expanding, significant
+uncertainty exists, blockers are present, or final batch reporting is being
+produced.
 
 ## Finalization
 
