@@ -152,7 +152,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 1. Guard Vague Row Selection | Pending |  |  |  | Guidance diff plus focused tests identified | Contract-narrowing slice; approval gate required before execution. |
 | 2. Test Split Block Narrow Contract | Pending |  |  |  | Focused tests fail without the new guard | Test quality review required. |
 | 3. Reconcile CCFG-11 Planning Evidence | Pending |  |  |  | CCFG-11 remains superseded and future planning points at the new guard | Planning evidence and closeout notes only. |
 
@@ -164,6 +163,7 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
+| 1. Guard Vague Row Selection | `4b531af` | `plan-batch` and `architecture-program-runway` now require vague or mixed-risk ledger rows to be split, blocked, or narrowed before selected dispatch and concrete runway creation. | Validation: `python -m pytest tests/test_skill_routing_rule_ownership.py tests/test_architecture_program_runway_status_vocabulary.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`. Review: clean `runway_reviewer` pass against HEAD for `skills/plan-batch/SKILL.md` and `skills/architecture-program-runway/SKILL.md`. |
 
 ## Slice 1. Guard Vague Row Selection
 
