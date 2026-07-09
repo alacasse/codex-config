@@ -2,7 +2,7 @@
 
 ```yaml
 batch_id: ccfg-1-runner-contract-fixtures
-status: queued
+status: completed
 source_program_ledger: docs/plans/programs/codex-config/LEDGER.md
 included_findings:
   - id: CCFG-1

@@ -76,15 +76,13 @@ orchestration_anomalies: []
   `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/runway.md`.
 - Closeout:
   `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/closeout.md`.
-- Completed finding: CCFG-1 preparation scope, pending explicit program
-  reconciliation.
-- Program `CURRENT.md`, program `LEDGER.md`, and batch queue metadata may still
-  need reconciliation because `work-batch` does not perform program
-  reconciliation unless explicitly requested.
+- Completed finding: CCFG-1 preparation scope.
+- Program `CURRENT.md`, program `LEDGER.md`, dispatch metadata, and batch queue
+  metadata were reconciled after closeout.
 - No new batch was selected.
 
-## Next Request
+## Successor Boundary
 
-To reconcile the program ledger and active-state files, ask:
-
-`Reconcile the CCFG-1 batch closeout in the codex-config program ledger.`
+Successor selection still requires an explicit `plan-batch` request. This
+closeout does not select, dispatch, refresh, create, or prepare CCFG-2 through
+CCFG-5 or any skill-cleanup successor work.
