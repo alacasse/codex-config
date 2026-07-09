@@ -30,7 +30,7 @@
 ## Active Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Active rows: CCFG-2 through CCFG-6 and CCFG-9 through CCFG-11.
+- Active rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and CCFG-15.
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:
@@ -60,6 +60,10 @@
 No selected, active, or queued batch is present. CCFG-14 closeout did not select
 successor work. A future explicit `plan-batch` request can select bounded work
 from the canonical ledger.
+
+CCFG-15 is a ready candidate recorded from GitHub issue #33 for vague or
+mixed-risk ledger-row splitting before runway expansion. It is not selected,
+queued, or active.
 
 CCFG-11 remains open, but its displaced runway is superseded planning evidence;
 do not execute it as active state without a future regenerated or amended runway
