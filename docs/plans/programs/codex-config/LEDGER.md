@@ -56,15 +56,15 @@ row-by-row here.
 | CCFG-9. Short skill frontmatter descriptions | Backlog | PST issue reconciliation #25 | Skill cleanup | Shorten dense skill descriptions without losing trigger accuracy | Source issue said this is not done consistently. |
 | CCFG-10. Skill steering vocabulary | Backlog | PST issue reconciliation #26 | Skill cleanup | Codify leading words or steering vocabulary where useful | Source issue said no consistent steering-vocabulary sections were found. |
 | CCFG-11. Skill deletion tests | Backlog | PST issue reconciliation #27 | Skill cleanup | Run deletion tests for no-ops, sediment, and obsolete skill surfaces | Source issue said no focused deletion-test audit was found. |
-| CCFG-12. Plan-batch command-owner deepening | Pending | `docs/plans/programs/codex-config/notes/command-owner-deepening-review.md` | Skill cleanup | Execute queued runway when explicitly requested | Queued in `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/runway.md` with dispatch at `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/dispatch.md`. Preserve runtime ownership in `architecture-program-runway` and `batch-runway`; deepen the human-facing command interface around ledger-only selection, selected-state handling, one-spec output, and stop-before-implementation behavior. |
+| CCFG-12. Plan-batch command-owner deepening | Completed | `docs/plans/programs/codex-config/notes/command-owner-deepening-review.md` | Skill cleanup | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/closeout.md`. `plan-batch` now owns a deeper human-facing command contract for ledger-only selection, selected/queued/active state handling, one-spec output, and stop-before-implementation behavior while `architecture-program-runway` and `batch-runway` remain runtime owners. |
 
 ## Batch Queue
 
-Queued batch: `ccfg-12-plan-batch-deepening`.
+Queued batch: `None`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
-| `ccfg-12-plan-batch-deepening` | queued | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/runway.md` | CCFG-12 | Execute with `work-batch` only when explicitly requested. Do not select another CCFG row while queued. |
+| `ccfg-12-plan-batch-deepening` | completed | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/runway.md` | CCFG-12 | Closed by `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/closeout.md`. |
 
 ## Recommended Work Order
 
@@ -74,8 +74,7 @@ Queued batch: `ccfg-12-plan-batch-deepening`.
    contracts clarify later runner workflow, skill, and diagnostic boundaries.
 3. Treat CCFG-6 through CCFG-11 as skill-cleanup backlog; group only when a
    batch can stay bounded and validation can prove the cleanup.
-4. Treat CCFG-12 as controlled by the queued
-   `ccfg-12-plan-batch-deepening` runway until closeout.
+4. Treat CCFG-12 as completed closeout evidence, not queued work.
 5. Do not revive APR or PST ledgers as active pickup sources. Use their archive
    snapshots only for evidence.
 
