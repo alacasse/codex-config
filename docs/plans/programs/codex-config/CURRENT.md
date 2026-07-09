@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/closeout.md`
 - Run artifact location: `None selected`
@@ -30,7 +31,7 @@
 ## Active Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Active rows: CCFG-2 through CCFG-6 and CCFG-9 through CCFG-11.
+- Active rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and CCFG-17.
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:
@@ -40,7 +41,8 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-16-deletion-test-vocabulary-ownership`
@@ -57,8 +59,10 @@
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. A future explicit `plan-batch` request
-can select the next bounded batch from the canonical ledger.
+CCFG-17 is queued. A future explicit `work-batch` request can execute
+`docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md`.
+Do not select successor work until CCFG-17 has concrete closeout evidence and a
+future explicit `plan-batch` request asks for another batch.
 
 CCFG-11 remains open, but its displaced runway is superseded planning evidence;
 do not execute it as active state without a future regenerated or amended runway
