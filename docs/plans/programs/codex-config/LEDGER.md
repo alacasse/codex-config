@@ -51,7 +51,7 @@ row-by-row here.
 | CCFG-4. Runner adapter authoring skill | Open | APR-29; GitHub issue #16 | Runner support skill | Create after CCFG-1 stabilizes the generic worker/runtime boundary | Preserve adapter guidance scope: provider quirks stay out of generic runner core; cover result, receipt, transition, artifact, observation, and input-inventory boundaries. |
 | CCFG-5. Baton dogfood diagnostics | Open | APR-30; GitHub issues #17, #18, #19 | Runner diagnostics | Sequence after CCFG-1 unless a diagnostic need blocks extraction | `baton-context-map`, `baton-doctor`, and `baton-receipt-inspector` should read runner/planning artifacts and produce compact diagnostics, not reconstruct execution from chat transcripts. |
 | CCFG-6. Skill-slimmer support | Backlog | PST issue reconciliation #15 | Skill cleanup | Decide whether to add a focused skill-slimmer workflow | Source issue said the `skill-slimmer` skill does not exist. Keep this as cleanup backlog until a bounded workflow and validation target are selected. |
-| CCFG-7. Batch Runway hot-path pruning | Pending | PST issue reconciliation #23 | Skill cleanup | Execute queued runway `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md` | Source issue said references were split, but no explicit pruning pass was evidenced as complete. Queued by `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/dispatch.md`. |
+| CCFG-7. Batch Runway hot-path pruning | Completed | PST issue reconciliation #23 | Skill cleanup | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/closeout.md`. Batch Runway routine execution now has a guarded compact read path, non-routine references remain trigger-loaded, and runtime semantics remain owned by the same Batch Runway contracts. |
 | CCFG-8. Ledger and dispatch rule dedupe | Backlog | PST issue reconciliation #24 | Skill cleanup | Deduplicate overlap across planning, dispatch, and runway skills | Preserve the source observation that `planning-artifacts`, `planning-state`, and consumer routing partially address this, but a focused dedupe pass remains. |
 | CCFG-9. Short skill frontmatter descriptions | Backlog | PST issue reconciliation #25 | Skill cleanup | Shorten dense skill descriptions without losing trigger accuracy | Source issue said this is not done consistently. |
 | CCFG-10. Skill steering vocabulary | Backlog | PST issue reconciliation #26 | Skill cleanup | Codify leading words or steering vocabulary where useful | Source issue said no consistent steering-vocabulary sections were found. |
@@ -60,12 +60,11 @@ row-by-row here.
 
 ## Batch Queue
 
-Queued batch:
-`docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md`.
+Queued batch: `None`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
-| `ccfg-7-batch-runway-hot-path-pruning` | queued | `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md` | CCFG-7 | Focused Batch Runway guidance pruning to reduce routine execution/context load without changing runtime semantics. |
+| `ccfg-7-batch-runway-hot-path-pruning` | completed | `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md` | CCFG-7 | Closed by `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/closeout.md`. |
 | `ccfg-12-plan-batch-deepening` | completed | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/runway.md` | CCFG-12 | Closed by `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/closeout.md`. |
 
 ## Recommended Work Order
@@ -76,7 +75,7 @@ Queued batch:
    contracts clarify later runner workflow, skill, and diagnostic boundaries.
 3. Treat CCFG-6 through CCFG-11 as skill-cleanup backlog; group only when a
    batch can stay bounded and validation can prove the cleanup.
-4. Treat CCFG-12 as completed closeout evidence, not queued work.
+4. Treat CCFG-7 and CCFG-12 as completed closeout evidence, not queued work.
 5. Do not revive APR or PST ledgers as active pickup sources. Use their archive
    snapshots only for evidence.
 
@@ -94,8 +93,8 @@ Queued batch:
   seams and contract sources, with test patterns and failure modes.
 - Close CCFG-5 only after the requested diagnostics exist with fixture-backed
   CLI tests or are split with explicit rationale.
-- Close CCFG-6 through CCFG-11 only with focused cleanup evidence, validation,
-  and archive-safe closeout pointers.
+- Close CCFG-6 and CCFG-8 through CCFG-11 only with focused cleanup evidence,
+  validation, and archive-safe closeout pointers.
 - Close CCFG-12 only after `plan-batch` owns a deeper human-facing command
   contract for ledger-only selection, selected-state handling, one-spec output,
   and stop-before-implementation behavior without duplicating runtime

@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -31,7 +30,7 @@
 ## Active Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Active rows: CCFG-1 through CCFG-11.
+- Active rows: CCFG-1 through CCFG-6 and CCFG-8 through CCFG-11.
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:
@@ -39,18 +38,16 @@
 
 ## Queued Batch
 
-- Batch: `ccfg-7-batch-runway-hot-path-pruning`
-- Dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/dispatch.md`
-- Runway:
-  `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md`
-- Covers: CCFG-7
+- Batch: `None`
+- Dispatch: `None`
+- Runway: `None`
+- Covers: `None`
 
 ## Next Safe Action
 
-Use `work-batch` to execute the queued
-`ccfg-7-batch-runway-hot-path-pruning` runway when explicitly requested. Do not
-create another dispatch or runway while this queued batch exists.
+No selected, active, or queued batch exists. Use `plan-batch` only when
+explicitly requested to select and create the next concrete batch. Do not infer
+new work from archived APR/PST ledgers or completed batch artifacts.
 
 ## Stop Conditions
 
