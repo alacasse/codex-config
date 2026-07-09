@@ -69,6 +69,16 @@ batch-runway
 Do not use this skill to implement code, execute slices, make commits, or
 orchestrate workers/reviewers.
 
+Deletion-test evidence vocabulary boundary: `legacy-removal` consumes the
+canonical deletion-test evidence statuses produced by `dead-surface-audit`,
+including `keep`, `delete-now`, `migrate-tests-first`, `keep-thin-entrypoint`,
+and `human-contract-decision`. It must not redefine those evidence categories,
+invent project-local replacements as canonical statuses, or treat evidence
+status ownership as authority to select or execute cleanup work. `legacy-removal`
+owns the follow-on legacy compatibility decision, cleanup-residue
+classification, canonical-model decision, and dispatch handoff material that
+use those evidence statuses as inputs.
+
 ## Core Principles
 
 - Do not delete code merely because it looks old.
