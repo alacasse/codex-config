@@ -46,6 +46,17 @@ DOWNSTREAM_PROJECT_PATTERNS = (
     "project-specific " + "validation",
 )
 
+LEAN_REFERENCE_EXAMPLES = (
+    "skills/batch-runway/references/execute-slice-core-v1.md",
+    "skills/batch-runway/references/execution-contract-v1.md",
+    "skills/batch-runway/references/reporting-contracts-v1.md",
+    "skills/batch-runway/references/ledger-retention-v1.md",
+)
+
+OLD_ABSOLUTE_BATCH_RUNWAY_REFERENCE_PLACEHOLDER = re.compile(
+    r"`<absolute path to batch-runway>/references/[^`]+`"
+)
+
 
 def normalized(markdown: str) -> str:
     return re.sub(r"\s+", " ", markdown)
@@ -126,6 +137,50 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
             text,
         )
         self.assert_no_session_local_override_claims(CREATE_SPEC)
+
+    def test_lean_create_spec_reference_examples_are_repo_relative(self) -> None:
+        text = CREATE_SPEC.read_text(encoding="utf-8")
+        lean_contract = section_between(
+            text,
+            "For lean specs, do not paste the full standard execution contract.",
+            "Use `Overrides` only for durable execution-contract deviations",
+        )
+
+        self.assertIsNone(
+            OLD_ABSOLUTE_BATCH_RUNWAY_REFERENCE_PLACEHOLDER.search(lean_contract),
+            lean_contract,
+        )
+        for example in LEAN_REFERENCE_EXAMPLES:
+            with self.subTest(example=example):
+                self.assertIn(f"- `{example}`", lean_contract)
+
+    def test_create_spec_guidance_allows_relative_reusable_references(self) -> None:
+        text = CREATE_SPEC.read_text(encoding="utf-8")
+        reference_guidance = section_between(
+            text,
+            "Generated dispatch and runway artifacts should use repo-relative",
+            "Use `Overrides` only for durable execution-contract deviations",
+        )
+        normalized_reference_guidance = normalized(reference_guidance)
+
+        self.assertIn(
+            "`skills/batch-runway/references/execution-contract-v1.md`",
+            reference_guidance,
+        )
+        self.assertIn(
+            "`references/execution-contract-v1.md`",
+            reference_guidance,
+        )
+        self.assertIn(
+            "Do not embed local absolute paths for those reusable repo-owned "
+            "skill references.",
+            normalized_reference_guidance,
+        )
+        self.assertIn(
+            "This rule does not ban absolute paths for user-provided local "
+            "values",
+            normalized_reference_guidance,
+        )
 
     def test_pst_18_queued_runway_keeps_session_mode_out_of_overrides(self) -> None:
         self.assert_no_session_local_override_claims(PST_18_RUNWAY)
