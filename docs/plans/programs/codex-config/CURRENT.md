@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -31,7 +30,7 @@
 ## Active Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Active rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and CCFG-13.
+- Active rows: CCFG-2 through CCFG-6 and CCFG-9 through CCFG-11.
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:
@@ -41,26 +40,29 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md`
+- Queued batch: `None`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-8-ledger-dispatch-rule-dedupe`
+- Latest completed batch: `ccfg-13-validation-command-status`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Covers: CCFG-8, completed as behavior-neutral skill routing rule dedupe.
+  `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/closeout.md`
+- Covers: CCFG-13, completed as validation-command status classification for
+  Batch Runway create-spec guidance and focused contract tests.
   Runtime behavior did not change.
 
 ## Next Safe Action
 
-Queued CCFG-13 batch replaces the previous CCFG-11 queue item to handle the
-validation-gate root cause exposed by that runway. Execute
-`docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md`
-before planning or executing CCFG-11 again.
+No batch is currently selected, queued, or active. A future explicit
+`plan-batch` request owns successor selection from
+`docs/plans/programs/codex-config/LEDGER.md`.
+
+CCFG-11 remains open, but its displaced runway is superseded planning evidence;
+do not execute it as active state without a future regenerated or amended
+runway.
 
 ## Stop Conditions
 
@@ -68,8 +70,8 @@ before planning or executing CCFG-11 again.
   canonical codex-config ledger.
 - Stop if work would select successor work, create another dispatch, or create
   another runway without an explicit `plan-batch` request.
-- Stop if work would execute the displaced CCFG-11 runway before CCFG-13 is
-  handled or explicitly superseded.
+- Stop if work would execute the displaced CCFG-11 runway as active state
+  without a future regenerated or amended runway.
 - Stop if CCFG-1 closeout text would imply runner extraction, package/runtime
   selection, repository/scaffold creation, adapter implementation, or CCFG-2
   through CCFG-5 work is complete.
