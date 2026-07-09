@@ -120,7 +120,7 @@ Focused validation commands:
 | 1. Create-spec reference guidance | Completed | contract-narrowing | `bc4175c` | `tests/test_batch_runway_create_spec_contract.py` passed; `git diff --check` passed | clean | Archived in `completed-slices.md`. |
 | 2. Create-spec contract tests | Completed | migration | `70324f8` | `tests/test_batch_runway_create_spec_contract.py` passed; `git diff --check` passed; `python -m ruff` unavailable as known-red baseline | clean | Archived in `completed-slices.md`. |
 | 3. Active-runway artifact guard | Completed | migration | `29b06e5` | `planning_state.py current/validate` passed; `tests/test_batch_runway_create_spec_contract.py` passed; `git diff --check` passed | clean | Archived in `completed-slices.md`. |
-| 4. Metadata and final validation | Pending | none |  |  |  | Update release metadata and closeout evidence only. |
+| 4. Metadata and final validation | Completed | none | `18b21c7` | `tests/test_batch_runway_create_spec_contract.py` passed; `json.tool` passed; `git diff --check` passed; manifest test known-red diagnostic | clean after fix loop | Archived in `completed-slices.md`. |
 
 ## Slice 1: Create-Spec Reference Guidance
 
