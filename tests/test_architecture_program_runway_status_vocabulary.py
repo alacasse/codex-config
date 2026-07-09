@@ -23,6 +23,10 @@ def section(markdown: str, heading: str) -> str:
     return match.group("body")
 
 
+def normalized(markdown: str) -> str:
+    return re.sub(r"\s+", " ", markdown)
+
+
 class ArchitectureProgramRunwayStatusVocabularyTests(unittest.TestCase):
     def test_skill_defines_pending_as_finding_lifecycle_state(self) -> None:
         statuses = section(SKILL.read_text(encoding="utf-8"), "Ledger Statuses")
@@ -77,6 +81,66 @@ class ArchitectureProgramRunwayStatusVocabularyTests(unittest.TestCase):
                     "the change in\nnarrative notes.",
                     text,
                 )
+
+    def test_selected_dispatch_requires_split_block_or_narrow_rationale(
+        self,
+    ) -> None:
+        guard = section(SKILL.read_text(encoding="utf-8"), "Vague Row Selection Guard")
+        compact_guard = normalized(guard)
+
+        self.assertIn("Before writing a selected dispatch", guard)
+        self.assertIn(
+            "one bounded batch with clear owner seam, risk class, acceptance "
+            "criteria, and stop conditions",
+            compact_guard,
+        )
+        self.assertIn("Do not let a vague or mixed-risk row silently expand", compact_guard)
+        self.assertIn(
+            "choose one of these outcomes before creating `dispatch.md`", compact_guard
+        )
+        self.assertIn("Split the row into smaller program findings", guard)
+        self.assertIn("Block the row when a decision, owner, risk class", guard)
+        self.assertIn(
+            "Narrow the selected dispatch to characterization-only or evidence-only",
+            guard,
+        )
+        self.assertIn(
+            "Record the split, block, or narrow-scope rationale in the program "
+            "ledger and selected dispatch packet.",
+            compact_guard,
+        )
+
+    def test_vague_row_guard_names_ccfg11_like_mixed_risk_expansion(
+        self,
+    ) -> None:
+        guard = section(SKILL.read_text(encoding="utf-8"), "Vague Row Selection Guard")
+        ccfg11_like_shape = (
+            "evidence gathering plus classification plus decision or destructive "
+            "cleanup in one vague row"
+        )
+
+        for signal in (
+            "evidence gathering",
+            "classification",
+            "decision",
+            "destructive cleanup",
+            "vague row",
+        ):
+            with self.subTest(signal=signal):
+                self.assertIn(signal, ccfg11_like_shape)
+
+        compact_guard = normalized(guard)
+
+        self.assertIn("evidence gathering, classification, decisions", compact_guard)
+        self.assertIn("destructive cleanup, migration, demotion", compact_guard)
+        self.assertIn(
+            "decision, owner, risk class, acceptance boundary", compact_guard
+        )
+        self.assertIn(
+            "Newly discovered destructive, migration, demotion, or "
+            "contract-narrowing work must become explicit follow-up ledger work",
+            compact_guard,
+        )
 
 
 if __name__ == "__main__":

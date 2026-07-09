@@ -125,6 +125,43 @@ class SkillRoutingRuleOwnershipTests(unittest.TestCase):
             work_batch,
         )
 
+    def test_plan_batch_blocks_direct_planning_from_ccfg11_like_vague_rows(
+        self,
+    ) -> None:
+        plan_batch = normalized(PLAN_BATCH)
+        ccfg11_like_shape = (
+            "evidence gathering plus classification plus decision or destructive "
+            "cleanup in one vague row"
+        )
+
+        for signal in (
+            "evidence gathering",
+            "classification",
+            "decision",
+            "destructive cleanup",
+            "vague row",
+        ):
+            with self.subTest(signal=signal):
+                self.assertIn(signal, ccfg11_like_shape)
+
+        self.assertIn(
+            "Requested ledger rows are suitable for direct planning only when the "
+            "row is precise enough for one bounded selected dispatch.",
+            plan_batch,
+        )
+        self.assertIn(
+            "A row is not suitable when it mixes evidence gathering, "
+            "classification, decisions, destructive cleanup, migration, demotion, "
+            "or contract narrowing without clear owner, risk, and acceptance "
+            "boundaries.",
+            plan_batch,
+        )
+        self.assertIn(
+            "route through `architecture-program-runway` to split, block, or "
+            "narrow the scope before any concrete runway spec is created.",
+            plan_batch,
+        )
+
     def test_runtime_and_support_skills_keep_procedure_ownership(self) -> None:
         architecture_program_runway = normalized(ARCHITECTURE_PROGRAM_RUNWAY)
         batch_runway = normalized(BATCH_RUNWAY)
