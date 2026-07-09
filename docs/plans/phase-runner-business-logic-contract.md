@@ -364,7 +364,7 @@ protocol: input root, output JSON, warning/error shape, and exit-code meaning.
 
 ### PBC-15. Planning-State Interop
 
-- Status: proposed for the next extraction batch.
+- Status: fixture-backed contract expectation.
 - Source evidence: `scripts/planning_state.py`,
   `tests/test_planning_state.py`, `docs/plans/planning-state-tooling-plan.md`,
   and `docs/plans/generic-phase-runner-workflow-contract.md`.
@@ -372,6 +372,25 @@ protocol: input root, output JSON, warning/error shape, and exit-code meaning.
   execution. A runner may receive planning-state facts as explicit inputs or
   call a documented planning-state command, but it must not infer active work
   from historical filenames when Layout v1 `CURRENT.md` files exist.
+- Protocol shape: the interop boundary is command/file/schema based. The
+  caller supplies a planning root and optionally an explicit state fixture path
+  or projection target. The command returns either text for humans or the
+  `planning-state-facts` JSON protocol for machines, including root facts,
+  program facts, warnings, blockers, validation messages, and exit facts.
+- Exit semantics: code `0` means the command completed without fatal blockers,
+  code `1` means validation completed and found blockers, and code `2` means
+  unsupported invocation or protocol usage. Warnings remain warning-only unless
+  they are also represented as blockers.
+- Active-work facts: `selected_dispatch`, `queued_batch`, and
+  `active_runway` come only from Layout v1 `CURRENT.md` files or explicit
+  fixture state. Historical flat runways, dispatches, redirect ledgers, pickup
+  notes, and archived files may appear as warnings or compatibility evidence,
+  but they must not become selected work.
+- Fixture expectation: `current --format json` and `validate --format json`
+  must agree on Layout v1 root, program, warning, blocker, selected dispatch,
+  queued runway, and active runway facts for the same fixture. Test-generated
+  or temporary fixtures are preferred; durable JSON state is allowed only when
+  project policy declares the exact target.
 - Target implication: the Go runner should define planning-state integration as
   an adapter or preflight protocol, not as a built-in dependency on
   `codex-config` Markdown conventions. The first interoperable shape should be
@@ -379,7 +398,8 @@ protocol: input root, output JSON, warning/error shape, and exit-code meaning.
 - Validation: target tests must include golden Planning Artifact Layout v1
   fixtures where `current` and `validate` agree with the runner's selected work
   input, and where stale historical files produce warnings without becoming
-  selected work.
+  selected work. Ordinary planning-state interop must not require projection
+  reporting or runner artifact projection.
 
 ## Integration-Specific Behavior To Keep Out Of The Core
 

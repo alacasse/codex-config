@@ -99,6 +99,34 @@ runner may call an external planning-state command or consume its schemas later,
 but the generic runner should not embed `codex-config` planning-root discovery,
 Graphify fixtures, or Markdown editing rules.
 
+## Planning-State Interop Fixtures
+
+Planning-state interop is an adapter contract, not a runner-core dependency.
+The generic runner may consume explicit planning facts supplied by its caller,
+or it may invoke a documented planning-state command as a preflight. In both
+cases the boundary is command/file/schema based: input planning root, optional
+state fixture or projection target, JSON output protocol, warning and blocker
+objects, and documented exit-code meanings.
+
+Fixture expectations for Layout v1 roots:
+
+- `current --format json` and `validate --format json` must agree on root,
+  program, selected dispatch, queued runway, active runway, warning, blocker,
+  and exit facts for the same planning root or state fixture.
+- Selected work may come only from active Layout v1 `CURRENT.md` files or from
+  an explicit validated state fixture. Historical flat runways, dispatches,
+  redirect ledgers, pickup notes, and archived files are warning or evidence
+  inputs only; they must not be promoted into selected work.
+- Stale historical files should produce warning-only diagnostics when the
+  active Layout v1 files are valid. They should not force a runner phase,
+  queued batch, projection rebuild, or artifact projection.
+- Test-generated or temporary JSON fixtures are preferred. Durable project-tree
+  JSON state is valid only when project policy declares that exact target.
+
+Projection reporting and runner artifact projection are optional reporting
+inputs. Ordinary planning-state interop must remain usable without rebuilding a
+SQLite projection or supplying runner artifacts.
+
 ## Proven Internal Adapters
 
 The extraction-prep batch proved the worker boundary with two internal

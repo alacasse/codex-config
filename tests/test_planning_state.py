@@ -268,6 +268,172 @@ def test_current_json_protocol_reports_root_program_warning_and_exit_facts(
     assert all("severity" in message for message in payload["validation_messages"])
 
 
+def test_current_and_validate_json_agree_on_layout_v1_active_work_fields(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+
+    cases = [
+        (
+            "selected-dispatch-proof",
+            "dispatch.md",
+            {
+                "selected": (
+                    "docs/plans/programs/planning-state-tooling/batches/"
+                    "selected-dispatch-proof/dispatch.md"
+                ),
+                "queued": "None selected",
+                "active": "None selected",
+            },
+            {
+                "selected_dispatch": (
+                    "docs/plans/programs/planning-state-tooling/batches/"
+                    "selected-dispatch-proof/dispatch.md"
+                ),
+                "queued_batch": None,
+                "active_runway": None,
+            },
+        ),
+        (
+            "queued-runway-proof",
+            "runway.md",
+            {
+                "selected": "None selected",
+                "queued": (
+                    "docs/plans/programs/planning-state-tooling/batches/"
+                    "queued-runway-proof/runway.md"
+                ),
+                "active": "None selected",
+            },
+            {
+                "selected_dispatch": None,
+                "queued_batch": (
+                    "docs/plans/programs/planning-state-tooling/batches/"
+                    "queued-runway-proof/runway.md"
+                ),
+                "active_runway": None,
+            },
+        ),
+        (
+            "active-runway-proof",
+            "runway.md",
+            {
+                "selected": "None selected",
+                "queued": "None selected",
+                "active": (
+                    "docs/plans/programs/planning-state-tooling/batches/"
+                    "active-runway-proof/runway.md"
+                ),
+            },
+            {
+                "selected_dispatch": None,
+                "queued_batch": None,
+                "active_runway": (
+                    "docs/plans/programs/planning-state-tooling/batches/"
+                    "active-runway-proof/runway.md"
+                ),
+            },
+        ),
+    ]
+
+    for batch_id, filename, current_kwargs, expected_values in cases:
+        batch_root = root / "programs" / "planning-state-tooling" / "batches" / batch_id
+        batch_root.mkdir(parents=True, exist_ok=True)
+        (batch_root / filename).write_text(f"# {filename}\n", encoding="utf-8")
+        _write_program_current(
+            root,
+            "planning-state-tooling",
+            latest="None selected",
+            **current_kwargs,
+        )
+
+        current = json.loads(_run_current_json(root).stdout)
+        validate = json.loads(_run_validate_json(root).stdout)
+        current_program = next(
+            program
+            for program in current["programs"]
+            if program["slug"] == "planning-state-tooling"
+        )
+        validate_program = next(
+            program
+            for program in validate["programs"]
+            if program["slug"] == "planning-state-tooling"
+        )
+
+        assert current["exit"]["code"] == 0
+        assert validate["exit"]["code"] == 0
+        source_path = str(
+            root / "programs" / "planning-state-tooling" / "CURRENT.md"
+        )
+        expected_active_work = {
+            field: {
+                "label": label,
+                "value": value,
+                "source_path": source_path,
+                "exists": True if value is not None else None,
+            }
+            for field, label, value in (
+                (
+                    "selected_dispatch",
+                    "selected dispatch path",
+                    expected_values["selected_dispatch"],
+                ),
+                (
+                    "queued_batch",
+                    "queued batch path or id",
+                    expected_values["queued_batch"],
+                ),
+                (
+                    "active_runway",
+                    "active batch runway spec path",
+                    expected_values["active_runway"],
+                ),
+            )
+        }
+        assert {
+            field: current_program[field] for field in expected_active_work
+        } == expected_active_work
+        assert {
+            field: validate_program[field] for field in expected_active_work
+        } == expected_active_work
+        assert current["blockers"] == validate["blockers"] == []
+
+
+def test_current_and_validate_json_keep_stale_historical_files_warning_only(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "my-docs" / "plans"
+    _write_graphify_fixture(root)
+
+    current = json.loads(_run_current_json(root).stdout)
+    validate = json.loads(_run_validate_json(root).stdout)
+    expected_warnings = {
+        "historical_batch_artifact",
+        "stale_pickup_note",
+        "stale_pickup_contradiction",
+    }
+
+    assert current["exit"]["code"] == 0
+    assert validate["exit"]["code"] == 0
+    assert {warning["code"] for warning in current["warnings"]} >= expected_warnings
+    assert {warning["code"] for warning in validate["warnings"]} >= expected_warnings
+    assert current["blockers"] == validate["blockers"] == []
+    for payload in (current, validate):
+        assert all(
+            program["selected_dispatch"]["value"] is None
+            for program in payload["programs"]
+        )
+        assert all(
+            program["queued_batch"]["value"] is None
+            for program in payload["programs"]
+        )
+        assert all(
+            program["active_runway"]["value"] is None
+            for program in payload["programs"]
+        )
+
+
 def test_current_json_reports_projection_routing_policy_facts(
     tmp_path: Path,
 ) -> None:
@@ -5754,6 +5920,7 @@ def _write_program_current(
     queued: str,
     latest: str,
     selected: str = "None selected",
+    active: str = "None selected",
     run_artifact: str = "None selected",
 ) -> None:
     (root / "programs" / slug / "CURRENT.md").write_text(
@@ -5768,7 +5935,7 @@ Purpose: fixture program.
 - Current ledger:
   `{_display_root(root)}/programs/{slug}/LEDGER.md`
 - Selected dispatch path: `{selected}`
-- Active Batch Runway spec path: `None selected`
+- Active Batch Runway spec path: `{active}`
 - Queued batch path or ID: `{queued}`
 - Latest closeout:
   `{latest}`
