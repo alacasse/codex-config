@@ -142,7 +142,7 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
-| 1. Deepen plan-batch command contract | `a63fb78` | success; added explicit command contract, state decision table, ledger-only source rule, one-spec output, and stop-before-implementation boundary | `python -m pytest tests/test_codex_features_manifest.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; reviewer `runway_reviewer` clean |
+| 1. Deepen plan-batch command contract | `d6644a4` | success; added explicit command contract, state decision table, ledger-only source rule, one-spec output, and stop-before-implementation boundary | `python -m pytest tests/test_codex_features_manifest.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; reviewer `runway_reviewer` clean |
 
 ## Slice 1. Deepen Plan-Batch Command Contract
 
