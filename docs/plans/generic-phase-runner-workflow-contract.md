@@ -36,6 +36,25 @@ apply transition rules, and record artifact locations. It must not require a
 specific coding agent, prompt format, issue tracker, project ledger, or personal
 workflow convention.
 
+## Contract Boundary Catalog
+
+These names describe implementation-neutral contracts. They are not source-file
+destinations, package names, or a required module split.
+
+| Contract | Generic responsibility | `codex-config` integration responsibility |
+|---|---|---|
+| **Workflow Contract** | Declare workflow identity, phase order or graph, transition rules, run bounds, stop conditions, and artifact rules. | Provide the architecture-program workflow instance, including `select-dispatch -> create-spec -> execute -> closeout`, Program Ledger inputs, and Batch Runway coordination rules. |
+| **Run State Contract** | Persist resumable run progress, active phase/work unit, artifact references, stop reason, latest receipt facts, and completed count under a versioned state schema. | Preserve current state-path discovery, dogfooding artifact locations, and migration behavior expected by the architecture-program runner facade. |
+| **Phase Result Contract** | Define the strict machine-readable result object that a worker returns for one phase, including status, next phase, work-unit identity, evidence paths, validation summary, and review summary. | Translate architecture-program phase names, dispatch/spec/closeout paths, and current schema field names where facade compatibility requires them. |
+| **Phase Receipt Contract** | Treat the receipt as durable control-plane evidence that must load as JSON and match the returned phase result exactly at the expected path. | Keep the current dogfooding receipt locations and error messages compatible until a migration plan says otherwise. |
+| **Worker Adapter Contract** | Run one phase through a provider adapter and return a phase result or runner error; post-worker validation, receipt checks, transitions, and artifact writes remain runner-owned. | Own Codex prompt construction, `codex exec` arguments, sandbox/model flags, skill references, shell-proof adapters, and provider-specific observation details. |
+| **Run/Batch Artifact Contract** | Record run-scoped and work-unit-scoped operational evidence such as manifests, indexes, receipt paths, telemetry paths, input inventories, and summary references. | Preserve current architecture-program artifact layout and local planning policy while a later generic core proves compatible artifact schemas. |
+
+Generic contracts stop at control-plane behavior. Architecture-program phase
+language, Codex prompts, Batch Runway obligations, Program Ledger vocabulary,
+GitHub policy, repo-owned Codex configuration, personal overlays, and
+Graphify-specific validation policy remain adapter-owned integration details.
+
 ## Current Runner Mapping
 
 The current architecture-program runner maps into the generic contract this

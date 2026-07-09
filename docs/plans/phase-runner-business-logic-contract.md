@@ -54,6 +54,47 @@ The extraction target is the control-plane business logic. The current
 architecture-program workflow should become the first integration adapter or
 dogfooding workflow, not the generic runner itself.
 
+## Contract Boundary Catalog
+
+The target boundary is a set of implementation-neutral contracts, not a list of
+future source files or package destinations. The generic core owns control-plane
+rules; the `codex-config` adapter owns current architecture-program language and
+dogfooding behavior.
+
+| Contract | Generic core owns | `codex-config` adapter owns |
+|---|---|---|
+| **Workflow Contract** | Workflow identity, phase ordering or graph, transition constraints, run bounds, stop conditions, and artifact policy. | The architecture-program phase names and order, Program Ledger and Dispatch Packet interpretation, Batch Runway obligations, and local workflow command language. |
+| **Run State Contract** | Versioned durable state, resume validation, active phase/work-unit facts, latest receipt facts, stop reason, artifact references, and completed count. | Current state-path defaults, structured run artifact locations, facade-compatible resume behavior, and migration behavior for dogfooding runs. |
+| **Phase Result Contract** | Strict worker-returned control object with status, phase, next phase, work-unit identity, evidence paths, validation summary, and review summary. | Current architecture-program field names, dispatch/spec/closeout path vocabulary, phase-specific summaries, and compatibility with the existing phase-result schema. |
+| **Phase Receipt Contract** | Receipt-path expectation, JSON-object loading, exact result equality, and rejection of malformed, missing, mismatched, or wrong-path receipts. | Current receipt path layout, dogfooding error language, and any compatibility translation for existing receipt artifacts. |
+| **Worker Adapter Contract** | Provider-neutral phase execution interface and uniform post-worker validation, receipt checks, state transitions, artifact writes, and stop handling. | Codex prompt construction, `codex exec` command details, sandbox/model flags, skill references, shell-proof adapter wiring, and provider observation attribution. |
+| **Run/Batch Artifact Contract** | Versioned run/work-unit manifests, indexes, input-inventory links, telemetry locations, receipt references, validation/review summaries, and final-summary facts. | Current architecture-program artifact tree, Program Ledger links, generated runway/closeout evidence, and local planning-policy compatibility. |
+
+The generic core must not absorb architecture-program prompts, Batch Runway
+execution rules, Program Ledger semantics, GitHub issue policy, repo-owned
+Codex configuration checks, personal overlays, or Graphify-specific validation
+policy. Those are integration adapter responsibilities even when the current
+Python runner contains them near generic-looking control-plane code.
+
+## Extraction Readiness Evidence
+
+A later implementation runway may begin only after these proofs are explicit:
+
+- contract tests or golden fixtures for workflow advancement, run-state resume,
+  phase-result strictness, receipt equality, worker-adapter post-processing,
+  artifact manifests, input inventory, telemetry separation, and stop
+  conditions;
+- facade compatibility evidence for current architecture-program CLI defaults,
+  dry-run behavior, resume behavior, receipt paths, final summary shape, and
+  focused `tests/test_architecture_program_runner*.py` coverage;
+- planning-state interop evidence showing command/file/schema boundaries
+  without importing or mirroring `scripts/planning_state.py` internals;
+- a named adapter boundary for Codex prompts, `codex exec` arguments,
+  sandbox/model flags, Batch Runway obligations, Program Ledger vocabulary, and
+  local planning policy;
+- an explicit package/runtime decision for any future target before runner code
+  is moved or scaffolded.
+
 ## Separation And Interoperability Direction
 
 The target should stay separate from `codex-config` while remaining
