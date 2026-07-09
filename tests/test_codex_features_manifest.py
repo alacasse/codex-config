@@ -180,6 +180,67 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("must not silently create new ledger findings", plan_batch)
         self.assertIn("current queued or active runway", work_batch)
 
+    def test_plan_batch_command_owner_runtime_boundaries_are_explicit(self) -> None:
+        manifest = self.load_manifest()
+        features = manifest["features"]
+        plan_batch_feature = features["plan-batch"]
+        plan_batch = (REPO_ROOT / "skills/plan-batch/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "User-facing command-owner skill",
+            plan_batch_feature["description"],
+        )
+        self.assertEqual(
+            plan_batch_feature.get("requires", []),
+            [
+                "planning-artifacts",
+                "planning-state",
+                "architecture-program-runway",
+                "batch-runway",
+            ],
+        )
+        self.assertEqual(
+            {link["source"] for link in plan_batch_feature["links"]},
+            {"skills/plan-batch"},
+        )
+
+        for runtime_owner in ("architecture-program-runway", "batch-runway"):
+            with self.subTest(runtime_owner=runtime_owner):
+                self.assertIn(
+                    "Agent-facing",
+                    features[runtime_owner]["description"],
+                )
+                self.assertNotIn(
+                    "deprecated",
+                    features[runtime_owner]["description"].lower(),
+                )
+
+        self.assertIn("ledger-source rule", plan_batch)
+        self.assertIn("stop-before-implementation boundary", plan_batch)
+        self.assertIn(
+            "This skill reads executable work only from the current program ledger",
+            plan_batch,
+        )
+        self.assertIn("Do not scan external sources to discover new work", plan_batch)
+        self.assertIn("Select bounded work from the current program ledger", plan_batch)
+        self.assertIn("Do not select different work. Use that dispatch.", plan_batch)
+        self.assertIn("Do not create another spec or replace the queue.", plan_batch)
+        self.assertIn("Do not create another spec or execute it.", plan_batch)
+        self.assertIn("Stop and report that `add-to-ledger` must ingest", plan_batch)
+        self.assertIn("at most one concrete batch runway spec", plan_batch)
+        self.assertIn("Stop before implementation", plan_batch)
+        self.assertIn("## Agent-Facing Support", plan_batch)
+        self.assertIn("`../architecture-program-runway/SKILL.md`", plan_batch)
+        self.assertIn("only for program selection", plan_batch)
+        self.assertIn("dispatch ownership", plan_batch)
+        self.assertIn(
+            "`../batch-runway/SKILL.md` only in `create-spec` mode",
+            plan_batch,
+        )
+        self.assertIn("runtime support", plan_batch)
+
     def test_executable_work_source_boundary_is_explicit(self) -> None:
         routing_contract = (REPO_ROOT / "docs/skill-routing-contract.md").read_text(
             encoding="utf-8"
