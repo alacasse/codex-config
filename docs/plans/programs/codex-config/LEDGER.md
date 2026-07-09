@@ -51,7 +51,7 @@ row-by-row here.
 | CCFG-4. Runner adapter authoring skill | Open | APR-29; GitHub issue #16 | Runner support skill | Create after CCFG-1 stabilizes the generic worker/runtime boundary | Preserve adapter guidance scope: provider quirks stay out of generic runner core; cover result, receipt, transition, artifact, observation, and input-inventory boundaries. |
 | CCFG-5. Baton dogfood diagnostics | Open | APR-30; GitHub issues #17, #18, #19 | Runner diagnostics | Sequence after CCFG-1 unless a diagnostic need blocks extraction | `baton-context-map`, `baton-doctor`, and `baton-receipt-inspector` should read runner/planning artifacts and produce compact diagnostics, not reconstruct execution from chat transcripts. |
 | CCFG-6. Skill-slimmer support | Backlog | PST issue reconciliation #15 | Skill cleanup | Decide whether to add a focused skill-slimmer workflow | Source issue said the `skill-slimmer` skill does not exist. Keep this as cleanup backlog until a bounded workflow and validation target are selected. |
-| CCFG-7. Batch Runway hot-path pruning | Backlog | PST issue reconciliation #23 | Skill cleanup | Run a focused pruning pass over Batch Runway guidance | Source issue said references were split, but no explicit pruning pass was evidenced as complete. |
+| CCFG-7. Batch Runway hot-path pruning | Pending | PST issue reconciliation #23 | Skill cleanup | Execute queued runway `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md` | Source issue said references were split, but no explicit pruning pass was evidenced as complete. Queued by `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/dispatch.md`. |
 | CCFG-8. Ledger and dispatch rule dedupe | Backlog | PST issue reconciliation #24 | Skill cleanup | Deduplicate overlap across planning, dispatch, and runway skills | Preserve the source observation that `planning-artifacts`, `planning-state`, and consumer routing partially address this, but a focused dedupe pass remains. |
 | CCFG-9. Short skill frontmatter descriptions | Backlog | PST issue reconciliation #25 | Skill cleanup | Shorten dense skill descriptions without losing trigger accuracy | Source issue said this is not done consistently. |
 | CCFG-10. Skill steering vocabulary | Backlog | PST issue reconciliation #26 | Skill cleanup | Codify leading words or steering vocabulary where useful | Source issue said no consistent steering-vocabulary sections were found. |
@@ -60,10 +60,12 @@ row-by-row here.
 
 ## Batch Queue
 
-Queued batch: `None`.
+Queued batch:
+`docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
+| `ccfg-7-batch-runway-hot-path-pruning` | queued | `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md` | CCFG-7 | Focused Batch Runway guidance pruning to reduce routine execution/context load without changing runtime semantics. |
 | `ccfg-12-plan-batch-deepening` | completed | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/runway.md` | CCFG-12 | Closed by `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/closeout.md`. |
 
 ## Recommended Work Order

@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/closeout.md`
 - Run artifact location: `None selected`
@@ -38,13 +39,18 @@
 
 ## Queued Batch
 
-No queued batch.
+- Batch: `ccfg-7-batch-runway-hot-path-pruning`
+- Dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/dispatch.md`
+- Runway:
+  `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md`
+- Covers: CCFG-7
 
 ## Next Safe Action
 
-Use `plan-batch` to create one bounded specs batch from the canonical ledger
-when explicitly requested. Do not infer selected work from old flat filenames,
-archived ledgers, retired planning paths, or archive contents.
+Use `work-batch` to execute the queued
+`ccfg-7-batch-runway-hot-path-pruning` runway when explicitly requested. Do not
+create another dispatch or runway while this queued batch exists.
 
 ## Stop Conditions
 
