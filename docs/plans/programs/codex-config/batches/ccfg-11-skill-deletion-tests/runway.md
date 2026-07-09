@@ -8,6 +8,26 @@ because its validation section listed known-red and implementation-created
 commands without status classes. CCFG-11 remains open in the program ledger and
 must be planned or amended after CCFG-13 closes before execution resumes.
 
+## Displaced Validation Gate Amendment
+
+Future CCFG-11 planning must regenerate or classify this runway's validation
+commands before execution. In this displaced spec, the currently ambiguous
+commands are:
+
+- `python -m pytest tests/test_codex_features_manifest.py -q`
+  - status: `known-red-baseline`
+  - handling: diagnostic until a named CCFG-11 slice remediates the existing
+    manifest failures or records a current-green result.
+- `python -m pytest tests/test_skill_deletion_surfaces.py -q`
+  - status: `implementation-created`
+  - handling: cannot gate execution until a named CCFG-11 slice creates the
+    test file or replaces this command with an existing current-green owner.
+
+Do not execute this displaced runway as-is. A future CCFG-11 runway must make
+every focused validation command explicit as `required-green`,
+`known-red-baseline`, `implementation-created`, `conditional`, or
+`diagnostic-only` before it becomes active.
+
 ## Purpose
 
 Create focused deletion-test evidence for no-op, sediment, and obsolete skill
@@ -103,20 +123,31 @@ Selected profile:
 Focused validation commands:
 - For installed skill metadata and command-owner dependency coverage:
   `python -m pytest tests/test_codex_features_manifest.py -q`
+  - displaced status: `known-red-baseline`
+  - handling before future execution: remediate in a named slice, record a
+    current-green result, or keep diagnostic/non-gating.
 - For create-spec and Batch Runway contract guardrails when this spec is
   touched:
   `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`
+  - displaced status: `required-green`
 - For deletion/dead-surface audit coverage:
   `python -m pytest tests/test_skill_deletion_surfaces.py -q`
+  - displaced status: `implementation-created`
+  - handling before future execution: create in a named CCFG-11 slice or
+    replace with an existing current-green command.
 - For planning-state diagnostics:
   `python scripts/planning_state.py current --root docs/plans`
   `python scripts/planning_state.py validate --root docs/plans`
+  - displaced status: `required-green`
 - For install metadata alignment, when `codex-features.json` or install-owned
   paths change:
   `./install.sh --dry-run`
+  - displaced status: `conditional`
 - For project-neutrality checks, the final diff should not introduce matches:
   `rg -n "/home/alacasse/projects/graphify|my-docs/plans|codex-config-uv-cache|Graphify-specific|project-specific validation" skills tests docs/skill-routing-contract.md docs/workflow-guide.md`
+  - displaced status: `conditional`
 - Always run `git diff --check`.
+  - displaced status: `required-green`
 
 Integration harness:
 - No nested Codex runs.
