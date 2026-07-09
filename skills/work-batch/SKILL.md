@@ -57,6 +57,12 @@ closeout evidence. Same-batch program reconciliation is part of `work-batch`
 closeout: after `batch-runway execute-spec` completes, route to
 `architecture-program-runway closeout-runway` for the just-completed batch only.
 
+A queued runway produced by `plan-batch` is expected live state, not stale or
+accidental residue. Same-batch program reconciliation requires concrete
+execution closeout evidence. If no execution closeout exists, preserve the
+queued runway unless the user explicitly asks to cancel or abandon it, or a
+documented blocker makes execution unsafe.
+
 The closeout reconciliation may update the relevant program `CURRENT.md`,
 program `LEDGER.md`, selected dispatch state, and batch queue metadata only as
 needed to reflect the completed batch's evidence. It may mark covered findings

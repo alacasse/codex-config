@@ -164,6 +164,10 @@ specific unresolved evidence question. State that question before continuing.
   not select, refresh, dispatch, create, or prepare successor work. For `/goal`
   or other runner-driven work, also record a compact goal-run evaluation
   receipt.
+  `closeout-runway` must not clear a queued dispatch/runway before execution
+  unless the user explicitly requests cancellation or abandonment, or the
+  closeout evidence documents a blocker that makes execution unsafe. A
+  dispatch/runway pair alone is not closeout evidence.
 - `reprioritize`: reassess remaining findings after the codebase or constraints
   changed. Update ordering without hiding deferred work.
 

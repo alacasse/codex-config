@@ -99,6 +99,9 @@ the normal direct commands for the ledger-driven workflow.
 - `plan-batch` must not discover new work by scanning external sources.
 - `plan-batch` reports existing queued or active runway state instead of
   replacing it or beginning implementation.
+- `plan-batch` normally leaves a queued runway. That queued state is not
+  residue; consume it with `work-batch` instead of closing or abandoning it
+  without explicit cancellation or documented blocker evidence.
 - `work-batch` must not select new work.
 - After `work-batch` completes concrete closeout, same-batch program-state
   reconciliation is part of `work-batch` closeout through
