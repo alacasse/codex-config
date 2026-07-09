@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Run artifact location: `None selected`
@@ -30,7 +31,7 @@
 ## Active Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Active rows: CCFG-2 through CCFG-6 and CCFG-9 through CCFG-11.
+- Active rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and CCFG-13.
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:
@@ -40,7 +41,8 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/runway.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-8-ledger-dispatch-rule-dedupe`
@@ -55,9 +57,10 @@
 
 ## Next Safe Action
 
-No selected, queued, or active batch. Wait for an explicit `plan-batch` request
-before selecting successor work, creating another dispatch, or creating another
-runway.
+Queued CCFG-11 batch exists, but CCFG-13 records a validation-gate root cause
+exposed by that runway. Do not execute
+`docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/runway.md`
+until CCFG-13 is handled or explicitly superseded.
 
 ## Stop Conditions
 
@@ -65,6 +68,8 @@ runway.
   canonical codex-config ledger.
 - Stop if work would select successor work, create another dispatch, or create
   another runway without an explicit `plan-batch` request.
+- Stop if work would execute the queued CCFG-11 runway before CCFG-13 is handled
+  or explicitly superseded.
 - Stop if CCFG-1 closeout text would imply runner extraction, package/runtime
   selection, repository/scaffold creation, adapter implementation, or CCFG-2
   through CCFG-5 work is complete.
