@@ -276,10 +276,9 @@ In `execute-spec` mode:
    ledger/archive update, anomaly logging, and continuation.
 8. If validation fails, review finds issues, blockers appear, or escalation is
    needed, read `references/execute-recovery-v1.md`.
-9. After the last slice, read `references/finalize-batch-v1.md`, run final
-   validation and project-required index refresh,
-   then report commits, validation, skipped slices, remaining risks, cleanup
-   residues, `orchestration_anomalies`, and expanded convergence.
+9. After the last slice, read `references/finalize-batch-v1.md`; it owns final
+   validation, required refreshes, closeout evidence, cleanup residues,
+   `orchestration_anomalies`, and expanded convergence reporting.
 
 ## Stop Conditions
 

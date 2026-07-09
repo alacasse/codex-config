@@ -124,7 +124,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 4. Align reporting and closeout references | pending |  |  |  | Final validation and closeout-ready evidence |  |
 
 ## Orchestration Anomalies
 
@@ -136,7 +135,8 @@ orchestration_anomalies: []
 |---|---|---|---|
 | 1. Guard the routine hot-path contract | `8093518` | success; added focused text-contract coverage for the routine execution hot path and trigger-loaded non-routine references | `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; test-quality review clean after fix; reviewer `runway_reviewer` clean |
 | 2. Prune entrypoint and execute-spec routing duplication | `959d125` | success; pruned duplicated routine execution loop text from the entrypoint and execute-spec routing while keeping the compact hot path and trigger references discoverable | `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; test-quality review clean; reviewer `runway_reviewer` clean |
-| 3. Slim routine execute-slice core detail | `pending` | success; slimmed `execute-slice-core-v1.md` by replacing non-routine support detail with trigger references while preserving routine worker, reviewer, validation, receipt, ledger, and anomaly guidance | `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; reviewer `runway_reviewer` clean |
+| 3. Slim routine execute-slice core detail | `e54d818` | success; slimmed `execute-slice-core-v1.md` by replacing non-routine support detail with trigger references while preserving routine worker, reviewer, validation, receipt, ledger, and anomaly guidance | `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; reviewer `runway_reviewer` clean |
+| 4. Align reporting and closeout references | `pending` | success; aligned finalization references, added recursive project-neutrality coverage, and created concrete closeout evidence for CCFG-7 | `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`; `python -m pytest tests/test_codex_features_manifest.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; hard-coding check no matches; `git diff --check`; test-quality review clean after fix; reviewer `runway_reviewer` clean |
 
 ## Slice 1. Guard The Routine Hot-Path Contract
 

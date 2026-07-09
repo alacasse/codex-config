@@ -9,6 +9,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL = REPO_ROOT / "skills/batch-runway/SKILL.md"
 CREATE_SPEC = REPO_ROOT / "skills/batch-runway/references/create-spec.md"
 EXECUTE_SPEC = REPO_ROOT / "skills/batch-runway/references/execute-spec.md"
+REFERENCE_FILES = tuple((REPO_ROOT / "skills/batch-runway/references").rglob("*.md"))
 PST_18_RUNWAY = (
     REPO_ROOT
     / "docs/plans/programs/planning-state-tooling/batches/"
@@ -35,6 +36,14 @@ NON_ROUTINE_REFERENCE_NAMES = (
     "reporting-contracts-v1.md",
     "test-quality-review.md",
     "projection-reporting.md",
+)
+
+DOWNSTREAM_PROJECT_PATTERNS = (
+    "/home/alacasse/projects/" + "graphify",
+    "my-docs/" + "plans",
+    "codex-config-" + "uv-cache",
+    "Graphify-" + "specific",
+    "project-specific " + "validation",
 )
 
 
@@ -220,6 +229,13 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
         for pattern in execute_spec_trigger_patterns:
             with self.subTest(path=str(EXECUTE_SPEC), pattern=pattern):
                 self.assertRegex(execute_spec_text, pattern)
+
+    def test_reusable_batch_runway_guidance_stays_project_neutral(self) -> None:
+        for path in (SKILL, EXECUTE_SPEC, *REFERENCE_FILES):
+            text = path.read_text(encoding="utf-8")
+            for pattern in DOWNSTREAM_PROJECT_PATTERNS:
+                with self.subTest(path=str(path), pattern=pattern):
+                    self.assertNotIn(pattern, text)
 
 
 if __name__ == "__main__":

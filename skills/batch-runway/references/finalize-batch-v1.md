@@ -6,8 +6,9 @@ for final batch reporting.
 ## Final Validation
 
 1. Run the spec's final validation.
-2. Run project-required graph, search index, generated docs, or metadata refresh
-   after code changes.
+2. Run graph, search index, generated docs, metadata refreshes, or integration
+   harnesses only when project instructions, the active spec, or the changed
+   surface requires them.
 3. If final validation uses a project-specific integration harness, use an
    explicit fresh output path when the harness writes artifacts.
 4. Read the required summary artifact before reporting the final harness result.
@@ -27,6 +28,7 @@ Report:
 - completed commits
 - validation results
 - skipped slices
+- closeout evidence paths or compact evidence summary
 - remaining risks
 - compatibility paths that remain
 - cleanup residues classified as removed, kept with reason, or deferred with a
