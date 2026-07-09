@@ -55,6 +55,18 @@ This spec executes the `ccfg-8-ledger-dispatch-rule-dedupe` batch described by
 - `add-to-ledger`, `plan-batch`, and `work-batch` must retain the minimum
   caller-visible rules needed for direct human invocation.
 
+## Rule Ownership Map
+
+| Repeated rule category | Single owner | Caller-visible boundary preserved outside the owner |
+|---|---|---|
+| Command routing and human-facing stop points | `docs/skill-routing-contract.md` | Command-owner skills (`add-to-ledger`, `plan-batch`, and `work-batch`) express the contract for their human-facing routes; runtime/support skills stay behind the selected route. |
+| Ledger and external-source intake | `add-to-ledger` | `plan-batch` consumes existing ledger state and stops when fresh work needs ingestion. |
+| Planning State Diagnostic ordering, target-policy checks, and projection routing | `planning-state` | Consumers carry forward compact diagnostic facts instead of reimplementing pickup logic. |
+| Planning Artifact Layout v1 placement, naming, active-state shape, and archive vocabulary | `planning-artifacts` | Consumers reference layout rules when interpreting or writing planning artifacts. |
+| Program dispatch, selected/queued/active batch artifact state, program queue mechanics, and finding lifecycle status | `architecture-program-runway` | Command-owner skills select the user-facing workflow; `batch-runway` consumes one selected dispatch. |
+| Concrete runway spec, slice ledger, validation/review loop, completed-slice archive, and commit receipt mechanics | `batch-runway` | Program ledgers and selected dispatch state remain owned by `architecture-program-runway`. |
+| Same-batch closeout reconciliation mechanics | `architecture-program-runway` | `work-batch` routes to closeout only after concrete execution evidence exists and stops before successor selection. |
+
 ## Non-Goals
 
 - Do not implement any slice during spec creation.
@@ -151,7 +163,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 1. Inventory duplicated rules and owners | pending |  |  |  | ownership map and focused tests drafted or updated | Characterization slice; no broad prose rewrite until owners are explicit. |
 | 2. Deduplicate command-owner routing prose | pending |  |  |  | command-owner skills retain human-facing decisions and reference owners for mechanics | Preserve direct invocation behavior. |
 | 3. Deduplicate runtime/support mechanics prose | pending |  |  |  | support skills keep mechanics ownership and reference routing contract where useful | Preserve runtime behavior. |
 | 4. Align cross-doc references and closeout state | pending |  |  |  | docs/tests/current/validate clean and closeout evidence ready | No successor selection. |
@@ -164,6 +175,7 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
+| 1. Inventory duplicated rules and owners | 9b7d04a | Added exact-owner rule map and focused ownership-boundary tests; review fix tightened single-owner table parsing and selected/queued/active artifact-state coverage. | Validation: `python -m pytest tests/test_skill_routing_rule_ownership.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`. Review: clean after fix loop with `test_quality_delta`. |
 
 ## Slice 1. Inventory Duplicated Rules And Owners
 
