@@ -10,10 +10,18 @@ SKILL = REPO_ROOT / "skills/batch-runway/SKILL.md"
 CREATE_SPEC = REPO_ROOT / "skills/batch-runway/references/create-spec.md"
 EXECUTE_SPEC = REPO_ROOT / "skills/batch-runway/references/execute-spec.md"
 REFERENCE_FILES = tuple((REPO_ROOT / "skills/batch-runway/references").rglob("*.md"))
+PROGRAM_CURRENT = REPO_ROOT / "docs/plans/programs/codex-config/CURRENT.md"
+PROGRAM_LEDGER = REPO_ROOT / "docs/plans/programs/codex-config/LEDGER.md"
+BATCH_RUNWAY_ROOT = REPO_ROOT / "docs/plans/programs"
 PST_18_RUNWAY = (
     REPO_ROOT
     / "docs/plans/programs/planning-state-tooling/batches/"
     "batch-runway-create-spec-output-contract/runway.md"
+)
+CCFG_7_COMPLETED_RUNWAY = (
+    REPO_ROOT
+    / "docs/plans/programs/codex-config/batches/"
+    "ccfg-7-batch-runway-hot-path-pruning/runway.md"
 )
 
 FORBIDDEN_OVERRIDE_PATTERNS = (
@@ -56,6 +64,13 @@ LEAN_REFERENCE_EXAMPLES = (
 OLD_ABSOLUTE_BATCH_RUNWAY_REFERENCE_PLACEHOLDER = re.compile(
     r"`<absolute path to batch-runway>/references/[^`]+`"
 )
+LOCAL_CODEX_CONFIG_SKILL_PREFIX = "/home/alacasse/projects/codex-config/skills/"
+PLANNING_RUNWAY_PATH = re.compile(
+    r"docs/plans/programs/[^\s`|]+/batches/[^\s`|]+/runway\.md"
+)
+PLANNING_DISPATCH_PATH = re.compile(
+    r"docs/plans/programs/[^\s`|]+/batches/[^\s`|]+/dispatch\.md"
+)
 
 
 def normalized(markdown: str) -> str:
@@ -85,6 +100,33 @@ def override_blocks(markdown: str) -> list[str]:
         blocks.append("\n".join(block_lines))
 
     return blocks
+
+
+def active_runway_paths() -> set[Path]:
+    current_text = PROGRAM_CURRENT.read_text(encoding="utf-8")
+    ledger_text = PROGRAM_LEDGER.read_text(encoding="utf-8")
+    active_paths: set[Path] = set()
+
+    for text in (current_text, ledger_text):
+        for match in PLANNING_RUNWAY_PATH.finditer(text):
+            path = REPO_ROOT / match.group(0)
+            if path.is_relative_to(BATCH_RUNWAY_ROOT):
+                active_paths.add(path)
+        for match in PLANNING_DISPATCH_PATH.finditer(text):
+            path = REPO_ROOT / match.group(0)
+            runway_path = path.with_name("runway.md")
+            if runway_path.is_relative_to(BATCH_RUNWAY_ROOT):
+                active_paths.add(runway_path)
+
+    return {
+        path
+        for path in active_paths
+        if path.exists()
+        and not any(
+            f"| `{path.parent.name}` | {inactive_status} |" in ledger_text
+            for inactive_status in ("completed", "superseded", "abandoned")
+        )
+    }
 
 
 class BatchRunwayCreateSpecContractTests(unittest.TestCase):
@@ -181,6 +223,29 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
             "values",
             normalized_reference_guidance,
         )
+
+    def test_active_runway_artifacts_do_not_embed_local_skill_paths(self) -> None:
+        self.assertIn(
+            LOCAL_CODEX_CONFIG_SKILL_PREFIX,
+            CCFG_7_COMPLETED_RUNWAY.read_text(encoding="utf-8"),
+        )
+
+        active_paths = active_runway_paths()
+        ledger_text = PROGRAM_LEDGER.read_text(encoding="utf-8")
+        ccfg_17_runway = (
+            REPO_ROOT
+            / "docs/plans/programs/codex-config/batches/"
+            "ccfg-17-absolute-runway-reference-paths/runway.md"
+        )
+
+        if "| `ccfg-17-absolute-runway-reference-paths` | queued |" in ledger_text:
+            self.assertIn(ccfg_17_runway, active_paths)
+        self.assertNotIn(CCFG_7_COMPLETED_RUNWAY, active_paths)
+
+        for path in active_paths:
+            with self.subTest(path=str(path)):
+                text = path.read_text(encoding="utf-8")
+                self.assertNotIn(LOCAL_CODEX_CONFIG_SKILL_PREFIX, text)
 
     def test_pst_18_queued_runway_keeps_session_mode_out_of_overrides(self) -> None:
         self.assert_no_session_local_override_claims(PST_18_RUNWAY)
