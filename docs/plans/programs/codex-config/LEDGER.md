@@ -52,7 +52,7 @@ row-by-row here.
 | CCFG-5. Baton dogfood diagnostics | Open | APR-30; GitHub issues #17, #18, #19 | Runner diagnostics | Sequence after CCFG-1 unless a diagnostic need blocks extraction | `baton-context-map`, `baton-doctor`, and `baton-receipt-inspector` should read runner/planning artifacts and produce compact diagnostics, not reconstruct execution from chat transcripts. |
 | CCFG-6. Skill-slimmer support | Backlog | PST issue reconciliation #15 | Skill cleanup | Decide whether to add a focused skill-slimmer workflow | Source issue said the `skill-slimmer` skill does not exist. Keep this as cleanup backlog until a bounded workflow and validation target are selected. |
 | CCFG-7. Batch Runway hot-path pruning | Completed | PST issue reconciliation #23 | Skill cleanup | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/closeout.md`. Batch Runway routine execution now has a guarded compact read path, non-routine references remain trigger-loaded, and runtime semantics remain owned by the same Batch Runway contracts. |
-| CCFG-8. Ledger and dispatch rule dedupe | Pending | PST issue reconciliation #24 | Skill cleanup | Execute queued runway with `work-batch` | Queued at `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md`. The previous pre-execution abandonment note was archived as an abandoned-state correction; preserve the source observation that `planning-artifacts`, `planning-state`, and consumer routing partially address this, but a focused dedupe pass remains. |
+| CCFG-8. Ledger and dispatch rule dedupe | Completed | PST issue reconciliation #24 | Skill cleanup | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`. The batch added a single owner map, deduplicated command-owner and support-skill rule prose, aligned cross-doc summaries, and changed no runtime behavior. |
 | CCFG-9. Short skill frontmatter descriptions | Backlog | PST issue reconciliation #25 | Skill cleanup | Shorten dense skill descriptions without losing trigger accuracy | Source issue said this is not done consistently. |
 | CCFG-10. Skill steering vocabulary | Backlog | PST issue reconciliation #26 | Skill cleanup | Codify leading words or steering vocabulary where useful | Source issue said no consistent steering-vocabulary sections were found. |
 | CCFG-11. Skill deletion tests | Backlog | PST issue reconciliation #27 | Skill cleanup | Run deletion tests for no-ops, sediment, and obsolete skill surfaces | Source issue said no focused deletion-test audit was found. |
@@ -60,13 +60,12 @@ row-by-row here.
 
 ## Batch Queue
 
-Queued batch:
-`docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md`.
+Queued batch: `None`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
 | `ccfg-1-runner-contract-fixtures` | completed | `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/runway.md` | CCFG-1 | Closed by `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/closeout.md`. Contract-first extraction preparation only: implementation-neutral contract boundaries, planning-state interop fixture expectations, facade compatibility checks, explicit non-goals/stop conditions, and unresolved extraction decisions before any code move, repository creation, package scaffold, hidden planning-state dependency, archived-ledger archaeology, or runner extraction. |
-| `ccfg-8-ledger-dispatch-rule-dedupe` | queued | `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md` | CCFG-8 | Ready for `work-batch`. The mistaken pre-execution abandonment files are archived under `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/`; no implementation slices have run yet. |
+| `ccfg-8-ledger-dispatch-rule-dedupe` | completed | `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md` | CCFG-8 | Closed by `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`. Runtime behavior unchanged. |
 | `ccfg-7-batch-runway-hot-path-pruning` | completed | `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md` | CCFG-7 | Closed by `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/closeout.md`. |
 | `ccfg-12-plan-batch-deepening` | completed | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/runway.md` | CCFG-12 | Closed by `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/closeout.md`. |
 
@@ -74,12 +73,12 @@ Queued batch:
 
 1. Start pickup from `docs/plans/CURRENT.md`, then
    `docs/plans/programs/codex-config/CURRENT.md`.
-2. CCFG-8 is queued. Use `work-batch` to execute it before selecting successor
-   work.
-3. Treat CCFG-6 and CCFG-8 through CCFG-11 as skill-cleanup backlog; group only when a
+2. No batch is selected, queued, or active. Use `plan-batch` only after an
+   explicit successor-planning request.
+3. Treat CCFG-6 and CCFG-9 through CCFG-11 as skill-cleanup backlog; group only when a
    batch can stay bounded and validation can prove the cleanup.
-4. Treat CCFG-1, CCFG-7, and CCFG-12 as completed closeout evidence, not queued
-   work.
+4. Treat CCFG-1, CCFG-7, CCFG-8, and CCFG-12 as completed closeout evidence,
+   not queued work.
 5. Do not revive APR or PST ledgers as active pickup sources. Use their archive
    snapshots only for evidence.
 
@@ -98,7 +97,7 @@ Queued batch:
   seams and contract sources, with test patterns and failure modes.
 - Close CCFG-5 only after the requested diagnostics exist with fixture-backed
   CLI tests or are split with explicit rationale.
-- Close CCFG-6 and CCFG-8 through CCFG-11 only with focused cleanup evidence,
+- Close CCFG-6 and CCFG-9 through CCFG-11 only with focused cleanup evidence,
   validation, and archive-safe closeout pointers.
 - Close CCFG-12 only after `plan-batch` owns a deeper human-facing command
   contract for ledger-only selection, selected-state handling, one-spec output,

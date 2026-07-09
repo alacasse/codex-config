@@ -12,6 +12,26 @@ This is a transitional bridge state created by the copy-first migration. It is
 not the final architecture. A later migration may rewrite command-owner skills
 into true end-to-end owners, but that is not the current state.
 
+## Owner Split
+
+Keep human-facing command decisions separate from runtime mechanics:
+
+- `add-to-ledger`, `plan-batch`, and `work-batch` own the user-visible command
+  routes and stop points.
+- `add-to-ledger` owns fresh ledger and external-source intake.
+- `planning-state` owns current/validate ordering, target-policy checks, and
+  projection routing.
+- `planning-artifacts` owns Planning Artifact Layout v1 placement, naming,
+  active-state file shape, batch directory, archive, and state vocabulary.
+- `architecture-program-runway` owns program selection, selected dispatch,
+  queue metadata, selected/queued/active artifact state, finding lifecycle
+  status, and same-batch closeout reconciliation.
+- `batch-runway` owns concrete runway specs, slice ledgers, validation/review
+  loops, completed-slice archives, and commit receipt mechanics.
+
+Command-owner skills may reference those runtime/support owners, but should not
+duplicate their procedure details.
+
 ## Skill Audiences
 
 - **Human-facing command-owner skill**: the primary skill that owns the user's
@@ -48,30 +68,12 @@ successor selection.
 ## Executable Work Source
 
 The program ledger is the only normal executable backlog source for
-`plan-batch`.
+`plan-batch`. External sources are candidate work or evidence until
+`add-to-ledger` records selected work in the ledger. `plan-batch` consumes
+ledger state; it must not discover new work by scanning external sources.
 
 For this repository, the active program ledger is
-`docs/plans/programs/codex-config/LEDGER.md`. Archived APR/PST ledgers,
-GitHub issues, ADRs, CONTEXT.md updates, specs, review notes, and chat
-transcripts may provide candidate work or evidence, but they are not executable
-backlog until represented in the active codex-config ledger.
-
-External engineering skills and issue tracker tickets may provide candidate
-work or evidence, but they are not executable backlog until `add-to-ledger`
-records the selected work in the program ledger.
-
-`add-to-ledger` may read external task sources only when the user explicitly
-names the source or provides the source content. When ingesting external
-tickets, preserve source identity such as issue number, URL, title,
-labels/status, and relevant evidence pointers.
-
-`plan-batch` must not scan GitHub issues, ADRs, CONTEXT.md, archived plans,
-specs, external tickets, or external engineering-skill outputs to discover new
-work unless an existing ledger row explicitly points there as evidence for
-already-ingested work.
-
-If useful work exists outside the ledger, `plan-batch` must stop and report
-that `add-to-ledger` must ingest it first.
+`docs/plans/programs/codex-config/LEDGER.md`.
 
 ## Routing Table
 

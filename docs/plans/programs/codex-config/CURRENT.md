@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -31,7 +30,7 @@
 ## Active Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Active rows: CCFG-2 through CCFG-6 and CCFG-8 through CCFG-11.
+- Active rows: CCFG-2 through CCFG-6 and CCFG-9 through CCFG-11.
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:
@@ -41,31 +40,24 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `ccfg-8-ledger-dispatch-rule-dedupe`
-- Queued dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/dispatch.md`
-- Queued runway:
-  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md`
-- Queued status: ready for `work-batch`; no implementation slices have run.
+- Queued batch: `None`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-1-runner-contract-fixtures`
+- Latest completed batch: `ccfg-8-ledger-dispatch-rule-dedupe`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/closeout.md`
-- Covers: CCFG-1, completed as contract/fixture preparation only. Closeout did
-  not authorize code moves, repository creation, package scaffolding, hidden
-  `planning_state.py` dependencies, archived-ledger archaeology, or extraction
-  implementation.
+  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
+- Covers: CCFG-8, completed as behavior-neutral skill routing rule dedupe.
+  Runtime behavior did not change.
 
 ## Next Safe Action
 
-Use `work-batch` to execute the queued CCFG-8 runway. Do not select successor
-work, create another dispatch, create another runway, or treat the archived
-abandoned-state correction as closeout evidence for the queued batch.
+No selected, queued, or active batch. Wait for an explicit `plan-batch` request
+before selecting successor work, creating another dispatch, or creating another
+runway.
 
 ## Stop Conditions
 

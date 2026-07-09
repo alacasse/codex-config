@@ -53,10 +53,15 @@ Examples from `skills-lock.json` include:
 These skills support command-owner workflows behind the scenes. They are not
 the normal direct commands for the ledger-driven workflow.
 
-- `planning-state`
-- `planning-artifacts`
-- `architecture-program-runway`
-- `batch-runway`
+- `planning-state`: current/validate ordering, target-policy checks, and
+  projection routing.
+- `planning-artifacts`: Planning Artifact Layout v1 placement, naming,
+  active-state file shape, batch directories, archives, and state vocabulary.
+- `architecture-program-runway`: program selection, selected dispatch, batch
+  queue metadata, selected/queued/active artifact state, finding lifecycle
+  status, and same-batch closeout reconciliation.
+- `batch-runway`: concrete runway specs, slice ledgers, validation/review
+  loops, completed-slice archives, and commit receipt mechanics.
 - `legacy-removal`
 - `dead-surface-audit`
 - `test-quality-review`
