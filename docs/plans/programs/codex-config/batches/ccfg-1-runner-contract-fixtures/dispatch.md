@@ -63,6 +63,7 @@ required_guardrails:
   - Do not move runner code.
   - Do not create a new repository.
   - Do not create a repo skeleton.
+  - Do not create package, module, or CI scaffolding.
   - Do not implement runner extraction.
   - Do not choose package/runtime basics beyond documenting what remains undecided.
   - Do not make `planning_state.py` a hidden runner-core dependency.
@@ -80,11 +81,23 @@ suggested_slices:
   - Define planning-state interop fixture expectations using explicit command/file/JSON/exit-code boundaries and generated-only fixture rules.
   - Define facade compatibility expectations and focused validation coverage for the existing runner facade.
   - Harden non-goals, stop conditions, and closeout criteria so later extraction cannot begin until contracts and fixtures are explicit.
+closeout_gates:
+  - Implementation-neutral workflow, state, result, receipt, worker, artifact, and stop-condition contracts are explicit.
+  - Planning-state interop fixture expectations are command/file/schema based and do not make `planning_state.py` a runner-core dependency.
+  - Facade compatibility expectations preserve current runner CLI, dry-run, direct-script, phase-result, receipt, artifact, and final-summary behavior.
+  - Remaining target language, package/repository, public CLI/API, compatibility promise, and extraction-location decisions are recorded as unresolved.
+  - Closeout does not claim extraction implementation, repository creation, package scaffolding, adapter implementation, or CCFG-2 through CCFG-5 completion.
 stop_conditions:
   - The work requires moving code or changing runtime behavior.
-  - The work creates a new repository, repo skeleton, or package scaffold.
+  - The work creates a new repository, repo skeleton, package scaffold, Go module, or CI scaffold.
   - The work starts choosing branch isolation, adapter-authoring, or dogfood diagnostics scope from CCFG-2 through CCFG-5.
   - The work needs archived APR/PST scans beyond APR-26 evidence already named by CCFG-1.
   - The work cannot express planning-state interop without coupling the runner core to `planning_state.py` internals.
+unresolved_extraction_decisions:
+  - Target language/runtime and package manager.
+  - Repository/module/package boundary and extraction location.
+  - Public CLI/API name and compatibility promise.
+  - Whether current JSON field names are public compatibility or adapter translation details.
+  - Exact planning-state interop command, JSON shape, and exit-code contract.
 expected_spec_path: docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/runway.md
 ```

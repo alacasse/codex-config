@@ -45,7 +45,7 @@ row-by-row here.
 
 | Finding | Status | Source | Area | Next action | Notes |
 |---|---|---|---|---|---|
-| CCFG-1. Contract-first runner business-logic extraction | Pending | APR-26 | Runner extraction | Execute queued runway `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/runway.md` when requested | Preserve the APR-26 direction: external OSS runner remains possible, but the queued batch is limited to implementation-neutral workflow/state/result/receipt/worker/artifact contract boundaries, planning-state interop fixture expectations, facade compatibility expectations, explicit non-goals, and stop conditions before moving code or creating a repo skeleton. |
+| CCFG-1. Contract-first runner business-logic extraction | Pending | APR-26 | Runner extraction | Execute queued runway `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/runway.md` when requested | Preserve the APR-26 direction: external OSS runner remains possible, but the queued batch is limited to implementation-neutral workflow/state/result/receipt/worker/artifact contract boundaries, planning-state interop fixture expectations, facade compatibility expectations, explicit non-goals, and stop conditions before moving code, creating a repo skeleton, choosing package/runtime basics, or implementing extraction. |
 | CCFG-2. Branch-per-batch runner isolation mode | Open | APR-27; GitHub issue #11 | Runner workflow | Design after CCFG-1 clarifies the generic runner boundary | Preserve source scope: `--batch-branch-mode none\|create\|require`, deterministic branch naming, state/receipt branch metadata, and closeout commit-range evidence remain unimplemented. |
 | CCFG-3. Contract-drift review skill | Open | APR-28; GitHub issue #14 | Runner support skill | Create only when extraction work starts to drift across boundaries | The requested skill should compare extraction changes against APR/PBC contracts, facade compatibility, generic-core boundaries, and stale-plan/archive risks without duplicating the full contract text. |
 | CCFG-4. Runner adapter authoring skill | Open | APR-29; GitHub issue #16 | Runner support skill | Create after CCFG-1 stabilizes the generic worker/runtime boundary | Preserve adapter guidance scope: provider quirks stay out of generic runner core; cover result, receipt, transition, artifact, observation, and input-inventory boundaries. |
@@ -65,7 +65,7 @@ Queued batch:
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
-| `ccfg-1-runner-contract-fixtures` | queued | `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/runway.md` | CCFG-1 | Contract-first extraction preparation only: implementation-neutral contract boundaries, planning-state interop fixture expectations, facade compatibility expectations, and explicit non-goals/stop conditions before any code move, repository creation, or runner extraction. |
+| `ccfg-1-runner-contract-fixtures` | queued | `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/runway.md` | CCFG-1 | Contract-first extraction preparation only: implementation-neutral contract boundaries, planning-state interop fixture expectations, facade compatibility checks, explicit non-goals/stop conditions, and unresolved extraction decisions before any code move, repository creation, package scaffold, hidden planning-state dependency, archived-ledger archaeology, or runner extraction. |
 | `ccfg-7-batch-runway-hot-path-pruning` | completed | `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md` | CCFG-7 | Closed by `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/closeout.md`. |
 | `ccfg-12-plan-batch-deepening` | completed | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/runway.md` | CCFG-12 | Closed by `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/closeout.md`. |
 
@@ -84,8 +84,11 @@ Queued batch:
 ## Closeout Rules
 
 - Close CCFG-1 only after implementation-neutral contracts, planning-state
-  interop fixtures, and facade compatibility checks exist or an explicit
-  decision supersedes extraction.
+  interop fixture expectations, facade compatibility checks, explicit
+  stop-gates, and unresolved extraction decisions are recorded. CCFG-1 closeout
+  must not claim runner extraction, package/runtime selection, repository or
+  scaffold creation, adapter implementation, or CCFG-2 through CCFG-5 scope is
+  complete.
 - Close CCFG-2 only after branch mode parsing, deterministic create/reuse,
   require-mode refusal, state/receipt branch metadata, and closeout branch or
   commit-range evidence are covered without changing default runner behavior.

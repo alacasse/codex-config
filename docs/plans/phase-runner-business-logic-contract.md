@@ -95,6 +95,49 @@ A later implementation runway may begin only after these proofs are explicit:
 - an explicit package/runtime decision for any future target before runner code
   is moved or scaffolded.
 
+These are preparation gates, not extraction evidence. Passing this contract
+batch does not mean the runner has been extracted, packaged, or made ready for
+repository creation.
+
+## Extraction Stop Gates And Non-Goals
+
+Stop before implementation whenever extraction work would require any of these
+decisions or actions before they are explicitly selected in a later batch:
+
+- moving `scripts/architecture_program_runner*.py` or translating the current
+  Python file split into target packages;
+- creating a repository, repo skeleton, package scaffold, Go module, CI
+  scaffold, or public release surface;
+- choosing target language/runtime, package manager, repository name, module
+  path, public CLI/API name, compatibility promise, or extraction location;
+- making `scripts/planning_state.py` a hidden internal dependency of the
+  generic runner instead of using explicit command/file/schema interop;
+- moving Codex prompts, Batch Runway rules, Program Ledger vocabulary, GitHub
+  issue policy, personal overlays, Graphify validation policy, or repo-local
+  planning policy into a generic runner core;
+- selecting CCFG-2 through CCFG-5 or treating branch isolation, contract-drift
+  review, adapter-authoring support, or Baton diagnostics as part of CCFG-1;
+- scanning archived APR/PST ledgers for new scope beyond the APR-26 evidence
+  already named by the canonical CCFG-1 row.
+
+CCFG-1 can close only as contract/fixture preparation. Its closeout must show
+implementation-neutral contracts, planning-state interop fixture expectations,
+and facade compatibility checks. It must not claim extraction implementation,
+package selection, repository creation, or adapter implementation is complete.
+
+## Unresolved Extraction Decisions
+
+The following decisions remain deliberately open after CCFG-1 preparation:
+
+- target language/runtime, package manager, and test/lint toolchain;
+- repository/module/package boundaries and whether extraction starts in-repo or
+  directly in a separate OSS repository;
+- public CLI/API name and compatibility promise;
+- whether current JSON field names are public compatibility or adapter
+  translation details;
+- exact planning-state interop command, JSON schema, and exit-code contract;
+- migration location and sequence for preserving current dogfooding behavior.
+
 ## Facade Compatibility Gates
 
 The existing `scripts/architecture_program_runner.py` facade is the

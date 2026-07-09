@@ -448,10 +448,32 @@ downstream project harness during this batch.
   package scaffold, or CI scaffold.
 - Stop on any attempt to implement runner extraction.
 - Stop if work broadens into CCFG-2 through CCFG-5.
-- Stop if planning-state interop requires importing or mirroring private
-  `scripts/planning_state.py` internals in a runner core.
+- Stop if work makes `planning_state.py` a hidden runner-core dependency
+  instead of an explicit command/file/schema interop boundary.
+- Stop if work scans archived APR/PST ledgers for new scope beyond APR-26
+  evidence already named by CCFG-1.
+- Stop if closeout text implies extraction implementation, package/runtime
+  selection, repository or scaffold creation, adapter implementation, or
+  CCFG-2 through CCFG-5 completion.
 - Stop if durable JSON state, SQLite projections, or runner artifacts would be
   written without explicit compatible policy.
-- Stop if archived APR/PST ledgers are needed beyond APR-26 evidence already
-  named by CCFG-1.
 - Stop on dirty-file conflicts outside the active slice scope.
+
+## CCFG-1 Preparation Closeout Criteria
+
+CCFG-1 may close only as preparation evidence. Closeout must show:
+
+- implementation-neutral workflow, state, result, receipt, worker, artifact,
+  planning-state interop, facade compatibility, and stop-condition contracts;
+- planning-state interop fixture expectations that stay command/file/schema
+  based and do not import or mirror `scripts/planning_state.py` internals;
+- facade compatibility checks for current CLI defaults, direct-script
+  execution, dry-run behavior, phase-result strictness, receipt behavior,
+  structured artifact expectations, and final-summary shape;
+- unresolved extraction decisions for target language/runtime, package or
+  repository boundary, public CLI/API name, compatibility promise, JSON field
+  compatibility, planning-state protocol shape, and extraction location.
+
+Closeout must not claim runner extraction, package/runtime selection,
+repository creation, package scaffolding, adapter implementation, or CCFG-2
+through CCFG-5 scope is complete.

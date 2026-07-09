@@ -45,6 +45,10 @@
 - Runway:
   `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/runway.md`
 - Covers: CCFG-1
+- Scope: contract/fixture preparation only; queued evidence does not authorize
+  code moves, repository creation, package scaffolding, hidden
+  `planning_state.py` dependencies, archived-ledger archaeology, or extraction
+  implementation.
 
 ## Next Safe Action
 
@@ -58,6 +62,9 @@ new work from archived APR/PST ledgers while this queued runway exists.
   canonical codex-config ledger.
 - Stop if work would create another dispatch or runway without an explicit
   `plan-batch` request.
+- Stop if CCFG-1 closeout text would imply runner extraction, package/runtime
+  selection, repository/scaffold creation, adapter implementation, or CCFG-2
+  through CCFG-5 work is complete.
 - Stop if work would copy closed APR/PST history into the active ledger
   row-by-row.
 - Stop if work would add project-specific paths, validation commands, cache
