@@ -51,6 +51,12 @@ def normalized(markdown: str) -> str:
     return re.sub(r"\s+", " ", markdown)
 
 
+def section_between(markdown: str, start_heading: str, end_heading: str) -> str:
+    start = markdown.index(start_heading)
+    end = markdown.index(end_heading, start)
+    return markdown[start:end]
+
+
 def override_blocks(markdown: str) -> list[str]:
     blocks: list[str] = []
     lines = markdown.splitlines()
@@ -236,6 +242,99 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
             for pattern in DOWNSTREAM_PROJECT_PATTERNS:
                 with self.subTest(path=str(path), pattern=pattern):
                     self.assertNotIn(pattern, text)
+
+    def test_create_spec_validation_commands_require_status_classes(self) -> None:
+        text = CREATE_SPEC.read_text(encoding="utf-8")
+        validation_contract = section_between(
+            text,
+            "Every focused validation command in a generated runway",
+            "Each slice must include:",
+        )
+        normalized_contract = normalized(validation_contract)
+
+        self.assertIn("declare exactly one status class", normalized_contract)
+        for status_class in (
+            "required-green",
+            "known-red-baseline",
+            "implementation-created",
+            "conditional",
+            "diagnostic-only",
+        ):
+            with self.subTest(status_class=status_class):
+                self.assertIn(f"`{status_class}`", validation_contract)
+
+    def test_required_green_requires_evidence_or_slice_owned_remediation(self) -> None:
+        text = CREATE_SPEC.read_text(encoding="utf-8")
+        validation_contract = normalized(
+            section_between(
+                text,
+                "Every focused validation command in a generated runway",
+                "Each slice must include:",
+            )
+        )
+
+        self.assertRegex(
+            validation_contract,
+            r"`required-green`: .*expected to pass now, or the slice explicitly "
+            r"owns the remediation",
+        )
+        self.assertRegex(
+            validation_contract,
+            r"Use this only with a current passing result, or with a named "
+            r"slice-owned remediation path and acceptance criteria",
+        )
+
+    def test_non_green_statuses_require_explicit_gating_context(self) -> None:
+        text = CREATE_SPEC.read_text(encoding="utf-8")
+        validation_contract = normalized(
+            section_between(
+                text,
+                "Every focused validation command in a generated runway",
+                "Each slice must include:",
+            )
+        )
+
+        self.assertRegex(
+            validation_contract,
+            r"`known-red-baseline`: .*currently fails.*cannot block execution "
+            r"until a named slice fixes the failure and promotes it with green "
+            r"evidence",
+        )
+        self.assertRegex(
+            validation_contract,
+            r"`implementation-created`: .*does not exist yet\. Name the slice "
+            r"that creates it before the command can become a required gate",
+        )
+        self.assertRegex(
+            validation_contract,
+            r"`conditional`: .*State the trigger condition precisely enough "
+            r"that an executor can decide whether to run it",
+        )
+
+    def test_diagnostic_and_future_commands_cannot_be_silent_required_gates(
+        self,
+    ) -> None:
+        text = CREATE_SPEC.read_text(encoding="utf-8")
+        validation_contract = normalized(
+            section_between(
+                text,
+                "Every focused validation command in a generated runway",
+                "Each slice must include:",
+            )
+        )
+
+        self.assertIn(
+            "Do not silently promote a known-red command, a missing "
+            "future-created command, or a diagnostic command to "
+            "`required-green`.",
+            validation_contract,
+        )
+        self.assertIn(
+            "Promotion requires explicit evidence that the command is now "
+            "green, or an explicitly named slice-owned remediation path that "
+            "makes it green before it gates downstream work.",
+            validation_contract,
+        )
 
 
 if __name__ == "__main__":
