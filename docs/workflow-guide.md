@@ -99,6 +99,10 @@ the normal direct commands for the ledger-driven workflow.
 - `plan-batch` reports existing queued or active runway state instead of
   replacing it or beginning implementation.
 - `work-batch` must not select new work.
+- After `work-batch` completes, program-state reconciliation is a separate
+  explicit request unless the user already authorized it. `work-batch` should
+  report the completed closeout path and the exact reconciliation handoff
+  instead of selecting new work or updating the program ledger implicitly.
 - If useful work exists outside the ledger, use `add-to-ledger` first.
 
 ## Anti-Patterns

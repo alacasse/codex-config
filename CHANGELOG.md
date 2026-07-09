@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Work-batch post-closeout handoff
+
+Problem: `work-batch` already avoided implicit program-ledger reconciliation
+after closeout, but a completed runway could still leave the remaining
+reconciliation step ambiguous in the final report.
+
+Decision: require `work-batch` to report an explicit post-closeout handoff when
+program reconciliation is not authorized, including closeout evidence, possible
+program-state residues, the next user-facing request, and confirmation that no
+new batch was selected.
+
+Expected effect: agents can complete runway execution without silently updating
+program state while still giving the user a precise next reconciliation step.
+
 ### Plan-batch command contract
 
 Problem: `plan-batch` was installed as a command-owner skill, but its

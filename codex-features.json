@@ -44,7 +44,7 @@
       ]
     },
     "work-batch": {
-      "version": "1.0.2",
+      "version": "1.0.3",
       "description": "User-facing command-owner skill for executing the current queued or active batch runway.",
       "requires": [
         "planning-artifacts",

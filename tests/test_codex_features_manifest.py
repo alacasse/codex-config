@@ -180,6 +180,31 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("must not silently create new ledger findings", plan_batch)
         self.assertIn("current queued or active runway", work_batch)
 
+    def test_work_batch_reports_post_closeout_reconciliation_handoff(self) -> None:
+        work_batch = (REPO_ROOT / "skills/work-batch/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        workflow_guide = (REPO_ROOT / "docs/workflow-guide.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("## Post-Closeout Handoff", work_batch)
+        self.assertIn(
+            "must not reconcile the program ledger after closeout\n"
+            "unless the user explicitly asks",
+            work_batch,
+        )
+        self.assertIn("final report must include a post-closeout handoff", work_batch)
+        self.assertIn("closeout path", work_batch)
+        self.assertIn("program `CURRENT.md`, program `LEDGER.md`", work_batch)
+        self.assertIn("batch queue metadata", work_batch)
+        self.assertIn("no new batch was selected", work_batch)
+        self.assertIn(
+            "program-state reconciliation is a separate\n"
+            "  explicit request",
+            workflow_guide,
+        )
+
     def test_plan_batch_command_owner_runtime_boundaries_are_explicit(self) -> None:
         manifest = self.load_manifest()
         features = manifest["features"]

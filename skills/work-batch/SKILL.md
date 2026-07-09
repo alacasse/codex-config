@@ -43,6 +43,28 @@ when interpreting active-state files or completed-slice archives.
   require replanning.
 - Do not broaden slice scope beyond the active runway.
 - Do not reconcile the program ledger after closeout unless explicitly asked.
+- If program reconciliation remains after closeout, report it as an explicit
+  post-closeout handoff instead of silently updating program state.
+
+## Post-Closeout Handoff
+
+`work-batch` executes the current queued or active runway and records concrete
+closeout evidence. It must not reconcile the program ledger after closeout
+unless the user explicitly asks for that reconciliation.
+
+When execution completes and program reconciliation is not explicitly
+authorized, the final report must include a post-closeout handoff with:
+
+- completed batch id or runway path;
+- closeout path;
+- completed finding or ledger row if known;
+- whether program `CURRENT.md`, program `LEDGER.md`, or batch queue metadata may
+  still need reconciliation;
+- the exact next user-facing request to run if reconciliation is desired;
+- a statement that no new batch was selected.
+
+The handoff must not select new work, create a dispatch, create a runway, or
+scan external backlog sources.
 
 ## Agent-Facing Support
 
