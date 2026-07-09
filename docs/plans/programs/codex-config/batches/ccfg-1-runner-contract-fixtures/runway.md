@@ -144,7 +144,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 1. Contract boundary catalog | pending | | | | Define neutral workflow/state/result/receipt/worker/artifact boundaries | |
 | 2. Planning-state interop fixture expectations | pending | | | | Prove fixture expectations without hidden planning-state dependency | |
 | 3. Facade compatibility expectations | pending | | | | Prove current runner facade compatibility expectations are explicit | |
 | 4. Non-goals and extraction stop gates | pending | | | | Confirm extraction cannot start from this batch alone | |
@@ -157,6 +156,7 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
+| 1. Contract boundary catalog | `03a6fae` | success; clarified implementation-neutral workflow, state, result, receipt, worker-adapter, and artifact boundaries while keeping codex-config runner behavior adapter-owned | `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; reviewer `runway_reviewer` clean |
 
 ## Slice 1. Contract Boundary Catalog
 
