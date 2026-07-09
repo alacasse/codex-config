@@ -10,7 +10,7 @@
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -41,6 +41,14 @@
 - Selected dispatch: `None`
 - Active runway: `None`
 - Queued batch: `None`
+- Latest closed batch: `ccfg-8-ledger-dispatch-rule-dedupe`
+- Latest closed dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/dispatch.md`
+- Latest closed runway:
+  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md`
+- Latest closed closeout:
+  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
+- Latest closed result: abandoned before execution; CCFG-8 remains backlog.
 - Latest completed batch: `ccfg-1-runner-contract-fixtures`
 - Latest completed dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/dispatch.md`
@@ -57,7 +65,8 @@
 
 No batch is selected, queued, or active. Stop until the user explicitly asks for
 `plan-batch` to select successor work from the active codex-config ledger. Do
-not infer new work from archived APR/PST ledgers or CCFG-1 closeout evidence.
+not infer new work from archived APR/PST ledgers, CCFG-1 closeout evidence, or
+the abandoned CCFG-8 dispatch/runway pair.
 
 ## Stop Conditions
 
