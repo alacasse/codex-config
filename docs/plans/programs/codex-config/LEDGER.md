@@ -61,12 +61,11 @@ row-by-row here.
 | CCFG-14. Batch kind and destructive-slice risk gates | Completed | GitHub issue #30; `docs/plans/programs/codex-config/findings/github-issue-30-batch-kind-slice-risk.md` | Batch Runway create-spec | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/closeout.md`. Batch Runway create-spec guidance and focused contract tests now require generated dispatch/runway artifacts to declare batch kind, require risky slices to declare risk classes, and require destructive or contract-narrowing work to carry explicit approval gates. |
 | CCFG-15. Vague ledger row splitting before runway expansion | Completed | GitHub issue #33; `docs/plans/programs/codex-config/findings/github-issue-33-vague-ledger-row-splitting.md` | Plan-batch / program runway planning guard | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/closeout.md`. `plan-batch` and `architecture-program-runway` now require vague or mixed-risk ledger rows to be split, blocked, or narrowed before selected dispatch and concrete runway creation. CCFG-11 remains open and must not resume from the displaced runway without applying this guard. |
 | CCFG-16. Deletion-test vocabulary ownership | Completed | GitHub issue #31; `docs/plans/programs/codex-config/findings/github-issue-31-deletion-test-vocabulary-ownership.md` | Skill cleanup / deletion-test evidence vocabulary | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/closeout.md`. `dead-surface-audit` owns canonical deletion-test evidence vocabulary; `legacy-removal`, `architecture-program-runway`, and `batch-runway` consume canonical statuses or locally defined non-canonical labels; focused CCFG-like regression coverage prevents unsupported generated deletion categories. Runtime behavior unchanged. |
-| CCFG-17. Absolute runway reference paths | Pending | GitHub issue #32; `docs/plans/programs/codex-config/findings/github-issue-32-absolute-runway-reference-paths.md` | Batch Runway create-spec | Execute queued runway `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md` with a future explicit `work-batch` request | Queued by `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/dispatch.md` and `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md`. Scope is generated reference-path guidance and focused tests; do not bulk-rewrite completed or archived runways unless a separate cleanup batch selects that churn. |
+| CCFG-17. Absolute runway reference paths | Completed | GitHub issue #32; `docs/plans/programs/codex-config/findings/github-issue-32-absolute-runway-reference-paths.md` | Batch Runway create-spec | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/closeout.md`. Batch Runway create-spec guidance now prefers repo-relative or skill-relative reusable skill references, focused tests guard the guidance and active generated artifacts, and completed historical runways were not rewritten. |
 
 ## Batch Queue
 
-Queued batch:
-`docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md`.
+Queued batch: None.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
@@ -79,14 +78,14 @@ Queued batch:
 | `ccfg-14-batch-kind-slice-risk` | completed | `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/runway.md` | CCFG-14 | Closed by `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/closeout.md`. Runtime behavior unchanged. |
 | `ccfg-15-vague-ledger-row-splitting` | completed | `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md` | CCFG-15 | Closed by `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/closeout.md`. Runtime behavior unchanged. |
 | `ccfg-16-deletion-test-vocabulary-ownership` | completed | `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/runway.md` | CCFG-16 | Closed by `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/closeout.md`. Runtime behavior unchanged. |
-| `ccfg-17-absolute-runway-reference-paths` | queued | `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md` | CCFG-17 | Queued for future `work-batch` execution. Scope is Batch Runway create-spec reference-path guidance and focused regression coverage only. |
+| `ccfg-17-absolute-runway-reference-paths` | completed | `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md` | CCFG-17 | Closed by `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/closeout.md`. Runtime guidance changed for generated reference paths; historical completed runways were not rewritten. |
 
 ## Recommended Work Order
 
 1. Start pickup from `docs/plans/CURRENT.md`, then
    `docs/plans/programs/codex-config/CURRENT.md`.
-2. CCFG-17 is queued. A future explicit `work-batch` request can execute
-   `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md`.
+2. No batch is currently selected, queued, or active. A future explicit
+   `plan-batch` request can select exactly one next batch from this ledger.
 3. Treat CCFG-6 and CCFG-9 through CCFG-10 as skill-cleanup backlog;
    group only when a batch can stay bounded and validation can prove the
    cleanup.
@@ -95,11 +94,8 @@ Queued batch:
    an explicit `plan-batch` request that applies the CCFG-13 validation-status,
    CCFG-14 risk-gate, CCFG-15 vague-row, and CCFG-16 deletion-test vocabulary
    guards.
-5. Treat CCFG-17 as pending queued Batch Runway create-spec root-cause work.
-   Keep the scope to generated reference-path guidance and focused tests; do
-   not bulk-rewrite historical completed runways unless a separate cleanup
-   batch selects that churn.
-6. Treat CCFG-1, CCFG-7, CCFG-8, and CCFG-12 through CCFG-16 as completed
+5. Treat CCFG-17 as completed closeout evidence, not queued work.
+6. Treat CCFG-1, CCFG-7, CCFG-8, and CCFG-12 through CCFG-17 as completed
    closeout evidence, not queued work.
 7. Do not revive APR or PST ledgers as active pickup sources. Use their archive
    snapshots only for evidence.

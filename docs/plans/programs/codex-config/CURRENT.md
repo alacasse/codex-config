@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -31,7 +30,7 @@
 ## Active Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Active rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and CCFG-17.
+- Active rows: CCFG-2 through CCFG-6 and CCFG-9 through CCFG-11.
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:
@@ -41,28 +40,25 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md`
+- Queued batch: `None`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-16-deletion-test-vocabulary-ownership`
+- Latest completed batch: `ccfg-17-absolute-runway-reference-paths`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/closeout.md`
-- Covers: CCFG-16, completed as deletion-test evidence vocabulary ownership and
-  generated-artifact consumer guidance across `dead-surface-audit`,
-  `legacy-removal`, `architecture-program-runway`, and `batch-runway`, with
-  focused CCFG-like regression coverage. Runtime behavior did not change.
+  `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/closeout.md`
+- Covers: CCFG-17, completed as Batch Runway generated reference-path guidance,
+  focused create-spec contract coverage, and an active-runway artifact guard.
+  Historical completed runways were not rewritten.
 
 ## Next Safe Action
 
-CCFG-17 is queued. A future explicit `work-batch` request can execute
-`docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md`.
-Do not select successor work until CCFG-17 has concrete closeout evidence and a
-future explicit `plan-batch` request asks for another batch.
+No batch is selected, queued, or active. CCFG-17 has concrete closeout evidence
+and same-batch program reconciliation is complete. Do not select successor work
+until a future explicit `plan-batch` request asks for another batch.
 
 CCFG-11 remains open, but its displaced runway is superseded planning evidence;
 do not execute it as active state without a future regenerated or amended runway

@@ -2,7 +2,7 @@
 
 ## Result
 
-CCFG-17 is ready for coordinator closeout. The batch changed Batch Runway
+CCFG-17 concrete execution is complete. The batch changed Batch Runway
 generated-artifact guidance so reusable repo-owned skill references use
 repo-relative or skill-relative paths, then added focused tests and an
 active-artifact guard for selected, queued, or active runway files.
@@ -37,5 +37,5 @@ active-artifact guard for selected, queued, or active runway files.
 
 - No known remaining CCFG-17 risks.
 - No historical completed runway artifacts were rewritten.
-- Program `CURRENT.md` and `LEDGER.md` still need coordinator-owned closeout
-  reconciliation after this concrete closeout evidence is committed.
+- Program `CURRENT.md` and `LEDGER.md` were reconciled by the same-batch
+  closeout pass after concrete closeout evidence was committed.
