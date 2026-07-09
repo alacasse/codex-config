@@ -49,20 +49,13 @@ reference file by default.
 
 - `references/project-values.md`: read before creating or executing a spec.
 - `../planning-state/SKILL.md`: read before consuming Layout v1 active-state
-  files, selected dispatches, queued specs, active runways, blockers, or target
-  policy. Invoke its Diagnostic-First Pickup Interface and carry forward only
-  Planning State Diagnostic facts for this workflow; Batch Runway still owns
-  concrete runway spec creation, execution orchestration, validation selection,
-  subagent routing, execution-ledger updates, completed-slice archives, and
-  commits.
+  files, selected dispatches, queued specs, active runways, blockers, target
+  policy, or projection-backed reports. Carry forward only Planning State
+  Diagnostic facts; Batch Runway still owns concrete runway spec creation,
+  execution orchestration, validation selection, subagent routing,
+  execution-ledger updates, completed-slice archives, and commits.
 - `../planning-state/references/projection-reporting.md`: read before broad
-  history/reporting scans for pending-batch inventory, missing closeout
-  evidence, batch evidence, runner summaries, or bounded backlog/history
-  reports. Treat policy-compatible `report-projection` command output as the
-  normal route when `projection_usage` and `projection_rebuild_authority` allow
-  it; stop on missing or incompatible policy, or record an explicit fallback
-  decision, before broad historical scans. Do not query SQLite directly or
-  silently scrape historical planning files.
+  history/reporting scans; follow Planning State's projection routing.
 - `../planning-artifacts/SKILL.md`: read when resolving a planning location,
   creating a spec from a selected dispatch packet, reorganizing planning
   artifacts, or when project instructions name Planning Artifact Layout v1.
@@ -106,19 +99,12 @@ capsule and the relevant Batch Runway reference path in the subagent prompt.
 2. Resolve project-specific values from repository instructions, local overlays,
    the active spec, or explicit user direction. See
    `references/project-values.md`.
-3. When the work uses a ledger-driven planning root, invoke `planning-state`
-   Diagnostic-First Pickup before consuming Layout v1 active-state files,
-   selected dispatches, queued specs, active runways, blockers, target policy,
-   or broader exploration. Carry forward only compact Planning State Diagnostic
-   facts: planning root, current and validate status, active programs, selected
-   dispatch, queued batch, active runway, blockers, warnings, and project
-   policy.
-4. For supported history/reporting questions not answered by the active-state
-   diagnostic, read the planning-state projection-reporting guidance and use
-   policy-compatible `report-projection` command output as the normal route
-   before broad historical scans. Missing or incompatible projection policy is a
-   bounded blocker or explicit fallback decision, not permission for silent
-   Markdown archaeology or direct SQLite reads.
+3. When the work uses a ledger-driven planning root, use `planning-state`
+   Diagnostic-First Pickup and projection-reporting guidance for operational
+   state facts before broader exploration.
+4. Use `planning-artifacts` for Planning Artifact Layout v1 placement, naming,
+   active-state file shape, batch directory, archive, and run/output-root
+   questions.
 5. Check the worktree and preserve unrelated dirty files.
 6. Choose `create-spec` or `execute-spec`.
 7. Choose `lean-runway` or `full-runway`.
@@ -238,12 +224,9 @@ In `create-spec` mode:
 
 1. Read `references/create-spec.md`.
 2. If the project uses Planning Artifact Layout v1, use `planning-state`
-   Diagnostic-First Pickup first. Consume only its Planning State Diagnostic
-   facts before reading the root `CURRENT.md`, relevant program `CURRENT.md`,
-   or broader context.
-3. If a selected dispatch, active runway, or queued batch exists in the
-   diagnostic or active-state files, do not
-   select another batch. Report the queued/active path, or create the missing
+   Diagnostic-First Pickup first and consume only its compact facts.
+3. If a selected dispatch, active runway, or queued batch exists, do not select
+   another batch. Report the queued/active path, or create the missing
    `runway.md` from the selected dispatch when that is the requested action.
 4. If no batch is selected, read the relevant program ledger and only the source
    packet named by the selected ledger row before writing the spec.
@@ -261,9 +244,8 @@ In `execute-spec` mode:
 1. Read the full active spec.
 2. Read `references/project-values.md`.
 3. For Layout v1 or ledger-driven specs, use `planning-state`
-   Diagnostic-First Pickup first and carry its Planning State Diagnostic facts
-   before reading active-state files, queued specs, active runways, blockers, or
-   target policy.
+   Diagnostic-First Pickup first and carry only its compact facts before
+   broader exploration.
 4. For routine slice execution, read `references/execute-slice-core-v1.md` and
    only the selected validation profile file under
    `references/validation-profiles/`.

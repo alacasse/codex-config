@@ -151,17 +151,10 @@ that exception.
 `CURRENT.md` files are for fresh-agent handoff. Keep them compact and current;
 they are not ledgers, transcripts, or a competing pickup algorithm.
 
-This section defines the required shape of active-state files. For
-ledger-driven pickup, task selection, batch selection, or "next batch/spec"
-requests under Planning Artifact Layout v1, use Planning State Diagnostic-First Pickup
-to validate and order reads of these files before broader tools such as
-knowledge graphs, generated reports, repository-wide search, or source exploration.
-
-When Planning State reports that active-state files are missing,
-contradictory, or insufficient for a specific decision, keep any expansion
-targeted to the relevant program ledger and the source packet or deepening note
-named by the selected ledger row. Do not infer active work from old filenames
-while a Layout v1 `CURRENT.md` path exists.
+This section defines the required shape of active-state files. For operational
+pickup order, validation, target policy, and projection routing, use
+`planning-state`; do not infer active work from old filenames while a Layout v1
+`CURRENT.md` path exists.
 
 The root `CURRENT.md` should include:
 

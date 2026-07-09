@@ -13,33 +13,13 @@ dispatch packets, queue state, or closeout reconciliation are needed.
 `batch-runway` owns the concrete 3-5 slice execution spec and per-slice
 execution workflow.
 
-Use Planning Artifact Layout v1 when project instructions, local overlays, or
-active planning docs select it. Read `../planning-artifacts/SKILL.md` before
-creating or reorganizing program ledgers, selected dispatch packets, batch
-directories, run artifact locations, generated-output locations, archives, or
-`CURRENT.md` active-state files under that convention.
-
-When Layout v1 is active, read `../planning-state/SKILL.md` and invoke its
-Diagnostic-First Pickup Interface before consuming active-state files, selected
-dispatches, queued batches, active runways, blockers, closeout evidence, or
-target policy. Treat the result as compact Planning State Diagnostic facts:
-planning root, current and validate status, active programs, selected dispatch,
-queued batch, active runway, blockers, warnings, and project policy.
+Use `../planning-artifacts/SKILL.md` for Planning Artifact Layout v1 placement,
+naming, active-state file shape, batch directories, archives, and run/output
+roots. Use `../planning-state/SKILL.md` for Diagnostic-First Pickup,
+current/validate ordering, target-policy checks, and projection routing.
 `planning-state` provides validated operational facts; this skill still owns
 program selection, grouping, sequencing, queue state, selected dispatch packets,
 handoff to `batch-runway`, and closeout reconciliation.
-
-For program history/reporting questions not answered by the active-state
-diagnostic, read `../planning-state/references/projection-reporting.md` and use
-policy-compatible `report-projection` command output as the normal route before
-broad historical planning scans. This applies to pending-batch inventory,
-missing closeout evidence, batch evidence, runner summary, and bounded
-backlog/history reports when `projection_usage` and
-`projection_rebuild_authority` permit it. Missing, blocked, stale, or
-policy-incompatible projection reports are explicit blockers, warnings, or
-fallback decisions before broad scans; projection output is read-only
-planning-state context and must not select batches, replace program ledgers or
-selected dispatch packets, query SQLite directly, or close findings.
 
 ## Core Rule
 
@@ -98,16 +78,11 @@ The normal flow is:
 ## Required First Steps
 
 1. Read applicable repo instructions and local overlays.
-2. If Planning Artifact Layout v1 is active and the request is about pickup,
-   current state, selecting the next task or batch, creating the next runway, or
-   working from a queued batch, use `planning-state` Diagnostic-First Pickup
-   before broader exploration, then make the program decision from the compact
-   diagnostic facts.
-3. If the request is about program history/reporting, pending-batch inventory,
-   missing closeout evidence, runner summaries, or bounded backlog/history
-   reports, use planning-state projection-reporting guidance and
-   policy-compatible `report-projection` command output as the normal route
-   before broad historical scans.
+2. If Layout v1 or a ledger-driven planning root is active, use
+   `planning-state` Diagnostic-First Pickup and projection-reporting guidance
+   for the operational state facts before broader exploration.
+3. For placement, naming, active-state file shape, batch directory, archive, or
+   run/output-root questions, follow `planning-artifacts`.
 4. Read the findings, review, PRD, ADR, selected dispatch packet, or planning
    document needed for the chosen mode.
 5. Read active or recently completed related runway specs only enough to know
@@ -122,10 +97,8 @@ creating a speculative plan.
 
 ## Active-State Handoff
 
-Use `planning-state` Diagnostic-First Pickup for normal ledger-driven "next
-batch", "create the next specs", "create the next runway", "work on the
-batch", and pickup requests when Planning Artifact Layout v1 is active.
-
+Use `planning-state` Diagnostic-First Pickup for normal ledger-driven pickup
+and batch-currentness questions when Planning Artifact Layout v1 is active.
 After that handoff, this skill makes the semantic program decision:
 
 - If a selected dispatch, active runway, or queued batch is present, stop
