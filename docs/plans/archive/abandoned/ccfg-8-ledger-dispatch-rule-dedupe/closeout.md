@@ -1,5 +1,9 @@
 # Ledger Dispatch Rule Dedupe Closeout
 
+Archived note: this was an erroneous pre-execution abandonment closeout. CCFG-8
+has been restored to queued state for `work-batch`; do not treat this archive
+file as closeout evidence for the active queued runway.
+
 ## Result
 
 Status: abandoned before execution.
@@ -15,7 +19,7 @@ claiming the CCFG-8 finding is complete.
 - Runway:
   `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md`
 - Completed slices:
-  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/completed-slices.md`
+  `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/completed-slices.md`
 
 ## Scope Outcome
 
@@ -23,12 +27,14 @@ claiming the CCFG-8 finding is complete.
 - No tests were added or changed.
 - No runtime behavior changed.
 - No CCFG-8 cleanup evidence exists yet.
-- CCFG-8 remains backlog work for a later explicit `plan-batch` request.
+- Historical note only: CCFG-8 has since been restored as the queued batch for
+  `work-batch`.
 
 ## Program State
+
+Historical abandoned state recorded by this archived note:
 
 - Selected dispatch: `None`
 - Queued batch: `None`
 - Active runway: `None`
 - Successor work selected: no
-

@@ -8,9 +8,10 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -40,15 +41,14 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Latest closed batch: `ccfg-8-ledger-dispatch-rule-dedupe`
-- Latest closed dispatch:
+- Queued batch: `ccfg-8-ledger-dispatch-rule-dedupe`
+- Queued dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/dispatch.md`
-- Latest closed runway:
+- Queued runway:
   `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md`
-- Latest closed closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest closed result: abandoned before execution; CCFG-8 remains backlog.
+- Queued status: ready for `work-batch`; no implementation slices have run.
+- Abandoned-state correction archived:
+  `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-1-runner-contract-fixtures`
 - Latest completed dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/dispatch.md`
@@ -63,10 +63,9 @@
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. Stop until the user explicitly asks for
-`plan-batch` to select successor work from the active codex-config ledger. Do
-not infer new work from archived APR/PST ledgers, CCFG-1 closeout evidence, or
-the abandoned CCFG-8 dispatch/runway pair.
+Use `work-batch` to execute the queued CCFG-8 runway. Do not select successor
+work, create another dispatch, create another runway, or treat the archived
+abandoned-state correction as closeout evidence for the queued batch.
 
 ## Stop Conditions
 
