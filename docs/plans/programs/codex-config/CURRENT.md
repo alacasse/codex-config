@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/closeout.md`
 - Run artifact location: `None selected`
@@ -40,7 +41,8 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/runway.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-13-validation-command-status`
@@ -56,15 +58,15 @@
 
 ## Next Safe Action
 
-No batch is currently selected, queued, or active. A future explicit
-`plan-batch` request owns successor selection from
-`docs/plans/programs/codex-config/LEDGER.md`.
+CCFG-14 is queued at
+`docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/runway.md`.
+A future explicit `work-batch` request owns execution from that runway.
 
 CCFG-11 remains open, but its displaced runway is superseded planning evidence;
 do not execute it as active state without a future regenerated or amended
 runway.
 
-CCFG-14 is open as a Batch Runway create-spec prerequisite before CCFG-11 is
+CCFG-14 is the Batch Runway create-spec prerequisite before CCFG-11 is
 regenerated or executed. It should add batch-kind and destructive-slice risk
 gates rather than patching only the displaced CCFG-11 artifact.
 
