@@ -159,6 +159,7 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
+| 1. Define Validation Command Status Contract | this slice commit | Create-spec guidance now requires validation-command status classes and prevents silent `required-green` promotion for known-red, future-created, or diagnostic commands. | Validation: `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`. Review: clean `runway_reviewer` pass against HEAD `f8b7c6a8259c42ffb76db5475cae507d5f080bdf`. |
 
 ## Slice 1. Define Validation Command Status Contract
 

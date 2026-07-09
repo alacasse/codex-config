@@ -68,7 +68,7 @@ The spec must include:
 - compact convergence assessment reference
 - orchestration anomaly log reference
 - ledger retention strategy reference
-- validation profile
+- validation profile and focused validation commands with status classes
 - execution ledger
 - 3-5 slice sections
 - final validation
@@ -113,6 +113,30 @@ overrides. For test-only or docs-only slices, explicitly state that project-leve
 integration harnesses, index/search/graph refreshes, generated-doc refreshes,
 package installs, and final validation are not part of per-slice worker work
 unless the slice deliberately assigns them.
+
+Every focused validation command in a generated runway must declare exactly one
+status class before execution:
+
+- `required-green`: the command is expected to pass now, or the slice explicitly
+  owns the remediation that makes it pass before it can gate later work. Use this
+  only with a current passing result, or with a named slice-owned remediation path
+  and acceptance criteria that prove the command becomes green.
+- `known-red-baseline`: the command currently fails. It can be retained as
+  diagnostic evidence or remediation scope, but cannot block execution until a
+  named slice fixes the failure and promotes it with green evidence.
+- `implementation-created`: the command targets a test, file, fixture, tool, or
+  artifact that does not exist yet. Name the slice that creates it before the
+  command can become a required gate.
+- `conditional`: the command runs only when named files, artifacts, metadata, or
+  project areas change. State the trigger condition precisely enough that an
+  executor can decide whether to run it.
+- `diagnostic-only`: the command informs planning, review, or risk assessment,
+  but is not an execution gate unless a later slice explicitly promotes it.
+
+Do not silently promote a known-red command, a missing future-created command, or
+a diagnostic command to `required-green`. Promotion requires explicit evidence
+that the command is now green, or an explicitly named slice-owned remediation
+path that makes it green before it gates downstream work.
 
 Each slice must include:
 
