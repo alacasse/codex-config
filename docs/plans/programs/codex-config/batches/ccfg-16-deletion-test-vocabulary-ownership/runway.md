@@ -110,7 +110,7 @@ Focused validation commands:
 | 1. Evidence vocabulary owner | Completed | decision-only | `056a576` | `tests/test_deletion_test_vocabulary_ownership.py` passed; selected profile subset passed; `git diff --check` passed | clean | Archived in `completed-slices.md`. |
 | 2. Legacy-removal consumer boundary | Completed | decision-only | `7070f88` | `tests/test_deletion_test_vocabulary_ownership.py` passed; selected profile subset passed; `git diff --check` passed | clean | Archived in `completed-slices.md`. |
 | 3. Generated artifact consumer rules | Completed | decision-only | `2dc852e` | `tests/test_deletion_test_vocabulary_ownership.py` passed; selected profile subset passed; `git diff --check` passed | clean | Archived in `completed-slices.md`. |
-| 4. CCFG-like regression guard | Pending | decision-only |  |  |  | Prevent unsupported generated deletion categories. |
+| 4. CCFG-like regression guard | Completed | decision-only | `921dc0a` | `tests/test_deletion_test_vocabulary_ownership.py` passed; selected profile subset passed; `git diff --check` passed | clean | Archived in `completed-slices.md`. |
 
 ## Slice 1: Evidence Vocabulary Owner
 
