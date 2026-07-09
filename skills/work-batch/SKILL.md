@@ -11,6 +11,8 @@ runway, or continue a queued or active batch through its implementation slices.
 This skill consumes the current queued or active runway. It executes that
 runway only; it does not create ledger findings, select new ledger work, or
 create a new runway unless explicit recovery instructions require replanning.
+A queued runway produced by `plan-batch` is expected live state, not stale or
+accidental residue.
 
 This skill owns execution intent for the current planned batch: confirm the
 active or queued runway, route execution through the runway contract, and stop

@@ -19,7 +19,13 @@ for final batch reporting.
    before broad historical scans. Stop on missing or incompatible
    `projection_usage` or `projection_rebuild_authority`, or record an explicit
    fallback decision before scanning. Do not query SQLite directly.
-6. Report skipped validation clearly when a command cannot run.
+6. When the final closeout artifact is included in its own commit, record the
+   self-referential final closeout commit as `this closeout commit`.
+7. Before reporting closure, run a stale-placeholder scan over active batch
+   artifacts and remove unresolved operational placeholders for coordinator
+   commits, commit-pending states, commit receipt placeholders, and pending
+   coordinator reviews.
+8. Report skipped validation clearly when a command cannot run.
 
 ## Final Report
 

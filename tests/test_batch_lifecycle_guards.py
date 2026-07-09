@@ -5,6 +5,9 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+EXECUTION_CONTRACT = REPO_ROOT / "skills/batch-runway/references/execution-contract-v1.md"
+FINALIZE_BATCH = REPO_ROOT / "skills/batch-runway/references/finalize-batch-v1.md"
+LEDGER_RETENTION = REPO_ROOT / "skills/batch-runway/references/ledger-retention-v1.md"
 
 
 class BatchLifecycleGuardTests(unittest.TestCase):
@@ -13,6 +16,55 @@ class BatchLifecycleGuardTests(unittest.TestCase):
 
     def normalized(self, relative_path: str) -> str:
         return " ".join(self.read(relative_path).split())
+
+    def normalized_path(self, path: Path) -> str:
+        return " ".join(path.read_text(encoding="utf-8").split())
+
+    def test_active_batch_artifacts_do_not_keep_unresolved_commit_placeholders(
+        self,
+    ) -> None:
+        banned_placeholders = (
+            "pending coordinator " "commit",
+            "commit " "pending",
+            "pending commit " "receipt",
+            "Coordinator review " "pending",
+        )
+        active_batch_root = REPO_ROOT / "docs/plans/programs"
+        artifact_names = {"runway.md", "closeout.md", "completed-slices.md"}
+
+        violations: list[str] = []
+        for path in active_batch_root.glob("*/batches/**/*"):
+            if not path.is_file() or path.name not in artifact_names:
+                continue
+
+            for line_number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(),
+                start=1,
+            ):
+                for placeholder in banned_placeholders:
+                    if placeholder in line:
+                        relative = path.relative_to(REPO_ROOT)
+                        violations.append(f"{relative}:{line_number}: {placeholder}")
+
+        self.assertEqual([], violations)
+
+    def test_batch_runway_documents_final_closeout_commit_placeholder_policy(
+        self,
+    ) -> None:
+        execution_contract = self.normalized_path(EXECUTION_CONTRACT)
+        finalize_batch = self.normalized_path(FINALIZE_BATCH)
+        ledger_retention = self.normalized_path(LEDGER_RETENTION)
+
+        self.assertIn("Ordinary slice commits record exact commit hashes", execution_contract)
+        self.assertIn("self-referential final closeout commit", execution_contract)
+        self.assertIn("`this closeout commit`", execution_contract)
+
+        self.assertIn("stale-placeholder scan", finalize_batch)
+        self.assertIn("pending coordinator reviews", finalize_batch)
+        self.assertIn("`this closeout commit`", finalize_batch)
+
+        self.assertIn("must not retain unresolved operational placeholders", ledger_retention)
+        self.assertIn("`this closeout commit`", ledger_retention)
 
     def test_work_batch_preserves_queued_plan_batch_output_without_closeout(
         self,

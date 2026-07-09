@@ -101,7 +101,9 @@ appropriate.
 10. Commit only the intended slice files once validation and review are clean.
 11. Record any orchestration anomalies using the compact log below.
 12. Report the compact commit receipt.
-13. Update the active ledger with only remaining-work state.
+13. Update the active ledger with only remaining-work state. Ordinary slice
+    entries record exact commit hashes after commit; final self-referential
+    closeout entries use `this closeout commit` under `finalize-batch-v1.md`.
 14. Move completed-slice audit references to the completed archive.
 15. Close completed subagents.
 16. Continue to the next pending slice unless a stop condition remains active or

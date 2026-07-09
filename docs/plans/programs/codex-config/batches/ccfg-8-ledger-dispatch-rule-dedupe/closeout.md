@@ -14,7 +14,7 @@ skills.
 - Runway:
   `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md`
 - Slice commits: `fc2b307`, `93b30e4`, `ac6c714`, plus final Slice 4 closeout
-  commit pending coordinator commit.
+  commit `this closeout commit`.
 - Cross-doc alignment:
   `docs/skill-routing-contract.md` and `docs/workflow-guide.md`
 - Focused ownership tests:

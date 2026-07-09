@@ -28,6 +28,14 @@ Rules:
   proceed under this workflow.
 - Do not fall back to main-agent implementation.
 - Commit after each clean, focused slice.
+- Ordinary slice commits record exact commit hashes in the concrete execution
+  ledger and completed-slice archive after the commit exists.
+- A self-referential final closeout commit records `this closeout commit` in
+  final closeout artifacts because the hash does not exist before that commit
+  is created.
+- Do not leave unresolved operational placeholders for coordinator commits,
+  commit-pending states, commit receipt placeholders, or pending coordinator reviews
+  in active batch artifacts.
 - After each commit, report a commit receipt with:
   - commit hash and subject
   - files changed
@@ -36,8 +44,8 @@ Rules:
   - review result
   - exact inspection commands, usually `git show --stat <hash>` and
     `git show <hash>`
-- Update the concrete execution ledger after each slice with status, commit
-  hash, focused validation, review result, review commands, and notes.
+- Update the concrete execution ledger after each ordinary slice with status,
+  commit hash, focused validation, review result, review commands, and notes.
 - After reporting a commit receipt, continue to the next pending slice unless
   the user explicitly asks to stop or a stop condition remains active.
 - If execution is interrupted by an approval request, permission issue,

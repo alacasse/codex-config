@@ -48,8 +48,13 @@ Rules:
 - The active ledger keeps only facts needed to choose and execute remaining work.
 - Completed rows move to the archive after commit.
 - Completed archive rows should fit on one line where practical.
-- Store commit hash, outcome, and audit references; do not store implementation
-  chronology.
+- Store exact commit hash, outcome, and audit references for ordinary slice
+  commits; use `this closeout commit` for a self-referential final closeout
+  commit.
+- Completed archives must not retain unresolved operational placeholders such
+  as coordinator-commit placeholders, commit-pending states, pending commit
+  receipts, or pending coordinator reviews.
+- Do not store implementation chronology.
 - Summarize validation as `pytest 75 passed; ruff passed; sandbox PASS` instead
   of pasting full commands repeatedly.
 - Store detailed commands, transcripts, logs, and generated reports in commits

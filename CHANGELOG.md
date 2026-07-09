@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Closeout commit placeholder guard
+
+Problem: final closeout artifacts can be committed by the same commit they need
+to reference, which let unresolved coordinator-commit placeholder wording
+survive in active batch artifacts.
+
+Decision: require ordinary slice rows to record exact commit hashes while
+self-referential final closeout rows use `this closeout commit`; add an active
+batch stale-placeholder guard for closeout/runway artifacts.
+
+Expected effect: future batch closeouts cannot report closure while active
+artifacts still contain unresolved coordinator or commit placeholders.
+
 ### Work-batch same-batch closeout reconciliation
 
 Problem: `work-batch` treated post-closeout program reconciliation as a
