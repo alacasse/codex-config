@@ -61,6 +61,7 @@ reimplements the boundary.
 The spec must include:
 
 - title and purpose
+- batch kind and slice risk contract
 - current baseline and assumptions
 - non-goals for the whole batch
 - execution contract reference
@@ -73,6 +74,46 @@ The spec must include:
 - 3-5 slice sections
 - final validation
 - stop conditions
+
+Every generated dispatch or runway artifact must declare exactly one batch
+kind before execution:
+
+- `characterization`: collects evidence or characterizes existing behavior
+  without cleanup, deletion, narrowing, demotion, migration, or ownership
+  changes.
+- `decision`: evaluates keep, remove, migrate, or defer outcomes and records a
+  decision without performing destructive cleanup in the same slice unless the
+  artifact is explicitly `mixed-risk`.
+- `migration`: moves, rewires, or changes ownership while preserving the
+  supported public contract.
+- `destructive-cleanup`: deletes, disables, demotes, or intentionally removes an
+  existing surface.
+- `mixed-risk`: combines evidence, decision, migration, contract-narrowing, or
+  destructive cleanup work. Name the risky slices and their approval gates.
+
+Every generated slice that can change an existing surface, ownership boundary,
+or supported contract must declare one slice risk class:
+
+- `none`: no deletion, narrowing, migration, demotion, or contract change.
+- `evidence-only`: gathers evidence without changing supported surfaces.
+- `decision-only`: records a keep, remove, migrate, or defer decision without
+  performing the selected cleanup.
+- `migration`: changes topology or ownership while preserving supported
+  behavior.
+- `contract-narrowing`: removes or narrows an exposed or depended-on surface,
+  supported behavior, command, schema field, documented workflow, compatibility
+  path, or other relied-on contract.
+- `destructive-cleanup`: deletes, disables, demotes, or intentionally removes an
+  existing surface.
+
+Destructive or contract-narrowing slices require an explicit approval gate in
+the generated artifact before execution. The gate must name who or what can
+approve the work and what evidence must exist before the slice runs. A
+`characterization` batch or an `evidence-only` slice must not include
+destructive cleanup or contract narrowing. If a batch combines evidence-only or
+decision-only work with destructive cleanup, contract narrowing, or migration,
+declare the batch kind as `mixed-risk`, name the risky slices, and list the
+approval gate for each risky slice.
 
 For lean specs, do not paste the full standard execution contract. Reference it:
 
