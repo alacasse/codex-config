@@ -175,7 +175,7 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
-| 1. Inventory duplicated rules and owners | 9b7d04a | Added exact-owner rule map and focused ownership-boundary tests; review fix tightened single-owner table parsing and selected/queued/active artifact-state coverage. | Validation: `python -m pytest tests/test_skill_routing_rule_ownership.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`. Review: clean after fix loop with `test_quality_delta`. |
+| 1. Inventory duplicated rules and owners | fc2b307 | Added exact-owner rule map and focused ownership-boundary tests; review fix tightened single-owner table parsing and selected/queued/active artifact-state coverage. | Validation: `python -m pytest tests/test_skill_routing_rule_ownership.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`. Review: clean after fix loop with `test_quality_delta`. |
 
 ## Slice 1. Inventory Duplicated Rules And Owners
 
