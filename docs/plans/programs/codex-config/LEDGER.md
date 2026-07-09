@@ -58,6 +58,7 @@ row-by-row here.
 | CCFG-11. Skill deletion tests | Open | PST issue reconciliation #27 | Skill cleanup | Future explicit `plan-batch` request can regenerate or amend the displaced runway with classified validation commands | Source issue said no focused deletion-test audit was found. The previous queued dispatch/runway was displaced by CCFG-13 and amended to classify its known-red, implementation-created, conditional, and required-green validation commands before any future execution. CCFG-11 remains open skill-cleanup work. |
 | CCFG-12. Plan-batch command-owner deepening | Completed | `docs/plans/programs/codex-config/notes/command-owner-deepening-review.md` | Skill cleanup | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/closeout.md`. `plan-batch` now owns a deeper human-facing command contract for ledger-only selection, selected/queued/active state handling, one-spec output, and stop-before-implementation behavior while `architecture-program-runway` and `batch-runway` remain runtime owners. |
 | CCFG-13. Validation command status classification | Completed | GitHub issue #29; `docs/plans/programs/codex-config/findings/github-issue-29-validation-command-status.md` | Batch Runway create-spec | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/closeout.md`. Batch Runway create-spec guidance and contract tests now classify generated validation commands before execution gates, and the displaced CCFG-11 runway records required future classification/regeneration. |
+| CCFG-14. Batch kind and destructive-slice risk gates | Open | GitHub issue #30; `docs/plans/programs/codex-config/findings/github-issue-30-batch-kind-slice-risk.md` | Batch Runway create-spec | Add durable batch-kind and slice-risk guidance plus contract tests before CCFG-11 is regenerated or executed | Generated dispatch/runway artifacts currently do not declare characterization, decision, migration, destructive-cleanup, or mixed-risk batch kind, and risky slices do not have reusable approval gates. CCFG-11 remains the visible symptom, but this row is the root-cause create-spec contract fix. |
 
 ## Batch Queue
 
@@ -78,13 +79,15 @@ Queued batch: `None`.
    `docs/plans/programs/codex-config/CURRENT.md`.
 2. No batch is currently selected, queued, or active. A future explicit
    `plan-batch` request owns successor selection.
-3. Treat CCFG-6 and CCFG-9 through CCFG-10 as skill-cleanup backlog; group only when a
+3. Treat CCFG-14 as a Batch Runway create-spec contract prerequisite before
+   CCFG-11 is regenerated or executed.
+4. Treat CCFG-6 and CCFG-9 through CCFG-10 as skill-cleanup backlog; group only when a
    batch can stay bounded and validation can prove the cleanup.
-4. Treat CCFG-11 as open skill-cleanup work; do not execute the displaced
+5. Treat CCFG-11 as open skill-cleanup work; do not execute the displaced
    CCFG-11 runway as active state.
-5. Treat CCFG-1, CCFG-7, CCFG-8, CCFG-12, and CCFG-13 as completed closeout evidence,
+6. Treat CCFG-1, CCFG-7, CCFG-8, CCFG-12, and CCFG-13 as completed closeout evidence,
    not queued work.
-6. Do not revive APR or PST ledgers as active pickup sources. Use their archive
+7. Do not revive APR or PST ledgers as active pickup sources. Use their archive
    snapshots only for evidence.
 
 ## Closeout Rules
@@ -113,3 +116,8 @@ Queued batch: `None`.
   known-red-baseline, implementation-created, conditional, or diagnostic-only,
   and prevent known-red or missing future-created tests from becoming silent
   required-green gates.
+- Close CCFG-14 only after Batch Runway create-spec guidance and focused
+  contract tests require generated dispatch/runway artifacts to declare batch
+  kind, require risk classes for destructive or contract-narrowing slices, and
+  prevent evidence-only batches from carrying destructive cleanup slices without
+  explicit mixed-risk metadata and approval gates.

@@ -30,7 +30,7 @@
 ## Active Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Active rows: CCFG-2 through CCFG-6 and CCFG-9 through CCFG-11.
+- Active rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and CCFG-14.
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:
@@ -64,6 +64,10 @@ CCFG-11 remains open, but its displaced runway is superseded planning evidence;
 do not execute it as active state without a future regenerated or amended
 runway.
 
+CCFG-14 is open as a Batch Runway create-spec prerequisite before CCFG-11 is
+regenerated or executed. It should add batch-kind and destructive-slice risk
+gates rather than patching only the displaced CCFG-11 artifact.
+
 ## Stop Conditions
 
 - Stop if work would select from archived APR/PST ledgers instead of the
@@ -72,6 +76,9 @@ runway.
   another runway without an explicit `plan-batch` request.
 - Stop if work would execute the displaced CCFG-11 runway as active state
   without a future regenerated or amended runway.
+- Stop if work would regenerate or execute CCFG-11 without first handling or
+  explicitly superseding the CCFG-14 batch-kind and destructive-slice risk
+  boundary.
 - Stop if CCFG-1 closeout text would imply runner extraction, package/runtime
   selection, repository/scaffold creation, adapter implementation, or CCFG-2
   through CCFG-5 work is complete.
