@@ -144,7 +144,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 3. Facade compatibility expectations | pending | | | | Prove current runner facade compatibility expectations are explicit | |
 | 4. Non-goals and extraction stop gates | pending | | | | Confirm extraction cannot start from this batch alone | |
 
 ## Orchestration Anomalies
@@ -157,6 +156,7 @@ orchestration_anomalies: []
 |---|---|---|---|
 | 1. Contract boundary catalog | `03a6fae` | success; clarified implementation-neutral workflow, state, result, receipt, worker-adapter, and artifact boundaries while keeping codex-config runner behavior adapter-owned | `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; reviewer `runway_reviewer` clean |
 | 2. Planning-state interop fixture expectations | `409742d` | success; documented planning-state command/file/schema boundaries and added Layout v1 current/validate fixture expectations for selected, queued, active, and stale historical cases | `python -m pytest tests/test_planning_state.py -q`; `uvx ruff check tests/test_planning_state.py`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; test-quality review clean after fix; reviewer `runway_reviewer` clean |
+| 3. Facade compatibility expectations | `1f25a59` | success; documented runner facade compatibility gates and added focused checks for direct-script dry-run behavior and final-summary shape | `python -m pytest tests/test_architecture_program_runner*.py -q`; `uvx ruff check tests/test_architecture_program_runner.py tests/test_architecture_program_runner_run_loop.py`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; test-quality review clean after fix; reviewer `runway_reviewer` clean |
 
 ## Slice 1. Contract Boundary Catalog
 
