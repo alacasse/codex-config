@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Plan-batch command contract
+
+Problem: `plan-batch` was installed as a command-owner skill, but its
+caller-visible contract did not fully spell out selected, queued, active, and
+ledger-only states.
+
+Decision: deepen the `plan-batch` skill around ledger-only selection,
+selected-state handling, one-spec output, and stop-before-implementation
+behavior while keeping Architecture Program Runway and Batch Runway as
+agent-facing runtime owners.
+
+Expected effect: agents can answer "create the next specs batch" from current
+planning state without scanning external sources, replacing queued work, or
+starting implementation.
+
 ### Single codex-config planning ledger
 
 Problem: codex-config planning had two active program ledgers, making pickup

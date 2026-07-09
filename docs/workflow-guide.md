@@ -41,7 +41,8 @@ Examples from `skills-lock.json` include:
 ### Codex-Config Command-Owner Skills
 
 - `add-to-ledger`: the explicit ingestion boundary for selected candidate work.
-- `plan-batch`: consumes existing ledger work and creates one dispatch/runway.
+- `plan-batch`: consumes existing ledger work, honors selected/queued/active
+  state, and creates at most one dispatch/runway before stopping.
 - `work-batch`: executes the current queued or active runway.
 - `port-by-contract`: extracts behavior contracts before a rewrite or port; it
   is not a general cleanup shortcut.
@@ -95,6 +96,8 @@ the normal direct commands for the ledger-driven workflow.
 - External skills and GitHub issues are candidate/evidence sources until
   ingested.
 - `plan-batch` must not discover new work by scanning external sources.
+- `plan-batch` reports existing queued or active runway state instead of
+  replacing it or beginning implementation.
 - `work-batch` must not select new work.
 - If useful work exists outside the ledger, use `add-to-ledger` first.
 

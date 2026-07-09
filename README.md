@@ -113,7 +113,7 @@ planning and execution workflow.
 | Skill | Purpose | How it is used |
 | --- | --- | --- |
 | `add-to-ledger` | Adds findings and work requests to a durable planning ledger. | Used when the user wants to capture a new issue, improvement, or investigation request without selecting a batch yet. |
-| `plan-batch` | Selects bounded ledger work and writes one concrete batch spec. | Used when the user wants the next executable batch planned from current ledger state, then wants the agent to stop before implementation. |
+| `plan-batch` | Selects bounded ledger work or reports selected/queued/active batch state, then writes at most one concrete batch spec. | Used when the user wants the next executable batch planned from current ledger state, then wants the agent to stop before implementation. |
 | `work-batch` | Executes the current queued or active batch runway. | Used when the user wants the agent to resume planned batch work through implementation, validation, review, and closeout. |
 | `port-by-contract` | Extracts implementation-neutral behavior contracts before a rewrite, migration, or port. | Used directly when moving behavior across languages, runtimes, or product boundaries without copying accidental source structure. |
 

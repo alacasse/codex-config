@@ -28,8 +28,8 @@
       ]
     },
     "plan-batch": {
-      "version": "1.0.2",
-      "description": "User-facing command-owner skill for selecting bounded ledger work and writing one concrete batch spec.",
+      "version": "1.0.3",
+      "description": "User-facing command-owner skill for selecting bounded ledger work or reporting selected batch state before writing at most one concrete batch spec.",
       "requires": [
         "planning-artifacts",
         "planning-state",

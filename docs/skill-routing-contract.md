@@ -30,7 +30,10 @@ into true end-to-end owners, but that is not the current state.
 `add-to-ledger` is the normal command-owner skill that turns fresh
 user-provided work/finding text into a new or updated ledger finding.
 
-`plan-batch` consumes existing ledger state. It may accept user preference
+`plan-batch` consumes existing ledger state. It owns the human "create the next
+specs batch" decision: use an existing selected dispatch, report queued or
+active runway state without replacing it, or select bounded work from the
+current program ledger when nothing is selected. It may accept user preference
 about which existing finding to prioritize, but it must not silently create new
 ledger findings. If no suitable ledger finding exists, stop and report that
 `add-to-ledger` must run first.
