@@ -2,7 +2,7 @@
 
 ```yaml
 batch_id: ccfg-11-skill-deletion-tests
-status: queued
+status: superseded
 source_program_ledger: docs/plans/programs/codex-config/LEDGER.md
 included_findings:
   - id: CCFG-11
@@ -59,7 +59,13 @@ dependencies_satisfied:
   - No selected dispatch, queued batch, or active runway existed before this batch was selected.
   - `dead-surface-audit` and `legacy-removal` already provide narrow evidence vocabulary that this batch can test against.
 dependencies_blocking:
-  - None for CCFG-11 planning.
+  - CCFG-13 must handle validation-command status classification before this
+    batch is planned or executed again.
+supersession:
+  replacement_batch: ccfg-13-validation-command-status
+  replacement_dispatch: docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/dispatch.md
+  replacement_spec: docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md
+  reason: The original CCFG-11 runway listed known-red and implementation-created validation commands without status classes.
 suggested_slices:
   - Add a focused deletion-test inventory over installed/user-facing/support skill metadata and existing evidence vocabulary.
   - Add regression coverage that classifies command-owner, support-only, no-op, sediment, and obsolete-surface cases without broad Markdown snapshots.

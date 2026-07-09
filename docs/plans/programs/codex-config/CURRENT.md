@@ -9,7 +9,7 @@
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Run artifact location: `None selected`
@@ -42,7 +42,7 @@
 - Selected dispatch: `None`
 - Active runway: `None`
 - Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-8-ledger-dispatch-rule-dedupe`
@@ -57,10 +57,10 @@
 
 ## Next Safe Action
 
-Queued CCFG-11 batch exists, but CCFG-13 records a validation-gate root cause
-exposed by that runway. Do not execute
-`docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/runway.md`
-until CCFG-13 is handled or explicitly superseded.
+Queued CCFG-13 batch replaces the previous CCFG-11 queue item to handle the
+validation-gate root cause exposed by that runway. Execute
+`docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md`
+before planning or executing CCFG-11 again.
 
 ## Stop Conditions
 
@@ -68,8 +68,8 @@ until CCFG-13 is handled or explicitly superseded.
   canonical codex-config ledger.
 - Stop if work would select successor work, create another dispatch, or create
   another runway without an explicit `plan-batch` request.
-- Stop if work would execute the queued CCFG-11 runway before CCFG-13 is handled
-  or explicitly superseded.
+- Stop if work would execute the displaced CCFG-11 runway before CCFG-13 is
+  handled or explicitly superseded.
 - Stop if CCFG-1 closeout text would imply runner extraction, package/runtime
   selection, repository/scaffold creation, adapter implementation, or CCFG-2
   through CCFG-5 work is complete.

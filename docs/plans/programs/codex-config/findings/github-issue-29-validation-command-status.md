@@ -14,7 +14,8 @@ Batch Runway `create-spec` can promote validation commands into required
 runway validation without recording whether each command is currently green,
 known-red, expected to be created by a slice, conditional, or diagnostic-only.
 
-The issue is currently visible in queued CCFG-11 planning state:
+The issue was visible in the previously queued CCFG-11 planning state, now
+displaced by the CCFG-13 prerequisite batch:
 
 - `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/runway.md`
   lists `python -m pytest tests/test_codex_features_manifest.py -q` as focused
@@ -83,5 +84,5 @@ command to declare one of these status classes before execution:
 
 - Do not fix CCFG-11 by removing one failing command only.
 - Do not weaken validation globally.
-- Do not execute the queued CCFG-11 runway until this root cause is handled or
-  explicitly superseded.
+- Do not execute the displaced CCFG-11 runway until this root cause is handled
+  or explicitly superseded.

@@ -1,5 +1,13 @@
 # Skill Deletion Tests Runway
 
+## Supersession Notice
+
+This runway is no longer queued active state. It was displaced by
+`docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md`
+because its validation section listed known-red and implementation-created
+commands without status classes. CCFG-11 remains open in the program ledger and
+must be planned or amended after CCFG-13 closes before execution resumes.
+
 ## Purpose
 
 Create focused deletion-test evidence for no-op, sediment, and obsolete skill

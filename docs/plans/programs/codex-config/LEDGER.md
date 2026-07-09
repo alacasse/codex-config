@@ -55,13 +55,13 @@ row-by-row here.
 | CCFG-8. Ledger and dispatch rule dedupe | Completed | PST issue reconciliation #24 | Skill cleanup | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`. The batch added a single owner map, deduplicated command-owner and support-skill rule prose, aligned cross-doc summaries, and changed no runtime behavior. |
 | CCFG-9. Short skill frontmatter descriptions | Backlog | PST issue reconciliation #25 | Skill cleanup | Shorten dense skill descriptions without losing trigger accuracy | Source issue said this is not done consistently. |
 | CCFG-10. Skill steering vocabulary | Backlog | PST issue reconciliation #26 | Skill cleanup | Codify leading words or steering vocabulary where useful | Source issue said no consistent steering-vocabulary sections were found. |
-| CCFG-11. Skill deletion tests | Pending | PST issue reconciliation #27 | Skill cleanup | Execute queued runway `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/runway.md` | Source issue said no focused deletion-test audit was found. This batch should produce deletion-test evidence for no-ops, sediment, and obsolete skill surfaces before any deletion or demotion. |
+| CCFG-11. Skill deletion tests | Open | PST issue reconciliation #27 | Skill cleanup | Replan after CCFG-13 handles validation-command status classification | Source issue said no focused deletion-test audit was found. The previous queued dispatch/runway was displaced by CCFG-13 because it contained unclassified known-red and implementation-created validation commands. CCFG-11 remains open skill-cleanup work. |
 | CCFG-12. Plan-batch command-owner deepening | Completed | `docs/plans/programs/codex-config/notes/command-owner-deepening-review.md` | Skill cleanup | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/closeout.md`. `plan-batch` now owns a deeper human-facing command contract for ledger-only selection, selected/queued/active state handling, one-spec output, and stop-before-implementation behavior while `architecture-program-runway` and `batch-runway` remain runtime owners. |
-| CCFG-13. Validation command status classification | Open | GitHub issue #29; `docs/plans/programs/codex-config/findings/github-issue-29-validation-command-status.md` | Batch Runway create-spec | Add validation-command status classes before required runway validation | Root cause from queued CCFG-11: known-red and future-created validation commands can be promoted into required validation without status classification. Do not execute CCFG-11 until this root cause is handled or explicitly superseded. |
+| CCFG-13. Validation command status classification | Pending | GitHub issue #29; `docs/plans/programs/codex-config/findings/github-issue-29-validation-command-status.md` | Batch Runway create-spec | Execute queued runway `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md` | Root cause from displaced CCFG-11: known-red and future-created validation commands can be promoted into required validation without status classification. Do not execute CCFG-11 until this root cause is handled or explicitly superseded. |
 
 ## Batch Queue
 
-Queued batch: `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/runway.md`.
+Queued batch: `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
@@ -69,19 +69,19 @@ Queued batch: `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-t
 | `ccfg-8-ledger-dispatch-rule-dedupe` | completed | `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/runway.md` | CCFG-8 | Closed by `docs/plans/programs/codex-config/batches/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`. Runtime behavior unchanged. |
 | `ccfg-7-batch-runway-hot-path-pruning` | completed | `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/runway.md` | CCFG-7 | Closed by `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/closeout.md`. |
 | `ccfg-12-plan-batch-deepening` | completed | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/runway.md` | CCFG-12 | Closed by `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/closeout.md`. |
-| `ccfg-11-skill-deletion-tests` | queued | `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/runway.md` | CCFG-11 | Produces focused deletion-test evidence for no-op, sediment, and obsolete skill surfaces before any deletion or demotion. |
+| `ccfg-11-skill-deletion-tests` | superseded | `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/runway.md` | CCFG-11 | Displaced by CCFG-13 at explicit user request because its validation section listed known-red and implementation-created commands without status classes. CCFG-11 remains open and should be planned again after CCFG-13 closes. |
+| `ccfg-13-validation-command-status` | queued | `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md` | CCFG-13 | Adds Batch Runway create-spec validation-command status classes and contract tests before CCFG-11 is planned or executed again. |
 
 ## Recommended Work Order
 
 1. Start pickup from `docs/plans/CURRENT.md`, then
    `docs/plans/programs/codex-config/CURRENT.md`.
-2. CCFG-11 is queued, but CCFG-13 records a validation-gate root cause exposed
-   by that runway. Do not execute CCFG-11 until CCFG-13 is handled or explicitly
-   superseded.
+2. CCFG-13 is queued because CCFG-11 exposed a validation-gate root cause.
+   Execute CCFG-13 before planning or executing CCFG-11 again.
 3. Treat CCFG-6 and CCFG-9 through CCFG-10 as skill-cleanup backlog; group only when a
    batch can stay bounded and validation can prove the cleanup.
-4. Treat CCFG-13 as the next prerequisite candidate if the user wants to unblock
-   the queued CCFG-11 runway.
+4. Treat CCFG-11 as open skill-cleanup work after CCFG-13 closes; do not execute
+   the displaced CCFG-11 runway as active state.
 5. Treat CCFG-1, CCFG-7, CCFG-8, and CCFG-12 as completed closeout evidence,
    not queued work.
 6. Do not revive APR or PST ledgers as active pickup sources. Use their archive
