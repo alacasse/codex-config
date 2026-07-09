@@ -28,6 +28,30 @@ state, use the selected dispatch when one exists, select bounded ledger work
 only when none is already selected, and write one concrete runway spec with
 clear scope, validation, allowed files, and slice boundaries.
 
+## Command Contract
+
+`plan-batch` is the human-facing command contract for "create the next specs
+batch". It owns the caller-visible decisions, ledger-source rule, one-spec
+output rule, and stop-before-implementation boundary. Runtime mechanics remain
+behind the support skills named below.
+
+Use this state table when answering the command:
+
+| Current state | `plan-batch` decision | Output |
+|---|---|---|
+| No selected work exists | Select bounded work from the current program ledger through `architecture-program-runway`. | One selected dispatch, then one concrete runway spec. |
+| Selected dispatch exists | Do not select different work. Use that dispatch. | One concrete runway spec for the selected dispatch. |
+| Queued runway exists | Do not create another spec or replace the queue. | Report the queued runway and stop before implementation. |
+| Active runway exists | Do not create another spec or execute it. | Report the active runway and stop before implementation. |
+| User requests an existing ledger row | Use the requested row only when it exists in the current program ledger and is suitable for bounded planning. | One selected dispatch, then one concrete runway spec. |
+| No suitable ledger row exists | Do not infer work from external text or sources. | Stop and report that `add-to-ledger` must ingest the work first. |
+
+The command result is at most one concrete batch runway spec. It never begins
+slice implementation, never creates new findings from fresh request text, and
+never treats external specs, ADRs, GitHub issues, archived plans, review notes,
+or external engineering-skill outputs as executable work unless the current
+program ledger points to them.
+
 This skill owns the user's request to plan one bounded batch. Use
 `../planning-state/SKILL.md` first for current state,
 `../architecture-program-runway/SKILL.md` only for program selection and
