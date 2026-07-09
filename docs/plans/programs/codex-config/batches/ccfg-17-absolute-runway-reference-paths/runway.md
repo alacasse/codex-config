@@ -117,7 +117,7 @@ Focused validation commands:
 
 | Slice | Status | Risk class | Commit | Validation | Review | Notes |
 |---|---|---|---|---|---|---|
-| 1. Create-spec reference guidance | Pending | contract-narrowing |  |  |  | Preserve allowed absolute runtime handoffs. |
+| 1. Create-spec reference guidance | Completed | contract-narrowing | `bc4175c` | `tests/test_batch_runway_create_spec_contract.py` passed; `git diff --check` passed | clean | Archived in `completed-slices.md`. |
 | 2. Create-spec contract tests | Pending | migration |  |  |  | Focus on reusable skill reference examples. |
 | 3. Active-runway artifact guard | Pending | migration |  |  |  | Ignore completed and archived historical evidence. |
 | 4. Metadata and final validation | Pending | none |  |  |  | Update release metadata and closeout evidence only. |
