@@ -16,6 +16,16 @@ architecture-program-runway, or batch-runway handoffs, but it does not create du
 state, dispatch packets, batch runways, commits, closeout records, or a
 human-facing cleanup command.
 
+Deletion-test evidence vocabulary owner: this skill owns the canonical
+project-neutral evidence statuses used when reporting deletion-test results:
+`keep`, `delete-now`, `migrate-tests-first`, `keep-thin-entrypoint`, and
+`human-contract-decision`. Treat generated labels such as `no-op`, `sediment`,
+`obsolete skill surface`, and `deletion-safe evidence` as non-canonical
+deletion-test evidence categories unless a specific local artifact explicitly
+defines them as non-canonical labels. Do not use this vocabulary ownership as
+authority to select program work, queue batches, execute cleanup, or approve
+deletions.
+
 ## Workflow
 
 ### 1. Establish the Intended Contract
