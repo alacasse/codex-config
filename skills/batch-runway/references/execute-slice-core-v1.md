@@ -11,7 +11,6 @@ projection of the canonical Batch Runway contracts, not an independent contract.
 - Normal Slice Loop
 - Worker Handoff
 - Reviewer Handoff
-- Support Investigation Handoff
 - Commit Receipt
 - Ledger Update
 - Orchestration Anomalies
@@ -89,10 +88,9 @@ appropriate.
    active runways, blockers, or target policy. Batch Runway still owns
    pending-row selection, validation, subagent routing, concrete
    execution-ledger updates, completed-slice archives, and commits.
-3. If broad source, test, memory, prior-spec, or architecture exploration would
-   otherwise be needed in coordinator context, spawn one batch-scoped
-   `fast_explorer` with the compact support handoff below. Reuse its compact
-   findings across related adjacent slices.
+3. If broad read-only exploration would otherwise be needed in coordinator
+   context, use the `fast_explorer` trigger in `subagent-briefs.md` and retain
+   only compact findings.
 4. Spawn `runway_worker` with the compact coding handoff below.
 5. Require compact YAML from the worker.
 6. Run or verify focused validation and selected-profile validation.
@@ -185,73 +183,36 @@ required_fixes: []
 
 Do not force multiple reviewers for every slice. Use specialist support only
 when the task-scoped diff triggers a lens, then pass compact findings into the
-final `runway_reviewer` handoff.
+final `runway_reviewer` handoff. Read `subagent-briefs.md` for triggered
+specialist-review routing and `test-quality-review.md` when tests trigger that
+review.
 
-Use `import_topology_reviewer` for project-local import fallback, direct-script
-entrypoint, `sys.path` manipulation, alternate local import, or topology-only
-test changes. Do not use it for ordinary optional third-party dependency imports
-unless they obscure project-local topology ambiguity.
-
-Use `dead-surface-audit` when legacy, compatibility, cleanup-residue,
-historical-evidence marker, alias, wrapper, facade, migration-retention, or
-test-only topology evidence suggests a surface may be kept alive by tests or
-compatibility logic.
-
-## Support Investigation Handoff
-
-Use `fast_explorer` only for optional read-only exploration that would otherwise
-inflate coordinator context. It does not replace required coding or review
-subagents. Prefer one batch-scoped support investigation for related adjacent
-slices.
-
-```text
-Use agent_type="fast_explorer".
-
-Investigate this read-only question for the active batch or slice <N>: <question>.
-Repo cwd: <absolute repository path>.
-Spec path: <absolute spec path>.
-Slice anchors: <heading text or line numbers>.
-Do not edit files. Return YAML only.
-No raw logs, long excerpts, implementation plan, chronological work log, or
-live-agent handoff instructions.
-```
-
-Support YAML:
-
-```yaml
-status: success
-question_answered: true
-files_checked:
-  - path/to/file.py
-findings:
-  - "Relevant behavior is owned by path/to/file.py:42"
-per_slice_notes:
-  1:
-    - "Use this only if it affects orchestration or the worker handoff."
-risks: []
-suggested_next_read: []
-```
+Use `subagent-briefs.md` for optional `fast_explorer` support investigations.
+Support output must stay compact YAML: answered question, files checked,
+findings, per-slice notes when useful, risks, and suggested next read.
 
 ## Commit Receipt
 
+Routine commit receipts should stay compact. Read `reporting-contracts-v1.md`
+for full receipt variants or non-routine reporting.
+
 ```yaml
-slice: 2
+slice: 3
 commit: abc1234
-subject: Extract module owner
+subject: Slim execute core
 status: committed
 files_changed:
-  - src/module_owner.py
-validation: "pytest 75 passed; ruff passed; harness PASS 48 passed"
+  - skills/batch-runway/references/execute-slice-core-v1.md
+validation: "git diff --check; focused test passed"
 review: clean
 convergence:
   phase: convergence
   scope_trend: shrinking
   new_unknowns: []
   blockers: []
-  next_proof: "Move runtime entrypoint off compatibility facade imports"
+  next_proof: "Validate next boundary"
 inspect:
   - git show --stat abc1234
-  - git show abc1234
 ```
 
 ## Ledger Update
@@ -271,17 +232,10 @@ Use `orchestration_anomalies` for suspicious coordinator or subagent-lifecycle
 behavior that may need later workflow fixes. Do not record routine command
 output, normal validation logs, clean reviews, or implementation chronology.
 
-Examples:
-
-- accidental extra agent spawn
-- wrong agent role
-- ignored or unusable support-agent output
-- malformed worker or reviewer report
-- confusing wait, resume, approval, or close controls
-- ambiguous, flaky, or escalation-prone validation command
-- near violation of the coordinator-only, worker-only, or reviewer-only contract
-- unexpected `HEAD`, index, or task-scoped diff change during orchestration
-- stale or mismatched reviewer evidence for the current diff basis
+Examples include accidental extra spawns, wrong roles, unusable support output,
+malformed reports, confusing wait/resume/approval controls, ambiguous or flaky
+validation, near role-contract violations, unexpected `HEAD` or diff movement,
+and stale reviewer evidence.
 
 Compact YAML:
 
