@@ -44,12 +44,13 @@
       ]
     },
     "work-batch": {
-      "version": "1.0.3",
+      "version": "1.0.4",
       "description": "User-facing command-owner skill for executing the current queued or active batch runway.",
       "requires": [
         "planning-artifacts",
         "planning-state",
-        "batch-runway"
+        "batch-runway",
+        "architecture-program-runway"
       ],
       "links": [
         {
@@ -73,8 +74,8 @@
       ]
     },
     "architecture-program-runway": {
-      "version": "1.1.5",
-      "description": "Agent-facing program-ledger support used by add-to-ledger and plan-batch for grouping, sequencing, selected dispatches, and closeout reconciliation.",
+      "version": "1.1.6",
+      "description": "Agent-facing program-ledger support used by add-to-ledger, plan-batch, and work-batch for grouping, sequencing, selected dispatches, and closeout reconciliation.",
       "requires": [
         "planning-artifacts",
         "planning-state"

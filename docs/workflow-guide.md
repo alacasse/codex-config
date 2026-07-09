@@ -15,7 +15,8 @@ external shaping / candidate source
 -> plan-batch
 -> dispatch/runway
 -> work-batch
--> closeout / follow-up ingestion
+-> closeout / same-batch program reconciliation
+-> follow-up ingestion or successor planning by explicit request
 ```
 
 ## Skill Families
@@ -99,10 +100,13 @@ the normal direct commands for the ledger-driven workflow.
 - `plan-batch` reports existing queued or active runway state instead of
   replacing it or beginning implementation.
 - `work-batch` must not select new work.
-- After `work-batch` completes, program-state reconciliation is a separate
-  explicit request unless the user already authorized it. `work-batch` should
-  report the completed closeout path and the exact reconciliation handoff
-  instead of selecting new work or updating the program ledger implicitly.
+- After `work-batch` completes concrete closeout, same-batch program-state
+  reconciliation is part of `work-batch` closeout through
+  `architecture-program-runway closeout-runway`.
+- Same-batch reconciliation may update the completed batch's program
+  `CURRENT.md`, `LEDGER.md`, and queue metadata, but it must not select,
+  dispatch, refresh, create, or prepare successor work.
+- Successor planning still requires an explicit `plan-batch` request.
 - If useful work exists outside the ledger, use `add-to-ledger` first.
 
 ## Anti-Patterns
@@ -112,6 +116,8 @@ the normal direct commands for the ledger-driven workflow.
 - Treating Matt Pocock tickets as executable backlog before ingestion.
 - Having both GitHub issues and the program ledger act as active backlogs.
 - Using `work-batch` to reselect or replan work.
+- Treating same-batch closeout reconciliation as permission to select or
+  prepare the next batch.
 - Using `port-by-contract` as a general refactor shortcut.
 
 ## Related Contracts

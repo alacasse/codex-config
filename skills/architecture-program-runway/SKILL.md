@@ -1,16 +1,17 @@
 ---
 name: architecture-program-runway
-description: Agent-facing program-ledger support used by add-to-ledger and plan-batch for broad finding intake, grouping, sequencing, selected dispatch packets, queue state, and closeout reconciliation.
+description: Agent-facing program-ledger support used by add-to-ledger, plan-batch, and work-batch for broad finding intake, grouping, sequencing, selected dispatch packets, queue state, and closeout reconciliation.
 ---
 
 # Architecture Program Runway
 
-Agent-facing program-ledger support for `add-to-ledger` and `plan-batch`. Do
-not present this as the normal human command for ledger intake or batch
-planning; use the command-owner skill first, then apply this workflow when
-program-level grouping, sequencing, selected dispatch packets, queue state, or
-closeout reconciliation are needed. `batch-runway` owns the concrete 3-5 slice
-execution spec and per-slice execution workflow.
+Agent-facing program-ledger support for `add-to-ledger`, `plan-batch`, and
+`work-batch`. Do not present this as the normal human command for ledger
+intake, batch planning, or batch closeout; use the command-owner skill first,
+then apply this workflow when program-level grouping, sequencing, selected
+dispatch packets, queue state, or closeout reconciliation are needed.
+`batch-runway` owns the concrete 3-5 slice execution spec and per-slice
+execution workflow.
 
 Use Planning Artifact Layout v1 when project instructions, local overlays, or
 active planning docs select it. Read `../planning-artifacts/SKILL.md` before
@@ -90,7 +91,9 @@ The normal flow is:
 3. `batch-runway execute-spec` completes slices, validation, review, commits,
    and the concrete execution ledger/archive.
 4. This skill consumes compact closeout evidence from the completed concrete
-   runway and reconciles the program ledger before selecting another batch.
+   runway and reconciles the program ledger. If invoked by `work-batch`, this
+   closeout is limited to the just-completed batch and must stop before
+   selecting another batch.
 
 ## Required First Steps
 
@@ -156,8 +159,11 @@ specific unresolved evidence question. State that question before continuing.
   in create-spec mode.
 - `closeout-runway`: after execution, update the program ledger. Mark findings
   `Closed`, `Prepared`, `Open`, `Split`, or `Superseded` based on evidence from
-  commits, validation, review, and the completed runway archive. For `/goal` or
-  other runner-driven work, also record a compact goal-run evaluation receipt.
+  commits, validation, review, and the completed runway archive. When this mode
+  is invoked from `work-batch`, reconcile only the just-completed batch and do
+  not select, refresh, dispatch, create, or prepare successor work. For `/goal`
+  or other runner-driven work, also record a compact goal-run evaluation
+  receipt.
 - `reprioritize`: reassess remaining findings after the codebase or constraints
   changed. Update ordering without hiding deferred work.
 
@@ -361,10 +367,11 @@ When creating the selected concrete batch:
 
 When a concrete runway closes under Layout v1, use Planning State Diagnostic
 facts and focused closeout evidence before reading historical plans or broad
-generated outputs. Then update the program ledger before planning the next
-batch. Preserve compact evidence and dispatch information; archive detailed
-runway execution history in the concrete runway spec or completed-slice archive,
-not in the program ledger.
+generated outputs. Then update the program ledger for the completed batch.
+Preserve compact evidence and dispatch information; archive detailed runway
+execution history in the concrete runway spec or completed-slice archive, not
+in the program ledger. If the route came from `work-batch`, stop there; a later
+explicit `plan-batch` request owns successor selection.
 
 ## Output Guidance
 

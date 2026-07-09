@@ -2,19 +2,21 @@
 
 ## Unreleased
 
-### Work-batch post-closeout handoff
+### Work-batch same-batch closeout reconciliation
 
-Problem: `work-batch` already avoided implicit program-ledger reconciliation
-after closeout, but a completed runway could still leave the remaining
-reconciliation step ambiguous in the final report.
+Problem: `work-batch` treated post-closeout program reconciliation as a
+separate explicit user request, so completed batches could leave stale program
+queue, `CURRENT.md`, or `LEDGER.md` state.
 
-Decision: require `work-batch` to report an explicit post-closeout handoff when
-program reconciliation is not authorized, including closeout evidence, possible
-program-state residues, the next user-facing request, and confirmation that no
-new batch was selected.
+Decision: make same-batch program reconciliation part of `work-batch` closeout:
+after `batch-runway execute-spec` creates concrete closeout evidence,
+`work-batch` routes to `architecture-program-runway closeout-runway` for the
+just-completed batch only, then stops.
 
-Expected effect: agents can complete runway execution without silently updating
-program state while still giving the user a precise next reconciliation step.
+Expected effect: agents can complete runway execution and clear completed-batch
+program state without selecting, dispatching, refreshing, creating, or preparing
+successor work. Successor planning still requires an explicit `plan-batch`
+request.
 
 ### Plan-batch command contract
 

@@ -130,6 +130,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 "planning-artifacts",
                 "planning-state",
                 "batch-runway",
+                "architecture-program-runway",
             ],
         }
 
@@ -180,30 +181,56 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("must not silently create new ledger findings", plan_batch)
         self.assertIn("current queued or active runway", work_batch)
 
-    def test_work_batch_reports_post_closeout_reconciliation_handoff(self) -> None:
+    def test_work_batch_reconciles_same_batch_closeout(self) -> None:
+        manifest = self.load_manifest()
+        work_batch_feature = manifest["features"]["work-batch"]
         work_batch = (REPO_ROOT / "skills/work-batch/SKILL.md").read_text(
             encoding="utf-8"
         )
         workflow_guide = (REPO_ROOT / "docs/workflow-guide.md").read_text(
             encoding="utf-8"
         )
+        routing_contract = (REPO_ROOT / "docs/skill-routing-contract.md").read_text(
+            encoding="utf-8"
+        )
 
-        self.assertIn("## Post-Closeout Handoff", work_batch)
         self.assertIn(
+            "architecture-program-runway",
+            work_batch_feature.get("requires", []),
+        )
+        self.assertIn("## Same-Batch Closeout Reconciliation", work_batch)
+        self.assertIn("`closeout-runway` mode", work_batch)
+        self.assertIn("same-batch program reconciliation", work_batch)
+        self.assertIn("just-completed batch only", work_batch)
+        self.assertIn("Successor selection remains owned", work_batch)
+        self.assertIn("same-batch program-state", workflow_guide)
+        self.assertIn("Successor planning still requires", workflow_guide)
+        self.assertIn(
+            "`architecture-program-runway` in `closeout-runway` mode",
+            routing_contract,
+        )
+        self.assertIn("completed batch only", routing_contract)
+        self.assertIn(
+            "same-batch closeout reconciliation as permission to",
+            routing_contract,
+        )
+        self.assertIn(
+            "select, dispatch, refresh, create, or prepare successor work",
+            work_batch,
+        )
+        self.assertNotIn(
             "must not reconcile the program ledger after closeout\n"
             "unless the user explicitly asks",
             work_batch,
         )
-        self.assertIn("final report must include a post-closeout handoff", work_batch)
-        self.assertIn("closeout path", work_batch)
-        self.assertIn("program `CURRENT.md`, program `LEDGER.md`", work_batch)
-        self.assertIn("batch queue metadata", work_batch)
-        self.assertIn("no new batch was selected", work_batch)
-        self.assertIn(
+        self.assertNotIn("Post-Closeout Handoff", work_batch)
+        self.assertNotIn("post-closeout handoff", work_batch)
+        self.assertNotIn(
             "program-state reconciliation is a separate\n"
             "  explicit request",
             workflow_guide,
         )
+        self.assertIn("no new batch was selected", work_batch)
 
     def test_plan_batch_command_owner_runtime_boundaries_are_explicit(self) -> None:
         manifest = self.load_manifest()

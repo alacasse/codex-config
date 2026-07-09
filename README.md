@@ -126,7 +126,7 @@ ledger and batch workflow.
 | Skill | Purpose | How it is used |
 | --- | --- | --- |
 | `batch-runway` | Provides bounded multi-slice runway spec mechanics, per-slice validation, commits, ledger updates, and implementation/review delegation. | Invoked behind `plan-batch` or `work-batch` when a command-owned batch needs concrete spec creation or execution contracts. |
-| `architecture-program-runway` | Provides program-ledger grouping, sequencing, selected dispatch, queue state, and closeout reconciliation. | Invoked behind `add-to-ledger` or `plan-batch` when broad findings need durable grouping or selected-batch state. |
+| `architecture-program-runway` | Provides program-ledger grouping, sequencing, selected dispatch, queue state, and closeout reconciliation. | Invoked behind `add-to-ledger`, `plan-batch`, or `work-batch` when broad findings need durable grouping, selected-batch state, or completed-batch reconciliation. |
 | `test-quality-review` | Reviews tests for behavioral confidence, regression protection, assertion strength, fixture friction, and design signals. | Invoked by review routes or directly for focused test audits where coverage percentage is not the main question. |
 | `dead-surface-audit` | Finds code surfaces kept alive by tests that assert imports, aliases, topology, or compatibility shape rather than behavior. | Invoked as evidence support when legacy, review, or planning work needs proof about test-retained dead surfaces. |
 | `legacy-removal` | Scopes evidence-backed legacy cleanup before implementation planning. | Invoked only for exceptional obsolete paths, fallback behavior, stale names, compatibility shims, or cleanup residues that need classification and a removal handoff. |

@@ -21,8 +21,10 @@ This skill owns the user's request to execute the current batch. It must not
 select a new batch, and it must not create a new runway unless explicit
 recovery instructions require replanning. Use `../planning-state/SKILL.md` first
 when Layout v1 state is involved, then use `../batch-runway/SKILL.md` in
-`execute-spec` mode for the detailed execution procedure. When routing
-ambiguity exists, follow `../../docs/skill-routing-contract.md`.
+`execute-spec` mode for the detailed execution procedure. After closeout
+evidence exists, use `../architecture-program-runway/SKILL.md` in
+`closeout-runway` mode to reconcile same-batch program state, then stop. When
+routing ambiguity exists, follow `../../docs/skill-routing-contract.md`.
 
 During normal execution, unsupported legacy preservation is a default
 implementation and review defect. Remove unsupported compatibility, or keep it
@@ -42,31 +44,40 @@ when interpreting active-state files or completed-slice archives.
 - Do not create a new runway spec unless recovery instructions explicitly
   require replanning.
 - Do not broaden slice scope beyond the active runway.
-- Do not reconcile the program ledger after closeout unless explicitly asked.
-- If program reconciliation remains after closeout, report it as an explicit
-  post-closeout handoff instead of silently updating program state.
+- Do not select, dispatch, refresh, create, or prepare successor work.
+- Do not use same-batch closeout reconciliation as a reason to scan backlog
+  sources or choose the next batch.
+- Do reconcile the just-completed batch's program state after concrete closeout
+  evidence exists.
 
-## Post-Closeout Handoff
+## Same-Batch Closeout Reconciliation
 
 `work-batch` executes the current queued or active runway and records concrete
-closeout evidence. It must not reconcile the program ledger after closeout
-unless the user explicitly asks for that reconciliation.
+closeout evidence. Same-batch program reconciliation is part of `work-batch`
+closeout: after `batch-runway execute-spec` completes, route to
+`architecture-program-runway closeout-runway` for the just-completed batch only.
 
-When execution completes and program reconciliation is not explicitly
-authorized, the final report must include a post-closeout handoff with:
+The closeout reconciliation may update the relevant program `CURRENT.md`,
+program `LEDGER.md`, selected dispatch state, and batch queue metadata only as
+needed to reflect the completed batch's evidence. It may mark covered findings
+closed, prepared, split, superseded, or still open according to the
+`closeout-runway` contract.
+
+The closeout reconciliation must not select successor work, refresh the
+program queue for next selection, create a new dispatch, create a new runway,
+or prepare the next batch. Successor selection remains owned by a later explicit
+`plan-batch` request.
+
+The final report must include:
 
 - completed batch id or runway path;
 - closeout path;
-- completed finding or ledger row if known;
-- whether program `CURRENT.md`, program `LEDGER.md`, or batch queue metadata may
-  still need reconciliation;
-- the exact next user-facing request to run if reconciliation is desired;
+- same-batch program state reconciled;
 - a statement that no new batch was selected.
-
-The handoff must not select new work, create a dispatch, create a runway, or
-scan external backlog sources.
 
 ## Agent-Facing Support
 
 Use `../batch-runway/SKILL.md` in execute-spec mode as runtime support for the
-current queued or active runway behind this command.
+current queued or active runway behind this command. After concrete closeout
+evidence exists, use `../architecture-program-runway/SKILL.md` in
+`closeout-runway` mode only for same-batch program reconciliation.
