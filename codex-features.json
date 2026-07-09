@@ -60,7 +60,7 @@
       ]
     },
     "batch-runway": {
-      "version": "1.3.12",
+      "version": "1.3.13",
       "description": "Agent-facing runtime support used by plan-batch and work-batch for multi-slice runway spec mechanics and execution contracts.",
       "requires": [
         "planning-artifacts",
@@ -74,7 +74,7 @@
       ]
     },
     "architecture-program-runway": {
-      "version": "1.1.6",
+      "version": "1.1.7",
       "description": "Agent-facing program-ledger support used by add-to-ledger, plan-batch, and work-batch for grouping, sequencing, selected dispatches, and closeout reconciliation.",
       "requires": [
         "planning-artifacts",
@@ -148,7 +148,7 @@
       ]
     },
     "dead-surface-audit": {
-      "version": "1.0.3",
+      "version": "1.0.4",
       "description": "Agent-facing evidence audit for code surfaces kept alive only by test-retained compatibility or topology assertions.",
       "links": [
         {
@@ -158,7 +158,7 @@
       ]
     },
     "legacy-removal": {
-      "version": "1.0.7",
+      "version": "1.0.8",
       "description": "Agent-facing evidence and scoping support for exceptional legacy-removal residues and cleanup handoffs.",
       "requires": [
         "planning-artifacts",

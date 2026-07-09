@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Deletion-test vocabulary ownership
+
+Problem: generated dispatches and runways could invent deletion-test labels
+such as `no-op`, `sediment`, `obsolete skill surface`, or `deletion-safe
+evidence` without a canonical vocabulary owner or local definition.
+
+Decision: make `dead-surface-audit` the canonical deletion-test evidence
+vocabulary owner, define `legacy-removal`, `architecture-program-runway`, and
+`batch-runway` as consumers of those terms, and require generated artifacts to
+use canonical statuses or locally define non-canonical labels.
+
+Expected effect: future CCFG-11-style planning can reject unsupported
+deletion-test categories unless they are explicitly local labels with clear
+non-canonical status; residue-style labels also need a concrete reason and a
+removal condition or follow-up owner.
+
 ### Vague ledger row split guard
 
 Problem: vague or mixed-risk ledger rows could be expanded into selected

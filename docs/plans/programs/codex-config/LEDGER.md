@@ -60,12 +60,11 @@ row-by-row here.
 | CCFG-13. Validation command status classification | Completed | GitHub issue #29; `docs/plans/programs/codex-config/findings/github-issue-29-validation-command-status.md` | Batch Runway create-spec | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/closeout.md`. Batch Runway create-spec guidance and contract tests now classify generated validation commands before execution gates, and the displaced CCFG-11 runway records required future classification/regeneration. |
 | CCFG-14. Batch kind and destructive-slice risk gates | Completed | GitHub issue #30; `docs/plans/programs/codex-config/findings/github-issue-30-batch-kind-slice-risk.md` | Batch Runway create-spec | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/closeout.md`. Batch Runway create-spec guidance and focused contract tests now require generated dispatch/runway artifacts to declare batch kind, require risky slices to declare risk classes, and require destructive or contract-narrowing work to carry explicit approval gates. |
 | CCFG-15. Vague ledger row splitting before runway expansion | Completed | GitHub issue #33; `docs/plans/programs/codex-config/findings/github-issue-33-vague-ledger-row-splitting.md` | Plan-batch / program runway planning guard | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/closeout.md`. `plan-batch` and `architecture-program-runway` now require vague or mixed-risk ledger rows to be split, blocked, or narrowed before selected dispatch and concrete runway creation. CCFG-11 remains open and must not resume from the displaced runway without applying this guard. |
-| CCFG-16. Deletion-test vocabulary ownership | Pending | GitHub issue #31; `docs/plans/programs/codex-config/findings/github-issue-31-deletion-test-vocabulary-ownership.md` | Skill cleanup / deletion-test evidence vocabulary | Execute queued runway `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/runway.md` | Source issue says generated dispatch/runway text can invent or reinterpret terms such as `no-op`, `sediment`, `obsolete skill surface`, and `deletion-safe evidence`. Preserve scope: define owner/consumer boundaries across `dead-surface-audit`, `legacy-removal`, `batch-runway`, and `architecture-program-runway`; require canonical terms or locally defined non-canonical evidence labels; add focused regression coverage; do not execute deletion cleanup or make `dead-surface-audit` the batch owner by accident. |
+| CCFG-16. Deletion-test vocabulary ownership | Completed | GitHub issue #31; `docs/plans/programs/codex-config/findings/github-issue-31-deletion-test-vocabulary-ownership.md` | Skill cleanup / deletion-test evidence vocabulary | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/closeout.md`. `dead-surface-audit` owns canonical deletion-test evidence vocabulary; `legacy-removal`, `architecture-program-runway`, and `batch-runway` consume canonical statuses or locally defined non-canonical labels; focused CCFG-like regression coverage prevents unsupported generated deletion categories. Runtime behavior unchanged. |
 
 ## Batch Queue
 
-Queued batch:
-`docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/runway.md`.
+Queued batch: `None`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
@@ -77,23 +76,23 @@ Queued batch:
 | `ccfg-13-validation-command-status` | completed | `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md` | CCFG-13 | Closed by `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/closeout.md`. Runtime behavior unchanged. |
 | `ccfg-14-batch-kind-slice-risk` | completed | `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/runway.md` | CCFG-14 | Closed by `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/closeout.md`. Runtime behavior unchanged. |
 | `ccfg-15-vague-ledger-row-splitting` | completed | `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md` | CCFG-15 | Closed by `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/closeout.md`. Runtime behavior unchanged. |
-| `ccfg-16-deletion-test-vocabulary-ownership` | queued | `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/runway.md` | CCFG-16 | Decision-only batch to define canonical deletion-test vocabulary ownership and generated-artifact consumer rules before future CCFG-11 replanning. |
+| `ccfg-16-deletion-test-vocabulary-ownership` | completed | `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/runway.md` | CCFG-16 | Closed by `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/closeout.md`. Runtime behavior unchanged. |
 
 ## Recommended Work Order
 
 1. Start pickup from `docs/plans/CURRENT.md`, then
    `docs/plans/programs/codex-config/CURRENT.md`.
-2. `ccfg-16-deletion-test-vocabulary-ownership` is queued. A future explicit
-   `work-batch` request can execute that runway; do not select successor work
-   while it remains queued.
+2. No batch is selected, queued, or active. A future explicit `plan-batch`
+   request can select the next bounded batch from this ledger.
 3. Treat CCFG-6 and CCFG-9 through CCFG-10 as skill-cleanup backlog;
    group only when a batch can stay bounded and validation can prove the
    cleanup.
 4. Treat CCFG-11 as open skill-cleanup work; do not execute the displaced
    CCFG-11 runway as active state. Replan, split, block, or narrow it only with
-   an explicit `plan-batch` request that applies the CCFG-15 guard and either
-   resolves CCFG-16 or avoids ambiguous deletion-test terminology.
-5. Treat CCFG-1, CCFG-7, CCFG-8, CCFG-12, CCFG-13, CCFG-14, and CCFG-15 as completed
+   an explicit `plan-batch` request that applies the CCFG-13 validation-status,
+   CCFG-14 risk-gate, CCFG-15 vague-row, and CCFG-16 deletion-test vocabulary
+   guards.
+5. Treat CCFG-1, CCFG-7, CCFG-8, and CCFG-12 through CCFG-16 as completed
    closeout evidence, not queued work.
 6. Do not revive APR or PST ledgers as active pickup sources. Use their archive
    snapshots only for evidence.
