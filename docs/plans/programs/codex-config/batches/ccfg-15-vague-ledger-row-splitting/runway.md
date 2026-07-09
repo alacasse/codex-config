@@ -152,7 +152,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 2. Test Split Block Narrow Contract | Pending |  |  |  | Focused tests fail without the new guard | Test quality review required. |
 | 3. Reconcile CCFG-11 Planning Evidence | Pending |  |  |  | CCFG-11 remains superseded and future planning points at the new guard | Planning evidence and closeout notes only. |
 
 ## Orchestration Anomalies
@@ -164,6 +163,7 @@ orchestration_anomalies: []
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
 | 1. Guard Vague Row Selection | `4b531af` | `plan-batch` and `architecture-program-runway` now require vague or mixed-risk ledger rows to be split, blocked, or narrowed before selected dispatch and concrete runway creation. | Validation: `python -m pytest tests/test_skill_routing_rule_ownership.py tests/test_architecture_program_runway_status_vocabulary.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`. Review: clean `runway_reviewer` pass against HEAD for `skills/plan-batch/SKILL.md` and `skills/architecture-program-runway/SKILL.md`. |
+| 2. Test Split Block Narrow Contract | `0ab3ad9` | Added focused text-contract tests proving `plan-batch` rejects vague CCFG-11-like mixed-risk rows and `architecture-program-runway` requires split, block, or narrow rationale before selected dispatch creation. | Validation: `python -m pytest tests/test_skill_routing_rule_ownership.py tests/test_architecture_program_runway_status_vocabulary.py -q`; `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`. Review: clean `runway_reviewer` pass with delta-only test-quality review after newline-sensitive assertions were fixed. |
 
 ## Slice 1. Guard Vague Row Selection
 
