@@ -6,6 +6,62 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
+UNSUPPORTED_DELETION_TEST_LABELS = (
+    "no-op",
+    "sediment",
+    "obsolete skill surface",
+    "deletion-safe evidence",
+)
+
+CLEANUP_RESIDUE_STYLE_LABELS = (
+    "sediment",
+    "obsolete skill surface",
+)
+
+
+def assert_generated_text_has_supported_deletion_test_vocabulary(
+    test_case: unittest.TestCase,
+    text: str,
+) -> None:
+    compact_text = " ".join(text.split()).lower()
+
+    for label in UNSUPPORTED_DELETION_TEST_LABELS:
+        with test_case.subTest(label=label):
+            if label not in compact_text:
+                continue
+
+            local_definition = (
+                f"`{label}` is a local non-canonical label"
+                in compact_text
+                or f"{label} is a local non-canonical label" in compact_text
+            )
+            test_case.assertTrue(
+                local_definition,
+                f"{label!r} must be locally defined before generated artifacts "
+                "can use it.",
+            )
+
+            if label in CLEANUP_RESIDUE_STYLE_LABELS:
+                has_concrete_reason = (
+                    f"`{label}` reason:" in compact_text
+                    or f"{label} reason:" in compact_text
+                )
+                has_removal_condition_or_owner = (
+                    f"`{label}` removal condition:" in compact_text
+                    or f"{label} removal condition:" in compact_text
+                    or f"`{label}` follow-up owner:" in compact_text
+                    or f"{label} follow-up owner:" in compact_text
+                )
+                test_case.assertTrue(
+                    has_concrete_reason,
+                    f"{label!r} local labels must name a concrete reason.",
+                )
+                test_case.assertTrue(
+                    has_removal_condition_or_owner,
+                    f"{label!r} retained or deferred local labels must name a "
+                    "removal condition or follow-up owner.",
+                )
+
 
 class DeletionTestVocabularyOwnershipTests(unittest.TestCase):
     def read(self, relative_path: str) -> str:
@@ -111,6 +167,87 @@ class DeletionTestVocabularyOwnershipTests(unittest.TestCase):
                 self.assertIn("approval gates", compact_text)
                 self.assertIn("cleanup decisions", compact_text)
                 self.assertIn("contract-narrowing decisions", compact_text)
+
+    def test_ccfg_like_generated_text_rejects_unsupported_deletion_categories(
+        self,
+    ) -> None:
+        generated_dispatch = """
+        ## Candidate Findings
+
+        - Status: delete-now
+          Evidence: dead-surface-audit found tests only protecting old shape.
+        - Status: sediment
+          Evidence: CCFG-like generated label with no local definition.
+        """
+        generated_runway = """
+        ## Execution Ledger
+
+        | Slice | Status | Risk class | Notes |
+        |---|---|---|---|
+        | 1. Remove stale alias | Pending | deletion-safe evidence | invented |
+        """
+
+        for name, text in (
+            ("generated dispatch", generated_dispatch),
+            ("generated runway", generated_runway),
+        ):
+            with self.subTest(artifact=name):
+                with self.assertRaisesRegex(AssertionError, "locally defined"):
+                    assert_generated_text_has_supported_deletion_test_vocabulary(
+                        self,
+                        text,
+                    )
+
+    def test_ccfg_like_generated_text_allows_local_noncanonical_labels(
+        self,
+    ) -> None:
+        generated_dispatch = """
+        ## Local Labels
+
+        `sediment` is a local non-canonical label.
+        `sediment` reason: groups old notes that still reference the retired
+        issue template during CCFG ledger review.
+        `sediment` removal condition: remove after those notes are either
+        archived or rewritten under canonical cleanup-residue classifications.
+        It is not a deletion-test evidence status, approval gate, cleanup
+        decision, migration decision, demotion decision, or contract-narrowing
+        decision.
+
+        ## Candidate Findings
+
+        - Status: migrate-tests-first
+          Evidence: ordinary behavior tests can move to the canonical owner.
+        - Label: sediment
+          Evidence: local grouping label with the inline definition above.
+        """
+
+        assert_generated_text_has_supported_deletion_test_vocabulary(
+            self,
+            generated_dispatch,
+        )
+
+    def test_ccfg_like_generated_text_rejects_unowned_residue_labels(
+        self,
+    ) -> None:
+        generated_dispatch = """
+        ## Local Labels
+
+        `sediment` is a local non-canonical label used only to group old notes;
+        it is not a deletion-test evidence status, approval gate, cleanup
+        decision, migration decision, demotion decision, or contract-narrowing
+        decision.
+
+        ## Candidate Findings
+
+        - Label: sediment
+          Evidence: local grouping label with the inline definition above.
+        """
+
+        with self.assertRaisesRegex(AssertionError, "concrete reason"):
+            assert_generated_text_has_supported_deletion_test_vocabulary(
+                self,
+                generated_dispatch,
+            )
 
 
 if __name__ == "__main__":
