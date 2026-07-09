@@ -115,6 +115,13 @@ decision-only work with destructive cleanup, contract narrowing, or migration,
 declare the batch kind as `mixed-risk`, name the risky slices, and list the
 approval gate for each risky slice.
 
+When a generated runway uses deletion-test evidence, consume the canonical
+deletion-test evidence statuses owned by `dead-surface-audit`, or define any
+local non-canonical labels inline as labels only. A generated runway must not
+invent unsupported deletion-test evidence categories or make unsupported terms
+act as approval gates, cleanup decisions, migration decisions, demotion
+decisions, or contract-narrowing decisions.
+
 For lean specs, do not paste the full standard execution contract. Reference it:
 
 ```md

@@ -86,6 +86,32 @@ class DeletionTestVocabularyOwnershipTests(unittest.TestCase):
             legacy_removal,
         )
 
+    def test_generated_artifact_consumers_require_canonical_or_local_labels(
+        self,
+    ) -> None:
+        architecture_runway = self.read("skills/architecture-program-runway/SKILL.md")
+        create_spec = self.read("skills/batch-runway/references/create-spec.md")
+
+        for name, text in (
+            ("architecture-program-runway", architecture_runway),
+            ("batch-runway create-spec", create_spec),
+        ):
+            compact_text = " ".join(text.split())
+            with self.subTest(consumer=name):
+                self.assertIn(
+                    "canonical deletion-test evidence statuses owned by "
+                    "`dead-surface-audit`",
+                    compact_text,
+                )
+                self.assertIn("local non-canonical labels inline", compact_text)
+                self.assertRegex(
+                    compact_text,
+                    r"must not (?:make|invent).*unsupported",
+                )
+                self.assertIn("approval gates", compact_text)
+                self.assertIn("cleanup decisions", compact_text)
+                self.assertIn("contract-narrowing decisions", compact_text)
+
 
 if __name__ == "__main__":
     unittest.main()

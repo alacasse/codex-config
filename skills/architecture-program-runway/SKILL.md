@@ -303,6 +303,13 @@ The brief should include:
 - For active legacy-removal programs, classified legacy surfaces, forbidden
   scaffolding, and stop conditions for unclassified legacy discoveries.
 
+If the selected dispatch uses deletion-test evidence, it must consume the
+canonical deletion-test evidence statuses owned by `dead-surface-audit`, or it
+must define any local non-canonical labels inline as labels only. A selected
+dispatch must not make unsupported generated terms behave like evidence
+categories, approval gates, cleanup decisions, migration decisions, demotion
+decisions, or contract-narrowing decisions.
+
 After the brief exists, future `create-next-runway` work should consume the
 brief plus the minimum ledger excerpt needed for statuses and evidence. Do not
 re-open the original broad review unless the brief is missing, contradicted by
