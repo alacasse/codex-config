@@ -124,7 +124,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 1. Guard the routine hot-path contract | pending |  |  |  | Contract test and inventory note |  |
 | 2. Prune entrypoint and execute-spec routing duplication | pending |  |  |  | Reduced duplicate routing prose with semantics preserved |  |
 | 3. Slim routine execute-slice core detail | pending |  |  |  | Non-routine detail moved behind trigger references |  |
 | 4. Align reporting and closeout references | pending |  |  |  | Final validation and closeout-ready evidence |  |
@@ -137,6 +136,7 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
+| 1. Guard the routine hot-path contract | `pending` | success; added focused text-contract coverage for the routine execution hot path and trigger-loaded non-routine references | `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`; test-quality review clean after fix; reviewer `runway_reviewer` clean |
 
 ## Slice 1. Guard The Routine Hot-Path Contract
 
