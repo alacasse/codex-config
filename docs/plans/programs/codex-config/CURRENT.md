@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-7-batch-runway-hot-path-pruning/closeout.md`
 - Run artifact location: `None selected`
@@ -38,16 +39,18 @@
 
 ## Queued Batch
 
-- Batch: `None`
-- Dispatch: `None`
-- Runway: `None`
-- Covers: `None`
+- Batch: `ccfg-1-runner-contract-fixtures`
+- Dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/dispatch.md`
+- Runway:
+  `docs/plans/programs/codex-config/batches/ccfg-1-runner-contract-fixtures/runway.md`
+- Covers: CCFG-1
 
 ## Next Safe Action
 
-No selected, active, or queued batch exists. Use `plan-batch` only when
-explicitly requested to select and create the next concrete batch. Do not infer
-new work from archived APR/PST ledgers or completed batch artifacts.
+Run `work-batch` only when explicitly requested to execute the queued CCFG-1
+runway. Do not select another batch, create another dispatch/runway, or infer
+new work from archived APR/PST ledgers while this queued runway exists.
 
 ## Stop Conditions
 
