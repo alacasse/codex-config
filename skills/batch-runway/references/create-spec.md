@@ -136,14 +136,24 @@ Use Batch Runway Standard Ledger Retention v1.
 Use Batch Runway Execute Slice Core v1 for routine slice execution.
 
 Reference files:
-- `<absolute path to batch-runway>/references/execute-slice-core-v1.md`
-- `<absolute path to batch-runway>/references/execution-contract-v1.md`
-- `<absolute path to batch-runway>/references/reporting-contracts-v1.md`
-- `<absolute path to batch-runway>/references/ledger-retention-v1.md`
+- `skills/batch-runway/references/execute-slice-core-v1.md`
+- `skills/batch-runway/references/execution-contract-v1.md`
+- `skills/batch-runway/references/reporting-contracts-v1.md`
+- `skills/batch-runway/references/ledger-retention-v1.md`
 
 Overrides:
 - <only list deviations from the standard contract>
 ```
+
+Generated dispatch and runway artifacts should use repo-relative paths like
+`skills/batch-runway/references/execution-contract-v1.md` or skill-relative
+paths like `references/execution-contract-v1.md` for reusable repo-owned Batch
+Runway references. Do not embed local absolute paths for those reusable
+repo-owned skill references.
+
+This rule does not ban absolute paths for user-provided local values,
+project-specific paths, repository cwd handoffs, subagent spec paths, or runtime
+handoff values that are not reusable repo-owned skill references.
 
 Use `Overrides` only for durable execution-contract deviations that future
 execution sessions must obey. Do not use `Overrides` for session-local
