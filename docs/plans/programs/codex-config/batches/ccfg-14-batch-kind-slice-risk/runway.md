@@ -158,7 +158,6 @@ Dirty-file constraints:
 
 | Slice | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|
-| 2. Test Destructive-Slice Gates | Pending |  |  |  | Focused create-spec contract tests and planning-state diagnostics |  |
 | 3. Reconcile CCFG-11 Risk Evidence | Pending |  |  |  | Planning-state diagnostics and `git diff --check` |  |
 
 ## Orchestration Anomalies
@@ -169,7 +168,8 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
-| 1. Define Batch Kind And Slice Risk Contract | `pending slice commit` | Create-spec guidance now requires generated artifacts to declare a batch kind, risky slices to declare risk classes, and destructive or contract-narrowing slices to carry explicit approval gates before execution. | Validation: `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`. Review: clean `runway_reviewer` pass against HEAD for `skills/batch-runway/references/create-spec.md`. |
+| 1. Define Batch Kind And Slice Risk Contract | `70b1de4` | Create-spec guidance now requires generated artifacts to declare a batch kind, risky slices to declare risk classes, and destructive or contract-narrowing slices to carry explicit approval gates before execution. | Validation: `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`. Review: clean `runway_reviewer` pass against HEAD for `skills/batch-runway/references/create-spec.md`. |
+| 2. Test Destructive-Slice Gates | `pending slice commit` | Added focused create-spec contract tests for batch-kind checklist coverage, portable batch kind and slice risk class taxonomy, mixed-risk metadata, and destructive or contract-narrowing approval gates. | Validation: `python -m pytest tests/test_batch_runway_create_spec_contract.py -q`; `python scripts/planning_state.py current --root docs/plans`; `python scripts/planning_state.py validate --root docs/plans`; `git diff --check`. Review: clean `runway_reviewer` pass with focused test-quality review against HEAD `70b1de4`. |
 
 ## Slice 1. Define Batch Kind And Slice Risk Contract
 

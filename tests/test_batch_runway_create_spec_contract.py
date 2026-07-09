@@ -336,6 +336,83 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
             validation_contract,
         )
 
+    def test_generated_spec_checklist_requires_batch_kind(self) -> None:
+        text = CREATE_SPEC.read_text(encoding="utf-8")
+        checklist = section_between(
+            text,
+            "The spec must include:",
+            "Every generated dispatch or runway artifact",
+        )
+
+        self.assertIn("- batch kind and slice risk contract", checklist)
+
+    def test_create_spec_guidance_names_batch_kinds_and_slice_risk_classes(
+        self,
+    ) -> None:
+        text = CREATE_SPEC.read_text(encoding="utf-8")
+        batch_kind_contract = section_between(
+            text,
+            "Every generated dispatch or runway artifact must declare exactly one "
+            "batch",
+            "Every generated slice that can change",
+        )
+        slice_risk_contract = section_between(
+            text,
+            "Every generated slice that can change",
+            "Destructive or contract-narrowing slices require",
+        )
+
+        for batch_kind in (
+            "characterization",
+            "decision",
+            "migration",
+            "destructive-cleanup",
+            "mixed-risk",
+        ):
+            with self.subTest(batch_kind=batch_kind):
+                self.assertIn(f"`{batch_kind}`", batch_kind_contract)
+
+        for risk_class in (
+            "none",
+            "evidence-only",
+            "decision-only",
+            "migration",
+            "contract-narrowing",
+            "destructive-cleanup",
+        ):
+            with self.subTest(risk_class=risk_class):
+                self.assertIn(f"`{risk_class}`", slice_risk_contract)
+
+    def test_destructive_cleanup_in_evidence_or_characterization_work_is_gated(
+        self,
+    ) -> None:
+        text = CREATE_SPEC.read_text(encoding="utf-8")
+        risk_gate_contract = normalized(
+            section_between(
+                text,
+                "Destructive or contract-narrowing slices require",
+                "For lean specs, do not paste",
+            )
+        )
+
+        self.assertRegex(
+            risk_gate_contract,
+            r"Destructive or contract-narrowing slices require an explicit "
+            r"approval gate",
+        )
+        self.assertRegex(
+            risk_gate_contract,
+            r"A `characterization` batch or an `evidence-only` slice must not "
+            r"include destructive cleanup or contract narrowing",
+        )
+        self.assertRegex(
+            risk_gate_contract,
+            r"If a batch combines evidence-only or decision-only work with "
+            r"destructive cleanup, contract narrowing, or migration, declare "
+            r"the batch kind as `mixed-risk`, name the risky slices, and list "
+            r"the approval gate for each risky slice",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
