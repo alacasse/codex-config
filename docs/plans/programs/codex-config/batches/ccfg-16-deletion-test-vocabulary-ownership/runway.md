@@ -107,7 +107,7 @@ Focused validation commands:
 
 | Slice | Status | Risk class | Commit | Validation | Review | Notes |
 |---|---|---|---|---|---|---|
-| 1. Evidence vocabulary owner | Pending | decision-only |  |  |  | Define canonical owner in `dead-surface-audit`. |
+| 1. Evidence vocabulary owner | Completed | decision-only | `056a576` | `tests/test_deletion_test_vocabulary_ownership.py` passed; selected profile subset passed; `git diff --check` passed | clean | Archived in `completed-slices.md`. |
 | 2. Legacy-removal consumer boundary | Pending | decision-only |  |  |  | Align legacy compatibility decisions with evidence vocabulary. |
 | 3. Generated artifact consumer rules | Pending | decision-only |  |  |  | Align `architecture-program-runway` and `batch-runway`. |
 | 4. CCFG-like regression guard | Pending | decision-only |  |  |  | Prevent unsupported generated deletion categories. |
