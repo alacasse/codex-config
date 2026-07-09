@@ -23,6 +23,14 @@ work. If useful work exists outside the ledger, stop and report that
 This skill owns the planning decision for one batch: use current state, respect
 selected/queued/active work, and produce at most one concrete runway spec.
 
+Requested ledger rows are suitable for direct planning only when the row is
+precise enough for one bounded selected dispatch. A row is not suitable when it
+mixes evidence gathering, classification, decisions, destructive cleanup,
+migration, demotion, or contract narrowing without clear owner, risk, and
+acceptance boundaries. In that case, route through
+`architecture-program-runway` to split, block, or narrow the scope before any
+concrete runway spec is created.
+
 ## Command Contract
 
 `plan-batch` is the human-facing command contract for "create the next specs

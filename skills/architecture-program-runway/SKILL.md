@@ -186,6 +186,32 @@ Use characterization slices sparingly. A characterization slice belongs in a
 batch only when it directly reduces risk for that batch. Otherwise, keep it as a
 separate candidate.
 
+## Vague Row Selection Guard
+
+Before writing a selected dispatch, confirm that each requested ledger row can
+be shaped into one bounded batch with clear owner seam, risk class, acceptance
+criteria, and stop conditions. Do not let a vague or mixed-risk row silently
+expand into unrelated discovery, decisions, cleanup, migration, demotion, or
+contract-narrowing work.
+
+If a row mixes evidence gathering, classification, decisions, destructive
+cleanup, migration, demotion, or contract narrowing without enough owner, risk,
+or acceptance boundaries, choose one of these outcomes before creating
+`dispatch.md`:
+
+- Split the row into smaller program findings when the source row already
+  authorizes distinct bounded work.
+- Block the row when a decision, owner, risk class, acceptance boundary, or
+  approval gate is missing.
+- Narrow the selected dispatch to characterization-only or evidence-only work
+  when the row mentions deletion, demotion, migration, cleanup, or narrowing
+  but does not precisely authorize that risky implementation.
+
+Record the split, block, or narrow-scope rationale in the program ledger and
+selected dispatch packet. Newly discovered destructive, migration, demotion, or
+contract-narrowing work must become explicit follow-up ledger work unless the
+source row already authorized that risk with precise boundaries.
+
 ## Ledger Statuses
 
 Use these finding lifecycle statuses unless a project already defines its own.
