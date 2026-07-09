@@ -59,11 +59,12 @@ row-by-row here.
 | CCFG-12. Plan-batch command-owner deepening | Completed | `docs/plans/programs/codex-config/notes/command-owner-deepening-review.md` | Skill cleanup | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-12-plan-batch-deepening/closeout.md`. `plan-batch` now owns a deeper human-facing command contract for ledger-only selection, selected/queued/active state handling, one-spec output, and stop-before-implementation behavior while `architecture-program-runway` and `batch-runway` remain runtime owners. |
 | CCFG-13. Validation command status classification | Completed | GitHub issue #29; `docs/plans/programs/codex-config/findings/github-issue-29-validation-command-status.md` | Batch Runway create-spec | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/closeout.md`. Batch Runway create-spec guidance and contract tests now classify generated validation commands before execution gates, and the displaced CCFG-11 runway records required future classification/regeneration. |
 | CCFG-14. Batch kind and destructive-slice risk gates | Completed | GitHub issue #30; `docs/plans/programs/codex-config/findings/github-issue-30-batch-kind-slice-risk.md` | Batch Runway create-spec | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/closeout.md`. Batch Runway create-spec guidance and focused contract tests now require generated dispatch/runway artifacts to declare batch kind, require risky slices to declare risk classes, and require destructive or contract-narrowing work to carry explicit approval gates. |
-| CCFG-15. Vague ledger row splitting before runway expansion | Ready | GitHub issue #33; `docs/plans/programs/codex-config/findings/github-issue-33-vague-ledger-row-splitting.md` | Plan-batch / program runway planning guard | Add guidance and focused tests so vague or mixed-risk ledger rows are split, blocked, or narrowed before 3-5 slice runway creation | Candidate next work after CCFG-14. CCFG-15 should prevent CCFG-11-like deletion-test rows from expanding directly into mixed evidence, decision, and destructive-cleanup slices. Do not select or execute CCFG-11 from the displaced runway; replan it only after this guard or an explicit split decision exists. |
+| CCFG-15. Vague ledger row splitting before runway expansion | Pending | GitHub issue #33; `docs/plans/programs/codex-config/findings/github-issue-33-vague-ledger-row-splitting.md` | Plan-batch / program runway planning guard | Execute queued runway `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md` | Queued by `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/dispatch.md`. CCFG-15 should prevent CCFG-11-like deletion-test rows from expanding directly into mixed evidence, decision, and destructive-cleanup slices. Do not select or execute CCFG-11 from the displaced runway; replan it only after this guard or an explicit split decision exists. |
 
 ## Batch Queue
 
-Queued batch: `None`.
+Queued batch:
+`docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
@@ -74,19 +75,20 @@ Queued batch: `None`.
 | `ccfg-11-skill-deletion-tests` | superseded | `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-11-skill-deletion-tests/runway.md` | CCFG-11 | Displaced by CCFG-13 at explicit user request. The displaced runway now records validation-command status and batch-kind/risk-gate prerequisites as planning evidence only; CCFG-11 remains open and must be regenerated or amended before execution. |
 | `ccfg-13-validation-command-status` | completed | `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md` | CCFG-13 | Closed by `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/closeout.md`. Runtime behavior unchanged. |
 | `ccfg-14-batch-kind-slice-risk` | completed | `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/runway.md` | CCFG-14 | Closed by `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/closeout.md`. Runtime behavior unchanged. |
+| `ccfg-15-vague-ledger-row-splitting` | queued | `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md` | CCFG-15 | Queued by explicit `plan-batch` request. Mixed-risk planning-contract guard; Slice 1 requires the approval gate recorded in dispatch/runway before execution. |
 
 ## Recommended Work Order
 
 1. Start pickup from `docs/plans/CURRENT.md`, then
    `docs/plans/programs/codex-config/CURRENT.md`.
-2. No successor batch is selected, active, or queued after CCFG-14 closeout.
-   CCFG-15 is a ready candidate for a future explicit `plan-batch` request,
-   but it is not selected by this ledger intake.
+2. CCFG-15 is queued as the next explicit batch after CCFG-14 closeout. Execute
+   it only through a future `work-batch` request against
+   `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md`.
 3. Treat CCFG-6 and CCFG-9 through CCFG-10 as skill-cleanup backlog; group only when a
    batch can stay bounded and validation can prove the cleanup.
 4. Treat CCFG-11 as open skill-cleanup work; do not execute the displaced
-   CCFG-11 runway as active state. Replan or split it only after CCFG-15 or an
-   equivalent explicit split/block decision resolves vague-row expansion.
+   CCFG-11 runway as active state. Replan or split it only after CCFG-15 closes
+   or an equivalent explicit split/block decision resolves vague-row expansion.
 5. Treat CCFG-1, CCFG-7, CCFG-8, CCFG-12, CCFG-13, and CCFG-14 as completed
    closeout evidence, not queued work.
 6. Do not revive APR or PST ledgers as active pickup sources. Use their archive

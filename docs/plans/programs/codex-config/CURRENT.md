@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-14-batch-kind-slice-risk/closeout.md`
 - Run artifact location: `None selected`
@@ -40,7 +41,8 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-14-batch-kind-slice-risk`
@@ -57,13 +59,9 @@
 
 ## Next Safe Action
 
-No selected, active, or queued batch is present. CCFG-14 closeout did not select
-successor work. A future explicit `plan-batch` request can select bounded work
-from the canonical ledger.
-
-CCFG-15 is a ready candidate recorded from GitHub issue #33 for vague or
-mixed-risk ledger-row splitting before runway expansion. It is not selected,
-queued, or active.
+CCFG-15 is the queued batch for vague or mixed-risk ledger-row splitting before
+runway expansion. A future explicit `work-batch` request can execute
+`docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md`.
 
 CCFG-11 remains open, but its displaced runway is superseded planning evidence;
 do not execute it as active state without a future regenerated or amended runway
@@ -75,7 +73,7 @@ classes, and approval gates where required.
 - Stop if work would select from archived APR/PST ledgers instead of the
   canonical codex-config ledger.
 - Stop if work would select successor work, create another dispatch, or create
-  another runway without an explicit `plan-batch` request.
+  another runway while CCFG-15 is queued.
 - Stop if work would execute the displaced CCFG-11 runway as active state
   without a future regenerated or amended runway.
 - Stop if work would regenerate or execute CCFG-11 without validation-command
