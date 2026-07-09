@@ -249,6 +249,22 @@ should be installed by their own provider and left out of this manifest.
 Repo-owned features are installed as symlinks. Editing the installed
 `~/.codex/...` path edits this repository.
 
+## Validation
+
+Use the project-owned dev tools through `uv` instead of relying on ambient
+Python packages:
+
+```bash
+UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uv run --frozen pytest -q
+UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uv run --frozen ruff check scripts tests
+UV_CACHE_DIR=/tmp/codex-config-uv-cache UV_TOOL_DIR=/tmp/codex-config-uv-tools uv run --frozen basedpyright
+```
+
+`basedpyright` is the project type checker; do not add `mypy` unless the repo
+intentionally decides to run two type-checking stacks. The explicit `/tmp`
+cache and tool directories avoid managed-sandbox failures when the default uv
+cache under the home directory is read-only.
+
 To check ownership for a `~/.codex` path:
 
 ```bash

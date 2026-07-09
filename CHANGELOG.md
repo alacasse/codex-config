@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Project-owned Python validation tools
+
+Problem: agents could run ambient `pytest` or discover that `python -m ruff`
+was unavailable, then treat missing local tooling as normal validation noise.
+
+Decision: add `pytest` and `ruff` to the locked dev dependency group, keep
+`basedpyright` as the project type checker instead of adding `mypy`, and
+document the `uv run --frozen` validation commands.
+
+Expected effect: future validation uses reproducible project-owned tools, and
+missing ambient packages should no longer be accepted as a normal state.
+
 ### Absolute runway reference path guidance
 
 Problem: Batch Runway create-spec guidance could lead generated runways to
