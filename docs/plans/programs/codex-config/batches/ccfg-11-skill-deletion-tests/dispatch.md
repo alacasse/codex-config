@@ -63,6 +63,8 @@ dependencies_blocking:
     batch is planned or executed again.
   - CCFG-14 must handle batch-kind and destructive-slice risk gates before this
     batch is planned or executed again.
+  - CCFG-15 must handle vague-row split, block, or narrow-scope guards before
+    this batch is planned or executed again.
 supersession:
   replacement_batch: ccfg-13-validation-command-status
   replacement_dispatch: docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/dispatch.md
@@ -75,6 +77,14 @@ risk_gate_supersession:
     - declare one batch kind for the regenerated or amended CCFG-11 batch
     - declare a risk class for every slice that could migrate, narrow, demote, or delete a skill surface
     - include explicit approval gates before destructive-cleanup or contract-narrowing slices execute
+  note: This displaced dispatch remains superseded planning evidence and is not active queue state.
+vague_row_guard_supersession:
+  status: blocked-before-future-planning
+  prerequisite_batch: ccfg-15-vague-ledger-row-splitting
+  required_before_selected_dispatch:
+    - split mixed evidence, classification, decision, migration, demotion, destructive cleanup, or contract-narrowing work into bounded rows
+    - block execution with explicit rationale when CCFG-11 remains too vague for one selected dispatch
+    - narrow the dispatch to characterization-only or evidence-only scope with clear owner, risk, validation, and acceptance boundaries
   note: This displaced dispatch remains superseded planning evidence and is not active queue state.
 suggested_slices:
   - Add a focused deletion-test inventory over installed/user-facing/support skill metadata and existing evidence vocabulary.

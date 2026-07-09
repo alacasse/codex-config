@@ -6,8 +6,8 @@ This runway is no longer queued active state. It was displaced by
 `docs/plans/programs/codex-config/batches/ccfg-13-validation-command-status/runway.md`
 because its validation section listed known-red and implementation-created
 commands without status classes. CCFG-11 remains open in the program ledger and
-must be regenerated or amended after CCFG-13 and CCFG-14 close before execution
-resumes.
+must be regenerated, blocked, split, or narrowed under the CCFG-15 vague-row
+guard before selected dispatch or execution resumes.
 
 ## Displaced Validation Gate Amendment
 
@@ -43,8 +43,25 @@ superseded planning evidence until a future CCFG-11 artifact:
   `contract-narrowing` slice executes.
 
 Do not treat this amendment as selecting, queuing, executing, or regenerating
-CCFG-11. CCFG-14 remains the queued prerequisite batch until its closeout
-reconciles program state.
+CCFG-11. CCFG-14 is complete; CCFG-15 remains the queued prerequisite guard
+until its closeout reconciles program state.
+
+## Displaced Vague-Row Guard Amendment
+
+Future CCFG-11 planning must not expand this displaced deletion-test evidence
+directly into a mixed evidence, decision, and cleanup runway. Before any new
+selected dispatch or concrete runway exists, CCFG-11 must either:
+
+- split evidence gathering, classification, decision, migration, demotion,
+  destructive cleanup, or contract-narrowing work into bounded follow-up rows;
+- block execution with an explicit rationale when the next safe scope is still
+  too vague; or
+- narrow the selected dispatch to characterization-only or evidence-only work
+  with clear owner, risk, validation, and acceptance boundaries.
+
+Do not treat this amendment as selecting, queuing, executing, or regenerating
+CCFG-11. It records only why the displaced CCFG-11 dispatch/runway pair remains
+superseded planning evidence while CCFG-15 is queued.
 
 ## Purpose
 

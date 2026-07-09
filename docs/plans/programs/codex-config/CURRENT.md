@@ -66,7 +66,8 @@ runway expansion. A future explicit `work-batch` request can execute
 CCFG-11 remains open, but its displaced runway is superseded planning evidence;
 do not execute it as active state without a future regenerated or amended runway
 that includes validation-command status classes, batch kind, slice risk
-classes, and approval gates where required.
+classes, approval gates where required, and a CCFG-15 split, block, or
+narrow-scope decision before selected dispatch and concrete runway creation.
 
 ## Stop Conditions
 
@@ -79,6 +80,9 @@ classes, and approval gates where required.
 - Stop if work would regenerate or execute CCFG-11 without validation-command
   status classes, batch kind, slice risk classes, and approval gates where
   required.
+- Stop if work would plan CCFG-11 from the displaced artifact without first
+  splitting, blocking, or narrowing its vague mixed-risk scope under the
+  CCFG-15 guard.
 - Stop if CCFG-1 closeout text would imply runner extraction, package/runtime
   selection, repository/scaffold creation, adapter implementation, or CCFG-2
   through CCFG-5 work is complete.

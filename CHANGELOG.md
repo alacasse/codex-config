@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Vague ledger row split guard
+
+Problem: vague or mixed-risk ledger rows could be expanded into selected
+dispatches and concrete runways that combined evidence gathering,
+classification, decisions, migration, demotion, destructive cleanup, or
+contract narrowing without a bounded owner, risk, and acceptance shape.
+
+Decision: require `plan-batch` and `architecture-program-runway` to split,
+block, or narrow vague mixed-risk rows before selected dispatch and runway
+creation, and record CCFG-11's displaced deletion-test runway as superseded
+planning evidence under that guard.
+
+Expected effect: future CCFG-11 planning cannot resume from the old displaced
+artifact unless it first produces a bounded split, explicit block, or narrowed
+evidence-only/characterization-only dispatch.
+
 ### Closeout commit placeholder guard
 
 Problem: final closeout artifacts can be committed by the same commit they need
