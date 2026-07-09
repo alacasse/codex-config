@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -136,6 +137,48 @@ class ArchitectureProgramRunnerIntegrationTests(ArchitectureProgramRunnerTestCas
         config = runner.config_from_args(args)
 
         self.assertEqual(config.max_batches, 3)
+
+    def test_direct_script_dry_run_preserves_facade_without_state_writes(self) -> None:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "architecture_program_runner.py",
+                "--project",
+                str(self.project),
+                "--program-ledger",
+                "project-notes/architecture/program.md",
+                "--dry-run",
+                "--env",
+                "CACHE_TOKEN=secret-value",
+            ],
+            cwd=Path(runner.__file__).parent,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("Command:\n", completed.stdout)
+        self.assertIn("Prompt:\n", completed.stdout)
+        self.assertIn("Env override keys: CACHE_TOKEN", completed.stdout)
+        self.assertNotIn("secret-value", completed.stdout)
+        self.assertNotIn("Final summary:", completed.stdout)
+        self.assertFalse(
+            (
+                self.project
+                / "project-notes"
+                / "architecture"
+                / "architecture-program-runs"
+            ).exists()
+        )
+        self.assertFalse(
+            (
+                self.project
+                / "project-notes"
+                / "architecture"
+                / "architecture-program-run-state.json"
+            ).exists()
+        )
 
     def test_execute_sandbox_overrides_execute_phase_only(self) -> None:
         args = runner.parse_args(

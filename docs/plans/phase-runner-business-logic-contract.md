@@ -95,6 +95,46 @@ A later implementation runway may begin only after these proofs are explicit:
 - an explicit package/runtime decision for any future target before runner code
   is moved or scaffolded.
 
+## Facade Compatibility Gates
+
+The existing `scripts/architecture_program_runner.py` facade is the
+dogfooding compatibility surface. Extraction may change internal ownership or
+translate to neutral generic-core concepts, but it must keep these facade
+expectations executable until a migration plan deliberately changes them:
+
+- CLI defaults and bounds stay stable: direct invocation defaults to one
+  completed closeout, `--all-batches` is the only unbounded mode, numeric and
+  unbounded bounds conflict, and `--stop-after-phase` remains phase-bounded.
+- Direct script execution remains supported from the `scripts/` directory as
+  well as module-style imports from tests and callers.
+- Dry runs print the planned command and prompt without writing runner state,
+  receipts, manifests, or telemetry, and env override values remain hidden.
+- Resume discovery prefers the latest structured run state and keeps legacy
+  flat state compatible while rejecting state that contradicts CLI project,
+  ledger, bound, or execution intent.
+- Phase results stay strict: the facade-visible schema rejects missing or
+  unknown control fields, invalid phase/status transitions, wrong active
+  phase, and non-string evidence paths.
+- Receipts remain the persisted phase result: expected structured receipt
+  paths must match, receipt JSON must be an object, and loaded receipt content
+  must equal the returned phase result.
+- Structured artifacts keep facade-visible project-relative paths for run
+  state, receipts, input inventories, manifests, telemetry, and batch
+  subdirectories unless an explicit compatibility plan says otherwise.
+- Input inventory linkage remains control-plane evidence: structured execute
+  receipts must include the runner-provided inventory path in `evidence_paths`,
+  and the inventory file must validate before transition or manifest writes.
+- Final summaries keep their compact machine-readable shape: state path,
+  artifact root, run and phase telemetry paths, latest receipt, stop reason,
+  completed count, active work unit, dispatch/spec paths, commit range,
+  validation summary, and review summary.
+
+These are public facade expectations. How a later generic core names,
+normalizes, or translates equivalent facts is an internal adapter detail and
+must not leak architecture-program prompts, Batch Runway semantics, Program
+Ledger vocabulary, branch-per-batch behavior, or repo-local planning policy
+into the generic core.
+
 ## Separation And Interoperability Direction
 
 The target should stay separate from `codex-config` while remaining

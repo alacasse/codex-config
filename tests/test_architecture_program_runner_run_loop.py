@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 from typing import Any
 
@@ -70,6 +72,60 @@ class ArchitectureProgramRunnerRunLoopTests(ArchitectureProgramRunnerTestCase):
         self.assertEqual(summary["commit_range"], "abc123..def456")
         self.assertEqual(summary["validation_summary"], "tests passed")
         self.assertEqual(summary["review_summary"], "review clean")
+
+    def test_final_summary_shape_is_facade_compatibility_contract(self) -> None:
+        config = self.structured_config()
+        state = runner.initial_state(config)
+        state.update(
+            {
+                "last_phase_telemetry_path": (
+                    "project-notes/architecture/architecture-program-runs/program/"
+                    "run-20260626-204812/telemetry/select-dispatch.json"
+                ),
+                "last_receipt_path": (
+                    "project-notes/architecture/architecture-program-runs/program/"
+                    "run-20260626-204812/receipts/select-dispatch.json"
+                ),
+                "stop_reason": "done",
+                "batches_completed": 2,
+                "active_batch_id": "batch-2",
+                "dispatch_path": "project-notes/architecture/dispatch/batch-2.md",
+                "spec_path": "project-notes/architecture/batch-2-spec.md",
+            }
+        )
+        output = io.StringIO()
+
+        with contextlib.redirect_stdout(output):
+            runner.print_final_summary(state, config)
+
+        lines = output.getvalue().splitlines()
+        self.assertEqual(lines[0], "Final summary:")
+        summary = json.loads("\n".join(lines[1:]))
+        self.assertEqual(
+            set(summary),
+            {
+                "state_path",
+                "artifact_root",
+                "run_telemetry_path",
+                "last_phase_telemetry_path",
+                "last_receipt_path",
+                "stop_reason",
+                "batches_completed",
+                "active_batch",
+                "dispatch_path",
+                "spec_path",
+                "commit_range",
+                "validation_summary",
+                "review_summary",
+            },
+        )
+        self.assertEqual(summary["state_path"], str(config.state_path))
+        self.assertEqual(summary["artifact_root"], state["artifact_root"])
+        self.assertEqual(summary["batches_completed"], 2)
+        self.assertEqual(summary["active_batch"], "batch-2")
+        self.assertEqual(summary["dispatch_path"], state["dispatch_path"])
+        self.assertEqual(summary["spec_path"], state["spec_path"])
+        self.assertEqual(summary["stop_reason"], "done")
 
     def test_unbounded_mode_stops_when_closeout_reports_no_next_batch(self) -> None:
         config = runner.RunnerConfig(**{**self.config.__dict__, "max_batches": None})
