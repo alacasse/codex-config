@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Absolute runway reference path guidance
+
+Problem: Batch Runway create-spec guidance could lead generated runways to
+embed local absolute paths for reusable repo-owned skill references, making
+portable planning artifacts look machine-specific.
+
+Decision: prefer repo-relative or skill-relative Batch Runway reference paths
+in generated runway guidance, add an active-artifact guard for queued or active
+runways, and preserve legitimate absolute runtime handoffs and project-specific
+local values.
+
+Expected effect: new selected, queued, or active runways should keep reusable
+skill references portable without rewriting completed historical evidence.
+
 ### Deletion-test vocabulary ownership
 
 Problem: generated dispatches and runways could invent deletion-test labels
