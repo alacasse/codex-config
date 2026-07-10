@@ -61,11 +61,16 @@ reference file by default.
   artifacts, or when project instructions name Planning Artifact Layout v1.
 - `references/execute-slice-core-v1.md`: read for routine `execute-spec` slice
   execution. This is the hot-path projection of the full canonical contracts.
-- `references/execution-contract-v1.md`: read when creating a new spec, executing
-  full-runway specs, auditing compatibility, or changing contract semantics.
-- `references/reporting-contracts-v1.md`: read before requesting worker,
-  reviewer, commit-receipt, convergence, or ledger-update output outside the
-  routine core path, or when changing canonical reporting semantics.
+- `references/execution-contract-v2.md`: read when creating a new spec, executing
+  current full-runway specs, or changing current contract semantics.
+- `references/execution-contract-v1.md`: read only when executing or auditing an
+  existing spec that names v1.
+- `references/agent-result-contract-v2.md`: read when changing current agent
+  result ownership or shared agent presentation semantics. Registered agent
+  TOMLs own their exact v2 result schemas.
+- `references/reporting-contracts-v1.md`: read for v1 compatibility and before
+  requesting coordinator commit-receipt, convergence, anomaly, or ledger-update
+  output outside the routine core path.
 - `references/ledger-retention-v1.md`: read before creating a new ledger or
   changing canonical ledger semantics. Routine ledger updates are covered by the
   execution core.
@@ -115,8 +120,8 @@ instruction priority order is missing.
 
 ## Core Contract
 
-Use Batch Runway Standard Execution Contract v1 unless the spec explicitly
-overrides it.
+Use Batch Runway Standard Execution Contract v2 for new work. Honor an existing
+spec's named contract version; do not reinterpret v1 as v2.
 
 Non-negotiable execution rules:
 

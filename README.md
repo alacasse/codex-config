@@ -310,12 +310,14 @@ Examples:
 
 ### agents/
 
-Custom agents.
+Registered custom agents. Each TOML owns the stable role boundary and result
+contract; workflows own invocation and lifecycle.
 
-Examples:
-
-* runway_worker
-* runway_reviewer
+* `codebase_investigator`: bounded read-only technical investigation
+* `runway_worker`: slice-scoped Batch Runway implementation
+* `runway_reviewer`: independent final Batch Runway review gate
+* `import_topology_reviewer`: triggered project-local import specialist
+* `spark`: low-risk interactive support and tiny mechanical edits
 
 ### rules/
 

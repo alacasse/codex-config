@@ -38,6 +38,7 @@ for compatibility questions, non-routine execution, recovery, and finalization.
 6. Check the worktree and identify dirty-file risks.
 7. Identify:
    - active validation profile
+   - named execution and agent result contract versions
    - pending ledger rows
    - stop conditions
    - commit strategy

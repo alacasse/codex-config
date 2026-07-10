@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+### Custom agent role contracts
+
+Problem: four registered agents still depended on caller assumptions for scope,
+authority, stopping conditions, evidence, and failure reporting. Worker and
+reviewer schemas were also copied into Batch Runway references, while clean
+report line caps could suppress material information.
+
+Decision: strengthen `spark`, `runway_worker`, `runway_reviewer`, and
+`import_topology_reviewer` around explicit role boundaries, lifecycle authority,
+evidence standards, structured status values, and completion criteria. Keep
+their existing model assignments, make each agent TOML the canonical owner of
+its current result contract, and leave Batch Runway responsible for triggers,
+task handoffs, coordinator lifecycle, and coordinator receipts. Preserve named
+v1 contract interpretation for existing specs and introduce Standard Execution
+Contract v2 plus Registered Agent Result Contract v2 for new work.
+
+Expected effect: delegated work should stop safely on ambiguity or stale
+evidence, preserve unrelated work and unchanged contracts, report every material
+finding regardless of length, and avoid schema drift between agent definitions
+and workflow prompts.
+
 ### Codebase investigator agent contract
 
 Problem: the read-only support agent was framed as a fast, vague exploration

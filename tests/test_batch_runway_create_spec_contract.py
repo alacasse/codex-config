@@ -56,7 +56,8 @@ DOWNSTREAM_PROJECT_PATTERNS = (
 
 LEAN_REFERENCE_EXAMPLES = (
     "skills/batch-runway/references/execute-slice-core-v1.md",
-    "skills/batch-runway/references/execution-contract-v1.md",
+    "skills/batch-runway/references/execution-contract-v2.md",
+    "skills/batch-runway/references/agent-result-contract-v2.md",
     "skills/batch-runway/references/reporting-contracts-v1.md",
     "skills/batch-runway/references/ledger-retention-v1.md",
 )
@@ -206,11 +207,11 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
         normalized_reference_guidance = normalized(reference_guidance)
 
         self.assertIn(
-            "`skills/batch-runway/references/execution-contract-v1.md`",
+            "`skills/batch-runway/references/execution-contract-v2.md`",
             reference_guidance,
         )
         self.assertIn(
-            "`references/execution-contract-v1.md`",
+            "`references/execution-contract-v2.md`",
             reference_guidance,
         )
         self.assertIn(
@@ -303,8 +304,9 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
                 r"read before broad history/reporting scans"
             ),
             (
-                r"`references/reporting-contracts-v1\.md`: read before "
-                r"requesting .* outside the routine core path"
+                r"`references/reporting-contracts-v1\.md`: read for v1 "
+                r"compatibility and before requesting .* outside the routine "
+                r"core path"
             ),
             (
                 r"`references/execute-recovery-v1\.md`: read only when "

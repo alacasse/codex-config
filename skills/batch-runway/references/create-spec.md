@@ -127,8 +127,11 @@ For lean specs, do not paste the full standard execution contract. Reference it:
 ```md
 ## Execution Contract
 
-Use Batch Runway Standard Execution Contract v1.
-Use Batch Runway Compact Report Contract v1.
+Use Batch Runway Standard Execution Contract v2.
+Use Batch Runway Registered Agent Result Contract v2. Registered agent TOMLs
+own worker, reviewer, specialist, investigator, and Spark result schemas.
+Use Batch Runway Compact Report Contract v1 only for coordinator receipts and
+its other non-agent reporting rules under the v2 compatibility statement.
 Use Batch Runway Compact Convergence Assessment v1 for routine status reports, slice summaries, commit receipts, and ledger notes.
 Use Batch Runway Orchestration Anomaly Log v1 for compact telemetry about suspicious coordinator or subagent-lifecycle behavior.
 Use the expanded convergence template only when scope is expanding, significant uncertainty exists, blockers are present, or final batch reporting is being produced.
@@ -137,7 +140,8 @@ Use Batch Runway Execute Slice Core v1 for routine slice execution.
 
 Reference files:
 - `skills/batch-runway/references/execute-slice-core-v1.md`
-- `skills/batch-runway/references/execution-contract-v1.md`
+- `skills/batch-runway/references/execution-contract-v2.md`
+- `skills/batch-runway/references/agent-result-contract-v2.md`
 - `skills/batch-runway/references/reporting-contracts-v1.md`
 - `skills/batch-runway/references/ledger-retention-v1.md`
 
@@ -146,8 +150,8 @@ Overrides:
 ```
 
 Generated dispatch and runway artifacts should use repo-relative paths like
-`skills/batch-runway/references/execution-contract-v1.md` or skill-relative
-paths like `references/execution-contract-v1.md` for reusable repo-owned Batch
+`skills/batch-runway/references/execution-contract-v2.md` or skill-relative
+paths like `references/execution-contract-v2.md` for reusable repo-owned Batch
 Runway references. Do not embed local absolute paths for those reusable
 repo-owned skill references.
 

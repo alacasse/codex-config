@@ -22,10 +22,12 @@ Do not run project-level integration harnesses, index/search/graph refreshes,
 generated-doc refreshes, final validation, or cleanup commands unless this handoff
 explicitly assigns them.
 Batch Runway reference, if needed: <absolute path to relevant reference file>.
-Use Compact Report Contract v1.
+Result contract: <Registered Agent Result Contract v2, or Compact Report Contract v1 when the existing spec names v1>.
 Allowed files/areas: <repeat exact allowed files if needed for safety>.
 Dirty-file constraints: preserve unrelated dirty files; do not touch generated output except allowed validation output.
-Return YAML only. No implementation history, reasoning narrative, or chronological work log.
+Return YAML only using exactly the result contract selected above. Stop if it
+conflicts with the spec. No implementation history, reasoning narrative, or
+chronological work log.
 ```
 
 Only paste the full slice content into the subagent brief when the subagent
@@ -44,13 +46,15 @@ Review slice <N> against <absolute spec path>.
 Repo cwd: <absolute repository path>.
 Slice anchor: <heading text or line number>.
 Diff basis: <commit hash or task-scoped worktree diff paths>.
+Result contract: <Registered Agent Result Contract v2, or Compact Report Contract v1 when the existing spec names v1>.
 Inspect only the task-scoped diff and relevant files.
 Check scope, acceptance criteria, validation evidence, dirty-file leakage, and behavior preservation.
 Flag new or remaining cleanup residue that lacks a concrete reason, removal condition, or follow-up owner.
 Classify review lenses before the verdict and include `lenses_applied`.
 Include compact specialist-review findings already gathered by the coordinator.
 Batch Runway reference, if needed: <absolute path to relevant reference file>.
-Use Compact Report Contract v1 reviewer format. Return YAML only, including `diff_basis`. Do not modify files.
+Return YAML only using exactly the result contract selected above. Stop if it
+conflicts with the spec. Do not modify files.
 ```
 
 Only paste full acceptance criteria when the reviewer cannot reliably read the
@@ -91,6 +95,21 @@ module entry behavior, path manipulation, direct-script fallback handling, or
 tests that preserve import topology. It should distinguish project-local import
 fallback from legitimate optional third-party dependency imports. A local import
 topology change alone should not trigger broader legacy-management review.
+
+Use this compact specialist handoff shape:
+
+```text
+Use agent_type="import_topology_reviewer".
+
+Review the project-local import topology changes for slice <N>.
+Repo cwd: <absolute repository path>.
+Diff basis: <commit hash or task-scoped worktree diff paths>.
+Trigger: <changed local imports, entry behavior, path manipulation, fallback, or topology-preserving tests>.
+Inspect the exact diff plus relevant entrypoints, local import callers, packaging
+documentation, and tests. Stay within the registered specialist boundary.
+Return YAML only using the registered import_topology_reviewer result contract.
+Do not modify files or make the final slice decision.
+```
 
 Use `dead-surface-audit` only when legacy, compatibility, cleanup-candidate,
 cleanup-residue, historical-evidence marker, test-retention,
@@ -166,6 +185,10 @@ Do not modify files, propose an implementation plan, or spawn additional agents.
 
 Do not use vague handoffs such as "explore the codebase" or "look around and
 report back."
-- Use `spark` only for lightweight, low-risk iteration.
-- Do not use `spark` for required Batch Runway review, security review, broad
-  refactors, or ambiguous validation failure recovery.
+- Use `spark` only for one concrete low-risk support question or other
+  disposable iteration whose correctness is locally evident.
+- Within Batch Runway, do not use `spark` for slice implementation, required or
+  specialist review, broad investigation, security or compatibility judgment,
+  architecture decisions, or ambiguous validation-failure recovery.
+- The registered `spark` TOML owns its stable edit boundary, completion
+  standard, and escalation behavior.
