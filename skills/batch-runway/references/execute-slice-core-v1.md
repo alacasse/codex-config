@@ -65,11 +65,11 @@ appropriate.
 - Run triggered specialist support reviewers only when the task-scoped diff
   matches a review route; keep `runway_reviewer` as the final gate.
 - Keep coordinator reads limited to orchestration state for routine slices.
-- Delegate broad read-only investigation to `fast_explorer` and carry forward
-  only its compact findings.
-- Prefer one batch-scoped `fast_explorer` investigation for related adjacent
-  slices; use multiple explorers only for independent questions where parallel
-  speedup is worth duplicated read context.
+- Delegate broad read-only investigation to the registered
+  `codebase_investigator` and carry forward only its compact findings.
+- Prefer one batch-scoped `codebase_investigator` investigation for related
+  adjacent slices; use multiple investigators only for genuinely independent
+  questions where parallel speedup is worth duplicated read context.
 - Do not pass live support-agent handles to workers or reviewers. The
   coordinator owns support-agent lifecycle and passes only compact findings,
   selected per-slice notes, or artifact paths.
@@ -88,9 +88,9 @@ appropriate.
    active runways, blockers, or target policy. Batch Runway still owns
    pending-row selection, validation, subagent routing, concrete
    execution-ledger updates, completed-slice archives, and commits.
-3. If broad read-only exploration would otherwise be needed in coordinator
-   context, use the `fast_explorer` trigger in `subagent-briefs.md` and retain
-   only compact findings.
+3. If broad read-only investigation would otherwise be needed in coordinator
+   context, use the `codebase_investigator` trigger in `subagent-briefs.md` and
+   retain only compact findings.
 4. Spawn `runway_worker` with the compact coding handoff below.
 5. Require compact YAML from the worker.
 6. Run or verify focused validation and selected-profile validation.
@@ -189,9 +189,9 @@ final `runway_reviewer` handoff. Read `subagent-briefs.md` for triggered
 specialist-review routing and `test-quality-review.md` when tests trigger that
 review.
 
-Use `subagent-briefs.md` for optional `fast_explorer` support investigations.
-Support output must stay compact YAML: answered question, files checked,
-findings, per-slice notes when useful, risks, and suggested next read.
+Use `subagent-briefs.md` for optional `codebase_investigator` support
+investigations. Support output must follow the compact YAML contract owned by
+the registered agent role.
 
 ## Commit Receipt
 

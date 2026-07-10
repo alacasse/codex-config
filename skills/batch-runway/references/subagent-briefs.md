@@ -121,20 +121,51 @@ finding, not as harmless historical context.
 
 ## Support-Only Custom Agents
 
-- Use `fast_explorer` only for read-only side investigations that do not replace
-  required coding or review subagents.
-- Use `fast_explorer` when broad source, test, memory, prior-spec, or
-  architecture exploration would otherwise enter coordinator context.
-- Prefer one batch-scoped `fast_explorer` investigation for related adjacent
-  slices. Use multiple explorers only for independent questions where parallel
-  speedup is worth duplicated read context.
+- `agents/codebase_investigator.toml` owns the stable role behavior and YAML
+  output contract. This Batch Runway reference owns invocation triggers,
+  task-specific briefs, coordinator lifecycle, and how compact findings are
+  carried into execution context.
+- Use the registered `codebase_investigator` only for read-only support
+  investigations that do not replace required `runway_worker` or
+  `runway_reviewer` agents.
+- Use `codebase_investigator` when broad source, test, memory, prior-spec, or
+  architecture investigation would otherwise enter coordinator context. Give
+  it a bounded, decision-oriented question rather than a general exploration
+  request.
+- Prefer one batch-scoped `codebase_investigator` investigation for related
+  adjacent slices. Use multiple investigators only for genuinely independent
+  questions where parallel speedup is worth duplicated read context.
 - The coordinator owns support-agent lifecycle. Do not pass live support-agent
   handles to workers or reviewers; pass only compact findings, selected
   per-slice notes, or artifact paths.
-- Require compact YAML with `status`, `question_answered`, `files_checked`,
-  `findings`, optional `per_slice_notes`, `risks`, and `suggested_next_read`.
-- Do not allow raw logs, long excerpts, implementation plans, or chronological
-  work logs in support-agent output.
+- Require YAML that follows the registered `codebase_investigator` contract.
+  Keep only the material findings and task-specific notes needed downstream;
+  do not retain raw investigation context.
+
+Use this compact handoff shape:
+
+```text
+Use agent_type="codebase_investigator".
+
+Investigate: Determine whether the selected ownership seam is already enforced
+by production call sites and behavioral tests.
+Repo cwd: <absolute repository path>.
+Relevant starting points:
+- <path or stable anchor>
+
+Determine:
+- Which production paths own or bypass the seam?
+- Which tests or specifications constrain the coordinator's next decision?
+
+Read broadly enough to produce a supported answer, but stop when additional
+reading is unlikely to change the conclusion.
+
+Return YAML only using the registered codebase investigator contract.
+Do not modify files, propose an implementation plan, or spawn additional agents.
+```
+
+Do not use vague handoffs such as "explore the codebase" or "look around and
+report back."
 - Use `spark` only for lightweight, low-risk iteration.
 - Do not use `spark` for required Batch Runway review, security review, broad
   refactors, or ambiguous validation failure recovery.

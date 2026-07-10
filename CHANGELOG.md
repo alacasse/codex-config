@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Codebase investigator agent contract
+
+Problem: the read-only support agent was framed as a fast, vague exploration
+role, which could encourage shallow file inventories and incomplete findings
+instead of answering a bounded technical question with supported evidence.
+
+Decision: give the registered role a clean `codebase_investigator` identity,
+set its model to `gpt-5.6-terra` with low reasoning effort, and make it the sole
+owner of the YAML investigation contract. Keep Batch Runway responsible only
+for decision-oriented briefs, coordinator lifecycle, and compact downstream
+handoffs, with no compatibility alias.
+
+Expected effect: delegated investigations should distinguish evidence,
+inference, and uncertainty; return partial or blocked results when necessary;
+and reduce coordinator context without replacing implementation or review
+agents.
+
 ### Project-owned Python validation tools
 
 Problem: agents could run ambient `pytest` or discover that `python -m ruff`

@@ -50,11 +50,11 @@ for compatibility questions, non-routine execution, recovery, and finalization.
    `runway_reviewer` as the final review gate. Invoke specialist support
    reviewers only when triggered by task-scoped changes, using
    `subagent-briefs.md` for routing.
-11. Use `fast_explorer` for optional read-only side investigations when broad
-   source, test, memory, prior-spec, or architecture exploration would otherwise
-   enter coordinator context. Prefer one batch-scoped investigation for related
-   adjacent slices, then pass only compact findings, selected per-slice notes, or
-   artifact paths to workers and reviewers.
+11. Use the registered `codebase_investigator` for optional read-only support
+   investigations when broad source, test, memory, prior-spec, or architecture
+   reading would otherwise enter coordinator context. Prefer one batch-scoped
+   investigation for related adjacent slices, then pass only compact findings,
+   selected per-slice notes, or artifact paths to workers and reviewers.
 12. Identify or create the spec's compact `orchestration_anomalies` location for
    suspicious coordinator or subagent-lifecycle behavior. Do not use it for
    routine command output, normal validation logs, clean reviews, or

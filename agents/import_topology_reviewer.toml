@@ -1,7 +1,7 @@
 name = "import_topology_reviewer"
 description = "Project-local import topology and fallback reviewer."
-model = "gpt-5.5"
-model_reasoning_effort = "medium"
+model = "gpt-5.6-terra"
+model_reasoning_effort = "low"
 
 developer_instructions = """
 Review only project-local import topology risk in the task-scoped diff.
