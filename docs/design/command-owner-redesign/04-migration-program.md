@@ -3,16 +3,19 @@
 ## Program Contract
 
 ```yaml
-schema: command-owner-migration-program/v1
+schema: command-owner-migration-program/v2
 
 source_baseline:
   repository: alacasse/codex-config
   commit: 86db50f91b0df4c00d5fa26beda0091796a43e81
 
-target_environment:
-  branch: architecture/command-owner-redesign
-  recommended_worktree: ../codex-config-contract-first
-  recommended_candidate_codex_home: ~/.codex-contract-first
+design_branch: architecture/command-owner-redesign
+implementation_intake_packet: docs/design/command-owner-redesign/07-implementation-ledger-intake.md
+
+control_model:
+  before_cutover: stable_generation_controls_real_work
+  candidate_generation: validation_only
+  after_cutover: candidate_generation_becomes_current
 
 phase_order:
   - phase-0-isolation-and-baseline
@@ -27,49 +30,166 @@ phase_order:
   - phase-9-contract-first-authoring-convergence
 
 execution_policy:
-  one_phase_active: true
-  one_batch_active: true
+  intake_many_items_at_once: true
+  plan_at_most_one_batch: true
+  execute_only_current_runway: true
+  successor_selection_during_closeout: false
   future_phase_implementation: forbidden
-  phase_completion_requires:
-    - acceptance_criteria_passed
-    - required_behavioral_scenarios_passed
-    - legacy_ownership_reduced_when_applicable
-    - temporary_bridges_registered
-    - no_unowned_compatibility
 ```
+
+## Planning Vocabulary
+
+The program uses four distinct levels:
+
+| Level | Meaning | Owner |
+|---|---|---|
+| Phase | Architectural dependency order and broad acceptance boundary. | This design package and accepted decisions. |
+| Work item | Individually addressable durable implementation need linked from `07-implementation-ledger-intake.md`. | `add-to-ledger` records it in the canonical ledger. |
+| Batch | One bounded selection or narrowing of eligible ledger work with one dispatch and one runway. | `plan-batch`. |
+| Slice | One independently executable row inside the current runway. | `work-batch` coordinates execution. |
+
+A phase is not a preselected batch. One phase may require several ledger items or
+several sequential batches. `plan-batch` decides the runnable boundary from
+current state and may split, block, narrow, group, or defer an item.
+
+## Program Entry Protocol
+
+Before implementation begins:
+
+1. create or update `07-implementation-ledger-intake.md`;
+2. invoke `add-to-ledger` once with the complete packet;
+3. create or update all individually addressable work items in the canonical
+   `codex-config` program ledger;
+4. preserve each item's dependencies and exact source-section link;
+5. leave every item unselected;
+6. stop without creating a dispatch or runway.
+
+After intake, the normal loop is:
+
+```text
+fresh plan-batch
+  -> choose one eligible item or bounded grouping
+  -> produce one selected dispatch and one queued runway
+  -> stop
+
+fresh work-batch
+  -> execute only that runway
+  -> reconcile only that batch
+  -> stop without selecting a successor
+```
+
+A design-only implementation batch map is forbidden because it would bypass the
+normal selection and scope-shaping authority of `plan-batch`.
+
+## Two-Generation Bootstrap Protocol
+
+### Stable control lane
+
+```yaml
+toolchain_generation: stable
+toolchain_source_checkout: stable checkout used by default CODEX_HOME
+target_repository_checkout: separate candidate checkout
+canonical_planning_state_mutation_allowed: true
+```
+
+The stable lane:
+
+- performs the multi-item `add-to-ledger` intake;
+- selects real migration work through the current `plan-batch`;
+- executes real migration batches through the current `work-batch`;
+- edits files only in the candidate checkout;
+- produces canonical ledger, dispatch, runway, commit, and closeout state;
+- remains unchanged and available for rollback until cutover.
+
+### Candidate validation lane
+
+```yaml
+toolchain_generation: candidate
+toolchain_source_checkout: candidate checkout
+target_repository_checkout: candidate checkout or isolated fixture checkout
+codex_home: separate candidate CODEX_HOME
+canonical_planning_state_mutation_allowed: false
+```
+
+Before cutover, the candidate lane may:
+
+- validate schemas and contract blocks;
+- run topology-independent behavioral fixtures;
+- run controlled trials of candidate skills;
+- verify fresh-session loading and installation identity;
+- return compact evidence to the stable controlling batch.
+
+Before cutover, the candidate lane may not:
+
+- mutate the canonical program ledger;
+- select, queue, execute, recover, or close a real migration batch;
+- change toolchain generation midway through a command;
+- treat successful fixture behavior as authorization to self-host real work.
+
+### Candidate checkout choice
+
+The default candidate checkout is a **separate clone**. It is familiar, visibly
+independent, and does not rely on unproven agent behavior around worktrees.
+
+A Git worktree is permitted only when the isolation work item proves all of the
+following:
+
+- the agent resolves the intended checkout consistently;
+- the installer links the intended skill source paths;
+- the runner and validation commands operate in the intended checkout;
+- branch and dirty-worktree diagnostics remain unambiguous;
+- rollback instructions are tested.
+
+Worktree support is not assumed by this program.
+
+### Required generation record
+
+Every planning, execution, or candidate-validation report records:
+
+```yaml
+toolchain_generation: stable | candidate
+toolchain_source_checkout: absolute path
+target_repository_checkout: absolute path
+codex_home: absolute path
+canonical_planning_state_mutation_allowed: true | false
+```
+
+Missing or contradictory generation evidence is a stop condition.
 
 ## Program Rules
 
-- The phase order is dependency-significant and must not be rearranged without
-  an accepted decision recorded in `decisions.md`.
-- Design, decomposition, and implementation occur in separate fresh sessions.
-- A phase may contain more than one bounded batch when necessary, but only one
-  batch may be selected at a time.
+- The phase order is dependency-significant and may change only through an
+  accepted decision.
+- Implementation work must already exist in the canonical ledger before
+  `plan-batch` may select it.
+- One `add-to-ledger` request may ingest the complete program packet.
+- One `plan-batch` invocation produces at most one dispatch and one runway.
+- One `work-batch` invocation consumes only the current queued or active runway.
 - A target surface must not become authoritative while the old owner remains an
   equally valid normal route.
-- Every ownership-transfer phase must remove or narrow named legacy ownership.
+- Every ownership-transfer batch removes or narrows named legacy ownership.
 - A phase is not complete merely because target and legacy paths both work.
-- No batch may preserve a topology test solely because it currently passes.
-- No active old-format artifact may be abandoned or silently reinterpreted.
-- Same-batch closeout may reconcile the completed batch but may not select the
-  next batch.
+- No batch preserves a topology test solely because it currently passes.
+- No active old-format artifact is abandoned or silently reinterpreted.
+- Same-batch closeout does not select the next batch.
 - Rollback uses Git history and the stable installation lane, not permanent
   runtime duplication.
-- `skill-authoring` v1 must be complete, authoritative, and validated before any
-  target command-owner skill is migrated.
-- Dogfood findings may refine compatible authoring guidance, but semantic changes
-  to ownership or canonicality require an explicit schema decision.
+- `skill-authoring` v1 is complete and authoritative before any target command
+  owner is migrated.
+- Dogfood findings may refine compatible guidance; semantic changes to ownership
+  or canonicality require an explicit schema decision.
 
 ## Temporary Bridge Record
 
-Every temporary bridge must be recorded in the selected batch and closeout:
+Every temporary bridge must be recorded in the selected dispatch, runway, and
+closeout:
 
 ```yaml
 bridge:
   id: BRIDGE-<stable-id>
   caller: exact caller
   reason: concrete migration need
-  owner: migration phase or batch
+  owner: migration work item or batch
   allowed_scope:
     - exact operation or artifact class
   introduced_in: commit-or-batch
@@ -80,69 +200,73 @@ bridge:
 
 A bridge without these fields is an architectural defect.
 
+# Phase Contracts
+
 ## Phase 0 — Isolation and Baseline
+
+### Ledger item
+
+`COR-001` in `07-implementation-ledger-intake.md`.
 
 ### Objective
 
-Create a stable execution lane and an isolated candidate lane before changing
-skills that are currently installed and used to perform the migration.
+Establish a stable control lane and an isolated candidate validation lane before
+changing skills that are currently installed and used to perform the migration.
 
 ### Required work
 
-- Create or confirm a dedicated branch or Git worktree for the candidate target.
-- Use final canonical `skills/<name>/` paths inside the candidate lane.
-- Configure a separate candidate `CODEX_HOME`.
-- Confirm the stable installation still points at the stable checkout.
-- Freeze and record the source baseline commit.
-- Confirm no selected, queued, or active old-format batch will be disrupted.
-- Confirm no resumable runner state requires the current runtime owners.
-- Establish rollback instructions based on Git and installation switching.
+- confirm the stable checkout and default `CODEX_HOME` source paths;
+- create a separate candidate clone at the design branch by default;
+- create a separate candidate `CODEX_HOME`;
+- prove a fresh session can report which generation it loaded;
+- confirm the stable lane edits the candidate checkout rather than itself;
+- confirm no selected, queued, active, or resumable state will be disrupted;
+- document installation switching and rollback;
+- evaluate a worktree only as an optional experiment, not a prerequisite.
 
 ### Forbidden work
 
-- No target skill implementation.
-- No active ledger mutation.
-- No batch selection.
-- No permanent `skills-v2/`, `skills-next/`, or version-suffixed commands.
-- No in-place mutation of a checkout used by active coordinator, worker, or
-  reviewer sessions.
-
-### Entry gate
-
-```yaml
-required:
-  - source_repository_accessible
-  - stable_installation_identifiable
-```
+- no target skill rewrite;
+- no active ledger-format migration;
+- no candidate-generation mutation of canonical state;
+- no permanent `skills-v2/`, `skills-next/`, or version-suffixed commands.
 
 ### Exit gate
 
 ```yaml
-stable_lane_unchanged: true
-candidate_lane_operational: true
-source_commit_frozen: true
+stable_checkout_unchanged: true
+stable_generation_identity_proven: true
+candidate_checkout_isolated: true
 candidate_codex_home_isolated: true
-selected_old_format_dispatch: null
-queued_old_format_runway: null
-active_old_format_runway: null
+candidate_generation_identity_proven: true
+stable_can_edit_candidate_without_self_mutation: true
+selected_old_generation_dispatch: null
+queued_old_generation_runway: null
+active_old_generation_runway: null
 resumable_old_runner_state: false
+rollback_documented: true
 ```
-
-### Validation
-
-- inspect installation state and symlink targets;
-- run candidate install dry-run;
-- start a fresh candidate session that can list installed candidate features;
-- verify the stable session still reads stable skills.
 
 ## Phase 1 — Contract Distillation
 
+### Ledger item
+
+`COR-002`.
+
 ### Objective
 
-Extract source behavior and target ownership through `port-by-contract`
-reasoning before implementation.
+Verify source behavior and target ownership before implementation.
 
-### Allowed modes
+### Required work
+
+- verify and complete `01-source-behavior-contracts.md`;
+- verify the target ownership model;
+- map source tests to behavior contracts;
+- identify accidental source topology;
+- resolve or preserve open decisions explicitly;
+- confirm every workflow decision has one target owner.
+
+### Allowed `port-by-contract` modes
 
 ```text
 intake-source
@@ -150,34 +274,12 @@ distill-contract
 design-target
 ```
 
-### Forbidden mode
-
-```text
-create-port-runway
-```
-
-The current runway skills are source implementation, not migration authority.
-
-### Required work
-
-- Verify and complete `01-source-behavior-contracts.md`.
-- Verify and complete the target ownership model.
-- Map source tests to behavior contracts.
-- Identify accidental source structure.
-- Record unresolved decisions without guessing.
-- Confirm each workflow decision has exactly one target owner.
-
 ### Forbidden work
 
-- No target skill rewrite.
-- No schema or parser implementation.
-- No program ledger mutation.
-- No implementation runway.
-
-### Entry gate
-
-- Phase 0 complete.
-- Source baseline unchanged or explicitly refreshed through a decision record.
+- no target skill rewrite;
+- no schema implementation;
+- no use of `create-port-runway` as migration authority;
+- no new program selection.
 
 ### Exit gate
 
@@ -187,43 +289,37 @@ each_target_decision_has_one_owner: true
 accidental_source_structure_identified: true
 test_classification_complete_enough_for_harness: true
 open_human_decisions_explicit: true
-implementation_started: false
 ```
-
-### Validation
-
-- architecture review against current skills, tests, manifests, agents, and
-  tooling;
-- deletion-test thought experiment for APR and Batch Runway;
-- human review of accepted and open decisions.
 
 ## Phase 2 — Contract Formats, Validators, and `skill-authoring` v1
 
-### Objective
+Phase 2 is intentionally represented by several ledger items so `plan-batch`
+can bound them independently.
 
-Finalize the contract-first representation and the authoritative authoring
-workflow before migrating any target command-owner skill.
+### COR-003 — Skill contract schema and validators
 
-### Required work
+Required outcomes:
 
-- Define and validate `skill-contract/v1`.
-- Define and validate `planning-dispatch/v1`.
-- Define and validate `planning-runway/v1`.
-- Define and validate `planning-closeout/v1`.
-- Implement lightweight block location, parsing, and schema validation.
-- Implement ownership-conflict, dependency, and reference checks.
-- Implement `skills/skill-authoring/SKILL.md` at its final canonical path.
-- Make `skill-authoring` v1 complete and authoritative for repository-specific
-  hybrid skill structure, ownership, canonicality, and migration rules.
-- Document the boundary with the agent's generic skill-writing guidance.
-- Validate `skill-authoring` on `port-by-contract` or an equivalent
-  representative skill before target-owner migration.
-- Prototype one synthetic dispatch, runway, execution receipt, and closeout
-  chain.
-- Install `skill-authoring` only in the candidate `CODEX_HOME` until cutover.
-- Compare readability, ambiguity, context size, and validation coverage.
+- `skill-contract/v1` schema;
+- block location and parsing;
+- required-field validation;
+- ownership, delegation, dependency, and reference checks;
+- malformed, duplicate-owner, cosmetic-migration, and retired-dependency tests.
 
-### `skill-authoring` completion standard
+### COR-004 — Planning artifact schemas and validators
+
+Required outcomes:
+
+- `planning-dispatch/v1`;
+- `planning-runway/v1`;
+- `planning-closeout/v1`;
+- canonicality and lineage validation;
+- synthetic dispatch/runway/receipt/closeout chain;
+- explicit handling of unresolved transaction and storage decisions.
+
+### COR-005 — Finalize `skill-authoring` v1
+
+Required outcomes:
 
 ```yaml
 skill_authoring_v1:
@@ -243,39 +339,11 @@ skill_authoring_v1:
   runtime_dependency_of_command_owners: false
 ```
 
-### Stable before dogfooding
+`skill-authoring` is validated on `port-by-contract` or an equivalent
+representative skill and installed only in the candidate `CODEX_HOME` before
+cutover.
 
-- required contract sections;
-- meaning of `owns`, `delegates`, `forbids`, `writes`, and `stops_when`;
-- machine-fact canonicality;
-- ownership-conflict behavior;
-- cosmetic-migration guard;
-- validator interfaces;
-- precedence over generic narrative-first formatting when the two conflict.
-
-### Compatibly refinable later
-
-- optional fields;
-- report formatting;
-- size-budget heuristics;
-- reference-loading recommendations;
-- additional non-breaking validation checks.
-
-### Forbidden work
-
-- No production transfer of plan or work ownership.
-- No new normal command names.
-- No installation of synthetic prototypes as runtime skills.
-- No runtime dependency from command owners to `skill-authoring`.
-- No migration of historical planning artifacts.
-- No semantic schema change hidden as authoring guidance.
-
-### Entry gate
-
-- Phase 1 complete.
-- No unresolved decision blocks the initial schemas.
-
-### Exit gate
+### Phase 2 exit gate
 
 ```yaml
 skill_contract_v1_parseable: true
@@ -283,82 +351,42 @@ planning_dispatch_v1_parseable: true
 planning_runway_v1_parseable: true
 planning_closeout_v1_parseable: true
 ownership_conflict_detection_proven: true
-reference_validation_proven: true
 canonicality_rules_documented: true
 skill_authoring_v1_complete: true
 skill_authoring_v1_authoritative: true
-skill_authoring_validated_on_representative_skill: true
-skill_authoring_candidate_install_green: true
-prototype_runtime_authority: false
+candidate_generation_still_validation_only: true
 ```
 
-### Validation
-
-- schema unit tests;
-- malformed and missing-field tests;
-- duplicate-owner tests;
-- unknown-reference tests;
-- cosmetic-migration tests that reject YAML plus retained contradictory prose;
-- generic-authoring precedence tests or review fixtures;
-- human review of representative diffs.
-
 ## Phase 3 — Behavioral Scenario Harness
+
+### Ledger item
+
+`COR-006`.
 
 ### Objective
 
 Create topology-independent proof of source and target workflow behavior before
 moving ownership.
 
-### Required work
-
-Create temporary planning-root fixtures for at least:
+### Required scenarios
 
 - empty ledger;
-- one eligible finding;
-- multiple eligible findings;
-- explicitly requested finding;
-- missing requested finding;
+- one and multiple eligible findings;
+- explicitly requested or missing finding;
 - vague mixed-risk finding;
-- selected dispatch;
-- queued runway;
-- active runway;
+- selected dispatch, queued runway, and active runway;
 - invalid or stale state;
-- validation failure;
-- review failure;
+- validation and review failure;
 - dirty-file conflict;
-- partial execution;
-- resume after interruption;
+- partial execution and resume;
 - successful closeout;
 - same-batch reconciliation;
 - no successor selection;
 - unsupported legacy discovery;
 - triggered test-quality review.
 
-Each scenario must assert:
-
-- initial canonical artifacts;
-- invoked public command;
-- expected state transition;
-- expected files written;
-- forbidden writes;
-- stable stop reason;
-- validation evidence.
-
-### Forbidden work
-
-- Do not make old skill names part of expected output unless testing a named
-  migration bridge.
-- Do not rely on exact prose in `SKILL.md`.
-- Do not mutate the active repository planning root.
-
-### Entry gate
-
-```yaml
-required_phases:
-  - phase-2-contract-formats-validators-and-skill-authoring
-required_authoring_surface:
-  - skill-authoring/v1
-```
+Each scenario asserts initial canonical facts, invoked public command, expected
+transition, expected writes, forbidden writes, stop reason, and evidence.
 
 ### Exit gate
 
@@ -371,48 +399,32 @@ active_planning_root_untouched: true
 
 ## Phase 4 — `add-to-ledger` Ownership Transfer
 
+### Ledger item
+
+`COR-007`.
+
 ### Objective
 
 Make `add-to-ledger` the sole owner of intake and canonical ledger mutation.
 
-### Responsibilities introduced or completed
-
-- source identity preservation;
-- finding normalization;
-- create, update, merge, or no-op decision;
-- revision-checked ledger mutation;
-- intake receipt;
-- stop-before-planning boundary.
-
-### Legacy ownership removed in the same phase
-
-- APR intake mode;
-- APR finding-normalization authority;
-- APR normal ledger-mutation authority;
-- legacy-removal program-owner exception.
-
 ### Required work
 
-- Use `skill-authoring` v1 to migrate `add-to-ledger`.
-- Introduce or complete the narrow ledger-store interface.
-- Add behavioral intake and idempotence tests.
-- Remove command manifest dependencies on APR for intake.
-- Rewrite or delete text/topology tests that require APR intake ownership.
-- Keep any old-format ledger reader read-only and caller-scoped.
-- Record any compatible authoring-guidance refinement discovered through
-  dogfooding; do not invent local schema fields.
+- use `skill-authoring` v1 to migrate `add-to-ledger`;
+- implement or complete the narrow ledger-store interface;
+- preserve source identity and idempotence;
+- remove APR intake and normalization authority;
+- remove the `legacy-removal` program-owner escape hatch;
+- remove command dependencies and tests that require APR intake ownership.
 
 ### Entry gate
 
 ```yaml
-required_phases:
-  - phase-3-behavioral-scenario-harness
-required_scenarios:
-  - fresh-finding-intake
-  - duplicate-finding-intake
-  - requested-missing-finding
-  - stale-ledger-revision
-skill_authoring_v1_authoritative: true
+requires:
+  - COR-005 closed
+  - COR-006 closed
+  - fresh-finding-intake green
+  - duplicate-finding-intake green
+  - stale-ledger-revision green
 ```
 
 ### Exit gate
@@ -422,87 +434,31 @@ add_to_ledger:
   owns_intake_decisions: true
   broad_workflow_dependencies: 0
   contract_validates: true
-  behavior_scenarios_green: true
 architecture_program_runway:
   intake_decisions_owned: 0
 legacy_removal:
   program_owner_escape_hatch: false
 ```
 
-### Rollback boundary
-
-Rollback the complete intake transfer as one unit. Do not restore APR as a
-second normal intake path while retaining the target path.
-
 ## Phase 5 — `plan-batch` Ownership Transfer
+
+### Ledger item
+
+`COR-008`.
 
 ### Objective
 
 Make `plan-batch` the sole owner of semantic planning and runway specification.
 
-### Responsibilities introduced or completed
-
-- current-state branch decision;
-- candidate eligibility and selection;
-- grouping into one bounded batch;
-- split, block, or narrow decision;
-- dispatch definition;
-- batch kind, risk, and approval gates;
-- runway slice design;
-- validation-profile selection;
-- selected and queued transition requests;
-- stop-before-implementation boundary.
-
-### Legacy ownership removed in the same phase
-
-From APR:
-
-- grouping;
-- prioritization;
-- candidate selection;
-- selected dispatch creation;
-- split, block, or narrow workflow ownership;
-- normal queue preparation.
-
-From Batch Runway:
-
-- `create-spec` mode;
-- semantic slice design;
-- validation-profile selection during planning;
-- planning-mode inference from human language.
-
 ### Required work
 
-- Use `skill-authoring` v1 to migrate `plan-batch`.
-- Move planning references under `skills/plan-batch/references/`.
-- Produce and validate hybrid dispatch and runway artifacts.
-- Replace APR and Batch Runway planning dependencies with narrow mechanisms.
-- Update runner planning invocation only where needed for this transfer.
-- Remove or rewrite tests that require APR and Batch Runway planning topology.
-- Preserve a read-only old-format spec parser only if active artifacts require it.
-- Record compatible authoring refinements centrally, not as a plan-batch dialect.
-
-### Entry gate
-
-```yaml
-required_phases:
-  - phase-4-add-to-ledger-transfer
-required_scenarios:
-  - empty-ledger
-  - one-eligible-finding
-  - multiple-eligible-findings
-  - explicitly-requested-finding
-  - vague-mixed-risk-finding
-  - selected-dispatch-exists
-  - queued-runway-exists
-  - active-runway-exists
-required_schemas:
-  - planning-dispatch/v1
-  - planning-runway/v1
-skill_authoring_v1_authoritative: true
-forbidden_state:
-  - active_old_format_runway
-```
+- use `skill-authoring` v1 to migrate `plan-batch`;
+- move planning references under `skills/plan-batch/references/`;
+- produce hybrid dispatch and runway artifacts;
+- remove APR grouping, selection, dispatch, and normal queue-preparation authority;
+- remove Batch Runway `create-spec` and semantic planning authority;
+- rewrite or delete topology tests;
+- retain only caller-scoped read-only compatibility required by active artifacts.
 
 ### Exit gate
 
@@ -524,80 +480,28 @@ batch_runway:
 new_active_artifact_format: hybrid_v1_only
 ```
 
-### Rollback boundary
-
-Rollback the whole planning transfer. Do not keep both target plan-batch and APR
-selection as valid normal routes.
-
 ## Phase 6 — `work-batch` Ownership Transfer
+
+### Ledger item
+
+`COR-009`.
 
 ### Objective
 
 Make `work-batch` the sole owner of execution, recovery, finalization, and
 same-batch closeout.
 
-### Responsibilities introduced or completed
-
-- queued-to-active transition request;
-- next incomplete slice choice;
-- worker and reviewer lifecycle;
-- validation acceptance;
-- specialist review routing;
-- commit acceptance and evidence;
-- recovery and resume;
-- final validation;
-- closeout evidence;
-- finding reconciliation decision;
-- active-to-completed transition request;
-- no-successor boundary.
-
-### Legacy ownership removed in the same phase
-
-From Batch Runway:
-
-- `execute-spec` mode;
-- execution lifecycle ownership;
-- recovery ownership;
-- finalization ownership;
-- commit and evidence ownership as workflow decisions.
-
-From APR:
-
-- `closeout-runway` mode;
-- same-batch reconciliation ownership;
-- completed-batch queue-clearing decision.
-
 ### Required work
 
-- Use `skill-authoring` v1 to migrate `work-batch`.
-- Move execution, recovery, finalization, and retention references under
-  `skills/work-batch/references/`.
-- Retain worker and reviewer as narrow independent agent mechanisms.
-- Produce and validate hybrid execution receipts and closeout artifacts.
-- Replace APR and Batch Runway dependencies with narrow mechanisms.
-- Remove or rewrite topology tests.
-- Complete or explicitly migrate any active old-format batch before cutover.
-- Record compatible authoring refinements centrally, not as a work-batch dialect.
-
-### Entry gate
-
-```yaml
-required_phases:
-  - phase-5-plan-batch-transfer
-required_scenarios:
-  - start-queued-batch
-  - validation-failure
-  - review-failure
-  - dirty-file-conflict
-  - partial-execution
-  - resume-after-interruption
-  - successful-closeout
-  - same-batch-reconciliation
-  - no-successor-selection
-required_schema:
-  - planning-closeout/v1
-skill_authoring_v1_authoritative: true
-```
+- use `skill-authoring` v1 to migrate `work-batch`;
+- move execution, recovery, finalization, and retention references under
+  `skills/work-batch/references/`;
+- retain worker and reviewer as narrow independent agents;
+- produce hybrid execution receipts and closeout artifacts;
+- remove Batch Runway `execute-spec`, recovery, and finalization authority;
+- remove APR `closeout-runway` and same-batch reconciliation authority;
+- remove or rewrite topology tests;
+- complete or explicitly migrate any active old-format batch before cutover.
 
 ### Exit gate
 
@@ -617,41 +521,29 @@ architecture_program_runway:
   closeout_decisions_owned: 0
 ```
 
-### Rollback boundary
-
-Rollback the complete execution transfer. Do not restore an old closeout owner
-while leaving target work-batch finalization authoritative.
-
 ## Phase 7 — Runner and Installation Cutover
+
+### Ledger item
+
+`COR-010`.
 
 ### Objective
 
-Make installation, manifests, agents, and the runner consume only public target
-command protocols and narrow mechanisms.
+Make manifests, agents, installation, and the runner consume only public target
+commands and narrow mechanisms, then switch toolchain generations safely.
 
 ### Required work
 
-- Remove APR and Batch Runway from command-owner feature dependencies.
-- Separate runner installation from APR.
-- Replace runner instructions that name old modes with public plan and work
-  command protocols.
-- Keep runner-owned concerns limited to process lifecycle, bounds, environment,
-  sandbox, telemetry, and explicit loop policy.
-- Update active docs, prompts, manifests, and feature descriptions.
-- Install `skill-authoring` and target command owners in the candidate lane.
-- Run a complete candidate plan and work workflow on a controlled fixture.
-
-### Forbidden work
-
-- The runner may not choose findings or design slices.
-- The runner may not reinterpret closeout or select a successor through
-  work-batch.
-- No direct-command metadata for retired owners.
-
-### Entry gate
-
-- Phase 6 complete.
-- No active old-format execution state.
+- remove APR and Batch Runway from command-owner feature dependencies;
+- separate runner installation from APR;
+- replace old-mode runner instructions with public plan/work protocols;
+- install the full candidate toolchain in the candidate `CODEX_HOME`;
+- run complete candidate workflows on controlled fixtures;
+- verify rollback to stable installation;
+- confirm no selected, queued, active, or resumable old-generation state;
+- perform the installation cutover as the final controlled action;
+- finish the controlling stable session without switching its loaded generation;
+- start a fresh candidate-generation diagnostic after cutover.
 
 ### Exit gate
 
@@ -659,33 +551,35 @@ command protocols and narrow mechanisms.
 command_owner_manifest_legacy_dependencies: 0
 runner_prompts_using_old_modes: 0
 runner_installation_owned_by_apr_feature: false
-candidate_full_workflow_green: true
-skill_authoring_candidate_install_green: true
-stable_rollback_available: true
+candidate_full_fixture_workflow_green: true
+no_old_generation_active_state: true
+rollback_to_stable_proven: true
+fresh_candidate_generation_diagnostic_green: true
+default_toolchain_generation: candidate
 ```
+
+The first real candidate-controlled `plan-batch` invocation may occur only after
+this exit gate is satisfied.
 
 ## Phase 8 — Legacy Owner Deletion
 
+### Ledger item
+
+`COR-011`.
+
 ### Objective
 
-Physically remove the broad legacy owners and migration-only topology.
+Physically remove broad legacy owners and migration-only topology.
 
 ### Required work
 
-- Delete `skills/architecture-program-runway/`.
-- Delete `skills/batch-runway/` after moving surviving references.
-- Delete old modes and direct-command metadata.
-- Delete migration-retention and topology tests that protect retired structure.
-- Delete expired transition fixtures and parsers.
-- Remove duplicated rules and vocabulary.
-- Run the target behavior suite after physical deletion.
-- Preserve clearly archived historical artifacts without rewriting them.
-
-### Entry gate
-
-- Phase 7 complete.
-- All conditions in `06-deletion-conditions.md` satisfied or explicitly waived
-  by an accepted human decision.
+- delete `skills/architecture-program-runway/`;
+- delete `skills/batch-runway/` after moving surviving references;
+- delete old modes, direct-command metadata, topology tests, expired fixtures,
+  and expired parsers;
+- remove duplicated rules and vocabulary;
+- preserve clearly archived historical artifacts without rewriting them;
+- run target behavior scenarios after physical deletion.
 
 ### Exit gate
 
@@ -698,102 +592,54 @@ active_legacy_artifacts: 0
 target_behavioral_scenarios_green: true
 ```
 
-### Rollback boundary
-
-Rollback is the pre-deletion commit and stable installation. Do not recreate
-permanent compatibility wrappers.
-
 ## Phase 9 — Contract-First Authoring Convergence
+
+### Ledger item
+
+`COR-012`.
 
 ### Objective
 
-Audit and refine the already-authoritative `skill-authoring` v1 after it has been
-dogfooded on all target command owners. This phase does not create the meta-skill.
+Audit and refine the already-authoritative `skill-authoring` v1 after dogfooding.
+This phase does not create the meta-skill.
 
 ### Required work
 
-- Audit `port-by-contract`, `add-to-ledger`, `plan-batch`, and `work-batch` for
-  consistent use of `skill-contract/v1`.
-- Collect dogfood findings from phases 4 through 6.
-- Integrate compatible improvements to optional fields, report layout, size
-  heuristics, reference loading, and non-breaking validation.
-- Remove temporary authoring exceptions and per-skill dialects.
-- Confirm the generic skill-writing guidance boundary remains explicit.
-- Validate `skill-authoring` by creating one new representative skill and
-  auditing one existing target skill.
-- Declare `skill-contract/v1` and `skill-authoring` v1 mature when evidence
-  supports it.
-
-### Forbidden work
-
-- No runtime dependency from command owners to `skill-authoring`.
-- No ownership of planning state or workflow execution.
-- No implicit inheritance or hidden include system.
-- No semantic ownership or canonicality change without a new accepted schema
-  decision.
-- No cosmetic migration that preserves source prose by default.
-
-### Entry gate
-
-```yaml
-skill_contract_v1_validated_on:
-  - port-by-contract
-  - add-to-ledger
-  - plan-batch
-  - work-batch
-planning_artifact_v1_chain_validated: true
-legacy_owner_deletion_complete: true
-```
+- audit `port-by-contract`, `add-to-ledger`, `plan-batch`, and `work-batch`;
+- collect dogfood findings from ownership-transfer phases;
+- integrate compatible improvements to optional fields, report layout, size
+  heuristics, reference loading, and non-breaking validation;
+- remove temporary authoring exceptions and per-skill dialects;
+- require an explicit versioned decision for semantic contract changes.
 
 ### Exit gate
 
 ```yaml
-skill_authoring_v1_mature: true
-target_skills_use_one_contract_dialect: true
+contract_first_target_skills_consistent: true
 temporary_authoring_exceptions: 0
-meta_skill_runtime_dependencies: 0
-meta_skill_ownership_conflict_detection_proven: true
-cosmetic_migration_guard_proven: true
+per_skill_contract_dialects: 0
+skill_authoring_v1_convergence_audit: passed
 ```
 
-## Implementation Decomposition Rules
+## Per-Item Planning Requirements
 
-After this program is accepted, a separate design-only session may create the
-ordered implementation batches.
-
-Each batch must declare:
+When `plan-batch` selects a redesign item, the dispatch and runway must name:
 
 ```yaml
-batch:
-  phase: phase-id
-  satisfies_contracts: []
-  introduces_target_responsibilities: []
-  removes_legacy_responsibilities: []
-  temporary_bridges: []
-  required_scenarios: []
-  entry_gate: []
-  exit_gate: []
-  rollback_boundary: string
+source_work_item: COR-xxx
+source_section: docs/design/command-owner-redesign/07-implementation-ledger-intake.md#...
+phase: phase-id
+satisfies_contracts: []
+introduces_target_responsibilities: []
+removes_legacy_responsibilities: []
+temporary_bridges: []
+required_scenarios: []
+entry_gate: []
+exit_gate: []
+rollback_boundary: string
+toolchain_generation: stable | candidate
 ```
 
-A batch is invalid if it introduces target ownership without naming the legacy
-ownership removed by the same transfer or its explicitly approved immediate
-cutover.
-
-## Program Completion
-
-The redesign program is complete only when:
-
-```yaml
-program_completion:
-  target_command_owners_authoritative: true
-  duplicate_workflow_decisions: 0
-  architecture_program_runway_deleted: true
-  batch_runway_deleted: true
-  old_modes_active_references: 0
-  behavior_scenarios_green: true
-  skill_authoring_v1_mature: true
-  active_artifacts_use_target_schemas: true
-  temporary_bridges: 0
-  successor_selection_boundary_proven: true
-```
+Before phase 7 cutover, every real migration dispatch uses
+`toolchain_generation: stable`. Candidate-generation work is validation evidence,
+not an independently selected real batch.
