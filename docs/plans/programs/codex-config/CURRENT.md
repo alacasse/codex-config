@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/closeout.md`
 - Run artifact location: `None selected`
@@ -31,7 +32,9 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-19 through CCFG-29.
+  CCFG-20 through CCFG-29.
+- Pending ledger row: CCFG-19. It is controlled by the queued design-only
+  dispatch and runway below.
 - Closed ledger row: CCFG-18. Candidate lineage, strict transition, isolated
   generation install, fixture isolation, quiescence, and rollback are complete.
 - Accepted command-owner redesign snapshot:
@@ -47,8 +50,10 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Queued dispatch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md`
+- Queued dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/dispatch.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-18-candidate-generation`
@@ -61,9 +66,11 @@
 
 ## Next Safe Action
 
-CCFG-18 is closed and no dispatch, runway, or batch is selected, active, or
-queued. Stop without selecting successor work. A future explicit `plan-batch`
-request owns any new selection; CCFG-19 remains unselected.
+Execute the queued
+`docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md`
+through an explicit `work-batch` request. CCFG-19 is a strict cross-checkout,
+design-only decision batch. Do not select, dispatch, queue, refresh, or prepare
+CCFG-20 or any other successor during execution or same-batch closeout.
 
 ## Stop Conditions
 
@@ -72,19 +79,23 @@ request owns any new selection; CCFG-19 remains unselected.
   pre-creation verification as strict identity.
 - Stop if any default stable-home installed link resolves to the redesign branch
   or candidate clone.
-- Stop if selected dispatch, active runway, or queued batch appears without a
-  future explicit `plan-batch` request.
+- Stop if selected dispatch or active runway appears alongside the queued
+  CCFG-19 runway.
+- Stop if a different queued batch appears or CCFG-19's dispatch/runway lineage
+  does not match the canonical ledger.
 - Stop if planning would write outside the canonical stable planning repository.
 - Stop if candidate code or helpers would control canonical state before cutover.
-- Stop if work would repeat command-owner redesign intake or create new identities
-  instead of amending CCFG-18 through CCFG-29.
+- Stop if work would repeat command-owner redesign intake or create new
+  identities instead of amending CCFG-18 through CCFG-29.
+- Stop if CCFG-19 execution would implement schemas, `ledger-store`, planning
+  transactions, runner changes, ownership transfer, or other CCFG-20 through
+  CCFG-29 work.
 - Stop if work would select successor work, create another dispatch, or create
-  another runway without an explicit future `plan-batch` request.
+  another runway during CCFG-19 execution or closeout.
 - Stop if work would select from archived APR/PST ledgers instead of the canonical
   codex-config ledger.
 - Stop if work would execute the displaced CCFG-11 runway without replanning.
 - Stop if work would copy archived history into the active ledger row-by-row.
 - Stop if a generic reusable skill receives project-specific paths, commands,
   caches, or planning layouts.
-- Stop if this closeout selects CCFG-19 or prepares any successor dispatch or
-  runway.
+- Stop if CCFG-19 closeout selects or prepares any successor dispatch or runway.
