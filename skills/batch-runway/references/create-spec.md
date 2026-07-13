@@ -58,13 +58,27 @@ slices to consume that same owner/API, and add acceptance criteria or stop
 conditions that fail the plan if a downstream slice bypasses, duplicates, or
 reimplements the boundary.
 
+When the selected dispatch explicitly names
+`cross-checkout-precreation/v1`, read `cross-checkout-precreation-v1.md` before
+writing the runway. Resolve the installed helper from the active Codex home,
+validate the complete payload and exact intended creation targets while they
+are absent, then preserve the payload and absolute installed helper path
+verbatim in a required pre-creation section. Stop instead of emitting the
+runway when validation fails. Planning must not create either target, and this
+section must not appear in ordinary single-root or strict cross-checkout
+runways.
+
 When the selected dispatch explicitly names `cross-checkout-context/v1` or
-separate toolchain, canonical-planning, and implementation roots, read
+explicitly declares separate existing toolchain, canonical-planning, and
+implementation repository roots, read
 `cross-checkout-context-v1.md` before writing the runway. Validate the complete
 payload and canonical planning root with the installed helper, then preserve
 both verbatim in the runway under a required execution-context section. Stop
 instead of emitting the runway when the context is missing or mismatched. Do
-not add that section to ordinary single-root runways.
+not add that section to ordinary single-root runways. A dispatch naming
+`cross-checkout-precreation/v1` does not use this strict branch before a
+validated helper-produced transition receipt plus green strict context exists;
+its pre-transition strict verification remains `null`.
 
 The spec must include:
 
@@ -82,8 +96,12 @@ The spec must include:
 - 3-5 slice sections
 - final validation
 - stop conditions
-- for explicitly cross-checkout work only: the complete validated
-  `cross-checkout-context/v1` payload and explicit canonical planning root
+- only for work that explicitly names `cross-checkout-context/v1` or explicitly
+  declares separate existing toolchain, canonical-planning, and implementation
+  repository roots: the complete validated strict payload and explicit
+  canonical planning root
+- for explicitly pre-creation work only: the complete validated
+  `cross-checkout-precreation/v1` payload and absolute installed helper path
 
 Every generated dispatch or runway artifact must declare exactly one batch
 kind before execution:
@@ -155,7 +173,12 @@ Reference files:
 - `skills/batch-runway/references/reporting-contracts-v1.md`
 - `skills/batch-runway/references/ledger-retention-v1.md`
 - `skills/batch-runway/references/cross-checkout-context-v1.md` when the runway
-  is explicitly cross-checkout
+  explicitly names `cross-checkout-context/v1` or explicitly declares separate
+  existing toolchain, canonical-planning, and implementation repository roots;
+  a pre-creation runway does not use this strict reference before its validated
+  transition receipt plus green strict context
+- `skills/batch-runway/references/cross-checkout-precreation-v1.md` when the
+  runway is explicitly pre-creation
 
 Overrides:
 - <only list deviations from the standard contract>

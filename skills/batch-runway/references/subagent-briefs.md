@@ -23,6 +23,7 @@ generated-doc refreshes, final validation, or cleanup commands unless this hando
 explicitly assigns them.
 Batch Runway reference, if needed: <absolute path to relevant reference file>.
 Result contract: <Registered Agent Result Contract v2, or Compact Report Contract v1 when the existing spec names v1>.
+Cross-checkout pre-creation: <exact payload, installed helper path, intended creation targets, and creation-bearing or read-only mode, or not applicable>.
 Cross-checkout context: <exact payload, canonical planning root, and installed helper path, or not applicable>.
 Cross-checkout mode: <write-bearing, read-only, or not applicable>.
 Allowed files/areas: <repeat exact allowed files if needed for safety>.
@@ -30,9 +31,17 @@ Dirty-file constraints: preserve unrelated dirty files; do not touch generated o
 Return YAML only using exactly the result contract selected above. Stop if it
 conflicts with the spec. No implementation history, reasoning narrative, or
 chronological work log.
-For an explicitly cross-checkout handoff, independently validate the supplied
-mechanical context before editing and populate the registered v2 verified
-identity field. Stop on missing or mismatched context.
+For a handoff that explicitly names `cross-checkout-context/v1` or explicitly
+declares separate existing toolchain, canonical-planning, and implementation
+repository roots, independently validate the supplied mechanical context before
+editing and populate the registered v2 strict identity field. Stop on missing
+or mismatched context. A handoff naming `cross-checkout-precreation/v1` does not
+use this strict branch until it carries a validated helper-produced transition
+receipt plus green strict context; before then its strict field remains null.
+For an explicit pre-creation handoff, independently validate the complete
+payload and applicable exact creation targets with the installed helper before
+editing, populate `verified_cross_checkout_precreation`, and leave
+`verified_cross_checkout_context` null. Stop on missing or mismatched facts.
 ```
 
 Only paste the full slice content into the subagent brief when the subagent
@@ -52,6 +61,7 @@ Repo cwd: <absolute repository path>.
 Slice anchor: <heading text or line number>.
 Diff basis: <commit hash or task-scoped worktree diff paths>.
 Result contract: <Registered Agent Result Contract v2, or Compact Report Contract v1 when the existing spec names v1>.
+Cross-checkout pre-creation: <exact payload, installed helper path, intended creation targets, and creation-bearing or read-only mode, or not applicable>.
 Cross-checkout context: <exact payload, canonical planning root, and installed helper path, or not applicable>.
 Cross-checkout mode: <read-only or not applicable>.
 Inspect only the task-scoped diff and relevant files.
@@ -60,9 +70,17 @@ Flag new or remaining cleanup residue that lacks a concrete reason, removal cond
 Classify review lenses before the verdict and include `lenses_applied`.
 Include compact specialist-review findings already gathered by the coordinator.
 Batch Runway reference, if needed: <absolute path to relevant reference file>.
-For an explicitly cross-checkout handoff, independently validate the supplied
-mechanical context and populate the registered v2 verified identity field.
-Stop on missing or mismatched context.
+For a handoff that explicitly names `cross-checkout-context/v1` or explicitly
+declares separate existing toolchain, canonical-planning, and implementation
+repository roots, independently validate the supplied mechanical context and
+populate the registered v2 strict identity field. Stop on missing or mismatched
+context. A handoff naming `cross-checkout-precreation/v1` does not use this
+strict branch until it carries a validated helper-produced transition receipt
+plus green strict context; before then its strict field remains null.
+For an explicit pre-creation handoff, independently validate the complete
+payload and applicable exact creation targets with the installed helper,
+populate `verified_cross_checkout_precreation`, and leave
+`verified_cross_checkout_context` null. Stop on missing or mismatched facts.
 Return YAML only using exactly the result contract selected above. Stop if it
 conflicts with the spec. Do not modify files.
 ```

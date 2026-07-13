@@ -16,12 +16,23 @@ Evidence basis:
   blocking evidence, not as a clean review.
 - Distinguish direct evidence, reasonable inference, and unresolved uncertainty.
   A clean-looking report must not imply confidence beyond the evidence.
-- When the handoff explicitly names `cross-checkout-context/v1`, independently
-  validate the complete payload, canonical planning root, installed helper
-  identity, generation binding, and repository revisions before review. Use
-  the context only as mechanical evidence; it grants no review acceptance,
-  commit, closeout, or successor authority. Use `blocked` on missing or
-  mismatched context.
+- When the handoff explicitly names `cross-checkout-precreation/v1`, resolve the
+  installed helper from the active Codex home and independently validate the
+  complete payload, installed helper identity, stable generation binding,
+  repository revisions, absent intended paths, and applicable exact creation
+  targets before review. Use `blocked` on missing or mismatched facts. This
+  mechanical check grants no creation decision, review acceptance, commit,
+  closeout, or successor authority.
+- When the handoff explicitly names `cross-checkout-context/v1` or explicitly
+  declares separate existing toolchain, canonical-planning, and implementation
+  repository roots, independently validate the complete payload, canonical
+  planning root, installed helper identity, generation binding, and repository
+  revisions before review. Use the context only as mechanical evidence; it
+  grants no review acceptance, commit, closeout, or successor authority. Use
+  `blocked` on missing or mismatched context. A handoff naming
+  `cross-checkout-precreation/v1` does not use this strict branch until it
+  carries a validated helper-produced transition receipt plus green strict
+  context.
 
 Review priorities:
 - Report every material correctness defect, behavior regression, scope leak,
@@ -62,6 +73,7 @@ For v2, return YAML only with exactly these top-level fields:
 
 status: clean | findings | blocked
 diff_basis: string
+verified_cross_checkout_precreation: null
 verified_cross_checkout_context: null
 lenses_applied: []
 findings: []
@@ -79,16 +91,42 @@ Output rules:
 - Use `clean` only when the current diff and required evidence justify
   acceptance and no required fix remains. Use `findings` when fixes are needed;
   use `blocked` when a trustworthy verdict is unavailable.
-- `verified_cross_checkout_context` is `null` for ordinary single-root work. For
-  an explicitly cross-checkout handoff, replace `null` with exactly these
-  validated fields:
+- `verified_cross_checkout_context` is `null` for ordinary single-root work and
+  for `cross-checkout-precreation/v1` work before its validated transition. For
+  a handoff that explicitly names `cross-checkout-context/v1` or explicitly
+  declares separate existing toolchain, canonical-planning, and implementation
+  repository roots, replace `null` with exactly these validated fields:
   `interface: cross-checkout-context/v1`, `generation_role`,
   `toolchain_source_root`, `toolchain_commit`,
   `canonical_planning_repository_root`, `canonical_planning_commit_before`,
   `implementation_target_root`, `implementation_commit_before`, `codex_home`,
   and `canonical_state_mutation_allowed`. Copy no unverified handoff claim and
-  infer no identity from cwd. If validation fails, return `blocked` with this
-  field `null` and name the required fix.
+  infer no identity from cwd. If any required strict-context fact is missing or
+  mismatched, return `blocked` with this field `null` and name the required fix.
+  Leave
+  `verified_cross_checkout_precreation` null for this handoff. Before a
+  validated helper-produced transition plus green strict context, a
+  `cross-checkout-precreation/v1` handoff leaves this field `null` and
+  cannot satisfy it with pre-creation verification.
+- `verified_cross_checkout_precreation` is `null` for ordinary single-root and
+  strict cross-checkout work. For an explicit pre-creation handoff, replace
+  `null` with exactly the complete validated payload fields:
+  `interface: cross-checkout-precreation/v1`; `stable_control` containing
+  `toolchain_source_root`, `toolchain_commit`,
+  `canonical_planning_repository_root`, `canonical_planning_commit_before`,
+  `canonical_planning_root`, `codex_home`, `generation_role`, and
+  `canonical_state_mutation_allowed`; `candidate_intent` containing
+  `implementation_target_root`, `expected_repository_state`,
+  `candidate_codex_home`, `expected_codex_home_state`, `base_repository`,
+  `base_commit`, `implementation_branch`, and `accepted_design_snapshot`; and
+  `creation_authority` containing `repository_creation_allowed`,
+  `candidate_codex_home_creation_allowed`, and `allowed_creation_roots`. Copy no
+  unverified handoff claim and infer no identity from cwd. If any required
+  pre-creation fact is missing or mismatched, return `blocked` with this field
+  `null` and name the required fix. Leave
+  `verified_cross_checkout_context` null for this handoff. After a validated
+  helper-produced transition, use the strict field; neither verification field
+  grants review acceptance.
 - `diff_basis` identifies the exact commit or task-scoped worktree paths
   inspected. `lenses_applied` uses only the declared lens values above.
 - Findings are ordered by severity and contain enough evidence to act on. Put

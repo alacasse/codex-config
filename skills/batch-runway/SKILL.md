@@ -93,9 +93,13 @@ reference file by default.
   core.
 - `references/test-quality-review.md`: read only when a slice explicitly asks for
   test quality review or when changed tests trigger test-review routing.
+- `references/cross-checkout-precreation-v1.md`: read only when a selected
+  dispatch, runway, or handoff explicitly names
+  `cross-checkout-precreation/v1`.
 - `references/cross-checkout-context-v1.md`: read only when a selected dispatch,
-  runway, or handoff explicitly names `cross-checkout-context/v1` or separate
-  toolchain, canonical-planning, and implementation roots.
+  runway, or handoff explicitly names `cross-checkout-context/v1` or explicitly
+  declares separate existing toolchain, canonical-planning, and implementation
+  repository roots.
 
 When a subagent receives only a spec path, make sure the spec contains enough
 contract detail for that subagent to act safely, or include a short contract
@@ -117,10 +121,15 @@ capsule and the relevant Batch Runway reference path in the subagent prompt.
 6. Choose `create-spec` or `execute-spec`.
 7. Choose `lean-runway` or `full-runway`.
 
-For explicitly cross-checkout work, complete the temporary validation and
-propagation steps in `references/cross-checkout-context-v1.md` before writing a
-runway or delegating a worker or reviewer. Ordinary single-root work does not
-use that bridge.
+For explicit pre-creation work, complete
+`references/cross-checkout-precreation-v1.md` before writing a runway or
+delegating a worker or reviewer, then require its transition before switching to
+the strict contract. For work that explicitly names
+`cross-checkout-context/v1` or explicitly declares separate existing toolchain,
+canonical-planning, and implementation repository roots, complete
+`references/cross-checkout-context-v1.md`. A pre-creation runway does not use
+that strict branch until it has a validated helper-produced transition receipt
+plus green strict context. Ordinary single-root work uses neither bridge.
 
 Stop instead of guessing when a required project value, validation command,
 harness command, output path, summary artifact, planning location, or
@@ -133,11 +142,25 @@ spec's named contract version; do not reinterpret v1 as v2.
 
 Non-negotiable execution rules:
 
-- For an explicitly cross-checkout runway, validate the complete
-  `cross-checkout-context/v1` payload and canonical planning root with the
-  installed helper before delegation, propagate them in worker and reviewer
-  handoffs, and reject missing or mismatched verified identity in either agent
-  result. Do not infer roots from cwd.
+- For an explicitly pre-creation runway, validate the complete
+  `cross-checkout-precreation/v1` payload and exact intended creation targets
+  with the installed helper before applicable delegations, propagate them, and
+  reject missing, null, or mismatched
+  `verified_cross_checkout_precreation` facts. Before later implementation,
+  require the helper-produced transition receipt and validated strict context;
+  pre-creation verification cannot satisfy the strict result field. The strict
+  field remains `null` for a pre-creation handoff; after transition, the
+  pre-creation field remains `null` for strict handoffs. Both remain `null` and
+  this rule adds no step for ordinary single-root work.
+- For a runway that explicitly names `cross-checkout-context/v1` or explicitly
+  declares separate existing toolchain, canonical-planning, and implementation
+  repository roots, validate the complete strict payload and canonical planning
+  root with the installed helper before delegation, propagate them in worker and
+  reviewer handoffs, and reject missing or mismatched verified identity in
+  either agent result. A `cross-checkout-precreation/v1` runway stays outside
+  this branch with `verified_cross_checkout_context` null until a validated
+  helper-produced transition receipt plus green strict context exists. Do not
+  infer roots from cwd.
 - These delegation rules bind the coordinator, not spawned workers or reviewers.
   A spawned `runway_worker` is already the required coding subagent for its
   assigned slice; it must implement that slice directly and must not spawn,
@@ -243,21 +266,26 @@ ledger.
 In `create-spec` mode:
 
 1. Read `references/create-spec.md`.
-2. For explicitly cross-checkout work, read and apply
-   `references/cross-checkout-context-v1.md` before writing the runway.
-3. If the project uses Planning Artifact Layout v1, use `planning-state`
+2. For explicit pre-creation work, read and apply
+   `references/cross-checkout-precreation-v1.md` before writing the runway.
+3. For work that explicitly names `cross-checkout-context/v1` or explicitly
+   declares separate existing toolchain, canonical-planning, and implementation
+   repository roots, read and apply `references/cross-checkout-context-v1.md`
+   before writing the runway. Pre-creation work does not use this branch before
+   its validated transition receipt plus green strict context.
+4. If the project uses Planning Artifact Layout v1, use `planning-state`
    Diagnostic-First Pickup first and consume only its compact facts.
-4. If a selected dispatch, active runway, or queued batch exists, do not select
+5. If a selected dispatch, active runway, or queued batch exists, do not select
    another batch. Report the queued/active path, or create the missing
    `runway.md` from the selected dispatch when that is the requested action.
-5. If no batch is selected, read the relevant program ledger and only the source
+6. If no batch is selected, read the relevant program ledger and only the source
    packet named by the selected ledger row before writing the spec.
-6. Write one local plan file in the project planning location. If the project
+7. Write one local plan file in the project planning location. If the project
    uses Planning Artifact Layout v1 and a selected batch directory exists,
    write the spec to that batch directory as `runway.md`.
-7. Pick 3-5 tightly related slices that can execute sequentially.
-8. Keep each slice independently testable and committable.
-9. Stop before coding.
+8. Pick 3-5 tightly related slices that can execute sequentially.
+9. Keep each slice independently testable and committable.
+10. Stop before coding.
 
 ## Execute-Spec Summary
 
@@ -265,25 +293,31 @@ In `execute-spec` mode:
 
 1. Read the full active spec.
 2. Read `references/project-values.md`.
-3. For an explicitly cross-checkout runway, read and apply
-   `references/cross-checkout-context-v1.md` before any worker or reviewer
-   delegation.
-4. For Layout v1 or ledger-driven specs, use `planning-state`
+3. For an explicitly pre-creation runway, read and apply
+   `references/cross-checkout-precreation-v1.md` before applicable worker or
+   reviewer delegation and until its validated strict transition.
+4. For a runway that explicitly names `cross-checkout-context/v1` or explicitly
+   declares separate existing toolchain, canonical-planning, and implementation
+   repository roots, read and apply `references/cross-checkout-context-v1.md`
+   before any worker or reviewer delegation. Pre-creation work does not use
+   this strict branch before its validated transition receipt plus green strict
+   context.
+5. For Layout v1 or ledger-driven specs, use `planning-state`
    Diagnostic-First Pickup first and carry only its compact facts before
    broader exploration.
-5. For routine slice execution, read `references/execute-slice-core-v1.md` and
+6. For routine slice execution, read `references/execute-slice-core-v1.md` and
    only the selected validation profile file under
    `references/validation-profiles/`.
-6. Identify the active validation profile, pending ledger rows, stop conditions,
+7. Identify the active validation profile, pending ledger rows, stop conditions,
    commit strategy, density mode, convergence state, active ledger rows, and
    completed slice archive.
-7. Execute from the next incomplete ledger row.
-8. For routine slices, follow `references/execute-slice-core-v1.md`; it owns
+8. Execute from the next incomplete ledger row.
+9. For routine slices, follow `references/execute-slice-core-v1.md`; it owns
    the worker/reviewer handoffs, validation/review loop, commit receipt,
    ledger/archive update, anomaly logging, and continuation.
-9. If validation fails, review finds issues, blockers appear, or escalation is
+10. If validation fails, review finds issues, blockers appear, or escalation is
    needed, read `references/execute-recovery-v1.md`.
-10. After the last slice, read `references/finalize-batch-v1.md`; it owns final
+11. After the last slice, read `references/finalize-batch-v1.md`; it owns final
    validation, required refreshes, closeout evidence, cleanup residues,
    `orchestration_anomalies`, and expanded convergence reporting.
 

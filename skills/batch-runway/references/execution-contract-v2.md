@@ -6,12 +6,26 @@ interpretation.
 
 Rules:
 
-- An explicitly cross-checkout runway must carry a complete validated
-  `cross-checkout-context/v1` payload and canonical planning root. The
-  coordinator must follow `cross-checkout-context-v1.md`, revalidate before
-  every worker and reviewer delegation, propagate the mechanical context, and
-  reject missing, null, or mismatched verified identity in either agent result.
-  This validation grants no lifecycle authority.
+- An explicitly pre-creation runway must carry a complete validated
+  `cross-checkout-precreation/v1` payload and installed helper path. The
+  coordinator must follow `cross-checkout-precreation-v1.md`, revalidate the
+  payload and exact intended creation targets before applicable delegations,
+  propagate the mechanical context, and reject a missing, null, or mismatched
+  `verified_cross_checkout_precreation` field. Before implementation beyond
+  repository and environment establishment, it must require the versioned
+  helper-produced transition receipt and a validated strict context. A
+  pre-creation result cannot satisfy strict verification, and neither field
+  grants lifecycle authority.
+- A runway that explicitly names `cross-checkout-context/v1` or explicitly
+  declares separate existing toolchain, canonical-planning, and implementation
+  repository roots must carry a complete validated strict payload and canonical
+  planning root. The coordinator must follow `cross-checkout-context-v1.md`,
+  revalidate before every worker and reviewer delegation, propagate the
+  mechanical context, and reject missing, null, or mismatched verified identity
+  in either agent result. A `cross-checkout-precreation/v1` runway remains
+  outside this strict branch with `verified_cross_checkout_context` null until a
+  validated helper-produced transition receipt plus green strict context
+  exists. This validation grants no lifecycle authority.
 - These delegation rules bind the coordinator, not spawned workers or reviewers.
   A spawned `runway_worker` is already the required coding subagent for its
   assigned slice; it must implement that slice directly and must not spawn,

@@ -19,6 +19,19 @@ class CodexFeaturesManifestTests(unittest.TestCase):
     def load_manifest(self) -> dict[str, Any]:
         return json.loads(MANIFEST.read_text(encoding="utf-8"))
 
+    def markdown_section(self, text: str, heading: str) -> str:
+        marker = f"## {heading}\n"
+        start = text.index(marker) + len(marker)
+        end = text.find("\n## ", start)
+        if end == -1:
+            end = len(text)
+        return " ".join(text[start:end].split())
+
+    def bounded_text(self, text: str, start_marker: str, end_marker: str) -> str:
+        start = text.index(start_marker)
+        end = text.index(end_marker, start + len(start_marker))
+        return " ".join(text[start:end].split())
+
     def test_manifest_links_point_to_repo_sources(self) -> None:
         manifest = self.load_manifest()
 
@@ -159,41 +172,387 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         batch_runway = (REPO_ROOT / "skills/batch-runway/SKILL.md").read_text(
             encoding="utf-8"
         )
+        create_spec = (
+            REPO_ROOT / "skills/batch-runway/references/create-spec.md"
+        ).read_text(encoding="utf-8")
         consumer_contract = (
+            REPO_ROOT / "skills/batch-runway/references/cross-checkout-context-v1.md"
+        ).read_text(encoding="utf-8")
+        precreation_contract = (
             REPO_ROOT
-            / "skills/batch-runway/references/cross-checkout-context-v1.md"
+            / "skills/batch-runway/references/cross-checkout-precreation-v1.md"
         ).read_text(encoding="utf-8")
         execute_core = (
             REPO_ROOT / "skills/batch-runway/references/execute-slice-core-v1.md"
         ).read_text(encoding="utf-8")
+        execution_contract = (
+            REPO_ROOT / "skills/batch-runway/references/execution-contract-v2.md"
+        ).read_text(encoding="utf-8")
+        agent_result_contract = (
+            REPO_ROOT / "skills/batch-runway/references/agent-result-contract-v2.md"
+        ).read_text(encoding="utf-8")
+        project_values = (
+            REPO_ROOT / "skills/batch-runway/references/project-values.md"
+        ).read_text(encoding="utf-8")
+        subagent_briefs = (
+            REPO_ROOT / "skills/batch-runway/references/subagent-briefs.md"
+        ).read_text(encoding="utf-8")
 
-        for text in (plan_batch, work_batch, batch_runway, execute_core):
-            with self.subTest(text=text[:40]):
-                self.assertIn("cross-checkout-context/v1", text)
-                self.assertNotIn("/home/alacasse/", text)
-
-        normalized_plan_batch = " ".join(plan_batch.split())
-        normalized_work_batch = " ".join(work_batch.split())
-        self.assertIn("complete context payload", normalized_plan_batch)
-        self.assertIn(
-            "before every worker or reviewer delegation",
-            normalized_work_batch,
+        plan_precreation = self.markdown_section(
+            plan_batch, "Explicit Cross-Checkout Pre-Creation Planning"
         )
+        work_precreation = self.markdown_section(
+            work_batch, "Explicit Cross-Checkout Pre-Creation Execution"
+        )
+        plan_strict = self.markdown_section(
+            plan_batch, "Explicit Strict Cross-Checkout Planning"
+        )
+        work_strict = self.markdown_section(
+            work_batch, "Explicit Strict Cross-Checkout Execution"
+        )
+        batch_precreation = " ".join(
+            (
+                self.markdown_section(batch_runway, "Required First Steps"),
+                self.markdown_section(batch_runway, "Core Contract"),
+            )
+        )
+        create_precreation = self.bounded_text(
+            create_spec,
+            "When the selected dispatch explicitly names\n"
+            "`cross-checkout-precreation/v1`",
+            "When the selected dispatch explicitly names `cross-checkout-context/v1`",
+        )
+        create_strict = self.bounded_text(
+            create_spec,
+            "When the selected dispatch explicitly names `cross-checkout-context/v1`",
+            "The spec must include:",
+        )
+        execute_precreation = " ".join(
+            (
+                self.markdown_section(execute_core, "Source Map"),
+                self.markdown_section(execute_core, "Coordinator Invariants"),
+                self.markdown_section(execute_core, "Normal Slice Loop"),
+            )
+        )
+
+        bounded_requirements: dict[str, tuple[str, tuple[str, ...]]] = {
+            "plan-batch": (
+                plan_precreation,
+                (
+                    "cross-checkout-precreation-v1.md",
+                    "installed helper from the active Codex home",
+                    "validate the complete payload and exact intended creation "
+                    "targets while they are absent",
+                    "must not create either candidate root",
+                    "no step for ordinary single-root or strict cross-checkout batches",
+                ),
+            ),
+            "work-batch": (
+                work_precreation,
+                (
+                    "cross-checkout-precreation-v1.md",
+                    "complete payload and exact intended creation targets with the "
+                    "installed helper",
+                    "missing, null, or mismatched "
+                    "`verified_cross_checkout_precreation`",
+                    "`verified_cross_checkout_context` remains `null`",
+                    "helper-produced versioned transition receipt",
+                    "green strict `cross-checkout-context/v1` payload",
+                    "`verified_cross_checkout_precreation` remains `null` for those "
+                    "strict results",
+                    "no step for ordinary single-root or strict cross-checkout batches",
+                ),
+            ),
+            "batch-runway": (
+                batch_precreation,
+                (
+                    "cross-checkout-precreation-v1.md",
+                    "complete `cross-checkout-precreation/v1` payload and exact "
+                    "intended creation targets with the installed helper",
+                    "missing, null, or mismatched "
+                    "`verified_cross_checkout_precreation`",
+                    "helper-produced transition receipt and validated strict context",
+                    "strict field remains `null` for a pre-creation handoff",
+                    "pre-creation field remains `null` for strict handoffs",
+                    "Both remain `null`",
+                    "adds no step for ordinary single-root work",
+                ),
+            ),
+            "create-spec": (
+                create_precreation,
+                (
+                    "cross-checkout-precreation-v1.md",
+                    "installed helper from the active Codex home",
+                    "complete payload and exact intended creation targets while they "
+                    "are absent",
+                    "Planning must not create either target",
+                    "must not appear in ordinary single-root or strict cross-checkout "
+                    "runways",
+                ),
+            ),
+            "execute-core": (
+                execute_precreation,
+                (
+                    "cross-checkout-precreation-v1.md",
+                    "absent targets, and exact creation scope",
+                    "missing, null, or mismatched "
+                    "`verified_cross_checkout_precreation`",
+                    "retained validated pre-creation context",
+                    "serialize the versioned transition receipt",
+                    "newly validated strict context",
+                    "Require `verified_cross_checkout_context`",
+                    "require `verified_cross_checkout_precreation` to remain `null`",
+                    "adds no step for ordinary single-root or strict cross-checkout "
+                    "handoffs",
+                ),
+            ),
+        }
+        for consumer, (bounded_contract, requirements) in bounded_requirements.items():
+            for requirement in requirements:
+                with self.subTest(consumer=consumer, requirement=requirement):
+                    self.assertIn(requirement, bounded_contract)
+
+        strict_requirements: dict[str, tuple[str, tuple[str, ...]]] = {
+            "plan-batch": (
+                plan_strict,
+                (
+                    "../batch-runway/references/cross-checkout-context-v1.md",
+                    "Require the complete context payload and canonical planning "
+                    "root, validate them with the installed helper",
+                    "preserve both verbatim in that runway",
+                    "absent-target payload cannot satisfy this strict "
+                    "post-creation contract",
+                    "adds no step for ordinary single-root batches",
+                ),
+            ),
+            "work-batch": (
+                work_strict,
+                (
+                    "../batch-runway/references/cross-checkout-context-v1.md",
+                    "Revalidate the exact payload and canonical planning root with "
+                    "the installed helper",
+                    "before every worker or reviewer delegation",
+                    "propagate the required mechanical context in each handoff",
+                    "pre-creation result field cannot satisfy this strict "
+                    "post-creation contract",
+                    "adds no step for ordinary single-root batches",
+                ),
+            ),
+            "batch-runway": (
+                batch_precreation,
+                (
+                    "references/cross-checkout-context-v1.md",
+                    "validate the complete strict payload and canonical planning "
+                    "root with the installed helper before delegation",
+                    "propagate them in worker and reviewer handoffs",
+                    "pre-creation verification cannot satisfy the strict result field",
+                    "Ordinary single-root work uses neither bridge",
+                ),
+            ),
+            "execute-core": (
+                execute_precreation,
+                (
+                    "`cross-checkout-context-v1.md` for explicit strict "
+                    "post-creation work",
+                    "revalidate the complete strict payload, canonical planning "
+                    "root, "
+                    "generation identity, repository revisions, and intended "
+                    "write scope with the installed helper",
+                    "before every worker and reviewer delegation",
+                    "Pre-creation verification cannot satisfy this strict invariant",
+                    "invariant adds no step for ordinary single-root handoffs",
+                ),
+            ),
+        }
+        for consumer, (bounded_contract, requirements) in strict_requirements.items():
+            for requirement in requirements:
+                with self.subTest(
+                    consumer=consumer,
+                    strict_requirement=requirement,
+                ):
+                    self.assertIn(requirement, bounded_contract)
+
+        execution_strict = self.bounded_text(
+            execution_contract,
+            "- A runway that explicitly names `cross-checkout-context/v1`",
+            "- These delegation rules bind the coordinator",
+        )
+        result_strict = self.markdown_section(
+            agent_result_contract,
+            "Canonical Owners",
+        )
+        project_value_strict = self.bounded_text(
+            project_values,
+            "- `cross_checkout_context`:",
+            "- `canonical_planning_root`:",
+        )
+        coding_handoff_strict = self.markdown_section(
+            subagent_briefs,
+            "Lean Coding Brief",
+        )
+        review_handoff_strict = self.markdown_section(
+            subagent_briefs,
+            "Lean Review Brief",
+        )
+        support_strict_requirements: dict[str, tuple[str, tuple[str, ...]]] = {
+            "execution-contract": (
+                execution_strict,
+                (
+                    "explicitly names `cross-checkout-context/v1` or explicitly "
+                    "declares separate existing toolchain, canonical-planning, and "
+                    "implementation repository roots",
+                    "complete validated strict payload and canonical planning root",
+                    "`cross-checkout-precreation/v1` runway remains outside this "
+                    "strict branch",
+                    "`verified_cross_checkout_context` null",
+                    "validated helper-produced transition receipt plus green strict "
+                    "context",
+                ),
+            ),
+            "agent-result-contract": (
+                result_strict,
+                (
+                    "explicitly names `cross-checkout-context/v1` or explicitly "
+                    "declares separate existing toolchain, canonical-planning, and "
+                    "implementation repository roots",
+                    "`cross-checkout-precreation/v1` handoff stays outside that "
+                    "strict branch",
+                    "strict field `null` until a validated helper-produced "
+                    "transition receipt plus green strict context exists",
+                ),
+            ),
+            "create-spec": (
+                create_strict,
+                (
+                    "explicitly names `cross-checkout-context/v1` or explicitly "
+                    "declares separate existing toolchain, canonical-planning, and "
+                    "implementation repository roots",
+                    "complete payload and canonical planning root with the installed "
+                    "helper",
+                    "`cross-checkout-precreation/v1` does not use this strict branch",
+                    "validated helper-produced transition receipt plus green strict "
+                    "context",
+                    "pre-transition strict verification remains `null`",
+                ),
+            ),
+            "project-values": (
+                project_value_strict,
+                (
+                    "explicitly names that interface or explicitly declares separate "
+                    "existing toolchain, canonical-planning, and implementation "
+                    "repository roots",
+                    "`cross-checkout-precreation/v1` remains outside this strict value",
+                    "strict verification `null` until a validated helper-produced "
+                    "transition receipt plus green strict context exists",
+                ),
+            ),
+            "coding-handoff": (
+                coding_handoff_strict,
+                (
+                    "explicitly names `cross-checkout-context/v1` or explicitly "
+                    "declares separate existing toolchain, canonical-planning, and "
+                    "implementation repository roots",
+                    "`cross-checkout-precreation/v1` does not use this strict branch",
+                    "validated helper-produced transition receipt plus green strict "
+                    "context",
+                    "before then its strict field remains null",
+                ),
+            ),
+            "review-handoff": (
+                review_handoff_strict,
+                (
+                    "explicitly names `cross-checkout-context/v1` or explicitly "
+                    "declares separate existing toolchain, canonical-planning, and "
+                    "implementation repository roots",
+                    "`cross-checkout-precreation/v1` does not use this strict branch",
+                    "validated helper-produced transition receipt plus green strict "
+                    "context",
+                    "before then its strict field remains null",
+                ),
+            ),
+        }
+        for surface, (
+            bounded_contract,
+            requirements,
+        ) in support_strict_requirements.items():
+            for requirement in requirements:
+                with self.subTest(
+                    strict_surface=surface,
+                    routing_requirement=requirement,
+                ):
+                    self.assertIn(requirement, bounded_contract)
+
+        strict_routing_surfaces = {
+            **{
+                consumer: bounded_contract
+                for consumer, (bounded_contract, _) in strict_requirements.items()
+            },
+            **{
+                surface: bounded_contract
+                for surface, (bounded_contract, _) in (
+                    support_strict_requirements.items()
+                )
+            },
+        }
+        overbroad_strict_triggers = (
+            "an explicitly cross-checkout handoff",
+            "an explicitly cross-checkout runway",
+            "explicitly cross-checkout work",
+            "runway is explicitly cross-checkout",
+        )
+        for surface, bounded_contract in strict_routing_surfaces.items():
+            normalized_contract = bounded_contract.lower()
+            for overbroad_trigger in overbroad_strict_triggers:
+                with self.subTest(
+                    strict_surface=surface,
+                    rejected_trigger=overbroad_trigger,
+                ):
+                    self.assertNotIn(overbroad_trigger, normalized_contract)
+
         self.assertIn("installed helper", consumer_contract)
         self.assertIn("scripts/cross_checkout_context.py", consumer_contract)
         self.assertIn("temporary bridge", consumer_contract)
         self.assertIn("project-owned deletion condition", consumer_contract)
-        self.assertIn("missing, null, or mismatched verified identity", execute_core)
-        self.assertIn("Cross-checkout context:", execute_core)
+
+        normalized_precreation = " ".join(precreation_contract.split())
+        self.assertIn(
+            "installed `scripts/cross_checkout_context.py` helper", precreation_contract
+        )
+        self.assertIn("parse_cross_checkout_precreation", precreation_contract)
+        self.assertIn("validate_precreation_creation_targets", precreation_contract)
+        self.assertIn("build_cross_checkout_transition_receipt", precreation_contract)
+        self.assertIn("cross_checkout_transition_receipt_to_dict", precreation_contract)
+        self.assertIn("Planning must not create either root", normalized_precreation)
+        self.assertIn(
+            "For ordinary single-root and strict cross-checkout handoffs, "
+            "`verified_cross_checkout_precreation` remains `null`",
+            normalized_precreation,
+        )
+        self.assertIn(
+            "pre-creation result satisfy a strict handoff",
+            normalized_precreation,
+        )
+        self.assertIn(
+            "not a strict handoff merely because it is cross-checkout",
+            normalized_precreation,
+        )
+        self.assertIn(
+            "`verified_cross_checkout_context` `null`, until the validated "
+            "helper-produced transition receipt plus green strict context",
+            normalized_precreation,
+        )
 
     def test_cross_checkout_generic_surfaces_remain_project_neutral(self) -> None:
         generic_surfaces = (
+            "agents/runway_worker.toml",
+            "agents/runway_reviewer.toml",
             "skills/plan-batch/SKILL.md",
             "skills/work-batch/SKILL.md",
             "skills/batch-runway/SKILL.md",
             "skills/batch-runway/references/agent-result-contract-v2.md",
             "skills/batch-runway/references/create-spec.md",
             "skills/batch-runway/references/cross-checkout-context-v1.md",
+            "skills/batch-runway/references/cross-checkout-precreation-v1.md",
             "skills/batch-runway/references/execute-slice-core-v1.md",
             "skills/batch-runway/references/execution-contract-v2.md",
             "skills/batch-runway/references/project-values.md",
@@ -249,9 +608,9 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                     {f"skills/{skill_name}"},
                 )
 
-                skill_text = (
-                    REPO_ROOT / f"skills/{skill_name}/SKILL.md"
-                ).read_text(encoding="utf-8")
+                skill_text = (REPO_ROOT / f"skills/{skill_name}/SKILL.md").read_text(
+                    encoding="utf-8"
+                )
                 ui_text = (
                     REPO_ROOT / f"skills/{skill_name}/agents/openai.yaml"
                 ).read_text(encoding="utf-8")
@@ -332,8 +691,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertNotIn("Post-Closeout Handoff", work_batch)
         self.assertNotIn("post-closeout handoff", work_batch)
         self.assertNotIn(
-            "program-state reconciliation is a separate\n"
-            "  explicit request",
+            "program-state reconciliation is a separate\n  explicit request",
             workflow_guide,
         )
         self.assertIn("no new batch was selected", work_batch)
@@ -543,9 +901,9 @@ class CodexFeaturesManifestTests(unittest.TestCase):
 
         for skill_name in support_skills:
             with self.subTest(skill=skill_name):
-                skill_text = (
-                    REPO_ROOT / f"skills/{skill_name}/SKILL.md"
-                ).read_text(encoding="utf-8")
+                skill_text = (REPO_ROOT / f"skills/{skill_name}/SKILL.md").read_text(
+                    encoding="utf-8"
+                )
                 ui_text = (
                     REPO_ROOT / f"skills/{skill_name}/agents/openai.yaml"
                 ).read_text(encoding="utf-8")

@@ -23,18 +23,43 @@ EXECUTE_CORE = REPO_ROOT / "skills/batch-runway/references/execute-slice-core-v1
 SUBAGENT_BRIEFS = REPO_ROOT / "skills/batch-runway/references/subagent-briefs.md"
 BATCH_RUNWAY = REPO_ROOT / "skills/batch-runway/SKILL.md"
 BATCH_REFERENCES = REPO_ROOT / "skills/batch-runway/references"
+PRECREATION_CONTRACT = BATCH_REFERENCES / "cross-checkout-precreation-v1.md"
 
 
 class CustomAgentContractTests(unittest.TestCase):
     def load_agent(self, name: str) -> dict[str, Any]:
-        return tomllib.loads(
-            (AGENTS_DIR / f"{name}.toml").read_text(encoding="utf-8")
-        )
+        return tomllib.loads((AGENTS_DIR / f"{name}.toml").read_text(encoding="utf-8"))
 
     def instructions(self, name: str) -> str:
+        return " ".join(self.raw_instructions(name).split())
+
+    def raw_instructions(self, name: str) -> str:
         instructions = self.load_agent(name)["developer_instructions"]
         self.assertIsInstance(instructions, str)
-        return " ".join(instructions.split())
+        return instructions
+
+    def result_field_rule(self, name: str, field: str) -> str:
+        instructions = self.raw_instructions(name)
+        marker = f"- `{field}` is"
+        start = instructions.index(marker)
+        end = instructions.find("\n- ", start + len(marker))
+        if end == -1:
+            end = len(instructions)
+        return " ".join(instructions[start:end].split())
+
+    def contained_fields(
+        self,
+        rule: str,
+        container: str,
+        next_container: str | None,
+    ) -> tuple[str, ...]:
+        start_marker = f"`{container}` containing"
+        start = rule.index(start_marker) + len(start_marker)
+        if next_container is None:
+            end = rule.index(". Copy no", start)
+        else:
+            end = rule.index(f"`{next_container}` containing", start)
+        return tuple(re.findall(r"`([^`]+)`", rule[start:end]))
 
     def test_active_agent_inventory_and_models_are_intentional(self) -> None:
         required = {
@@ -69,7 +94,9 @@ class CustomAgentContractTests(unittest.TestCase):
         self.assertEqual(registered, on_disk)
         self.assertTrue(all(link["source"] == link["target"] for link in links))
 
-    def test_spark_is_bounded_support_with_explicit_edit_and_escalation_rules(self) -> None:
+    def test_spark_is_bounded_support_with_explicit_edit_and_escalation_rules(
+        self,
+    ) -> None:
         instructions = self.instructions("spark")
 
         for required in (
@@ -168,14 +195,14 @@ class CustomAgentContractTests(unittest.TestCase):
             "installed helper identity, generation binding, repository revisions, "
             "and intended write scope before editing",
             "Stop with `blocked` on missing or mismatched context",
-            "If validation fails, return `blocked` with this field `null`",
+            "strict-context fact is missing or mismatched, return `blocked`",
         )
         reviewer_requirements = (
             "independently validate the complete payload, canonical planning root, "
             "installed helper identity, generation binding, and repository "
             "revisions before review",
             "Use `blocked` on missing or mismatched context",
-            "If validation fails, return `blocked` with this field `null`",
+            "strict-context fact is missing or mismatched, return `blocked`",
         )
         for role, instructions, requirements in (
             ("worker", worker, worker_requirements),
@@ -184,6 +211,154 @@ class CustomAgentContractTests(unittest.TestCase):
             for requirement in requirements:
                 with self.subTest(role=role, normalized_requirement=requirement):
                     self.assertIn(requirement, instructions)
+
+    def test_worker_and_reviewer_distinguish_precreation_verification(self) -> None:
+        expected_stable = (
+            "toolchain_source_root",
+            "toolchain_commit",
+            "canonical_planning_repository_root",
+            "canonical_planning_commit_before",
+            "canonical_planning_root",
+            "codex_home",
+            "generation_role",
+            "canonical_state_mutation_allowed",
+        )
+        expected_candidate = (
+            "implementation_target_root",
+            "expected_repository_state",
+            "candidate_codex_home",
+            "expected_codex_home_state",
+            "base_repository",
+            "base_commit",
+            "implementation_branch",
+            "accepted_design_snapshot",
+        )
+        expected_authority = (
+            "repository_creation_allowed",
+            "candidate_codex_home_creation_allowed",
+            "allowed_creation_roots",
+        )
+        expected_strict = (
+            "interface: cross-checkout-context/v1",
+            "generation_role",
+            "toolchain_source_root",
+            "toolchain_commit",
+            "canonical_planning_repository_root",
+            "canonical_planning_commit_before",
+            "implementation_target_root",
+            "implementation_commit_before",
+            "codex_home",
+            "canonical_state_mutation_allowed",
+        )
+
+        for role in ("runway_worker", "runway_reviewer"):
+            precreation_rule = self.result_field_rule(
+                role, "verified_cross_checkout_precreation"
+            )
+            strict_rule = self.result_field_rule(
+                role, "verified_cross_checkout_context"
+            )
+
+            with self.subTest(role=role, rule="precreation nested fields"):
+                self.assertIn(
+                    "`interface: cross-checkout-precreation/v1`", precreation_rule
+                )
+                self.assertEqual(
+                    self.contained_fields(
+                        precreation_rule, "stable_control", "candidate_intent"
+                    ),
+                    expected_stable,
+                )
+                self.assertEqual(
+                    self.contained_fields(
+                        precreation_rule, "candidate_intent", "creation_authority"
+                    ),
+                    expected_candidate,
+                )
+                self.assertEqual(
+                    self.contained_fields(precreation_rule, "creation_authority", None),
+                    expected_authority,
+                )
+            with self.subTest(role=role, rule="precreation applicability"):
+                self.assertIn(
+                    "`null` for ordinary single-root and strict cross-checkout work",
+                    precreation_rule,
+                )
+                self.assertIn("explicit pre-creation handoff", precreation_rule)
+                self.assertIn(
+                    "Leave `verified_cross_checkout_context` null for this handoff",
+                    precreation_rule,
+                )
+                self.assertIn("missing or mismatched", precreation_rule)
+                self.assertIn(
+                    "return `blocked` with this field `null`", precreation_rule
+                )
+                self.assertNotIn(
+                    "interface: cross-checkout-context/v1", precreation_rule
+                )
+            with self.subTest(role=role, rule="strict field isolation"):
+                strict_fields_start = strict_rule.index("validated fields:")
+                strict_fields_end = strict_rule.index(". Copy no", strict_fields_start)
+                self.assertEqual(
+                    tuple(
+                        re.findall(
+                            r"`([^`]+)`",
+                            strict_rule[strict_fields_start:strict_fields_end],
+                        )
+                    ),
+                    expected_strict,
+                )
+                self.assertIn(
+                    "explicitly names `cross-checkout-context/v1`",
+                    strict_rule,
+                )
+                self.assertIn(
+                    "explicitly declares separate existing toolchain, "
+                    "canonical-planning, and implementation repository roots",
+                    strict_rule,
+                )
+                self.assertIn(
+                    "Leave `verified_cross_checkout_precreation` null for this handoff",
+                    strict_rule,
+                )
+                self.assertIn(
+                    "`cross-checkout-precreation/v1` work before its validated "
+                    "transition",
+                    strict_rule,
+                )
+                self.assertIn(
+                    "validated helper-produced transition plus green strict context",
+                    strict_rule,
+                )
+                self.assertIn(
+                    "`cross-checkout-precreation/v1` handoff leaves this field `null`",
+                    strict_rule,
+                )
+                self.assertIn("missing or mismatched", strict_rule)
+                self.assertIn("return `blocked` with this field `null`", strict_rule)
+                self.assertNotIn("explicitly cross-checkout handoff", strict_rule)
+
+    def test_precreation_contract_requires_installed_owner_and_strict_transition(
+        self,
+    ) -> None:
+        contract = " ".join(PRECREATION_CONTRACT.read_text(encoding="utf-8").split())
+
+        for required in (
+            "explicitly names `cross-checkout-precreation/v1`",
+            "Do not infer pre-creation mode from cwd",
+            "parse_cross_checkout_precreation",
+            "validate_precreation_creation_targets",
+            "must not create either root",
+            "missing, null, or mismatched field",
+            "build_cross_checkout_transition_receipt",
+            "cross_checkout_transition_receipt_to_dict",
+            "before any implementation beyond repository and environment "
+            "establishment continues",
+            "Do not re-run the absent-state parser after candidate creation",
+            "pre-creation result satisfy a strict handoff",
+        ):
+            with self.subTest(requirement=required):
+                self.assertIn(required, contract)
 
     def test_import_reviewer_stays_inside_triggered_project_local_lens(self) -> None:
         instructions = self.instructions("import_topology_reviewer")
@@ -233,8 +408,17 @@ class CustomAgentContractTests(unittest.TestCase):
             execution_v2,
         )
         self.assertIn("Standard Execution Contract v2 for new work", batch_runway)
-        self.assertIn("Result contract: <Registered Agent Result Contract v2", execute_core)
-        self.assertIn("Compact Report Contract v1 when the existing spec names v1", execute_core)
+        self.assertIn("verified_cross_checkout_precreation", agent_v2)
+        self.assertIn("helper-produced versioned transition receipt", agent_v2)
+        self.assertIn("retained validated pre-creation context", execute_core)
+        self.assertIn("After this point, use only strict handoffs", execute_core)
+        self.assertIn("re-run absent-state validation", execute_core)
+        self.assertIn(
+            "Result contract: <Registered Agent Result Contract v2", execute_core
+        )
+        self.assertIn(
+            "Compact Report Contract v1 when the existing spec names v1", execute_core
+        )
         self.assertIn("registered import_topology_reviewer result contract", briefs)
 
     def test_worker_and_reviewer_handoffs_select_v1_or_v2_schemas(self) -> None:
@@ -259,6 +443,8 @@ class CustomAgentContractTests(unittest.TestCase):
                     "Stop if it conflicts with the spec",
                     normalized_handoff,
                 )
+                self.assertIn("Cross-checkout pre-creation:", handoff)
+                self.assertIn("verified_cross_checkout_precreation", handoff)
 
         worker_v1 = reporting.split("Worker report:", 1)[1].split(
             "Reviewer report:", 1

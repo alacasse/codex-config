@@ -62,16 +62,34 @@ ownership, and `../batch-runway/SKILL.md` only in `create-spec` mode for the
 concrete spec procedure. Stop before implementation. When routing ambiguity
 exists, follow `../../docs/skill-routing-contract.md`.
 
-## Explicit Cross-Checkout Planning
+## Explicit Cross-Checkout Pre-Creation Planning
+
+When the selected dispatch explicitly names
+`cross-checkout-precreation/v1`, read
+`../batch-runway/references/cross-checkout-precreation-v1.md`. Resolve the
+installed helper from the active Codex home, validate the complete payload and
+exact intended creation targets while they are absent, and preserve the
+complete payload plus installed helper path in the concrete runway. Stop on
+missing or mismatched facts. Planning must not create either candidate root.
+
+This conditional bridge changes neither selection nor the one-spec and
+stop-before-implementation boundaries. It adds no step for ordinary
+single-root or strict cross-checkout batches.
+
+## Explicit Strict Cross-Checkout Planning
 
 When the selected dispatch or required execution environment explicitly names
-`cross-checkout-context/v1` or separate toolchain, canonical-planning, and
-implementation roots, read
+`cross-checkout-context/v1` or explicitly declares separate existing toolchain,
+canonical-planning, and implementation repository roots, read
 `../batch-runway/references/cross-checkout-context-v1.md`. Require the complete
 context payload and canonical planning root, validate them with the installed
 helper before writing the concrete runway, and preserve both verbatim in that
 runway. Stop on missing or mismatched context; do not infer roots from cwd or
 create candidate paths while planning.
+
+When the dispatch names `cross-checkout-precreation/v1`, use the separate
+pre-creation contract above; an absent-target payload cannot satisfy this
+strict post-creation contract.
 
 This conditional bridge does not change `plan-batch` selection, one-spec, or
 stop-before-implementation ownership. It adds no step for ordinary single-root

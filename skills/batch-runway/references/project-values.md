@@ -31,9 +31,17 @@ Resolve these values before creating or executing a spec:
   conventions.
 - `dirty_file_constraints`: files or directories that are expected dirty,
   generated, ignored, or forbidden to touch.
+- `cross_checkout_precreation`: complete
+  `cross-checkout-precreation/v1` payload and installed helper path when the
+  selected work explicitly authorizes creation of declared absent candidate
+  roots; otherwise not applicable.
 - `cross_checkout_context`: complete `cross-checkout-context/v1` payload when
-  the selected work explicitly spans separate toolchain, canonical-planning,
-  and implementation roots; otherwise not applicable.
+  the selected work explicitly names that interface or explicitly declares
+  separate existing toolchain, canonical-planning, and implementation
+  repository roots; otherwise not applicable. Work naming
+  `cross-checkout-precreation/v1` remains outside this strict value with strict
+  verification `null` until a validated helper-produced transition receipt plus
+  green strict context exists.
 - `canonical_planning_root`: explicit planning write root paired with an
   applicable cross-checkout context. Do not infer it from cwd.
 
@@ -51,8 +59,13 @@ Stop instead of guessing when:
 - a required harness command, output path, or summary artifact is named but not
   concretely specified
 - focused validation targets cannot be identified safely from the slice scope
-- explicitly cross-checkout work is missing its complete context payload or
-  canonical planning root, or the installed helper rejects either one
+- explicitly pre-creation work is missing its complete payload, installed
+  helper path, or exact intended creation targets, or the installed helper
+  rejects any of them
+- work explicitly naming `cross-checkout-context/v1` or explicitly declaring
+  separate existing toolchain, canonical-planning, and implementation
+  repository roots is missing its complete strict context payload or canonical
+  planning root, or the installed helper rejects either one
 - project instructions conflict and the priority order is not clear
 
 When stopping, report the missing project value and the exact source checked.

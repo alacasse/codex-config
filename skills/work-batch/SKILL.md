@@ -34,16 +34,41 @@ only with a named external contract, explicit user instruction, or temporary
 removal condition. Use legacy and dead-surface support only for exceptional
 residue investigations that the active runway or review route requires.
 
-## Explicit Cross-Checkout Execution
+## Explicit Cross-Checkout Pre-Creation Execution
 
 When the queued or active runway explicitly names
-`cross-checkout-context/v1` or separate toolchain, canonical-planning, and
-implementation roots, read
+`cross-checkout-precreation/v1`, read
+`../batch-runway/references/cross-checkout-precreation-v1.md`. Revalidate the
+complete payload and exact intended creation targets with the installed helper
+before every applicable worker or reviewer delegation, propagate the required
+mechanical context, and reject missing, null, or mismatched
+`verified_cross_checkout_precreation` facts in the agent result.
+For that handoff, `verified_cross_checkout_context` remains `null`.
+
+After candidate establishment, require the helper-produced versioned transition
+receipt and a green strict `cross-checkout-context/v1` payload before further
+implementation. Subsequent delegations use the strict contract and must not
+reinterpret pre-creation verification as strict identity;
+`verified_cross_checkout_precreation` remains `null` for those strict results.
+
+This conditional bridge authorizes no install, reload, generation switch,
+execution acceptance, closeout decision, or successor selection. It adds no
+step for ordinary single-root or strict cross-checkout batches.
+
+## Explicit Strict Cross-Checkout Execution
+
+When the queued or active runway explicitly names
+`cross-checkout-context/v1` or explicitly declares separate existing toolchain,
+canonical-planning, and implementation repository roots, read
 `../batch-runway/references/cross-checkout-context-v1.md`. Revalidate the exact
 payload and canonical planning root with the installed helper before every
 worker or reviewer delegation, propagate the required mechanical context in
 each handoff, and reject missing, null, or mismatched verified identity in the
 agent result. Stop before delegation on any validation failure.
+
+When the runway names `cross-checkout-precreation/v1`, use the separate
+pre-creation contract above until its validated transition; the pre-creation
+result field cannot satisfy this strict post-creation contract.
 
 This conditional bridge does not authorize a generation switch, install,
 reload, workflow acceptance, closeout decision, or successor selection. It adds

@@ -37,6 +37,11 @@ Worker/reviewer handoffs:
 
 - `subagent-briefs.md`
 
+Cross-checkout controls:
+
+- `cross-checkout-precreation-v1.md` for explicit absent-target creation work
+- `cross-checkout-context-v1.md` for explicit strict post-creation work
+
 Full contracts remain canonical. Make semantic changes in the canonical
 references first, then update this projection to match.
 
@@ -75,9 +80,22 @@ appropriate.
 - Do not pass live support-agent handles to workers or reviewers. The
   coordinator owns support-agent lifecycle and passes only compact findings,
   selected per-slice notes, or artifact paths.
-- For an explicitly `cross-checkout-context/v1` runway, apply
-  `cross-checkout-context-v1.md` before every worker and reviewer delegation and
-  reject missing, null, or mismatched verified identity in their v2 results.
+- For an explicitly `cross-checkout-precreation/v1` runway, apply
+  `cross-checkout-precreation-v1.md` before every applicable worker and reviewer
+  delegation, reject missing, null, or mismatched
+  `verified_cross_checkout_precreation` facts, and require the helper-produced
+  transition receipt plus strict context before later implementation. This
+  invariant adds no step for ordinary single-root or strict cross-checkout
+  handoffs.
+- For a runway that explicitly names `cross-checkout-context/v1` or explicitly
+  declares separate existing toolchain, canonical-planning, and implementation
+  repository roots, apply `cross-checkout-context-v1.md` before every worker and
+  reviewer delegation and reject missing, null, or mismatched verified identity
+  in their v2 results. A `cross-checkout-precreation/v1` runway stays outside
+  this strict branch with `verified_cross_checkout_context` null until a
+  validated helper-produced transition receipt plus green strict context
+  exists. Pre-creation verification cannot satisfy this strict invariant. This
+  invariant adds no step for ordinary single-root handoffs.
 - Preserve unrelated dirty files.
 - Do not revert or commit files outside the slice scope.
 - Commit after the slice is clean, validated, and reviewed.
@@ -97,29 +115,54 @@ appropriate.
 3. If broad read-only investigation would otherwise be needed in coordinator
    context, use the `codebase_investigator` trigger in `subagent-briefs.md` and
    retain only compact findings.
-4. For explicitly cross-checkout work, revalidate the complete payload,
-   canonical planning root, generation identity, repository revisions, and
-   intended write scope with the installed helper. Stop before delegation on
-   any missing or mismatched fact.
-5. Spawn `runway_worker` with the compact coding handoff below.
-6. Require compact YAML from the worker. For explicitly cross-checkout work,
+4. For explicit pre-creation work, revalidate the complete payload, installed
+   helper identity, stable revisions, absent targets, and exact creation scope.
+   Stop before delegation on any missing or mismatched fact.
+5. For work that explicitly names `cross-checkout-context/v1` or explicitly
+   declares separate existing toolchain, canonical-planning, and implementation
+   repository roots, revalidate the complete strict payload, canonical planning
+   root, generation identity, repository revisions, and intended write scope
+   with the installed helper. Stop before delegation on any missing or
+   mismatched fact. Pre-creation work does not use this branch before its
+   validated transition receipt plus green strict context.
+6. Spawn `runway_worker` with the compact coding handoff below.
+7. Require compact YAML from the worker. For explicit pre-creation work, reject
+   a missing, null, or mismatched `verified_cross_checkout_precreation` and
+   require `verified_cross_checkout_context` to remain `null`. For work that
+   explicitly names `cross-checkout-context/v1` or explicitly declares separate
+   existing toolchain, canonical-planning, and implementation repository roots,
    reject a missing, null, or mismatched `verified_cross_checkout_context`.
-7. Run or verify focused validation and selected-profile validation.
-8. Classify the task-scoped diff for review triggers. If specialist support is
+8. If a creation-bearing worker establishes either candidate root, use the
+   retained validated pre-creation context and installed helper to build and
+   serialize the versioned transition receipt with a newly validated strict
+   context. Stop before further implementation or review when either proof is
+   missing or mismatched. After this point, use only strict handoffs; do not
+   re-run absent-state validation. Require `verified_cross_checkout_context`
+   and require `verified_cross_checkout_precreation` to remain `null`.
+9. Run or verify focused validation and selected-profile validation.
+10. Classify the task-scoped diff for review triggers. If specialist support is
    needed, use `subagent-briefs.md` and retain only compact YAML findings.
-9. Revalidate applicable cross-checkout facts, then spawn `runway_reviewer`
+11. Revalidate pre-creation facts when the declared roots remain absent, or
+   strict facts after a validated transition, then spawn
+   `runway_reviewer`
    with the compact review handoff below.
-10. Require compact YAML from the reviewer. For explicitly cross-checkout work,
-    reject a missing, null, or mismatched `verified_cross_checkout_context`.
-11. Commit only the intended slice files once validation and review are clean.
-12. Record any orchestration anomalies using the compact log below.
-13. Report the compact commit receipt.
-14. Update the active ledger with only remaining-work state. Ordinary slice
+12. Require compact YAML from the reviewer. For a pre-creation handoff while
+    roots remain absent, reject a missing, null, or mismatched
+    `verified_cross_checkout_precreation` and require
+    `verified_cross_checkout_context` to remain `null`. For a handoff that
+    explicitly names `cross-checkout-context/v1`, explicitly declares separate
+    existing toolchain, canonical-planning, and implementation repository roots,
+    or follows the validated transition, reject a missing, null, or mismatched
+    `verified_cross_checkout_context`.
+13. Commit only the intended slice files once validation and review are clean.
+14. Record any orchestration anomalies using the compact log below.
+15. Report the compact commit receipt.
+16. Update the active ledger with only remaining-work state. Ordinary slice
     entries record exact commit hashes after commit; final self-referential
     closeout entries use `this closeout commit` under `finalize-batch-v1.md`.
-15. Move completed-slice audit references to the completed archive.
-16. Close completed subagents.
-17. Continue to the next pending slice unless a stop condition remains active or
+17. Move completed-slice audit references to the completed archive.
+18. Close completed subagents.
+19. Continue to the next pending slice unless a stop condition remains active or
     the user explicitly asks to stop.
 
 ## Worker Handoff
@@ -139,6 +182,7 @@ Allowed files/areas: <slice allowed files>.
 Dirty-file constraints: <constraints>.
 Validation profile: <selected profile path or expanded profile>.
 Result contract: <Registered Agent Result Contract v2, or Compact Report Contract v1 when the existing spec names v1>.
+Cross-checkout pre-creation: <exact payload, installed helper path, intended creation targets, and handoff mode, or not applicable>.
 Cross-checkout context: <exact payload, canonical planning root, and installed helper path, or not applicable>.
 Cross-checkout mode: <write-bearing, read-only, or not applicable>.
 You are already the required coding subagent for this slice. Do not spawn,
@@ -151,9 +195,18 @@ explicitly assigns them.
 Read the full slice in the spec. Return YAML only.
 Use exactly the result contract selected above. Stop if it conflicts with the
 spec.
-For an explicitly cross-checkout handoff, independently validate the supplied
-mechanical context before editing and populate the registered v2 verified
-identity field. Stop on missing or mismatched context.
+For a handoff that explicitly names `cross-checkout-context/v1` or explicitly
+declares separate existing toolchain, canonical-planning, and implementation
+repository roots, independently validate the supplied mechanical context before
+editing and populate the registered v2 strict identity field. Stop on missing
+or mismatched context. A handoff naming `cross-checkout-precreation/v1` does not
+use this strict branch until it carries a validated helper-produced transition
+receipt plus green strict context; before then its strict field remains null.
+For an explicit pre-creation handoff, independently validate the complete
+payload and applicable exact creation targets with the installed helper before
+editing and populate `verified_cross_checkout_precreation`. Leave
+`verified_cross_checkout_context` null until a validated transition selects the
+strict contract. Stop on missing or mismatched facts.
 No implementation history, reasoning narrative, or chronological work log.
 ```
 
@@ -172,6 +225,7 @@ Repo cwd: <absolute repository path>.
 Slice anchor: <heading text or line number>.
 Diff basis: <commit hash or task-scoped worktree diff paths>.
 Result contract: <Registered Agent Result Contract v2, or Compact Report Contract v1 when the existing spec names v1>.
+Cross-checkout pre-creation: <exact payload, installed helper path, intended creation targets, and handoff mode, or not applicable>.
 Cross-checkout context: <exact payload, canonical planning root, and installed helper path, or not applicable>.
 Cross-checkout mode: <read-only or not applicable>.
 Inspect only the task-scoped diff and relevant files.
@@ -179,9 +233,18 @@ Check scope, acceptance criteria, validation evidence, dirty-file leakage, and b
 Flag new or remaining cleanup residue that lacks a concrete reason, removal condition, or follow-up owner.
 Classify review lenses before the verdict and include `lenses_applied`.
 Include compact specialist-review findings already gathered by the coordinator.
-For an explicitly cross-checkout handoff, independently validate the supplied
-mechanical context and populate the registered v2 verified identity field.
-Stop on missing or mismatched context.
+For a handoff that explicitly names `cross-checkout-context/v1` or explicitly
+declares separate existing toolchain, canonical-planning, and implementation
+repository roots, independently validate the supplied mechanical context and
+populate the registered v2 strict identity field. Stop on missing or mismatched
+context. A handoff naming `cross-checkout-precreation/v1` does not use this
+strict branch until it carries a validated helper-produced transition receipt
+plus green strict context; before then its strict field remains null.
+For an explicit pre-creation handoff, independently validate the complete
+payload and applicable exact creation targets with the installed helper and
+populate `verified_cross_checkout_precreation`. Leave
+`verified_cross_checkout_context` null until a validated transition selects the
+strict contract. Stop on missing or mismatched facts.
 Return YAML only using exactly the result contract selected above. Stop if it
 conflicts with the spec. Do not modify files.
 ```
