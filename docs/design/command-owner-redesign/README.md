@@ -107,6 +107,7 @@ the canonical planning authority before cutover.
 | `06-deletion-conditions.md` | Reproducible proof required to remove APR, Batch Runway, stale routes, and migration bridges. |
 | `07-implementation-ledger-intake.md` | Individually addressable work items COR-001 through COR-012; not a batch map. |
 | `08-review-resolution.md` | Resolution of the independent review findings and accepted post-intake amendments. |
+| `09-live-precreation-amendment.md` | Live CCFG-18 pre-creation amendment and exact candidate lineage. |
 | `decisions.md` | Accepted, superseded, open, deferred, and rejected decisions. |
 
 ## Three-Root Bootstrap Topology
