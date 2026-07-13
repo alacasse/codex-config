@@ -204,7 +204,6 @@ batch.
 
 | Slice | Status | Risk class | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|---|
-| 1. Pre-creation owner and transition evidence | pending | migration | | | | Focused helper behavior and strict regression tests green | Candidate paths remain absent |
 | 2. Stable consumer and agent propagation | pending | migration | | | | Consumer and agent contract tests green | Reusable text remains project-neutral |
 | 3. Manifest and release wiring | pending | migration | | | | Manifest, dry-run, final validation, and review green | Stop before real install or reload |
 
@@ -218,6 +217,7 @@ orchestration_anomalies: []
 
 | Slice | Commit | Outcome | Audit references |
 |---|---|---|---|
+| 1. Pre-creation owner and transition evidence | `3d38ad8` | success; precreation 32 passed / 39 subtests, strict context 21 passed / 31 subtests, Ruff and basedpyright green, install dry-run green, test-quality and final review clean | `git show --stat 3d38ad8`; `git show 3d38ad8` |
 
 ## Slice 1: Pre-Creation Owner And Transition Evidence
 
