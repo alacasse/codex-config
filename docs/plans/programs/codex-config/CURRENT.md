@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-18-stable-precreation-support/closeout.md`
 - Run artifact location: `None selected`
@@ -32,9 +33,8 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-19 through CCFG-29.
-- Blocked ledger row: CCFG-18. Stable pre-creation support is committed, but
-  the changed feature set must be installed and loaded in a fresh stable
-  session before candidate creation can be planned.
+- Pending ledger row: CCFG-18. The installed stable pre-creation controller now
+  governs one queued candidate-generation runway.
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -48,8 +48,10 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Queued dispatch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/runway.md`
+- Queued dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/dispatch.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-18-stable-precreation-support`
@@ -62,27 +64,27 @@
 
 ## Next Safe Action
 
-Install the exact committed stable feature set, verify installed versions and
-stable-checkout links, then start a fresh stable session. In that fresh session,
-rerun planning-state `current` and `validate`; only then may an explicit
-`plan-batch CCFG-18` plan the remaining candidate-creation scope. No successor
-is selected now, and CCFG-19 remains unselected.
+Use `work-batch` to execute
+`docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/runway.md`.
+Revalidate the complete installed-helper pre-creation payload before creating
+either exact candidate root, transition to strict context immediately after
+repository/environment establishment, and stop after same-batch CCFG-18
+closeout. CCFG-19 remains unselected.
 
 ## Stop Conditions
 
-- Stop if remaining CCFG-18 planning begins before the committed feature set is
-  installed and loaded in a fresh stable session.
+- Stop if execution bypasses the queued CCFG-18 candidate-generation runway.
 - Stop if planning weakens strict `cross-checkout-context/v1` or treats
   pre-creation verification as strict identity.
 - Stop if work creates the candidate repository or candidate `CODEX_HOME`
-  before a new explicit CCFG-18 batch authorizes those exact paths.
-- Stop if any installed link resolves to the redesign branch or candidate clone.
-- Stop if selected dispatch, active runway, queued batch, or resumable state
-  appears before a new explicit `plan-batch CCFG-18` request.
+  before the queued runway revalidates exact pre-creation authority.
+- Stop if any default stable-home installed link resolves to the redesign branch
+  or candidate clone.
+- Stop if selected dispatch, active runway, or a second queued batch appears.
 - Stop if planning would write outside the canonical stable planning repository.
 - Stop if candidate code or helpers would control canonical state before cutover.
-- Stop if the stable helper link or installed feature versions do not match the
-  exact closeout commit.
+- Stop if the stable helper link, installed feature versions, or stable revision
+  no longer match the queued runway's validated baseline.
 - Stop if work would repeat command-owner redesign intake or create new identities
   instead of amending CCFG-18 through CCFG-29.
 - Stop if work would select successor work, create another dispatch, or create
@@ -93,5 +95,6 @@ is selected now, and CCFG-19 remains unselected.
 - Stop if work would copy archived history into the active ledger row-by-row.
 - Stop if a generic reusable skill receives project-specific paths, commands,
   caches, or planning layouts.
-- Stop if follow-up planning would mark CCFG-18 `Closed`, select CCFG-19, or
-  bypass the remaining CCFG-18 scope.
+- Stop if execution selects CCFG-19 or marks CCFG-18 `Closed` without complete
+  candidate lineage, transition, identity, fixture-isolation, quiescence, and
+  rollback evidence.

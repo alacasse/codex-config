@@ -69,7 +69,7 @@ row-by-row here.
 | CCFG-15. Vague ledger row splitting before runway expansion | Completed | GitHub issue #33 | Planning guard | None | Closed with split, block, or narrow guard. |
 | CCFG-16. Deletion-test vocabulary ownership | Completed | GitHub issue #31 | Skill cleanup | None | Closed with canonical evidence vocabulary ownership. |
 | CCFG-17. Absolute runway reference paths | Completed | GitHub issue #32 | Batch Runway create-spec | None | Closed with repo-relative reusable references and active-artifact guard. |
-| CCFG-18. Establish Stable and Candidate Generations | Blocked | [COR-001](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-001--ccfg-18--establish-stable-and-candidate-generations) plus live pre-creation amendment in `findings/command-owner-redesign-implementation-intake.md` | Command-owner redesign / control-plane isolation | Install the committed stable feature set, load a fresh stable session, verify planning state, then use a new explicit `plan-batch CCFG-18` | Stable pre-creation support completed in `e012d93..314fbcb`; see `batches/ccfg-18-stable-precreation-support/closeout.md`. Strict `cross-checkout-context/v1` remains unchanged, candidate paths remain absent, and no successor was selected. Candidate clone/branch, accepted design merge, candidate CODEX_HOME, real transition, identity, fixture-only validation, and rollback remain under CCFG-18. |
+| CCFG-18. Establish Stable and Candidate Generations | Pending | [COR-001](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-001--ccfg-18--establish-stable-and-candidate-generations) plus live pre-creation amendment in `findings/command-owner-redesign-implementation-intake.md` | Command-owner redesign / control-plane isolation | Execute `batches/ccfg-18-candidate-generation/runway.md` through `work-batch` | The exact committed stable feature set is installed and linked to stable `master`; planning-state and the installed helper validate the queued pre-creation payload. The queued runway owns candidate clone/branch, accepted design merge, candidate CODEX_HOME, strict transition, identity, fixture-only validation, quiescence, and rollback. CCFG-19 remains unselected. |
 | CCFG-19. Verify Source Contracts and Resolve Blocking Decisions | Open | [COR-002](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-002--ccfg-19--verify-source-contracts-and-resolve-blocking-decisions) | Command-owner redesign / contracts | Wait for CCFG-18 | Complete contract-to-owner/scenario map, schema evolution, ledger-store boundary, runner protocol, and planning transaction decision or blocker. Unselected. |
 | CCFG-20. Implement `skill-contract/v1` Schema and Validators | Open | [COR-003](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-003--ccfg-20--implement-skill-contractv1-schema-and-validators) | Command-owner redesign / skill contracts | Wait for CCFG-19 | Implement deterministic schema, ownership, delegation, reference, compatibility, and migration-residue validation. Unselected. |
 | CCFG-21. Implement Planning Artifact Schemas and Validators | Open | [COR-004](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-004--ccfg-21--implement-planning-artifact-schemas-and-validators) | Command-owner redesign / planning contracts | Wait for CCFG-19 | Prototype canonical CURRENT.md, per-finding ledger, dispatch/runway/closeout schemas, atomic writes, receipts, and fault injection. Unselected. |
@@ -84,7 +84,8 @@ row-by-row here.
 
 ## Batch Queue
 
-Queued batch: `None`.
+Queued batch:
+`docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/runway.md`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
@@ -98,21 +99,22 @@ Queued batch: `None`.
 | `ccfg-15-vague-ledger-row-splitting` | completed | `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md` | CCFG-15 | Closed. |
 | `ccfg-16-deletion-test-vocabulary-ownership` | completed | `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/runway.md` | CCFG-16 | Closed. |
 | `ccfg-17-absolute-runway-reference-paths` | completed | `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md` | CCFG-17 | Closed. |
-| `ccfg-18-stable-control-bootstrap` | completed | `docs/plans/programs/codex-config/batches/ccfg-18-stable-control-bootstrap/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-18-stable-control-bootstrap/runway.md` | CCFG-18 | Stable bootstrap completed with a `Prepared` result; the later pre-creation circularity now leaves the finding `Blocked`. Candidate-generation remainder stays under CCFG-18. |
-| `ccfg-18-stable-precreation-support` | completed | `docs/plans/programs/codex-config/batches/ccfg-18-stable-precreation-support/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-18-stable-precreation-support/runway.md` | CCFG-18 | Stable support completed in `e012d93..314fbcb`; CCFG-18 remains blocked on installation and fresh-session reload. Candidate paths remain absent and no successor was selected. |
+| `ccfg-18-stable-control-bootstrap` | completed | `docs/plans/programs/codex-config/batches/ccfg-18-stable-control-bootstrap/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-18-stable-control-bootstrap/runway.md` | CCFG-18 | Stable bootstrap completed with a `Prepared` result; the later pre-creation circularity left the finding `Blocked` before the support batch. Candidate-generation remainder stayed under CCFG-18. |
+| `ccfg-18-stable-precreation-support` | completed | `docs/plans/programs/codex-config/batches/ccfg-18-stable-precreation-support/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-18-stable-precreation-support/runway.md` | CCFG-18 | Stable support completed in `e012d93..314fbcb` and left CCFG-18 blocked on installation/fresh-session reload; the current queued batch records that gate as satisfied. Candidate paths remain absent. |
+| `ccfg-18-candidate-generation` | queued | `docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/runway.md` | CCFG-18 | Installed stable control validated the exact absent targets and queued the remaining candidate-generation, strict-transition, fixture-isolation, quiescence, and rollback scope. CCFG-19 remains unselected. |
 
 ## Recommended Work Order
 
 1. Start pickup from root and program `CURRENT.md`.
-2. Install the exact committed stable feature set and load it in a fresh stable
-   session; verify installed versions, stable-checkout links, and planning-state
-   `current` and `validate` before further planning.
-3. Only after that gate may a new explicit `plan-batch CCFG-18` plan candidate
-   creation under the same finding identity.
-4. Preserve strict `cross-checkout-context/v1`; pre-creation verification must
-   not substitute for strict post-creation identity.
-5. Do not select CCFG-19, create a successor dispatch/runway, or create either
-   candidate path before the explicit CCFG-18 planning pass.
+2. Execute the queued `ccfg-18-candidate-generation` runway through
+   `work-batch`; do not select different work.
+3. Revalidate the exact installed-helper pre-creation payload before creating
+   either candidate root, then transition to strict
+   `cross-checkout-context/v1` before further implementation.
+4. Keep planning writes stable-canonical, implementation writes candidate-only,
+   candidate sessions fixture-only, and the default generation stable.
+5. Close and reconcile only CCFG-18; do not select CCFG-19 or create a successor
+   dispatch/runway.
 6. Do not revive archived APR/PST ledgers as pickup sources.
 7. Keep CCFG-11 open but do not execute its displaced runway.
 
@@ -127,10 +129,10 @@ Queued batch: `None`.
 - The `ccfg-18-stable-control-bootstrap` closeout marks CCFG-18 `Prepared`, not
   `Closed`, records the changed stable commit and fresh-session handoff, and
   preserves all candidate-generation remainder under the same finding identity.
-- The later pre-creation circularity supersedes that finding-level lifecycle
-  state: CCFG-18 remains `Blocked` until pre-creation support is completed,
-  installed, and loaded in a fresh stable session. Only then may closeout return
-  it to `Prepared` for a later candidate-creation planning pass.
+- The stable pre-creation gate is satisfied. The queued
+  `ccfg-18-candidate-generation` runway controls the remaining finding scope;
+  close CCFG-18 only after candidate lineage, strict transition, generation
+  identity, fixture isolation, quiescence, and rollback are all proven.
 - CCFG-27 does not switch the default generation.
 - CCFG-28 switches only after physical deletion and clean-install proof, then
   closes under the pinned stable controller and stops.

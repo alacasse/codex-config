@@ -7,7 +7,7 @@ source_identity: COR-001 through COR-012
 original_design_snapshot: b3f31c44a1fc3287c33dd2955489f194afef66f6
 accepted_design_snapshot: caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c
 initial_intake_commit: 7356a3fd9d8d487be8562af11cad56170f300616
-state: CCFG-18 blocked by missing pre-creation support; no item selected
+state: CCFG-18 candidate-generation runway queued; CCFG-19 remains unselected
 ```
 
 - Accepted immutable design packet:
