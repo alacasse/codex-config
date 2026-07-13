@@ -128,20 +128,43 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             "target": "scripts/cross_checkout_context.py",
         }
 
-        self.assertIn(helper_link, features["batch-runway"]["links"])
-        owners = [
-            feature_name
+        helper_source = (REPO_ROOT / helper_link["source"]).resolve()
+        helper_target = Path(helper_link["target"])
+        helper_installations = [
+            (feature_name, link)
             for feature_name, feature in features.items()
-            if helper_link in feature["links"]
+            for link in feature["links"]
+            if (REPO_ROOT / link["source"]).resolve() == helper_source
+            or Path(link["target"]) == helper_target
         ]
-        self.assertEqual(owners, ["batch-runway"])
         self.assertEqual(
-            (REPO_ROOT / helper_link["source"]).resolve(),
-            (REPO_ROOT / "scripts/cross_checkout_context.py").resolve(),
+            helper_installations,
+            [("batch-runway", helper_link)],
         )
         for consumer in ("plan-batch", "work-batch"):
             with self.subTest(consumer=consumer):
                 self.assertIn("batch-runway", features[consumer]["requires"])
+        installed_agent_sources = {
+            link["source"] for link in features["custom-agents"]["links"]
+        }
+        for agent_source in (
+            "agents/runway_worker.toml",
+            "agents/runway_reviewer.toml",
+        ):
+            with self.subTest(agent_source=agent_source):
+                self.assertIn(agent_source, installed_agent_sources)
+                agent = tomllib.loads(
+                    (REPO_ROOT / agent_source).read_text(encoding="utf-8")
+                )
+                instructions = agent["developer_instructions"]
+                self.assertIn(
+                    "verified_cross_checkout_precreation: null",
+                    instructions,
+                )
+                self.assertIn(
+                    "verified_cross_checkout_context: null",
+                    instructions,
+                )
         self.assertEqual(
             {
                 name: features[name]["version"]
@@ -153,10 +176,10 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 )
             },
             {
-                "plan-batch": "1.0.4",
-                "work-batch": "1.0.5",
-                "batch-runway": "1.5.0",
-                "custom-agents": "1.4.0",
+                "plan-batch": "1.0.5",
+                "work-batch": "1.0.6",
+                "batch-runway": "1.5.1",
+                "custom-agents": "1.4.1",
             },
         )
 

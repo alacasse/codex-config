@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Stable cross-checkout pre-creation support
+
+Problem: strict `cross-checkout-context/v1` validation requires the candidate
+repository and candidate Codex home to exist, so it cannot safely authorize a
+later session to create those exact absent paths.
+
+Decision: add a separate temporary `cross-checkout-precreation/v1` interface to
+the existing Batch Runway-installed `cross_checkout_context.py` helper, keep
+that helper as the single mechanical owner, and propagate the new facts through
+`plan-batch`, `work-batch`, Batch Runway, `runway_worker`, and
+`runway_reviewer`. The strict interface remains the unchanged post-creation
+contract and requires a validated transition before later implementation. This
+temporary ownership remains scheduled for removal at CCFG-29 final integration.
+
+Expected effect: after the stable configuration is installed and Codex is
+reloaded in a fresh session, the workflow can fail closed on absent-path intent,
+exact creation authority, and transition identity without weakening strict
+post-creation validation. This release does not install or reload the changed
+control surface in the current session and does not create candidate paths.
+
 ### Stable cross-checkout control bootstrap
 
 Problem: a future command-owner migration must keep one loaded toolchain
