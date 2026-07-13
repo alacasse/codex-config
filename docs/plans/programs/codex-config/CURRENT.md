@@ -27,11 +27,15 @@
 - Projection rebuild authority: `command`
 - Update authority: `command`
 
-## Active Ledger
+## Open Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Active rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and CCFG-18
-  through CCFG-29.
+- Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
+  CCFG-18 through CCFG-29.
+- Accepted command-owner redesign snapshot:
+  `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
+- Live redesign decisions:
+  `docs/plans/programs/codex-config/findings/command-owner-redesign-bootstrap-decisions.md`
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:
@@ -51,52 +55,63 @@
   `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md`
 - Latest closeout:
   `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/closeout.md`
-- Covers: CCFG-17, completed as Batch Runway generated reference-path guidance,
-  focused create-spec contract coverage, and an active-runway artifact guard.
-  Historical completed runways were not rewritten.
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. CCFG-17 has concrete closeout evidence
-and same-batch program reconciliation is complete. Do not select successor work
-until a future explicit `plan-batch` request asks for another batch.
+No batch is selected, queued, or active. CCFG-18 through CCFG-29 remain open and
+unselected. CCFG-18 is the first dependency-free command-owner redesign item.
 
-The command-owner redesign intake is recorded as CCFG-18 through CCFG-29,
-preserving source identities COR-001 through COR-012. Every redesign item is
-unselected. CCFG-18 (`COR-001`) is the first dependency-free redesign item; a
-future explicit `plan-batch` invocation owns any selection or narrowing.
+Before an explicit `plan-batch CCFG-18` request, verify in a fresh stable session:
 
-CCFG-11 remains open, but its displaced runway is superseded planning evidence;
-do not execute it as active state without a future regenerated or amended runway
-that includes validation-command status classes, batch kind, slice risk
-classes, approval gates where required, and a CCFG-15 split, block, or
-narrow-scope decision before selected dispatch and concrete runway creation.
-Future CCFG-11 planning must also use the CCFG-16 deletion-test vocabulary owner
-and generated-artifact consumer rules, or define any non-canonical labels
-locally as labels only.
+```yaml
+stable_checkout:
+  branch: master
+  clean_or_classified: true
+installed_generation:
+  default_codex_home_resolves_to_stable_checkout: true
+  required_skills_resolve_to_one_stable_commit: true
+  candidate_links: 0
+planning_state:
+  selected_dispatch: null
+  queued_runway: null
+  active_runway: null
+  resumable_runner_state: false
+project_values:
+  stable_checkout_path: known
+  candidate_clone_path: known
+  candidate_codex_home_path: known
+  accepted_design_snapshot: caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c
+```
+
+`plan-batch` may then select or narrow CCFG-18 only. CCFG-18 owns creation of the
+candidate clone, implementation branch, merge of the accepted design history,
+candidate `CODEX_HOME`, temporary cross-checkout control support, mechanical
+generation identity, fixture-only candidate validation, and pre-cutover rollback
+proof.
+
+Do not require those implementation results before planning CCFG-18; doing so
+would create a circular prerequisite.
+
+CCFG-11 remains open, but its displaced runway is superseded planning evidence.
+Do not execute it without a future regenerated or amended runway that applies the
+CCFG-13 validation status, CCFG-14 risk gates, CCFG-15 vague-row guard, and
+CCFG-16 deletion-test vocabulary rules.
 
 ## Stop Conditions
 
-- Stop if work would select from archived APR/PST ledgers instead of the
-  canonical codex-config ledger.
+- Stop if installed skills do not resolve to one stable `master` generation.
+- Stop if any installed link resolves to the redesign branch or candidate clone.
+- Stop if selected, queued, active, or resumable state appears before CCFG-18
+  planning.
+- Stop if planning would write outside the canonical stable planning repository.
+- Stop if candidate code or helpers would control canonical state before cutover.
+- Stop if work would repeat command-owner redesign intake or create new identities
+  instead of amending CCFG-18 through CCFG-29.
 - Stop if work would select successor work, create another dispatch, or create
-  another runway without a future explicit `plan-batch` request.
-- Stop if work would execute the displaced CCFG-11 runway as active state
-  without a future regenerated or amended runway.
-- Stop if work would regenerate or execute CCFG-11 without validation-command
-  status classes, batch kind, slice risk classes, and approval gates where
-  required.
-- Stop if work would plan CCFG-11 from the displaced artifact without first
-  splitting, blocking, or narrowing its vague mixed-risk scope under the
-  CCFG-15 guard.
-- Stop if work would replan or execute CCFG-11 using ambiguous deletion-test
-  labels such as `no-op`, `sediment`, `obsolete skill surface`, or
-  `deletion-safe evidence` without applying the CCFG-16 canonical vocabulary or
-  locally defining those labels as non-canonical labels only.
-- Stop if CCFG-1 closeout text would imply runner extraction, package/runtime
-  selection, repository/scaffold creation, adapter implementation, or CCFG-2
-  through CCFG-5 work is complete.
-- Stop if work would copy closed APR/PST history into the active ledger
-  row-by-row.
-- Stop if work would add project-specific paths, validation commands, cache
-  locations, or local planning layouts to a generic reusable skill.
+  another runway without an explicit future `plan-batch` request.
+- Stop if work would select from archived APR/PST ledgers instead of the canonical
+  codex-config ledger.
+- Stop if work would execute the displaced CCFG-11 runway without replanning.
+- Stop if work would copy archived history into the active ledger row-by-row.
+- Stop if a generic reusable skill receives project-specific paths, commands,
+  caches, or planning layouts.
