@@ -17,8 +17,8 @@ class CrossCheckoutContextTests(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.root = Path(self.temp_dir.name)
         self.stable_root, self.stable_commit = self._create_repository("stable")
-        self.implementation_root, self.implementation_commit = (
-            self._create_repository("implementation")
+        self.implementation_root, self.implementation_commit = self._create_repository(
+            "implementation"
         )
         self.codex_home = self.root / "codex-home"
         self.codex_home.mkdir()
@@ -275,8 +275,7 @@ class CrossCheckoutContextTests(unittest.TestCase):
                 "planning",
                 (self.stable_root / "not-planning.md",),
                 (),
-                "planning_paths\\[0\\] must stay within "
-                "canonical_planning_root=",
+                "planning_paths\\[0\\] must stay within canonical_planning_root=",
             ),
             (
                 "implementation",
@@ -289,8 +288,7 @@ class CrossCheckoutContextTests(unittest.TestCase):
                 "planning symlink escape",
                 (escape_link / "escaped.md",),
                 (),
-                "planning_paths\\[0\\] must stay within "
-                "canonical_planning_root=",
+                "planning_paths\\[0\\] must stay within canonical_planning_root=",
             ),
         ):
             with self.subTest(scope=scope_field):
@@ -535,7 +533,9 @@ class CrossCheckoutContextTests(unittest.TestCase):
 
             with self.subTest(field=field, problem="missing"):
                 payload = self._payload()
-                self._execution_payload(payload)[field] = str(self.root / f"missing-{field}")
+                self._execution_payload(payload)[field] = str(
+                    self.root / f"missing-{field}"
+                )
                 with self.assertRaisesRegex(
                     context_owner.CrossCheckoutContextError,
                     rf"{field} does not resolve to an existing path",
@@ -613,7 +613,9 @@ class CrossCheckoutContextTests(unittest.TestCase):
         nested_root = self.implementation_root / "nested"
         nested_root.mkdir()
         payload = self._payload()
-        self._execution_payload(payload)["implementation_target_root"] = str(nested_root)
+        self._execution_payload(payload)["implementation_target_root"] = str(
+            nested_root
+        )
         with self.assertRaisesRegex(
             context_owner.CrossCheckoutContextError,
             "implementation_target_root must be the Git repository root",
@@ -662,6 +664,8 @@ class CrossCheckoutContextTests(unittest.TestCase):
             [
                 "INTERFACE",
                 "RECEIPT_INTERFACE",
+                "PRECREATION_INTERFACE",
+                "TRANSITION_RECEIPT_INTERFACE",
                 "DELETION_CONDITION",
                 "GenerationRole",
                 "CrossCheckoutContextError",
@@ -671,11 +675,23 @@ class CrossCheckoutContextTests(unittest.TestCase):
                 "AllowedWriteScope",
                 "RepositoryRevisions",
                 "CrossRepositoryReceipt",
+                "PrecreationStableControl",
+                "CandidateIntent",
+                "CreationAuthority",
+                "CrossCheckoutPrecreationContext",
+                "AuthorizedCreationScope",
+                "CreatedCandidateIdentity",
+                "CrossCheckoutTransitionReceipt",
                 "parse_cross_checkout_context",
+                "parse_cross_checkout_precreation",
                 "capture_generation_identity",
                 "validate_write_scope",
+                "validate_precreation_creation_targets",
                 "build_cross_repository_receipt",
+                "build_cross_checkout_transition_receipt",
                 "cross_repository_receipt_to_dict",
+                "cross_checkout_precreation_to_dict",
+                "cross_checkout_transition_receipt_to_dict",
             ],
         )
         data_contracts = (
