@@ -3,7 +3,8 @@
 ## Purpose
 
 This register separates accepted target decisions from deferred ideas, rejected
-approaches, and questions that still require explicit human input.
+approaches, superseded decisions, and questions that still require explicit
+human input.
 
 Priority order for redesign work:
 
@@ -18,8 +19,9 @@ accepted decisions in this register
 -> conversation transcripts
 ```
 
-An agent must not silently resolve an `open` decision or revive a rejected
-approach because it appears in historical source material.
+An agent must not silently resolve an `open` decision, revive a rejected
+approach, or follow a superseded decision because it appears in historical
+source material.
 
 ## Status Values
 
@@ -42,9 +44,6 @@ status: accepted
 decision: >-
   add-to-ledger owns intake, plan-batch owns planning, and work-batch owns
   execution plus same-batch closeout.
-rationale: >-
-  These commands match user intent and allow support components to become narrow
-  mechanisms rather than alternate workflow owners.
 consequences:
   - architecture-program-runway is decomposed and deleted
   - batch-runway is split and deleted
@@ -60,9 +59,6 @@ decision: >-
   Command owners may delegate diagnostics, state application, path resolution,
   schema validation, worker execution, review, and commit mechanics. A delegated
   support surface may not independently reinterpret the same human workflow.
-rationale: >-
-  The architectural problem is broad alternate ownership, not short command
-  skills or technical delegation.
 ```
 
 ### DEC-003 — `planning-state` is a narrow state-machine authority
@@ -75,9 +71,6 @@ decision: >-
   transition validation, revision checks, serialization, and receipts. It does
   not select findings, shape batches, design slices, choose recovery actions, or
   select successors.
-rationale: >-
-  This keeps deterministic state behavior executable without hiding a new broad
-  workflow owner behind a narrow name.
 ```
 
 ### DEC-004 — `planning-artifacts` owns structure, not lifecycle
@@ -134,9 +127,6 @@ status: accepted
 decision: >-
   Skills and active planning artifacts use one versioned embedded YAML contract
   block plus concise Markdown procedure, rationale, and context.
-rationale: >-
-  This keeps machine facts parseable and human reasoning readable in one Git-
-  reviewable artifact without introducing a companion-file drift problem.
 source_proposals:
   - GitHub issue #48
   - GitHub issue #50
@@ -150,9 +140,6 @@ status: accepted
 decision: >-
   Preserve minimal discovery frontmatter and place the operational skill contract
   under a stable `## Contract` heading.
-rationale: >-
-  Full workflow contracts would overload integration frontmatter, especially for
-  ownership, outputs, and references.
 ```
 
 ### DEC-010 — Structured machine facts are canonical
@@ -178,8 +165,6 @@ decision: >-
   Do not create permanent skills-v2, skills-next, or version-suffixed human
   commands. Develop target skills at final paths in an isolated branch or
   worktree with a separate CODEX_HOME.
-rationale: >-
-  Parallel catalogs create routing ambiguity and compatibility sediment.
 ```
 
 ### DEC-012 — Use stable and candidate installation lanes
@@ -191,12 +176,9 @@ decision: >-
   The stable checkout and default CODEX_HOME perform and review migration work.
   The candidate branch or worktree and separate CODEX_HOME test target skills in
   fresh sessions.
-rationale: >-
-  Installed features are symlinked to source paths; in-place mutation could make
-  one workflow session consume multiple generations of its own contract.
 ```
 
-### DEC-013 — Use `port-by-contract` only for extraction and target design during bootstrap
+### DEC-013 — Limit `port-by-contract` during redesign bootstrap
 
 ```yaml
 id: DEC-013
@@ -285,19 +267,6 @@ decision: >-
   work-batch owns lifecycle coordination.
 ```
 
-### DEC-021 — The skill-authoring meta-skill is implemented last
-
-```yaml
-id: DEC-021
-status: accepted
-decision: >-
-  GitHub issue #49 is implemented only after skill-contract/v1 and planning
-  artifact v1 formats are validated on the target owners.
-rationale: >-
-  Creating the meta-skill first would risk codifying an unproven schema or
-  encouraging cosmetic migrations.
-```
-
 ### DEC-022 — Historical artifacts are not rewritten by default
 
 ```yaml
@@ -321,6 +290,63 @@ decision: >-
 source_proposal: GitHub issue #50
 ```
 
+### DEC-024 — Finalize `skill-authoring` v1 before command-owner migrations
+
+```yaml
+id: DEC-024
+status: accepted
+supersedes:
+  - DEC-021
+decision: >-
+  Define, implement, validate, and treat skill-authoring v1 as authoritative in
+  phase 2 before add-to-ledger, plan-batch, or work-batch are migrated. Use it to
+  guide those migrations, then perform a final convergence audit after dogfooding.
+rationale: >-
+  The first target skills must not invent separate hybrid dialects or rely only on
+  generic narrative-first skill guidance. Flexibility is preserved through
+  versioning and later compatible refinements, not through an incomplete guide.
+phase_2_completion_requires:
+  - skill-contract/v1 schema accepted
+  - validators implemented
+  - skill-authoring v1 complete and schema-valid
+  - generic authoring guidance boundary documented
+  - validated on port-by-contract or an equivalent representative skill
+  - installed only in the candidate CODEX_HOME until cutover
+dogfood_phases:
+  - phase-4-add-to-ledger-transfer
+  - phase-5-plan-batch-transfer
+  - phase-6-work-batch-transfer
+final_convergence_phase: phase-9-contract-first-authoring-convergence
+versioning_policy:
+  stable_early:
+    - ownership semantics
+    - canonicality rules
+    - required contract sections
+    - migration and ambiguity guards
+  refinable_compatibly:
+    - optional fields
+    - report presentation
+    - size heuristics
+    - reference-loading guidance
+```
+
+## Superseded Decisions
+
+### DEC-021 — The skill-authoring meta-skill is implemented last
+
+```yaml
+id: DEC-021
+status: superseded
+superseded_by: DEC-024
+previous_decision: >-
+  Implement skill-authoring only after all target command owners and planning
+  artifact formats have been validated.
+reason_for_change: >-
+  This left the first hybrid skill migrations without an authoritative
+  repository-specific authoring workflow and could produce incompatible or
+  cosmetic migrations.
+```
+
 ## Open Decisions
 
 ### OPEN-001 — Canonical storage of current lifecycle pointers
@@ -333,9 +359,6 @@ question: >-
   embedded in program CURRENT.md, or in a separate structured state file with
   CURRENT.md as a generated human view?
 recommended_option: embedded structured block in CURRENT.md
-reason: >-
-  It avoids a second durable source while keeping the current handoff artifact
-  human-readable. The implementation must prove atomic revision-checked updates.
 blocks:
   - final planning-state write interface
   - final current-state schema
@@ -351,29 +374,20 @@ question: >-
   structured block per finding, or a separate structured index plus narrative
   sections?
 recommended_option: one structured canonical ledger block with compact finding records
-reason: >-
-  A single block simplifies revision checks and duplicate identity validation,
-  but diff readability and merge behavior must be prototyped.
 blocks:
   - ledger-store format
   - intake mutation implementation
 ```
 
-### OPEN-003 — Exact transaction boundary for multi-artifact planning
+### OPEN-003 — Transaction boundary for multi-artifact planning
 
 ```yaml
 id: OPEN-003
 status: open
 question: >-
-  How should plan-batch atomically or recoverably apply dispatch creation, runway
-  creation, and selected-to-queued transitions across Markdown artifacts?
-options:
-  - staged writes plus transition receipts and recovery
-  - temporary files plus atomic renames within one filesystem
-  - explicit selected state followed by separately recoverable queued transition
+  How should plan-batch recoverably apply dispatch creation, runway creation, and
+  selected-to-queued transitions across Markdown artifacts?
 recommended_option: explicit selected state followed by recoverable queue transition
-reason: >-
-  The dispatch is already a meaningful durable intermediate state.
 blocks:
   - final plan-batch state mutation protocol
 ```
@@ -384,14 +398,9 @@ blocks:
 id: OPEN-004
 status: open
 question: >-
-  Is one focused commit per accepted slice a universal execution contract or a
-  default execution profile that may be overridden explicitly?
+  Is one focused commit per accepted slice universal or a default execution
+  profile with explicit overrides?
 recommended_option: default profile with explicit override support
-reason: >-
-  The behavior is useful and currently relied upon, but a versioned profile is
-  more honest than treating it as a universal workflow law.
-blocks:
-  - planning-runway/v1 final execution fields
 ```
 
 ### OPEN-005 — Exact slice-count rule
@@ -403,11 +412,6 @@ question: >-
   Should 3-5 slices remain a hard schema constraint, a planning warning, or only
   a documented heuristic?
 recommended_option: warning-level heuristic
-reason: >-
-  Bounded, testable, independently committable work is the durable contract; the
-  exact count is current implementation guidance.
-blocks:
-  - planning-runway/v1 validation severity
 ```
 
 ### OPEN-006 — Final names for narrow Python modules
@@ -419,9 +423,6 @@ question: >-
   What final module split should implement diagnostics, transitions, ledger
   mutation, artifact parsing, schemas, closeout validation, and projections?
 recommended_option: decide from behavior seams during implementation design
-reason: >-
-  The design fixes interfaces and forbidden responsibilities, not accidental
-  package names.
 blocks: []
 ```
 
@@ -433,9 +434,6 @@ status: open
 question: >-
   Should runway_worker and runway_reviewer be renamed after Batch Runway deletion?
 recommended_option: defer renaming
-reason: >-
-  Their authority contracts are useful and the names do not block ownership
-  transfer if path and dependency references are removed.
 blocks: []
 ```
 
@@ -448,9 +446,6 @@ question: >-
   Should representation experiments live temporarily in prototypes/contract-first
   or only in test fixtures and design documents?
 recommended_option: use prototypes only when comparison requires reviewable artifacts
-reason: >-
-  Any prototype directory must be non-installed, non-canonical, and deleted after
-  selection.
 blocks: []
 ```
 
@@ -461,12 +456,10 @@ blocks: []
 ```yaml
 id: FUTURE-001
 status: deferred
-topic: conservative parallel slice scheduling
 enabled_by:
   - explicit slice dependencies
   - declared read and write scopes
   - stable result contracts
-  - isolated worktrees or equivalent execution boundaries
 excluded_from_current_program: true
 ```
 
@@ -475,7 +468,6 @@ excluded_from_current_program: true
 ```yaml
 id: FUTURE-002
 status: deferred
-topic: generate human-readable Markdown from structured canonical sources
 reason: >-
   Embedded hybrid artifacts should be proven before adding generator ownership,
   regeneration policy, and review workflow.
@@ -486,81 +478,33 @@ reason: >-
 ```yaml
 id: FUTURE-003
 status: deferred
-topic: replace file-level transition coordination with a stronger transaction store
 reason: >-
-  The current program should first prove explicit revisions and recoverable file
-  transitions. SQLite must not become canonical by accident.
+  First prove explicit revisions and recoverable file transitions. SQLite must
+  not become canonical by accident.
 ```
 
 ## Rejected Approaches
 
-### REJECT-001 — Permanent `skills-v2/` catalog
-
 ```yaml
-id: REJECT-001
-status: rejected
-approach: permanent parallel skill directory or version-suffixed human commands
-reason: >-
-  Creates dual routing, duplicate ownership, install ambiguity, and compatibility
-  sediment.
-```
-
-### REJECT-002 — Modernize APR and Batch Runway in place as final owners
-
-```yaml
-id: REJECT-002
-status: rejected
-approach: >-
-  Rewrite architecture-program-runway and batch-runway into contract-first
-  formats while retaining their current broad ownership.
-reason: >-
-  Improves representation but reinforces the transitional architecture.
-```
-
-### REJECT-003 — Central replacement workflow service behind command aliases
-
-```yaml
-id: REJECT-003
-status: rejected
-approach: >-
-  Replace APR with another broad workflow service while keeping command skills as
-  thin aliases.
-reason: >-
-  Conflicts with the accepted command-owner intent and recreates the same owner
-  problem under a new name.
-```
-
-### REJECT-004 — Companion YAML as the initial artifact default
-
-```yaml
-id: REJECT-004
-status: rejected
-approach: Markdown artifact plus independently edited companion YAML
-reason: >-
-  Creates two files that can drift, move, or be reviewed separately before the
-  format and transaction model are proven.
-```
-
-### REJECT-005 — Preserve every current test unchanged
-
-```yaml
-id: REJECT-005
-status: rejected
-approach: treat all current tests as target compatibility contracts
-reason: >-
-  Many current tests intentionally protect bridge topology and prose rather than
-  externally meaningful behavior.
-```
-
-### REJECT-006 — Implement the entire redesign as one giant batch
-
-```yaml
-id: REJECT-006
-status: rejected
-approach: single rewrite and deletion batch
-reason: >-
-  Prevents controlled ownership transfer, weakens rollback, and makes behavior
-  equivalence and compatibility expiry difficult to prove.
+rejected:
+  - id: REJECT-001
+    approach: permanent skills-v2 catalog or version-suffixed human commands
+    reason: creates dual routing and compatibility sediment
+  - id: REJECT-002
+    approach: modernize APR and Batch Runway as final broad owners
+    reason: improves representation while preserving the wrong ownership model
+  - id: REJECT-003
+    approach: central replacement workflow service behind command aliases
+    reason: recreates the same broad owner under a new name
+  - id: REJECT-004
+    approach: independently edited companion YAML as the initial default
+    reason: creates two files that can drift
+  - id: REJECT-005
+    approach: preserve every current test unchanged
+    reason: many tests protect bridge topology and prose rather than behavior
+  - id: REJECT-006
+    approach: implement the redesign as one giant batch
+    reason: weakens rollback and behavior-equivalence proof
 ```
 
 ## Decision Change Procedure
