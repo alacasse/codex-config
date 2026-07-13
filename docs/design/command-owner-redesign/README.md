@@ -34,6 +34,8 @@ which:
 - `architecture-program-runway` and `batch-runway` are ultimately deleted as
   broad workflow owners;
 - skills and durable planning artifacts use contract-first hybrid Markdown;
+- `skill-authoring` v1 is finalized before the target command-owner skills are
+  migrated and then refined compatibly through dogfooding;
 - migration safety is demonstrated through behavior contracts and scenario
   tests rather than preservation of historical topology.
 
@@ -108,11 +110,11 @@ package answers the current question.
 |---|---|
 | [`01-source-behavior-contracts.md`](01-source-behavior-contracts.md) | Implementation-neutral behaviors that the target must preserve or deliberately change. |
 | [`02-target-ownership-model.md`](02-target-ownership-model.md) | Single-owner target architecture, interfaces, allowed dependencies, and forbidden dependencies. |
-| [`03-contract-first-formats.md`](03-contract-first-formats.md) | Contract-first skill and planning-artifact representation, incorporating GitHub issues #48, #49, and #50. |
-| [`04-migration-program.md`](04-migration-program.md) | Required phase order, entry gates, exit gates, bridge rules, and cutover strategy. |
+| [`03-contract-first-formats.md`](03-contract-first-formats.md) | Contract-first skill and planning-artifact representation, including the early authoritative `skill-authoring` v1 workflow. |
+| [`04-migration-program.md`](04-migration-program.md) | Required phase order, entry gates, exit gates, bridge rules, authoring bootstrap, and cutover strategy. |
 | [`05-behavioral-test-matrix.md`](05-behavioral-test-matrix.md) | Scenario matrix that proves workflow behavior independently from legacy skill names and prose. |
 | [`06-deletion-conditions.md`](06-deletion-conditions.md) | Measurable removal conditions for legacy owners, modes, routing, tests, fixtures, and vocabulary. |
-| [`decisions.md`](decisions.md) | Accepted, deferred, rejected, and open decisions. |
+| [`decisions.md`](decisions.md) | Accepted, superseded, deferred, rejected, and open decisions. |
 
 ## Source Implementation Scope
 
@@ -172,11 +174,32 @@ Do not introduce a permanent `skills-v2/`, `skills-next/`, or version-suffixed
 human command set. Candidate skills should occupy their final `skills/<name>/`
 paths on an isolated branch or worktree.
 
+## Authoring Bootstrap
+
+The target command-owner migrations must not invent the hybrid format while
+performing their own ownership transfers.
+
+Before `add-to-ledger`, `plan-batch`, or `work-batch` is migrated:
+
+1. `skill-contract/v1` must be accepted and mechanically validated;
+2. `skill-authoring` v1 must be complete at `skills/skill-authoring/SKILL.md`;
+3. its ownership, canonicality, ambiguity, and cosmetic-migration rules must be
+   authoritative;
+4. it must be validated on `port-by-contract` or an equivalent representative
+   skill;
+5. it must be installed and tested in the candidate `CODEX_HOME`;
+6. the agent's generic skill-writing guidance may supply universal mechanics,
+   but repository-specific contract-first rules take precedence.
+
+Dogfooding may produce compatible v1 refinements. It must not create separate
+contract dialects for each migrated skill.
+
 ## Program Invariants
 
 - Exactly one migration phase may be active.
 - Exactly one implementation batch may be selected.
 - No implementation batch may begin before its entry gate is satisfied.
+- `skill-authoring` v1 must be authoritative before target skill migration.
 - A phase must remove legacy ownership, not only add target surfaces.
 - No temporary bridge may exist without a named caller, reason, owner, allowed
   scope, and deletion condition.
