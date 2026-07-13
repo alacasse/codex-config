@@ -62,6 +62,21 @@ ownership, and `../batch-runway/SKILL.md` only in `create-spec` mode for the
 concrete spec procedure. Stop before implementation. When routing ambiguity
 exists, follow `../../docs/skill-routing-contract.md`.
 
+## Explicit Cross-Checkout Planning
+
+When the selected dispatch or required execution environment explicitly names
+`cross-checkout-context/v1` or separate toolchain, canonical-planning, and
+implementation roots, read
+`../batch-runway/references/cross-checkout-context-v1.md`. Require the complete
+context payload and canonical planning root, validate them with the installed
+helper before writing the concrete runway, and preserve both verbatim in that
+runway. Stop on missing or mismatched context; do not infer roots from cwd or
+create candidate paths while planning.
+
+This conditional bridge does not change `plan-batch` selection, one-spec, or
+stop-before-implementation ownership. It adds no step for ordinary single-root
+batches.
+
 ## Stops
 
 - Do not implement any slice.

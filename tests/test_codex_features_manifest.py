@@ -5,6 +5,7 @@ import tomllib
 import unittest
 from argparse import Namespace
 from pathlib import Path
+from typing import Any
 
 from scripts import install_codex_config
 
@@ -15,7 +16,7 @@ SKILLS_LOCK = REPO_ROOT / "skills-lock.json"
 
 
 class CodexFeaturesManifestTests(unittest.TestCase):
-    def load_manifest(self) -> dict[str, object]:
+    def load_manifest(self) -> dict[str, Any]:
         return json.loads(MANIFEST.read_text(encoding="utf-8"))
 
     def test_manifest_links_point_to_repo_sources(self) -> None:
@@ -105,6 +106,111 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         selected = install_codex_config.selected_feature_names(args, manifest)
 
         self.assertEqual(selected, ["planning-artifacts", "planning-state"])
+
+    def test_cross_checkout_helper_is_installed_only_by_batch_runway(self) -> None:
+        manifest = self.load_manifest()
+        features = manifest["features"]
+        helper_link = {
+            "source": "scripts/cross_checkout_context.py",
+            "target": "scripts/cross_checkout_context.py",
+        }
+
+        self.assertIn(helper_link, features["batch-runway"]["links"])
+        owners = [
+            feature_name
+            for feature_name, feature in features.items()
+            if helper_link in feature["links"]
+        ]
+        self.assertEqual(owners, ["batch-runway"])
+        self.assertEqual(
+            (REPO_ROOT / helper_link["source"]).resolve(),
+            (REPO_ROOT / "scripts/cross_checkout_context.py").resolve(),
+        )
+        for consumer in ("plan-batch", "work-batch"):
+            with self.subTest(consumer=consumer):
+                self.assertIn("batch-runway", features[consumer]["requires"])
+        self.assertEqual(
+            {
+                name: features[name]["version"]
+                for name in (
+                    "plan-batch",
+                    "work-batch",
+                    "batch-runway",
+                    "custom-agents",
+                )
+            },
+            {
+                "plan-batch": "1.0.4",
+                "work-batch": "1.0.5",
+                "batch-runway": "1.5.0",
+                "custom-agents": "1.4.0",
+            },
+        )
+
+    def test_cross_checkout_consumers_share_the_temporary_runtime_contract(
+        self,
+    ) -> None:
+        plan_batch = (REPO_ROOT / "skills/plan-batch/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        work_batch = (REPO_ROOT / "skills/work-batch/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        batch_runway = (REPO_ROOT / "skills/batch-runway/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        consumer_contract = (
+            REPO_ROOT
+            / "skills/batch-runway/references/cross-checkout-context-v1.md"
+        ).read_text(encoding="utf-8")
+        execute_core = (
+            REPO_ROOT / "skills/batch-runway/references/execute-slice-core-v1.md"
+        ).read_text(encoding="utf-8")
+
+        for text in (plan_batch, work_batch, batch_runway, execute_core):
+            with self.subTest(text=text[:40]):
+                self.assertIn("cross-checkout-context/v1", text)
+                self.assertNotIn("/home/alacasse/", text)
+
+        normalized_plan_batch = " ".join(plan_batch.split())
+        normalized_work_batch = " ".join(work_batch.split())
+        self.assertIn("complete context payload", normalized_plan_batch)
+        self.assertIn(
+            "before every worker or reviewer delegation",
+            normalized_work_batch,
+        )
+        self.assertIn("installed helper", consumer_contract)
+        self.assertIn("scripts/cross_checkout_context.py", consumer_contract)
+        self.assertIn("temporary bridge", consumer_contract)
+        self.assertIn("project-owned deletion condition", consumer_contract)
+        self.assertIn("missing, null, or mismatched verified identity", execute_core)
+        self.assertIn("Cross-checkout context:", execute_core)
+
+    def test_cross_checkout_generic_surfaces_remain_project_neutral(self) -> None:
+        generic_surfaces = (
+            "skills/plan-batch/SKILL.md",
+            "skills/work-batch/SKILL.md",
+            "skills/batch-runway/SKILL.md",
+            "skills/batch-runway/references/agent-result-contract-v2.md",
+            "skills/batch-runway/references/create-spec.md",
+            "skills/batch-runway/references/cross-checkout-context-v1.md",
+            "skills/batch-runway/references/execute-slice-core-v1.md",
+            "skills/batch-runway/references/execution-contract-v2.md",
+            "skills/batch-runway/references/project-values.md",
+            "skills/batch-runway/references/subagent-briefs.md",
+        )
+        forbidden_fragments = (
+            "/home/alacasse/",
+            "codex-config",
+            "command-owner-redesign",
+            "CCFG-",
+        )
+
+        for relative_path in generic_surfaces:
+            text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+            with self.subTest(path=relative_path):
+                for fragment in forbidden_fragments:
+                    self.assertNotIn(fragment, text)
 
     def test_command_owner_skills_are_directly_invokable(self) -> None:
         manifest = self.load_manifest()
@@ -415,7 +521,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             for feature_name, feature in features.items()
             if feature["description"].startswith("User-facing command-owner skill")
         }
-        direct_prompt_skills = set()
+        direct_prompt_skills: set[str] = set()
         for prompt_file in (REPO_ROOT / "skills").glob("*/agents/openai.yaml"):
             if "Use $" in prompt_file.read_text(encoding="utf-8"):
                 direct_prompt_skills.add(prompt_file.parents[1].name)

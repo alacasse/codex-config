@@ -5,6 +5,7 @@ import re
 import tomllib
 import unittest
 from pathlib import Path
+from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -25,7 +26,7 @@ BATCH_REFERENCES = REPO_ROOT / "skills/batch-runway/references"
 
 
 class CustomAgentContractTests(unittest.TestCase):
-    def load_agent(self, name: str) -> dict[str, object]:
+    def load_agent(self, name: str) -> dict[str, Any]:
         return tomllib.loads(
             (AGENTS_DIR / f"{name}.toml").read_text(encoding="utf-8")
         )
@@ -128,6 +129,61 @@ class CustomAgentContractTests(unittest.TestCase):
         ):
             with self.subTest(requirement=required):
                 self.assertIn(required, instructions)
+
+    def test_worker_and_reviewer_report_verified_cross_checkout_identity(self) -> None:
+        worker = self.instructions("runway_worker")
+        reviewer = self.instructions("runway_reviewer")
+
+        for role, instructions in (("worker", worker), ("reviewer", reviewer)):
+            with self.subTest(role=role):
+                for required in (
+                    "verified_cross_checkout_context: null",
+                    "interface: cross-checkout-context/v1",
+                    "generation_role",
+                    "toolchain_source_root",
+                    "toolchain_commit",
+                    "canonical_planning_repository_root",
+                    "canonical_planning_commit_before",
+                    "implementation_target_root",
+                    "implementation_commit_before",
+                    "codex_home",
+                    "canonical_state_mutation_allowed",
+                    "ordinary single-root work",
+                    "infer no identity from cwd",
+                    "missing or mismatched context",
+                ):
+                    with self.subTest(role=role, requirement=required):
+                        self.assertIn(required, instructions)
+
+        self.assertIn(
+            "grants no selection, acceptance, closeout, or successor authority",
+            worker,
+        )
+        self.assertIn(
+            "grants no review acceptance, commit, closeout, or successor authority",
+            reviewer,
+        )
+        worker_requirements = (
+            "independently validate the complete payload, canonical planning root, "
+            "installed helper identity, generation binding, repository revisions, "
+            "and intended write scope before editing",
+            "Stop with `blocked` on missing or mismatched context",
+            "If validation fails, return `blocked` with this field `null`",
+        )
+        reviewer_requirements = (
+            "independently validate the complete payload, canonical planning root, "
+            "installed helper identity, generation binding, and repository "
+            "revisions before review",
+            "Use `blocked` on missing or mismatched context",
+            "If validation fails, return `blocked` with this field `null`",
+        )
+        for role, instructions, requirements in (
+            ("worker", worker, worker_requirements),
+            ("reviewer", reviewer, reviewer_requirements),
+        ):
+            for requirement in requirements:
+                with self.subTest(role=role, normalized_requirement=requirement):
+                    self.assertIn(requirement, instructions)
 
     def test_import_reviewer_stays_inside_triggered_project_local_lens(self) -> None:
         instructions = self.instructions("import_topology_reviewer")

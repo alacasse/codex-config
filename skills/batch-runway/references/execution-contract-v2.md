@@ -6,6 +6,12 @@ interpretation.
 
 Rules:
 
+- An explicitly cross-checkout runway must carry a complete validated
+  `cross-checkout-context/v1` payload and canonical planning root. The
+  coordinator must follow `cross-checkout-context-v1.md`, revalidate before
+  every worker and reviewer delegation, propagate the mechanical context, and
+  reject missing, null, or mismatched verified identity in either agent result.
+  This validation grants no lifecycle authority.
 - These delegation rules bind the coordinator, not spawned workers or reviewers.
   A spawned `runway_worker` is already the required coding subagent for its
   assigned slice; it must implement that slice directly and must not spawn,

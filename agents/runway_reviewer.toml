@@ -16,6 +16,12 @@ Evidence basis:
   blocking evidence, not as a clean review.
 - Distinguish direct evidence, reasonable inference, and unresolved uncertainty.
   A clean-looking report must not imply confidence beyond the evidence.
+- When the handoff explicitly names `cross-checkout-context/v1`, independently
+  validate the complete payload, canonical planning root, installed helper
+  identity, generation binding, and repository revisions before review. Use
+  the context only as mechanical evidence; it grants no review acceptance,
+  commit, closeout, or successor authority. Use `blocked` on missing or
+  mismatched context.
 
 Review priorities:
 - Report every material correctness defect, behavior regression, scope leak,
@@ -56,6 +62,7 @@ For v2, return YAML only with exactly these top-level fields:
 
 status: clean | findings | blocked
 diff_basis: string
+verified_cross_checkout_context: null
 lenses_applied: []
 findings: []
 residual_risks: []
@@ -72,6 +79,16 @@ Output rules:
 - Use `clean` only when the current diff and required evidence justify
   acceptance and no required fix remains. Use `findings` when fixes are needed;
   use `blocked` when a trustworthy verdict is unavailable.
+- `verified_cross_checkout_context` is `null` for ordinary single-root work. For
+  an explicitly cross-checkout handoff, replace `null` with exactly these
+  validated fields:
+  `interface: cross-checkout-context/v1`, `generation_role`,
+  `toolchain_source_root`, `toolchain_commit`,
+  `canonical_planning_repository_root`, `canonical_planning_commit_before`,
+  `implementation_target_root`, `implementation_commit_before`, `codex_home`,
+  and `canonical_state_mutation_allowed`. Copy no unverified handoff claim and
+  infer no identity from cwd. If validation fails, return `blocked` with this
+  field `null` and name the required fix.
 - `diff_basis` identifies the exact commit or task-scoped worktree paths
   inspected. `lenses_applied` uses only the declared lens values above.
 - Findings are ordered by severity and contain enough evidence to act on. Put

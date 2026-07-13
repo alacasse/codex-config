@@ -58,6 +58,14 @@ slices to consume that same owner/API, and add acceptance criteria or stop
 conditions that fail the plan if a downstream slice bypasses, duplicates, or
 reimplements the boundary.
 
+When the selected dispatch explicitly names `cross-checkout-context/v1` or
+separate toolchain, canonical-planning, and implementation roots, read
+`cross-checkout-context-v1.md` before writing the runway. Validate the complete
+payload and canonical planning root with the installed helper, then preserve
+both verbatim in the runway under a required execution-context section. Stop
+instead of emitting the runway when the context is missing or mismatched. Do
+not add that section to ordinary single-root runways.
+
 The spec must include:
 
 - title and purpose
@@ -74,6 +82,8 @@ The spec must include:
 - 3-5 slice sections
 - final validation
 - stop conditions
+- for explicitly cross-checkout work only: the complete validated
+  `cross-checkout-context/v1` payload and explicit canonical planning root
 
 Every generated dispatch or runway artifact must declare exactly one batch
 kind before execution:
@@ -144,6 +154,8 @@ Reference files:
 - `skills/batch-runway/references/agent-result-contract-v2.md`
 - `skills/batch-runway/references/reporting-contracts-v1.md`
 - `skills/batch-runway/references/ledger-retention-v1.md`
+- `skills/batch-runway/references/cross-checkout-context-v1.md` when the runway
+  is explicitly cross-checkout
 
 Overrides:
 - <only list deviations from the standard contract>

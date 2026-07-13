@@ -21,6 +21,13 @@ coordinator lifecycle, triggered review routing, and local acceptance criteria.
 They request the registered role contract instead of copying agent schemas into
 prompts or examples.
 
+The worker and final-reviewer TOMLs also own their nullable
+`verified_cross_checkout_context` fields. For an explicitly cross-checkout
+handoff, each role independently validates and reports mechanical repository
+and generation identity. The field stays `null` otherwise. It never transfers
+selection, execution acceptance, review acceptance, closeout, or successor
+authority from the coordinator.
+
 The coordinator must put the selected result contract in every worker and final
 reviewer handoff. Use `Registered Agent Result Contract v2` for new v2 specs and
 `Compact Report Contract v1` only when an existing spec names v1. The registered

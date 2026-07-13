@@ -75,6 +75,9 @@ appropriate.
 - Do not pass live support-agent handles to workers or reviewers. The
   coordinator owns support-agent lifecycle and passes only compact findings,
   selected per-slice notes, or artifact paths.
+- For an explicitly `cross-checkout-context/v1` runway, apply
+  `cross-checkout-context-v1.md` before every worker and reviewer delegation and
+  reject missing, null, or mismatched verified identity in their v2 results.
 - Preserve unrelated dirty files.
 - Do not revert or commit files outside the slice scope.
 - Commit after the slice is clean, validated, and reviewed.
@@ -94,22 +97,29 @@ appropriate.
 3. If broad read-only investigation would otherwise be needed in coordinator
    context, use the `codebase_investigator` trigger in `subagent-briefs.md` and
    retain only compact findings.
-4. Spawn `runway_worker` with the compact coding handoff below.
-5. Require compact YAML from the worker.
-6. Run or verify focused validation and selected-profile validation.
-7. Classify the task-scoped diff for review triggers. If specialist support is
+4. For explicitly cross-checkout work, revalidate the complete payload,
+   canonical planning root, generation identity, repository revisions, and
+   intended write scope with the installed helper. Stop before delegation on
+   any missing or mismatched fact.
+5. Spawn `runway_worker` with the compact coding handoff below.
+6. Require compact YAML from the worker. For explicitly cross-checkout work,
+   reject a missing, null, or mismatched `verified_cross_checkout_context`.
+7. Run or verify focused validation and selected-profile validation.
+8. Classify the task-scoped diff for review triggers. If specialist support is
    needed, use `subagent-briefs.md` and retain only compact YAML findings.
-8. Spawn `runway_reviewer` with the compact review handoff below.
-9. Require compact YAML from the reviewer.
-10. Commit only the intended slice files once validation and review are clean.
-11. Record any orchestration anomalies using the compact log below.
-12. Report the compact commit receipt.
-13. Update the active ledger with only remaining-work state. Ordinary slice
+9. Revalidate applicable cross-checkout facts, then spawn `runway_reviewer`
+   with the compact review handoff below.
+10. Require compact YAML from the reviewer. For explicitly cross-checkout work,
+    reject a missing, null, or mismatched `verified_cross_checkout_context`.
+11. Commit only the intended slice files once validation and review are clean.
+12. Record any orchestration anomalies using the compact log below.
+13. Report the compact commit receipt.
+14. Update the active ledger with only remaining-work state. Ordinary slice
     entries record exact commit hashes after commit; final self-referential
     closeout entries use `this closeout commit` under `finalize-batch-v1.md`.
-14. Move completed-slice audit references to the completed archive.
-15. Close completed subagents.
-16. Continue to the next pending slice unless a stop condition remains active or
+15. Move completed-slice audit references to the completed archive.
+16. Close completed subagents.
+17. Continue to the next pending slice unless a stop condition remains active or
     the user explicitly asks to stop.
 
 ## Worker Handoff
@@ -129,6 +139,8 @@ Allowed files/areas: <slice allowed files>.
 Dirty-file constraints: <constraints>.
 Validation profile: <selected profile path or expanded profile>.
 Result contract: <Registered Agent Result Contract v2, or Compact Report Contract v1 when the existing spec names v1>.
+Cross-checkout context: <exact payload, canonical planning root, and installed helper path, or not applicable>.
+Cross-checkout mode: <write-bearing, read-only, or not applicable>.
 You are already the required coding subagent for this slice. Do not spawn,
 delegate to, or wait on additional subagents. Implement only this slice.
 The coordinator handles validation, review delegation, concrete execution-ledger
@@ -139,6 +151,9 @@ explicitly assigns them.
 Read the full slice in the spec. Return YAML only.
 Use exactly the result contract selected above. Stop if it conflicts with the
 spec.
+For an explicitly cross-checkout handoff, independently validate the supplied
+mechanical context before editing and populate the registered v2 verified
+identity field. Stop on missing or mismatched context.
 No implementation history, reasoning narrative, or chronological work log.
 ```
 
@@ -157,11 +172,16 @@ Repo cwd: <absolute repository path>.
 Slice anchor: <heading text or line number>.
 Diff basis: <commit hash or task-scoped worktree diff paths>.
 Result contract: <Registered Agent Result Contract v2, or Compact Report Contract v1 when the existing spec names v1>.
+Cross-checkout context: <exact payload, canonical planning root, and installed helper path, or not applicable>.
+Cross-checkout mode: <read-only or not applicable>.
 Inspect only the task-scoped diff and relevant files.
 Check scope, acceptance criteria, validation evidence, dirty-file leakage, and behavior preservation.
 Flag new or remaining cleanup residue that lacks a concrete reason, removal condition, or follow-up owner.
 Classify review lenses before the verdict and include `lenses_applied`.
 Include compact specialist-review findings already gathered by the coordinator.
+For an explicitly cross-checkout handoff, independently validate the supplied
+mechanical context and populate the registered v2 verified identity field.
+Stop on missing or mismatched context.
 Return YAML only using exactly the result contract selected above. Stop if it
 conflicts with the spec. Do not modify files.
 ```

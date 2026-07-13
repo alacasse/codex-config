@@ -34,6 +34,21 @@ only with a named external contract, explicit user instruction, or temporary
 removal condition. Use legacy and dead-surface support only for exceptional
 residue investigations that the active runway or review route requires.
 
+## Explicit Cross-Checkout Execution
+
+When the queued or active runway explicitly names
+`cross-checkout-context/v1` or separate toolchain, canonical-planning, and
+implementation roots, read
+`../batch-runway/references/cross-checkout-context-v1.md`. Revalidate the exact
+payload and canonical planning root with the installed helper before every
+worker or reviewer delegation, propagate the required mechanical context in
+each handoff, and reject missing, null, or mismatched verified identity in the
+agent result. Stop before delegation on any validation failure.
+
+This conditional bridge does not authorize a generation switch, install,
+reload, workflow acceptance, closeout decision, or successor selection. It adds
+no step for ordinary single-root batches.
+
 ## Stops
 
 - Do not create ledger findings.

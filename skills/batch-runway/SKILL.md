@@ -93,6 +93,9 @@ reference file by default.
   core.
 - `references/test-quality-review.md`: read only when a slice explicitly asks for
   test quality review or when changed tests trigger test-review routing.
+- `references/cross-checkout-context-v1.md`: read only when a selected dispatch,
+  runway, or handoff explicitly names `cross-checkout-context/v1` or separate
+  toolchain, canonical-planning, and implementation roots.
 
 When a subagent receives only a spec path, make sure the spec contains enough
 contract detail for that subagent to act safely, or include a short contract
@@ -114,6 +117,11 @@ capsule and the relevant Batch Runway reference path in the subagent prompt.
 6. Choose `create-spec` or `execute-spec`.
 7. Choose `lean-runway` or `full-runway`.
 
+For explicitly cross-checkout work, complete the temporary validation and
+propagation steps in `references/cross-checkout-context-v1.md` before writing a
+runway or delegating a worker or reviewer. Ordinary single-root work does not
+use that bridge.
+
 Stop instead of guessing when a required project value, validation command,
 harness command, output path, summary artifact, planning location, or
 instruction priority order is missing.
@@ -125,6 +133,11 @@ spec's named contract version; do not reinterpret v1 as v2.
 
 Non-negotiable execution rules:
 
+- For an explicitly cross-checkout runway, validate the complete
+  `cross-checkout-context/v1` payload and canonical planning root with the
+  installed helper before delegation, propagate them in worker and reviewer
+  handoffs, and reject missing or mismatched verified identity in either agent
+  result. Do not infer roots from cwd.
 - These delegation rules bind the coordinator, not spawned workers or reviewers.
   A spawned `runway_worker` is already the required coding subagent for its
   assigned slice; it must implement that slice directly and must not spawn,
@@ -230,19 +243,21 @@ ledger.
 In `create-spec` mode:
 
 1. Read `references/create-spec.md`.
-2. If the project uses Planning Artifact Layout v1, use `planning-state`
+2. For explicitly cross-checkout work, read and apply
+   `references/cross-checkout-context-v1.md` before writing the runway.
+3. If the project uses Planning Artifact Layout v1, use `planning-state`
    Diagnostic-First Pickup first and consume only its compact facts.
-3. If a selected dispatch, active runway, or queued batch exists, do not select
+4. If a selected dispatch, active runway, or queued batch exists, do not select
    another batch. Report the queued/active path, or create the missing
    `runway.md` from the selected dispatch when that is the requested action.
-4. If no batch is selected, read the relevant program ledger and only the source
+5. If no batch is selected, read the relevant program ledger and only the source
    packet named by the selected ledger row before writing the spec.
-5. Write one local plan file in the project planning location. If the project
+6. Write one local plan file in the project planning location. If the project
    uses Planning Artifact Layout v1 and a selected batch directory exists,
    write the spec to that batch directory as `runway.md`.
-6. Pick 3-5 tightly related slices that can execute sequentially.
-7. Keep each slice independently testable and committable.
-8. Stop before coding.
+7. Pick 3-5 tightly related slices that can execute sequentially.
+8. Keep each slice independently testable and committable.
+9. Stop before coding.
 
 ## Execute-Spec Summary
 
@@ -250,22 +265,25 @@ In `execute-spec` mode:
 
 1. Read the full active spec.
 2. Read `references/project-values.md`.
-3. For Layout v1 or ledger-driven specs, use `planning-state`
+3. For an explicitly cross-checkout runway, read and apply
+   `references/cross-checkout-context-v1.md` before any worker or reviewer
+   delegation.
+4. For Layout v1 or ledger-driven specs, use `planning-state`
    Diagnostic-First Pickup first and carry only its compact facts before
    broader exploration.
-4. For routine slice execution, read `references/execute-slice-core-v1.md` and
+5. For routine slice execution, read `references/execute-slice-core-v1.md` and
    only the selected validation profile file under
    `references/validation-profiles/`.
-5. Identify the active validation profile, pending ledger rows, stop conditions,
+6. Identify the active validation profile, pending ledger rows, stop conditions,
    commit strategy, density mode, convergence state, active ledger rows, and
    completed slice archive.
-6. Execute from the next incomplete ledger row.
-7. For routine slices, follow `references/execute-slice-core-v1.md`; it owns
+7. Execute from the next incomplete ledger row.
+8. For routine slices, follow `references/execute-slice-core-v1.md`; it owns
    the worker/reviewer handoffs, validation/review loop, commit receipt,
    ledger/archive update, anomaly logging, and continuation.
-8. If validation fails, review finds issues, blockers appear, or escalation is
+9. If validation fails, review finds issues, blockers appear, or escalation is
    needed, read `references/execute-recovery-v1.md`.
-9. After the last slice, read `references/finalize-batch-v1.md`; it owns final
+10. After the last slice, read `references/finalize-batch-v1.md`; it owns final
    validation, required refreshes, closeout evidence, cleanup residues,
    `orchestration_anomalies`, and expanded convergence reporting.
 

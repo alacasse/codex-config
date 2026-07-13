@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Stable cross-checkout control bootstrap
+
+Problem: a future command-owner migration must keep one loaded toolchain
+generation in control while canonical planning and candidate implementation
+live in different repositories. The stable command and agent contracts had no
+installed owner for validating those roots, revisions, write scopes, or
+delegated generation identity before work began.
+
+Decision: install the temporary `cross-checkout-context/v1` helper through the
+existing `batch-runway` manifest feature, and make `plan-batch`, `work-batch`,
+Batch Runway, `runway_worker`, and `runway_reviewer` consume that owner only for
+explicitly cross-checkout work. Require fail-closed validation and handoff
+propagation before delegation, add nullable verified identity to the v2 worker
+and reviewer results, and retain all lifecycle decisions with the coordinator.
+The temporary bridge remains scheduled for removal at CCFG-29 final
+integration.
+
+Expected effect: fresh stable generations can reject missing, mismatched, or
+wrong-generation cross-checkout work before writes or delegation, while normal
+single-root batches remain unchanged and candidate paths, installation state,
+and the default Codex home are not mutated by this bootstrap.
+
 ### Custom agent role contracts
 
 Problem: four registered agents still depended on caller assumptions for scope,

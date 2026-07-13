@@ -31,6 +31,11 @@ Resolve these values before creating or executing a spec:
   conventions.
 - `dirty_file_constraints`: files or directories that are expected dirty,
   generated, ignored, or forbidden to touch.
+- `cross_checkout_context`: complete `cross-checkout-context/v1` payload when
+  the selected work explicitly spans separate toolchain, canonical-planning,
+  and implementation roots; otherwise not applicable.
+- `canonical_planning_root`: explicit planning write root paired with an
+  applicable cross-checkout context. Do not infer it from cwd.
 
 Stop instead of guessing when:
 
@@ -46,6 +51,8 @@ Stop instead of guessing when:
 - a required harness command, output path, or summary artifact is named but not
   concretely specified
 - focused validation targets cannot be identified safely from the slice scope
+- explicitly cross-checkout work is missing its complete context payload or
+  canonical planning root, or the installed helper rejects either one
 - project instructions conflict and the priority order is not clear
 
 When stopping, report the missing project value and the exact source checked.
