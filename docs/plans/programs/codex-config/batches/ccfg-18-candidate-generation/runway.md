@@ -374,7 +374,7 @@ commands. No source index or generated-doc refresh is required.
 
 | Slice | Status | Risk class | Candidate commit | Stable planning receipt | Validation | Review | Next proof |
 |---|---|---|---|---|---|---|---|
-| 3. Fixture isolation and rollback proof | Pending | evidence-only | Not applicable | None | Not run | Not run | Fresh candidate fixture session, canonical rejection, quiescence, stable rollback |
+| 3. Fixture isolation and rollback proof | Reviewed | evidence-only | Not applicable | Pending coordinator commit | Candidate and unchanged-default stable fixture sessions exact; canonical rejection, quiescence, installer, focused tests/lint/types/planning green; full manifest exact known-red baseline | Clean after required fix; shell CLI compatibility retained as non-blocking residual risk | Commit the focused stable evidence receipt |
 
 ## Orchestration Anomalies
 
