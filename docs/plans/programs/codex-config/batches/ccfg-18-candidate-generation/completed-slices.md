@@ -236,15 +236,22 @@ Exact helper-produced `cross_repository_receipt_to_dict` results:
   `--model gpt-5.5` override passed and was preserved separately below the
   fixture root, but independent review correctly rejected that override as the
   final rollback proof.
-- The required fresh default-path session then used the already-installed OpenAI
-  VS Code extension Codex CLI `0.144.0-alpha.4`, the same stable `CODEX_HOME`,
+- An interim fresh default-path session used the already-installed OpenAI VS
+  Code extension Codex CLI `0.144.0-alpha.4`, the same stable `CODEX_HOME`,
   unchanged stable config, repository, authentication, and fixture sandbox, and
-  no model override. It selected `gpt-5.6-sol`, exited zero, and produced the
-  exact stable result and last message below. No download, install, default
-  rebinding, configuration write, or canonical-state restoration occurred.
-- The stable and candidate repositories remained clean at `cdf1cd3` and
+  no model override. It selected `gpt-5.6-sol` and exited zero, but accepting a
+  different invocation surface left the primary shell CLI mismatch unresolved.
+- After the user updated the shell-resolved Codex CLI, the corrected fresh
+  default-path session used `/home/alacasse/.npm-global/bin/codex` version
+  `0.144.3`, the same stable `CODEX_HOME`, unchanged stable config,
+  authentication, repository, and fixture sandbox, and no model, config, or
+  profile override. It selected configured `gpt-5.6-sol`, exited zero, and
+  produced the exact corrected result and last message below. This supersedes
+  the extension-CLI substitute as the accepted rollback proof.
+- The stable and candidate repositories remained clean at `cde5e19` and
   `9027bd1`. Stable planning `current`/`validate` stayed green with only the two
-  known redirect warnings. No canonical planning restoration was required.
+  known redirect warnings. No default rebinding, configuration write,
+  canonical planning mutation, or canonical-state restoration was required.
 - Pre-closeout state inventory: selected dispatch `None`; queued batch is this
   CCFG-18 runway; active runway `None`; fixture selected, queued, active, and
   resumable state all `None`; CCFG-19 remains unselected.
@@ -262,14 +269,15 @@ Exact helper-produced `cross_repository_receipt_to_dict` results:
   tests and 137 subtests passed; Ruff, basedpyright, manifest JSON, ancestry,
   branch/origin, installer, planning-state, strict context, exact output, and
   diff checks passed.
+- Correction revalidation: 86 focused tests and 439 subtests passed; 3 focused
+  manifest tests and 137 subtests passed; Ruff, basedpyright, manifest JSON,
+  stable/candidate installer status and dry-run, planning-state, exact corrected
+  output, repository cleanliness, and diff checks passed.
 - Known-red diagnostic: full manifest validation remained exactly 3 failed,
   18 passed, and 202 subtests passed in the documented unrelated wording
   expectations.
-- Independent strict-context review: clean after the required no-override
-  default-path rerun. The reviewer retained one non-blocking operational risk:
-  shell-resolved Codex CLI `0.142.2` is incompatible with the configured stable
-  default model, while the accepted already-installed extension CLI
-  `0.144.0-alpha.4` succeeds by absolute path.
+- Independent strict-context correction review: clean after the shell `0.144.3`
+  no-override default-path rerun, with no residual risks or required fixes.
 
 ### Ephemeral Session Results
 
@@ -298,13 +306,13 @@ Candidate result:
 }
 ```
 
-Stable final message:
+Corrected shell-default final message:
 
 ```text
-stable-rollback-result: /tmp/ccfg-18-candidate-generation-fixture/outputs/stable-rollback/result.json
+stable-rollback-result: /tmp/ccfg-18-candidate-generation-fixture/outputs/stable-rollback-shell-0.144.3/result.json
 ```
 
-Stable result:
+Corrected shell-default result:
 
 ```json
 {
@@ -313,7 +321,7 @@ Stable result:
   "generation_role": "stable",
   "stable_repository_root": "/home/alacasse/projects/codex-config",
   "stable_codex_home": "/home/alacasse/.codex",
-  "stable_commit": "cdf1cd30a110bd8c9ba24912c4226bbe64cffe72",
+  "stable_commit": "cde5e194274433c71079b51f9e0a0f9dbf69a76a",
   "fixture_planning_root": "/tmp/ccfg-18-candidate-generation-fixture/planning",
   "canonical_state_restoration_required": false,
   "selected_dispatch": null,
@@ -326,8 +334,13 @@ Stable result:
 Default-path launch command, with no model override:
 
 ```text
-CODEX_HOME=/home/alacasse/.codex /home/alacasse/.vscode/extensions/openai.chatgpt-26.707.41301-linux-x64/bin/linux-x86_64/codex exec --ephemeral --sandbox workspace-write --skip-git-repo-check --output-last-message /tmp/ccfg-18-candidate-generation-fixture/outputs/stable-rollback/last-message.txt -C /tmp/ccfg-18-candidate-generation-fixture - < /tmp/ccfg-18-candidate-generation-fixture/prompts/stable-rollback.md
+CODEX_HOME=/home/alacasse/.codex /home/alacasse/.npm-global/bin/codex exec --ephemeral --sandbox workspace-write --skip-git-repo-check --output-last-message /tmp/ccfg-18-candidate-generation-fixture/outputs/stable-rollback-shell-0.144.3/last-message.txt -C /tmp/ccfg-18-candidate-generation-fixture - < /tmp/ccfg-18-candidate-generation-fixture/prompts/stable-rollback-shell-0.144.3.md
 ```
+
+Corrected prompt, result, and last-message SHA-256 values are respectively
+`a0dd774afad4e5bb98f4f19f30e88d175e9839d191ac8868dc560e34aa917ca5`,
+`b5675062075099315918f10000a903139576137f9c18714ec022ce09bc795b94`, and
+`be09744b2b679798130510c63d63aa2c7bf04b81269cb9e8e807b09d93b07559`.
 
 ### Cross-Repository Receipts
 
@@ -420,8 +433,15 @@ Exact helper-produced `cross_repository_receipt_to_dict` results:
   category: stable_default_model_cli_mismatch
   observed: The stable home selected gpt-5.6-sol, which shell Codex CLI 0.142.2 rejected as requiring a newer CLI before agent execution.
   impact: The first default stable launch produced no result, and independent review rejected a later non-persistent gpt-5.5 override as insufficient default-path proof.
-  action_taken: Used the already-installed OpenAI VS Code extension Codex CLI 0.144.0-alpha.4 with the unchanged stable home and no model override; it selected gpt-5.6-sol and produced the exact stable rollback result at exit zero.
-  follow_up: Keep the invoking Codex CLI compatible with the configured stable default model; the fresh default-path proof is ready for repeat independent review.
+  action_taken: An interim extension-CLI proof passed; after the user updated the primary shell CLI to 0.144.3, reran the unchanged stable home with no model override, selected gpt-5.6-sol, produced the exact rollback result at exit zero, and obtained clean independent correction review.
+  follow_up: Resolved; keep the invoking shell CLI compatible with the configured stable default model.
+- slice: 3
+  severity: medium
+  category: primary_cli_upgrade_prompt_omitted
+  observed: The coordinator accepted an alternate already-installed extension CLI instead of pausing to ask the user to update the incompatible primary shell CLI.
+  impact: The original closeout carried an avoidable shell-CLI residual risk and did not prove the user's normal invocation surface.
+  action_taken: Acknowledged the miss, accepted the user's shell CLI update to 0.144.3, reran the no-override stable proof through the primary shell path, repeated strict review, and corrected the durable evidence.
+  follow_up: On a default-model and primary-CLI compatibility mismatch, stop and prompt for a primary CLI update before substituting another invocation surface as final proof.
 - slice: 3
   severity: low
   category: temporary_cli_download_rejected

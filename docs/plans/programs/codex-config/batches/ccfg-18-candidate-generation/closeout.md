@@ -26,6 +26,7 @@ unselected.
 stable_generation:
   repository_root: /home/alacasse/projects/codex-config
   evidence_commit: 34202189a20313cbb3420e03507dd0165c0df2b6
+  rollback_correction_base_commit: cde5e194274433c71079b51f9e0a0f9dbf69a76a
   codex_home: /home/alacasse/.codex
   canonical_state_mutation_allowed: true
 candidate_generation:
@@ -58,6 +59,7 @@ Stable planning evidence range:
 ## Validation And Review
 
 - Required focused validation: 86 tests and 440 subtests passed.
+- Correction focused validation: 86 tests and 439 subtests passed.
 - Focused manifest validation: 3 tests and 137 subtests passed; 18 tests were
   deselected.
 - Ruff: passed.
@@ -73,9 +75,11 @@ Stable planning evidence range:
   baseline: 3 failed, 18 passed, and 202 subtests passed in the same unrelated
   exact-wording assertions.
 - Slice 3 review found the first model-override rollback proof insufficient.
-  The required fresh no-override run through the already-installed extension
-  Codex CLI `0.144.0-alpha.4` selected configured `gpt-5.6-sol` and passed; the
-  repeat review was clean.
+  The later extension-CLI proof passed but left the primary shell mismatch
+  unresolved. After the shell CLI was updated, the required fresh no-override
+  run through `/home/alacasse/.npm-global/bin/codex` version `0.144.3` selected
+  configured `gpt-5.6-sol`, passed at exit zero, and received clean independent
+  strict-context correction review with no residual risk.
 - Independent final review over the exact candidate and stable planning ranges
   was clean with no required fixes.
 
@@ -84,7 +88,7 @@ Stable planning evidence range:
 - Candidate session result and last message:
   `/tmp/ccfg-18-candidate-generation-fixture/outputs/candidate-session/`.
 - Stable default-path rollback result and last message:
-  `/tmp/ccfg-18-candidate-generation-fixture/outputs/stable-rollback/`.
+  `/tmp/ccfg-18-candidate-generation-fixture/outputs/stable-rollback-shell-0.144.3/`.
 - Durable exact session summaries, transition receipt, cross-repository
   receipts, strict canonical-write rejection, and orchestration evidence:
   `completed-slices.md`.
@@ -115,10 +119,9 @@ Stable planning evidence range:
   redesign findings, not compatibility residue.
 - Runtime `.tmp`/`tmp` session scratch is non-authoritative and excluded from
   managed-link fingerprints. Destructive cleanup was outside this runway.
-- Operational residual risk: shell-resolved Codex CLI `0.142.2` cannot run the
-  configured stable default `gpt-5.6-sol`; the already-installed OpenAI VS Code
-  extension CLI `0.144.0-alpha.4` succeeds by absolute path. This does not block
-  generation rollback or CCFG-18 closeout.
+- Resolved environment correction: the primary shell Codex CLI is now `0.144.3`
+  and directly runs configured stable default `gpt-5.6-sol`; the extension-CLI
+  substitute is no longer part of the accepted rollback proof.
 
 ## Same-Batch Program Reconciliation
 
@@ -160,7 +163,11 @@ orchestration_anomalies:
   - slice: 3
     severity: medium
     category: stable_default_model_cli_mismatch
-    status: resolved_with_compatible_installed_cli
+    status: resolved_by_shell_cli_update_and_reproof
+  - slice: 3
+    severity: medium
+    category: primary_cli_upgrade_prompt_omitted
+    status: corrected_after_user_feedback
   - slice: 3
     severity: low
     category: temporary_cli_download_rejected
@@ -182,9 +189,9 @@ orchestration_anomalies:
 - Closed this batch: candidate establishment, accepted-design lineage, strict
   transition, isolated generation install, fixture-only candidate operation,
   canonical-write rejection, quiescence inventory, and stable rollback.
-- Newly discovered: shell CLI `0.142.2` is incompatible with configured
-  `gpt-5.6-sol`; a compatible already-installed extension CLI provides the
-  accepted default-path proof.
+- Resolved during correction: shell CLI `0.142.2` was incompatible with
+  configured `gpt-5.6-sol`; the user updated the primary shell CLI to `0.144.3`,
+  and the accepted no-override proof now uses that normal invocation surface.
 - Deferred out of scope: CCFG-19 through CCFG-29 remain individually tracked
   and unselected.
 - Remaining unknowns: none for CCFG-18 acceptance.
@@ -196,7 +203,8 @@ orchestration_anomalies:
 - Completion forecastable: yes; this batch and CCFG-18 are complete.
 - Evidence: candidate commits `b044e3c` and `9027bd1`; stable evidence and
   ledger commits `3fa5c4f`, `cb8e4b7`, `af0a1b9`, `cdf1cd3`, `218b249`, and
-  `3420218`; `completed-slices.md`; exact fixture outputs; clean final review;
-  and this closeout.
+  `3420218`; corrected rollback proof at stable base `cde5e19`; exact fixture
+  outputs; clean final and correction reviews; `completed-slices.md`; and this
+  closeout.
 - Next proof required: none for CCFG-18. A future explicit `plan-batch` request
   owns any successor selection.
