@@ -2,20 +2,19 @@
 
 ## Purpose
 
-This document incorporates the design intent of GitHub issues #48, #49, and #50
-into one representation strategy for skills and durable planning artifacts.
+This document defines the accepted representation for hybrid skills and active
+planning artifacts. Representation is subordinate to ownership: adding YAML does
+not make a bridge skill a real owner.
 
-The representation work is subordinate to the ownership model. A skill does not
-become a real owner merely because it contains a parseable YAML block. A
-migration succeeds only when both representation and responsibility move.
+Success requires both:
 
 ```yaml
-representation_success:
+representation:
   contracts_parseable: true
   machine_facts_canonical: true
   prose_not_authoritative: true
 
-ownership_success:
+ownership:
   duplicate_workflow_decisions: 0
   broad_runtime_owner_dependencies: 0
   old_owner_deletion_test: passed
@@ -23,27 +22,20 @@ ownership_success:
 
 ## Design Principles
 
-- Use YAML for stable operational facts.
-- Use numbered procedure steps for the normal path.
-- Use explicit `IF`/`THEN` rules for branching and stopping.
-- Use short prose for rationale, danger, and non-obvious architectural context.
-- Move rare edge cases, examples, compatibility details, and long procedures to
-  references.
+- YAML holds stable operational facts.
+- Numbered steps hold the normal procedure.
+- Explicit IF/THEN rules hold branching and stopping.
+- Short prose explains dangerous or non-obvious rationale.
+- Rare cases, examples, compatibility detail, and long procedures live in
+  trigger-loaded references.
+- One machine fact has one structured owner.
 - Do not create a dense repository-specific DSL.
 - Do not convert narrative prose into YAML-shaped prose.
-- Do not define the same machine-relevant fact independently in prose and YAML.
 - Keep contracts versioned and mechanically validated.
-- Finalize the repository-specific authoring workflow before migrating target
-  command-owner skills.
 - Keep active artifacts readable in ordinary Git review.
-- Keep SQLite optional and derived.
+- Keep SQLite derived and rebuildable.
 
 ## Skill Representation
-
-### Chosen form
-
-Keep the existing minimal frontmatter for Codex discovery and place one
-canonical operational contract block under a stable heading:
 
 ```markdown
 ---
@@ -74,21 +66,11 @@ IF an active runway exists:
 
 ## Rationale
 
-Short explanation of dangerous or non-obvious invariants.
-
-## Reference Loading
-
-```yaml
-load:
-  references/runway-specification.md:
-    when:
-      - creating_runway
-```
+Only dangerous or non-obvious invariants.
 ```
 
-Do not place the full operational contract in frontmatter. Frontmatter is an
-integration and discovery surface; the contract block is the versioned workflow
-interface.
+Discovery frontmatter remains minimal. The operational contract lives under one
+stable `## Contract` heading.
 
 ## `skill-contract/v1`
 
@@ -118,9 +100,7 @@ reads:
   required:
     - normalized_planning_diagnostic
     - canonical_program_ledger
-  conditional:
-    - selected_dispatch
-    - source_evidence_referenced_by_selected_finding
+  conditional: []
 
 writes:
   - selected_dispatch
@@ -166,288 +146,192 @@ references:
       - creating_runway
 ```
 
-### Required fields
+Required top-level fields:
 
-Every target contract-first skill requires:
+```text
+schema
+identity
+purpose
+owns
+reads
+writes
+requires
+delegates
+forbids
+outputs
+stops_when
+references
+```
 
-- `schema`
-- `identity`
-- `purpose`
-- `owns`
-- `reads`
-- `writes`
-- `requires`
-- `delegates`
-- `forbids`
-- `outputs`
-- `stops_when`
-- `references`
+Empty collections are allowed. Missing fields are not.
 
-Empty collections are allowed when semantically correct. Missing fields are not.
-Optional fields may be added only through accepted schema evolution.
+## Audience Profiles
 
-### Ownership validation
+The common shape supports distinct audience profiles:
 
-A validator must reject or report:
+```text
+human-command-owner
+support-mechanism
+evidence-skill
+authoring-support
+```
 
-- one skill owning and forbidding the same decision or write;
-- two human command skills owning the same decision;
-- two skills owning the same durable fact without a declared shared mechanism;
+Profile validators enforce different ownership constraints without inventing
+separate dialects.
+
+## Ownership and Dependency Validation
+
+A deterministic validator rejects or reports:
+
+- a skill owning and forbidding the same decision or write;
+- two command owners owning the same decision;
+- two skills owning the same durable fact without an accepted shared mechanism;
 - a support mechanism owning a human workflow decision;
 - an unknown delegated target;
 - a dependency cycle;
-- a referenced file that does not exist;
+- a missing referenced file;
 - a command owner depending on a retired broad owner;
-- an evidence skill declaring queue, selected-state, execution, or closeout
-  ownership;
-- a main `SKILL.md` that exceeds the selected size budget without an explicit
-  justification.
+- an evidence skill owning queue, selection, execution, or closeout state;
+- multiple canonical contract blocks for one skill;
+- a reference cycle;
+- a reference outside the allowed toolchain root;
+- a per-command schema or ownership dialect.
 
-The size budget is a review signal, not an automatic architecture rule. It must
-not force dangerous invariants into hidden references.
+Mechanical validation may detect explicit structured contradictions and known
+migration residues. It must not claim to understand arbitrary prose semantics.
+Broader cosmetic migration and prose contradiction findings remain independent
+review evidence unless expressed through controlled identifiers.
+
+## Schema Evolution
+
+```yaml
+schema_compatibility:
+  writer_emits: v1
+  reader_accepts:
+    - v1
+  unknown_schema_version: block
+  unknown_fields_within_v1: reject_unless_explicitly_allowed
+  optional_field_addition:
+    requires: accepted_compatible_decision
+  required_field_change:
+    requires: new_schema_version
+  semantic_ownership_change:
+    requires:
+      - new_schema_version
+      - accepted_architecture_decision
+  deprecation:
+    minimum_read_support: named_migration_condition
+```
+
+Equivalent policies apply to every planning-artifact schema.
+
+Every emitted active contract records:
+
+```yaml
+producer:
+  toolchain_generation: stable | candidate
+  toolchain_commit: full-sha
+  schema_version: string
+```
 
 ## Procedure and Decision Rules
 
-A contract states authority and invariants. It does not replace readable
-execution order.
+The contract states authority and invariants. Numbered procedure states normal
+order. Decision rules state branches.
 
-Use numbered procedure steps for the normal path:
-
-```text
-1. Inspect and validate current state.
-2. Resolve the canonical ledger.
-3. Branch on active lifecycle state.
-4. Select exactly one bounded finding when idle.
-5. Write and validate the dispatch.
-6. Write and validate the runway.
-7. Apply the queued transition.
-8. Stop before implementation.
-```
-
-Use decision rules for branching:
+Example normal path:
 
 ```text
-IF an active runway exists:
-  report it and stop without writes.
-
-IF a queued runway exists:
-  report it and stop without writes.
-
-IF a selected dispatch exists and its source revision is current:
-  create or validate only that dispatch's runway.
-
-IF a candidate mixes evidence gathering and destructive cleanup without an
-approval boundary:
-  block, split, or narrow before dispatch creation.
+1. Validate root and generation context.
+2. Inspect current planning state.
+3. Resolve the canonical ledger.
+4. Branch on selected, queued, or active state.
+5. Select exactly one eligible finding when idle.
+6. Split, block, or narrow when required.
+7. Create and validate the dispatch.
+8. Create and validate the runway.
+9. Apply explicit state transitions.
+10. Stop before implementation.
 ```
 
-Avoid embedding extensive rationale inside procedure steps.
+Example branch:
 
-## Rationale
-
-Rationale belongs in the main skill only when misunderstanding it could cause a
-material safety or ownership defect.
-
-Suitable examples:
-
-- why fresh external work cannot become executable backlog without intake;
-- why same-batch reconciliation cannot select a successor;
-- why state mechanisms must apply explicit decisions rather than infer intent;
-- why a worker cannot review or commit its own slice.
-
-Long examples and rare compatibility cases belong in references.
-
-## Reference Loading
-
-References must be trigger-loaded:
-
-```yaml
-load:
-  references/recovery.md:
-    when:
-      - validation_failed
-      - review_findings
-      - dirty_file_conflict
-      - stale_diff_basis
-  references/finalization.md:
-    when:
-      - all_intended_slices_complete
-      - final_report_requested
+```text
+IF the selected dispatch source revision is stale:
+  block without partial writes.
 ```
 
-A reference may deepen a procedure but may not contradict or independently
-redefine the main contract.
+## References
+
+`references[*].load_when` is the single canonical machine representation of
+reference loading. A Markdown reference-loading section may explain it but may
+not define a second trigger list.
+
+A reference may deepen procedure but may not redefine the main contract.
 
 ## `skill-authoring` v1
 
-GitHub issue #49 proposes a meta-skill for creating, migrating, and reviewing
-contract-first skills. The target adopts it as an early authoring authority.
-
-`skill-authoring` v1 must be complete before `add-to-ledger`, `plan-batch`, or
-`work-batch` are migrated. It is finalized after `skill-contract/v1` and its
-validators are accepted, then validated on `port-by-contract` or an equivalent
-representative skill.
-
-### Contract
+`skill-authoring` is complete and authoritative before command-owner migrations.
+It has one core skill and optional conditionally loaded references under the same
+version.
 
 ```yaml
 schema: skill-contract/v1
-
 identity:
   name: skill-authoring
   audience: authoring-support
-
 purpose: >-
-  Create, migrate, or audit skills against accepted contract-first formats
-  without preserving accidental source prose or duplicate ownership.
-
+  Create, migrate, and audit contract-first hybrid skills using accepted
+  ownership, canonicality, procedure, reference, and ambiguity rules.
 owns:
   decisions:
-    - skill_contract_extraction
+    - contract_extraction
     - skill_structure_design
-    - instruction_classification
     - ownership_conflict_reporting
-    - reference_split_recommendation
+    - reference_split_recommendations
   durable_facts: []
-
-reads:
-  required:
-    - accepted_skill_contract_schema
-    - target_skill_purpose
-    - intended_owner_boundaries
-    - expected_inputs_and_outputs
-  conditional:
-    - source_skill
-    - source_behavior_contract_ids
-    - generic_skill_authoring_guidance
-
-writes:
-  - target_skill_draft_or_patch
-  - ambiguity_report
-  - ownership_report
-  - validation_checklist
-
-requires:
-  mechanisms:
-    - skill-contract-schema-validator
-    - ownership-conflict-validator
-    - reference-validator
-  evidence_skills: []
-
-delegates:
-  - responsibility: schema_validation
-    target: skill-contract-schema-validator
-  - responsibility: ownership_validation
-    target: ownership-conflict-validator
-
 forbids:
   - workflow_execution
-  - durable_planning_state_mutation
-  - resolving_ownership_conflicts_silently
-  - inventing_unapproved_schema_fields
-  - preserving_source_prose_by_default
-  - treating_yaml_presence_as_successful_migration
-  - hiding_operational_rules_in_rationale
-
-outputs:
-  required:
-    - contract_first_skill_draft_or_patch
-    - ambiguity_report
-    - ownership_report
-    - validation_result
-
-stops_when:
-  - ownership_cannot_be_determined
-  - purpose_conflicts_with_another_skill
-  - required_inputs_or_outputs_are_unknown
-  - requested_change_creates_overlapping_ownership
-  - schema_change_requires_human_decision
-
-references:
-  - path: references/classification-rules.md
-    load_when:
-      - migrating_existing_skill
-      - auditing_ambiguous_skill
+  - planning_state_mutation
+  - silent_ownership_resolution
+  - unapproved_schema_fields
+  - preservation_of_source_prose_by_default
+  - yaml_presence_as_migration_success
 ```
 
-### Authoring procedure
+Core prerequisites:
 
 ```text
-1. Identify the skill's externally meaningful purpose.
-2. Extract behavior contracts before preserving source structure.
-3. Name the exact decisions and durable facts the skill owns.
-4. Separate delegated mechanisms from owned decisions.
-5. Define reads, writes, outputs, forbidden actions, and stop conditions.
-6. Convert the normal path into numbered procedure steps.
-7. Convert branches and stops into explicit IF/THEN rules.
-8. Keep only dangerous or non-obvious rationale in the main skill.
-9. Move rare detail into trigger-loaded references.
-10. Run schema, ownership, reference, and cosmetic-migration validation.
-11. Report unresolved ambiguity instead of guessing.
+accepted skill-contract/v1
+accepted ownership vocabulary
+accepted skill canonicality
+accepted reference-loading rules
+deterministic validators
 ```
 
-### Relationship to generic skill-writing guidance
-
-The agent may still use its generic skill-writing skill for universal mechanics
-such as:
-
-- discovery frontmatter;
-- trigger accuracy;
-- concise descriptions;
-- progressive disclosure;
-- reference organization;
-- general Codex skill compatibility.
-
-For repository-specific operational structure and ownership, this document and
-`skill-authoring` v1 are authoritative.
+The core does not require complete planning-artifact schema implementation.
+Planning guidance lives at:
 
 ```text
-repository-specific contract-first rules
-  outrank
-agent-generic skill-writing conventions
+skills/skill-authoring/references/planning-artifact-authoring.md
 ```
 
-The generic guidance must not normalize a target skill back to a
-narrative-first structure or silently remove required contract fields.
+It loads only when a task creates or modifies a supported planning artifact and
+must declare supported schema names and versions. An unsupported schema blocks.
+It may not redefine core ownership or canonicality.
 
-### Completion gate before owner migration
+Required trials:
 
-```yaml
-skill_authoring_v1:
-  schema_valid: true
-  authoritative: true
-  validators_green: true
-  validated_on:
-    - port-by-contract_or_equivalent_representative_skill
-  installed_in_candidate_codex_home: true
-  runtime_dependency_of_command_owners: false
-```
+1. one narrow evidence or analysis skill;
+2. one command-like skill with normal procedure, multiple branches, stop
+   conditions, and delegated mechanisms.
 
-Stable before dogfooding:
+Target command owners do not depend on `skill-authoring` at runtime.
 
-- ownership semantics;
-- required contract sections;
-- canonicality rules;
-- ambiguity and cosmetic-migration guards;
-- validator interfaces.
+## Active Planning Artifact Representation
 
-May evolve compatibly after dogfooding:
-
-- optional fields;
-- report layout;
-- size heuristics;
-- reference-loading recommendations;
-- additional non-breaking validation checks.
-
-A semantic change to `owns`, canonicality, or required boundaries requires an
-explicit schema-version decision rather than an undocumented edit.
-
-## Planning Artifact Representation
-
-### Chosen form
-
-Use one canonical embedded YAML block near the beginning of each active
-Markdown artifact:
+Each active Markdown artifact has exactly one structured operational block near
+the beginning plus human-readable context.
 
 ```markdown
 # Batch CCFG-20
@@ -461,40 +345,205 @@ schema: planning-runway/v1
 
 ## Objective
 
-Human-readable objective and context.
-
-## Architectural Rationale
-
-Human-readable explanation of non-obvious decisions.
+Human-readable context.
 ```
 
-This form keeps structured facts and rationale co-located without requiring a
-companion file that can drift independently.
+Companion YAML, generated Markdown, and full contract frontmatter remain rejected
+as the initial default.
 
-### Rejected as the initial default
+## Canonical Program State in `CURRENT.md`
 
-- **Companion YAML file:** creates two independently movable and editable
-  artifacts.
-- **Generated Markdown from structured source:** adds generator and review
-  friction before the format is proven.
-- **Full frontmatter contract:** becomes unwieldy for slices and evidence.
-- **Custom DSL:** unnecessary and difficult for fresh agents and ordinary tools.
+Each active program `CURRENT.md` contains exactly one canonical block:
 
-## Canonical Fact Ownership
+```yaml
+schema: planning-current/v1
+program: codex-config
+revision: 1
+ledger: docs/plans/programs/codex-config/LEDGER.md
+selected_dispatch: null
+queued_runway: null
+active_runway: null
+latest_closeout: path-or-null
+blockers: []
+producer:
+  toolchain_generation: stable
+  toolchain_commit: full-sha
+```
 
-| Fact | Canonical owner |
-|---|---|
-| Finding identity, provenance, lifecycle, and next action | structured ledger finding entry |
-| Selected, queued, and active artifact pointers | structured program current-state block |
-| Batch selection, included findings, exclusions, and scope | structured dispatch contract |
-| Slices, dependencies, risks, validation, and delegation | structured runway contract |
-| Slice completion and commit evidence | structured execution receipts and runway progress state |
-| Final completion evidence and same-batch reconciliation result | structured closeout contract |
-| Architectural context, rationale, and unresolved tradeoffs | prose in the owning artifact |
-| Historical reports and inventory | derived projection |
-| Runner telemetry | separate runtime JSON artifacts |
+The block owns all machine lifecycle pointers and blockers. Prose may explain but
+may not redefine them.
 
-No second artifact or prose section may independently redefine these facts.
+Write contract:
+
+```yaml
+expected_revision_required: true
+expected_file_hash_required: true
+write_temp_adjacent: true
+atomic_replace_required: true
+reread_and_validate_required: true
+before_and_after_receipt_required: true
+```
+
+Prototype proof:
+
+- stale revision rejects without partial write;
+- fresh session reads state without prose scanning;
+- rollback restores a compatible recorded revision;
+- unrelated prose does not churn;
+- duplicate pointer definitions are rejected.
+
+## Canonical Ledger in `LEDGER.md`
+
+Default representation: one canonical structured block per finding.
+
+```yaml
+schema: planning-finding/v1
+id: CCFG-18
+revision: 1
+title: Establish Stable and Candidate Generations
+provenance:
+  source_id: COR-001
+  source_commit: immutable-sha
+  source_section: immutable-url
+lifecycle:
+  status: open
+dependencies: []
+scope:
+  summary: string
+  included: []
+  excluded: []
+evidence:
+  pointers: []
+next_action:
+  command: plan-batch
+  condition: explicit_request
+```
+
+A compact index or table is derived from or mechanically validated against the
+finding blocks. It has no semantic authority.
+
+Multi-item intake transaction:
+
+```text
+read whole file at expected hash
+-> parse all finding blocks
+-> apply caller-decided mutations in memory
+-> validate IDs, provenance, dependencies, and revisions
+-> regenerate or validate derived index
+-> render deterministically
+-> write adjacent temporary file
+-> atomic replace
+-> reread and validate
+-> emit one receipt naming all touched findings
+```
+
+The prototype compares per-finding blocks with one global block for:
+
+- multi-item atomicity;
+- duplicate detection;
+- diff locality;
+- merge conflicts;
+- parsing and error locality;
+- per-finding revisions;
+- derived index consistency;
+- SQLite projection equality.
+
+Changing the default to one global block requires blocking prototype evidence and
+an explicit accepted decision.
+
+## Planning Artifact Schemas
+
+### `planning-dispatch/v1`
+
+```yaml
+schema: planning-dispatch/v1
+artifact:
+  id: ccfg-example
+  program: codex-config
+  revision: sha256
+source:
+  ledger_path: absolute-or-canonical-relative-path
+  ledger_revision: sha256
+  finding_ids: []
+selection:
+  outcome: selected
+  rationale_code: string
+scope:
+  goal: string
+  included_finding_ids: []
+  deferred_finding_ids: []
+  owner_seam: string
+  batch_kind: string
+  risk_summary: []
+approval_gates: []
+dependencies:
+  satisfied: []
+  blocking: []
+runway:
+  expected_path: path
+execution_context:
+  toolchain_source_root: absolute-path
+  canonical_planning_repository_root: absolute-path
+  implementation_target_root: absolute-path
+stops_when: []
+producer:
+  toolchain_generation: stable
+  toolchain_commit: full-sha
+```
+
+### `planning-runway/v1`
+
+```yaml
+schema: planning-runway/v1
+artifact:
+  id: ccfg-example
+  source_dispatch: path
+  source_dispatch_revision: sha256
+batch:
+  kind: migration
+  status: queued
+execution:
+  result_contract: registered-agent/v2
+  branch_policy: explicit
+  dirty_worktree_policy: strict
+  successor_selection: forbidden
+  implementation_target_root: absolute-path
+slices: []
+review:
+  final_gate: registered-reviewer
+closeout:
+  same_batch_only: true
+  required_artifacts: []
+producer:
+  toolchain_generation: stable
+  toolchain_commit: full-sha
+```
+
+### `planning-closeout/v1`
+
+```yaml
+schema: planning-closeout/v1
+artifact:
+  batch_id: ccfg-example
+result:
+  status: completed
+  implementation_commits: []
+evidence:
+  validation: {}
+  review: {}
+reconciliation:
+  finding_mutations: []
+  selected_dispatch_after: null
+  queued_runway_after: null
+  active_runway_after: null
+  successor_selected: false
+execution_context:
+  canonical_planning_repository_root: absolute-path
+  implementation_target_root: absolute-path
+producer:
+  toolchain_generation: stable | candidate
+  toolchain_commit: full-sha
+```
 
 ## Canonicality Rules
 
@@ -511,176 +560,28 @@ canonicality:
     must_not:
       - override
       - duplicate_operational_values
-      - define_a_second_status
-      - define_a_second_dependency_graph
-      - define_a_second_validation_class
+      - define_second_status
+      - define_second_dependency_graph
   derived_artifacts:
     must_declare:
       - source_artifact
       - source_revision
 ```
 
-## `planning-dispatch/v1`
+## Compatibility Policy
 
-```yaml
-schema: planning-dispatch/v1
-artifact:
-  type: dispatch
-  id: ccfg-20-example
-  program: codex-config
-  revision: sha256:...
-source:
-  ledger_path: docs/plans/programs/codex-config/LEDGER.md
-  ledger_revision: sha256:...
-  finding_ids:
-    - CCFG-20
-selection:
-  outcome: selected
-  rationale_code: bounded-owner-seam
-scope:
-  goal: Transfer planning ownership into plan-batch.
-  owner_seam: plan-batch
-  batch_kind: migration
-  included_finding_ids:
-    - CCFG-20
-  deferred_finding_ids: []
-  risk_summary:
-    - ownership-transfer
-approval_gates: []
-dependencies:
-  satisfied: []
-  blocking: []
-runway:
-  expected_path: docs/plans/programs/codex-config/batches/ccfg-20-example/runway.md
-stops_when:
-  - ledger_revision_stale
-  - unresolved_human_decision
-```
+- New active artifacts use accepted target schemas after their cutover gate.
+- Old active artifacts complete under stable contracts or are explicitly migrated.
+- Archived historical artifacts are not rewritten.
+- Legacy readers are read-only, caller-scoped, and removed when active and
+  resumable legacy state reaches zero.
+- Unknown schema versions block rather than fall back to prose inference.
 
-## `planning-runway/v1`
+## Non-Goals
 
-```yaml
-schema: planning-runway/v1
-artifact:
-  type: runway
-  id: ccfg-20-example
-  program: codex-config
-  source_dispatch: docs/plans/programs/codex-config/batches/ccfg-20-example/dispatch.md
-  source_dispatch_revision: sha256:...
-batch:
-  kind: migration
-  status: queued
-execution:
-  result_contract: registered-agent/v2
-  branch_policy: dedicated
-  dirty_worktree_policy: strict
-  commit_profile: focused-per-slice
-  successor_selection: forbidden
-slices:
-  - id: slice-1
-    depends_on: []
-    owner_role: worker
-    allowed_read_paths: []
-    allowed_write_paths:
-      - skills/plan-batch/**
-    risk_class: migration
-    approval_gate: null
-    validation:
-      - command: python -m pytest tests/test_plan_batch_workflow.py -q
-        class: required-green
-review:
-  final_gate_role: reviewer
-closeout:
-  required_artifacts:
-    - closeout
-    - completed-slices
-    - commit-receipts
-  required_transition: active-to-completed
-  reconcile_same_batch_only: true
-```
-
-## `planning-closeout/v1`
-
-```yaml
-schema: planning-closeout/v1
-artifact:
-  type: closeout
-  batch_id: ccfg-20-example
-  source_runway_revision: sha256:...
-result:
-  status: completed
-  commits:
-    - abc1234
-evidence:
-  validation:
-    status: passed
-    artifacts: []
-  review:
-    status: clean
-    diff_basis: abc1234
-reconciliation:
-  findings:
-    closed:
-      - CCFG-20
-    open: []
-  lifecycle:
-    selected_dispatch: null
-    queued_runway: null
-    active_runway: null
-  successor_selected: false
-```
-
-## Validation Tooling
-
-Lightweight tooling must:
-
-- locate exactly one structured contract block;
-- validate schema version and required fields;
-- reject unknown lifecycle transitions;
-- validate artifact lineage and source revisions;
-- reject unknown slice dependencies and dependency cycles;
-- detect unsupported validation classifications and risk classes;
-- validate approval gates when required;
-- detect declared overlapping write scopes where applicable;
-- reject retired broad-owner dependencies;
-- report compact actionable errors before delegation;
-- preserve readable Git diffs.
-
-Schema validation proves structure. Behavioral scenario tests prove workflow
-meaning. Neither replaces independent review.
-
-## Legacy Compatibility
-
-- Historical archived artifacts may remain Markdown-only.
-- New active artifacts use the accepted hybrid schemas after cutover.
-- A legacy parser is read-only, caller-scoped, and temporary.
-- No new artifact may be emitted in a legacy format after its target schema is
-  authoritative.
-- A legacy parser must name active callers and a measurable deletion condition.
-
-## Acceptance Criteria
-
-The contract-first representation is ready for command-owner migration only
-when:
-
-```yaml
-acceptance:
-  skill_contract_v1:
-    parseable: true
-    ownership_validation: proven
-    reference_validation: proven
-  skill_authoring_v1:
-    complete: true
-    authoritative: true
-    validated_on_representative_skill: true
-    installed_in_candidate_lane: true
-  planning_artifacts_v1:
-    dispatch_parseable: true
-    runway_parseable: true
-    closeout_parseable: true
-    canonicality_rules_enforced: true
-  migration_safety:
-    prototypes_non_authoritative: true
-    historical_artifacts_not_bulk_migrated: true
-    command_owner_ownership_not_yet_transferred: true
-```
+- no parallel execution;
+- no custom inheritance system;
+- no canonical SQLite planning state;
+- no automatic semantic interpretation of arbitrary prose;
+- no migration of all historical artifacts;
+- no permanent compatibility layer.
