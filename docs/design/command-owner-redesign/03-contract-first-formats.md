@@ -7,7 +7,7 @@ into one representation strategy for skills and durable planning artifacts.
 
 The representation work is subordinate to the ownership model. A skill does not
 become a real owner merely because it contains a parseable YAML block. A
-migration is successful only when both representation and responsibility move.
+migration succeeds only when both representation and responsibility move.
 
 ```yaml
 representation_success:
@@ -33,6 +33,8 @@ ownership_success:
 - Do not convert narrative prose into YAML-shaped prose.
 - Do not define the same machine-relevant fact independently in prose and YAML.
 - Keep contracts versioned and mechanically validated.
+- Finalize the repository-specific authoring workflow before migrating target
+  command-owner skills.
 - Keep active artifacts readable in ordinary Git review.
 - Keep SQLite optional and derived.
 
@@ -84,10 +86,11 @@ load:
 ```
 ```
 
-Do not place the full operational contract in frontmatter. The frontmatter is an
-integration surface; the contract block is the versioned workflow interface.
+Do not place the full operational contract in frontmatter. Frontmatter is an
+integration and discovery surface; the contract block is the versioned workflow
+interface.
 
-### `skill-contract/v1`
+## `skill-contract/v1`
 
 ```yaml
 schema: skill-contract/v1
@@ -165,7 +168,7 @@ references:
 
 ### Required fields
 
-Every contract-first target skill requires:
+Every target contract-first skill requires:
 
 - `schema`
 - `identity`
@@ -181,6 +184,7 @@ Every contract-first target skill requires:
 - `references`
 
 Empty collections are allowed when semantically correct. Missing fields are not.
+Optional fields may be added only through accepted schema evolution.
 
 ### Ownership validation
 
@@ -274,51 +278,169 @@ load:
 A reference may deepen a procedure but may not contradict or independently
 redefine the main contract.
 
-## Skill-Authoring Meta-Skill
+## `skill-authoring` v1
 
 GitHub issue #49 proposes a meta-skill for creating, migrating, and reviewing
-contract-first skills. The target accepts the idea but defers implementation
-until the format has been validated on real owners.
+contract-first skills. The target adopts it as an early authoring authority.
 
-### Target role
+`skill-authoring` v1 must be complete before `add-to-ledger`, `plan-batch`, or
+`work-batch` are migrated. It is finalized after `skill-contract/v1` and its
+validators are accepted, then validated on `port-by-contract` or an equivalent
+representative skill.
+
+### Contract
 
 ```yaml
-name: skill-authoring
-purpose: Create, migrate, or audit skills against accepted contract-first formats.
+schema: skill-contract/v1
+
+identity:
+  name: skill-authoring
+  audience: authoring-support
+
+purpose: >-
+  Create, migrate, or audit skills against accepted contract-first formats
+  without preserving accidental source prose or duplicate ownership.
+
 owns:
-  - contract_extraction
-  - skill_structure_design
-  - ownership_conflict_detection
-  - reference_split_recommendations
+  decisions:
+    - skill_contract_extraction
+    - skill_structure_design
+    - instruction_classification
+    - ownership_conflict_reporting
+    - reference_split_recommendation
+  durable_facts: []
+
+reads:
+  required:
+    - accepted_skill_contract_schema
+    - target_skill_purpose
+    - intended_owner_boundaries
+    - expected_inputs_and_outputs
+  conditional:
+    - source_skill
+    - source_behavior_contract_ids
+    - generic_skill_authoring_guidance
+
+writes:
+  - target_skill_draft_or_patch
+  - ambiguity_report
+  - ownership_report
+  - validation_checklist
+
+requires:
+  mechanisms:
+    - skill-contract-schema-validator
+    - ownership-conflict-validator
+    - reference-validator
+  evidence_skills: []
+
+delegates:
+  - responsibility: schema_validation
+    target: skill-contract-schema-validator
+  - responsibility: ownership_validation
+    target: ownership-conflict-validator
+
 forbids:
   - workflow_execution
   - durable_planning_state_mutation
   - resolving_ownership_conflicts_silently
   - inventing_unapproved_schema_fields
+  - preserving_source_prose_by_default
+  - treating_yaml_presence_as_successful_migration
+  - hiding_operational_rules_in_rationale
+
+outputs:
+  required:
+    - contract_first_skill_draft_or_patch
+    - ambiguity_report
+    - ownership_report
+    - validation_result
+
+stops_when:
+  - ownership_cannot_be_determined
+  - purpose_conflicts_with_another_skill
+  - required_inputs_or_outputs_are_unknown
+  - requested_change_creates_overlapping_ownership
+  - schema_change_requires_human_decision
+
+references:
+  - path: references/classification-rules.md
+    load_when:
+      - migrating_existing_skill
+      - auditing_ambiguous_skill
 ```
 
-### Required creation gate
+### Authoring procedure
 
-Do not implement `skill-authoring` until:
+```text
+1. Identify the skill's externally meaningful purpose.
+2. Extract behavior contracts before preserving source structure.
+3. Name the exact decisions and durable facts the skill owns.
+4. Separate delegated mechanisms from owned decisions.
+5. Define reads, writes, outputs, forbidden actions, and stop conditions.
+6. Convert the normal path into numbered procedure steps.
+7. Convert branches and stops into explicit IF/THEN rules.
+8. Keep only dangerous or non-obvious rationale in the main skill.
+9. Move rare detail into trigger-loaded references.
+10. Run schema, ownership, reference, and cosmetic-migration validation.
+11. Report unresolved ambiguity instead of guessing.
+```
+
+### Relationship to generic skill-writing guidance
+
+The agent may still use its generic skill-writing skill for universal mechanics
+such as:
+
+- discovery frontmatter;
+- trigger accuracy;
+- concise descriptions;
+- progressive disclosure;
+- reference organization;
+- general Codex skill compatibility.
+
+For repository-specific operational structure and ownership, this document and
+`skill-authoring` v1 are authoritative.
+
+```text
+repository-specific contract-first rules
+  outrank
+agent-generic skill-writing conventions
+```
+
+The generic guidance must not normalize a target skill back to a
+narrative-first structure or silently remove required contract fields.
+
+### Completion gate before owner migration
 
 ```yaml
-skill_contract_schema:
-  accepted_version: 1
+skill_authoring_v1:
+  schema_valid: true
+  authoritative: true
+  validators_green: true
   validated_on:
-    - port-by-contract
-    - add-to-ledger
-    - plan-batch
-    - work-batch
-planning_artifact_schemas:
-  accepted_versions:
-    - planning-dispatch/v1
-    - planning-runway/v1
-    - planning-closeout/v1
-open_schema_questions: 0
+    - port-by-contract_or_equivalent_representative_skill
+  installed_in_candidate_codex_home: true
+  runtime_dependency_of_command_owners: false
 ```
 
-The meta-skill guides design and invokes validators. It is not a runtime
-dependency of command owners.
+Stable before dogfooding:
+
+- ownership semantics;
+- required contract sections;
+- canonicality rules;
+- ambiguity and cosmetic-migration guards;
+- validator interfaces.
+
+May evolve compatibly after dogfooding:
+
+- optional fields;
+- report layout;
+- size heuristics;
+- reference-loading recommendations;
+- additional non-breaking validation checks.
+
+A semantic change to `owns`, canonicality, or required boundaries requires an
+explicit schema-version decision rather than an undocumented edit.
 
 ## Planning Artifact Representation
 
@@ -358,9 +480,6 @@ companion file that can drift independently.
 - **Full frontmatter contract:** becomes unwieldy for slices and evidence.
 - **Custom DSL:** unnecessary and difficult for fresh agents and ordinary tools.
 
-A future accepted decision may revisit generated views after the embedded form
-is proven.
-
 ## Canonical Fact Ownership
 
 | Fact | Canonical owner |
@@ -383,7 +502,6 @@ No second artifact or prose section may independently redefine these facts.
 canonicality:
   machine_relevant_facts:
     source: structured_contract_only
-
   prose:
     may:
       - explain
@@ -396,47 +514,29 @@ canonicality:
       - define_a_second_status
       - define_a_second_dependency_graph
       - define_a_second_validation_class
-
   derived_artifacts:
     must_declare:
       - source_artifact
       - source_revision
 ```
 
-Allowed prose:
-
-```text
-This batch requires explicit approval because `batch.kind` is
-`destructive-cleanup`.
-```
-
-Forbidden prose when the structured contract disagrees:
-
-```text
-This is a behavior-preserving batch.
-```
-
 ## `planning-dispatch/v1`
 
 ```yaml
 schema: planning-dispatch/v1
-
 artifact:
   type: dispatch
   id: ccfg-20-example
   program: codex-config
   revision: sha256:...
-
 source:
   ledger_path: docs/plans/programs/codex-config/LEDGER.md
   ledger_revision: sha256:...
   finding_ids:
     - CCFG-20
-
 selection:
   outcome: selected
   rationale_code: bounded-owner-seam
-
 scope:
   goal: Transfer planning ownership into plan-batch.
   owner_seam: plan-batch
@@ -446,16 +546,12 @@ scope:
   deferred_finding_ids: []
   risk_summary:
     - ownership-transfer
-
 approval_gates: []
-
 dependencies:
   satisfied: []
   blocking: []
-
 runway:
   expected_path: docs/plans/programs/codex-config/batches/ccfg-20-example/runway.md
-
 stops_when:
   - ledger_revision_stale
   - unresolved_human_decision
@@ -465,49 +561,41 @@ stops_when:
 
 ```yaml
 schema: planning-runway/v1
-
 artifact:
   type: runway
   id: ccfg-20-example
   program: codex-config
   source_dispatch: docs/plans/programs/codex-config/batches/ccfg-20-example/dispatch.md
   source_dispatch_revision: sha256:...
-
 batch:
   kind: migration
   status: queued
-
 execution:
   result_contract: registered-agent/v2
   branch_policy: dedicated
   dirty_worktree_policy: strict
+  commit_profile: focused-per-slice
   successor_selection: forbidden
-
 slices:
   - id: slice-1
     depends_on: []
-    allowed_read_paths:
-      - skills/plan-batch/**
-      - tests/**
+    owner_role: worker
+    allowed_read_paths: []
     allowed_write_paths:
       - skills/plan-batch/**
-      - tests/test_plan_batch_workflow.py
     risk_class: migration
     approval_gate: null
     validation:
       - command: python -m pytest tests/test_plan_batch_workflow.py -q
         class: required-green
-        trigger: always
-
 review:
-  final_gate: runway_reviewer
-
+  final_gate_role: reviewer
 closeout:
   required_artifacts:
     - closeout
     - completed-slices
     - commit-receipts
-  required_transition: active_to_completed
+  required_transition: active-to-completed
   reconcile_same_batch_only: true
 ```
 
@@ -515,33 +603,21 @@ closeout:
 
 ```yaml
 schema: planning-closeout/v1
-
 artifact:
   type: closeout
   batch_id: ccfg-20-example
-  program: codex-config
-  source_runway: docs/plans/programs/codex-config/batches/ccfg-20-example/runway.md
   source_runway_revision: sha256:...
-
 result:
   status: completed
   commits:
     - abc1234
-
-validation:
-  status: passed
-  evidence: []
-
-review:
-  status: clean
-  diff_basis: abc1234
-  evidence: []
-
-cleanup_residue:
-  removed: []
-  kept: []
-  deferred: []
-
+evidence:
+  validation:
+    status: passed
+    artifacts: []
+  review:
+    status: clean
+    diff_basis: abc1234
 reconciliation:
   findings:
     closed:
@@ -556,79 +632,55 @@ reconciliation:
 
 ## Validation Tooling
 
-The design expects lightweight executable validators, not prose-only checks.
-Candidate final placement:
+Lightweight tooling must:
 
-```text
-schemas/
-  skill-contract-v1.schema.json
-  planning-dispatch-v1.schema.json
-  planning-runway-v1.schema.json
-  planning-closeout-v1.schema.json
+- locate exactly one structured contract block;
+- validate schema version and required fields;
+- reject unknown lifecycle transitions;
+- validate artifact lineage and source revisions;
+- reject unknown slice dependencies and dependency cycles;
+- detect unsupported validation classifications and risk classes;
+- validate approval gates when required;
+- detect declared overlapping write scopes where applicable;
+- reject retired broad-owner dependencies;
+- report compact actionable errors before delegation;
+- preserve readable Git diffs.
 
-scripts/contracts/
-  validate_skill_contracts.py
-  validate_planning_artifacts.py
-```
+Schema validation proves structure. Behavioral scenario tests prove workflow
+meaning. Neither replaces independent review.
 
-The exact implementation split remains subject to implementation design, but
-the validators must cover:
+## Legacy Compatibility
 
-- locating exactly one canonical contract block;
-- schema version and required fields;
-- unknown references and artifact paths;
-- duplicate durable-fact ownership;
-- unsupported lifecycle state or transition;
-- unknown slice dependencies and dependency cycles;
-- unsupported risk and validation classes;
-- required approval gates;
-- result-contract compatibility;
-- source revision binding;
-- overlapping declared write scopes where applicable;
-- closeout consistency and `successor_selected: false`;
-- active artifacts using retired skill names after cutover.
+- Historical archived artifacts may remain Markdown-only.
+- New active artifacts use the accepted hybrid schemas after cutover.
+- A legacy parser is read-only, caller-scoped, and temporary.
+- No new artifact may be emitted in a legacy format after its target schema is
+  authoritative.
+- A legacy parser must name active callers and a measurable deletion condition.
 
-## Legacy Markdown Compatibility
+## Acceptance Criteria
 
-Existing Markdown-only artifacts follow this migration policy:
+The contract-first representation is ready for command-owner migration only
+when:
 
 ```yaml
-legacy_artifacts:
-  creation_after_cutover: forbidden
-  reading: allowed_only_through_named_read_only_parser
-  mutation: forbidden_unless_migrated_first
-  active_artifact_handling:
-    - complete_under_named_old_contract
-    - or migrate_with_explicit_validation
-  historical_archive_rewrite: not_required
-  parser_removal_condition:
-    - no selected legacy dispatch
-    - no queued legacy runway
-    - no active legacy runway
-    - no resumable legacy runner state
+acceptance:
+  skill_contract_v1:
+    parseable: true
+    ownership_validation: proven
+    reference_validation: proven
+  skill_authoring_v1:
+    complete: true
+    authoritative: true
+    validated_on_representative_skill: true
+    installed_in_candidate_lane: true
+  planning_artifacts_v1:
+    dispatch_parseable: true
+    runway_parseable: true
+    closeout_parseable: true
+    canonicality_rules_enforced: true
+  migration_safety:
+    prototypes_non_authoritative: true
+    historical_artifacts_not_bulk_migrated: true
+    command_owner_ownership_not_yet_transferred: true
 ```
-
-Historical artifacts may retain old terminology when clearly inactive. New
-active artifacts may not create new dependencies on retired owners or modes.
-
-## Prototype Policy
-
-Representation prototypes may live temporarily under:
-
-```text
-prototypes/contract-first/
-```
-
-They must declare:
-
-```yaml
-prototype:
-  installed: false
-  canonical: false
-  runtime_references_allowed: false
-  removal_condition:
-    - accepted content moved to canonical locations
-    - rejected alternatives deleted
-```
-
-Do not create a permanent `skills-v2/` or parallel command catalog.
