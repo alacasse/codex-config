@@ -41,7 +41,7 @@ same-batch closeout may close CCFG-18, but it must not select CCFG-19.
   this planning pass.
 - Stable checkout:
   `/home/alacasse/projects/codex-config`, branch `master`, exact `HEAD` and
-  `origin/master` `d414113f2f749481755e820b2344e391867e89a5`.
+  `origin/master` `da5b97165eb8d8c9f809a64937bcc9d753032ee7`.
 - Stable worktree was clean before this planning pass.
 - Active stable `CODEX_HOME`: `/home/alacasse/.codex`.
 - `./install.sh --status` reports the exact committed feature versions.
@@ -90,9 +90,9 @@ Complete validated payload:
 interface: cross-checkout-precreation/v1
 stable_control:
   toolchain_source_root: /home/alacasse/projects/codex-config
-  toolchain_commit: d414113f2f749481755e820b2344e391867e89a5
+  toolchain_commit: da5b97165eb8d8c9f809a64937bcc9d753032ee7
   canonical_planning_repository_root: /home/alacasse/projects/codex-config
-  canonical_planning_commit_before: d414113f2f749481755e820b2344e391867e89a5
+  canonical_planning_commit_before: da5b97165eb8d8c9f809a64937bcc9d753032ee7
   canonical_planning_root: /home/alacasse/projects/codex-config/docs/plans
   codex_home: /home/alacasse/.codex
   generation_role: stable
@@ -103,7 +103,7 @@ candidate_intent:
   candidate_codex_home: /home/alacasse/.codex-command-owner-redesign
   expected_codex_home_state: absent
   base_repository: alacasse/codex-config
-  base_commit: d414113f2f749481755e820b2344e391867e89a5
+  base_commit: da5b97165eb8d8c9f809a64937bcc9d753032ee7
   implementation_branch: implementation/command-owner-redesign
   accepted_design_snapshot: caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c
 creation_authority:
@@ -138,7 +138,7 @@ The coordinator must use this order:
 
 1. While both targets are absent, compute and independently review the
    deterministic merge result of authoritative master
-   `d414113f2f749481755e820b2344e391867e89a5` and accepted design
+   `da5b97165eb8d8c9f809a64937bcc9d753032ee7` and accepted design
    `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c` in the stable repository. Record
    the reviewed tree hash and diff basis.
 2. Delegate one creation-bearing worker to create only the two authorized roots,
@@ -164,20 +164,20 @@ The first strict context is stable-controlled. Its exact runtime shape is:
 interface: cross-checkout-context/v1
 execution_context:
   toolchain_source_root: /home/alacasse/projects/codex-config
-  toolchain_commit: d414113f2f749481755e820b2344e391867e89a5
+  toolchain_commit: da5b97165eb8d8c9f809a64937bcc9d753032ee7
   canonical_planning_repository_root: /home/alacasse/projects/codex-config
-  canonical_planning_commit_before: d414113f2f749481755e820b2344e391867e89a5
+  canonical_planning_commit_before: da5b97165eb8d8c9f809a64937bcc9d753032ee7
   implementation_target_root: /home/alacasse/projects/codex-config-command-owner-redesign
-  implementation_commit_before: actual full candidate merge commit captured by Slice 1
+  implementation_commit_before: b044e3c348922663aa074638227aae8d2633cfe3
   codex_home: /home/alacasse/.codex
   generation_role: stable
   canonical_state_mutation_allowed: true
 ```
 
-The runtime-captured candidate commit is deliberately not guessed during
-planning. After strict transition, `verified_cross_checkout_precreation` is
-null and every worker/reviewer result must carry the freshly validated
-`verified_cross_checkout_context` required by
+The runtime-captured candidate commit is
+`b044e3c348922663aa074638227aae8d2633cfe3`. After strict transition,
+`verified_cross_checkout_precreation` is null and every worker/reviewer result
+must carry the freshly validated `verified_cross_checkout_context` required by
 `skills/batch-runway/references/cross-checkout-context-v1.md`.
 
 ## Project Values
@@ -347,7 +347,7 @@ Focused validation commands and status classes:
   - Slice 2 promotes it and requires every candidate link to resolve to the
     candidate repository with no stable/candidate mixture.
 - Candidate ancestry checks using `git merge-base --is-ancestor` for both
-  `d414113f2f749481755e820b2344e391867e89a5` and
+  `da5b97165eb8d8c9f809a64937bcc9d753032ee7` and
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c` against candidate `HEAD`
   - Status: `implementation-created` by Slice 1, then `required-green`.
 - Fresh candidate fixture session rooted at

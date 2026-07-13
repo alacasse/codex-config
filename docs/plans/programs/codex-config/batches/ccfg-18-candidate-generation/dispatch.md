@@ -37,8 +37,8 @@ planning_state:
 stable_control:
   checkout: /home/alacasse/projects/codex-config
   branch: master
-  commit: d414113f2f749481755e820b2344e391867e89a5
-  origin_master: d414113f2f749481755e820b2344e391867e89a5
+  commit: da5b97165eb8d8c9f809a64937bcc9d753032ee7
+  origin_master: da5b97165eb8d8c9f809a64937bcc9d753032ee7
   worktree: clean
   codex_home: /home/alacasse/.codex
   installed_versions_match: true
@@ -49,7 +49,7 @@ candidate_intent:
   candidate_codex_home: /home/alacasse/.codex-command-owner-redesign
   candidate_codex_home_state: absent
   base_repository: alacasse/codex-config
-  base_commit: d414113f2f749481755e820b2344e391867e89a5
+  base_commit: da5b97165eb8d8c9f809a64937bcc9d753032ee7
   implementation_branch: implementation/command-owner-redesign
   accepted_design_snapshot: caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c
 installed_helper: /home/alacasse/.codex/scripts/cross_checkout_context.py
@@ -106,7 +106,7 @@ planning write rejection, quiescence, and pre-cutover rollback.
   candidate roots remain absent.
 - Create only the exact candidate repository and candidate `CODEX_HOME` roots.
 - Create `implementation/command-owner-redesign` from authoritative master at
-  `d414113f2f749481755e820b2344e391867e89a5`.
+  `da5b97165eb8d8c9f809a64937bcc9d753032ee7`.
 - Merge the accepted design history ending at
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c` with preserved ancestry and verify
   the imported design tree before live amendments.
