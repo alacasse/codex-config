@@ -374,7 +374,6 @@ commands. No source index or generated-doc refresh is required.
 
 | Slice | Status | Risk class | Candidate commit | Stable planning receipt | Validation | Review | Next proof |
 |---|---|---|---|---|---|---|---|
-| 1. Candidate roots and strict transition | Pending | migration | None | None | Not run | Not run | Exact roots, reviewed merge tree, ancestry, transition receipt, green strict context |
 | 2. Candidate amendment and generation install | Pending | migration | None | None | Not run | Not run | Live amendment, candidate install, link/generation fingerprints, refreshed strict receipts |
 | 3. Fixture isolation and rollback proof | Pending | evidence-only | Not applicable | None | Not run | Not run | Fresh candidate fixture session, canonical rejection, quiescence, stable rollback |
 
@@ -388,6 +387,7 @@ orchestration_anomalies: []
 
 | Slice | Candidate commit | Stable planning receipt | Outcome | Audit references |
 |---|---|---|---|---|
+| 1. Candidate roots and strict transition | `b044e3c` | `3fa5c4f` | success; exact reviewed merge tree and design subtree, helper-produced transition receipt, strict stable context, focused tests/lint/types/install/planning validation green, strict and planning reviews clean; full manifest unchanged at its exact known-red baseline | `completed-slices.md`; `git show --stat b044e3c`; `git show --stat 3fa5c4f` |
 
 ## Slice 1: Candidate Roots And Strict Transition
 
