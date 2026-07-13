@@ -2,973 +2,501 @@
 
 ## Purpose
 
-This document is the durable intake packet for implementing the accepted
-command-owner redesign.
+This is the durable source packet for twelve individually addressable work items.
+It is not a dispatch, runway, batch map, or slice plan.
 
-It defines **individually addressable work items**. It does not define selected
-batches, dispatches, runways, slices, or implementation commits.
+`add-to-ledger` has already ingested these items as CCFG-18 through CCFG-29 on
+`master`. Future changes amend those existing findings; they do not create new
+identities or repeat intake.
 
-The normal workflow is:
-
-```text
-this packet
-  -> add-to-ledger ingests all items
-  -> each item remains unselected
-  -> plan-batch selects and shapes at most one eligible item
-  -> work-batch executes only the resulting current runway
-  -> same-batch closeout and stop
-```
-
-`plan-batch` may split, block, narrow, group, or defer an item when current
-repository state, risk, owner seams, validation profiles, or acceptance
-boundaries require it.
-
-## Intake Contract
+## Source and Authority
 
 ```yaml
-schema: command-owner-implementation-intake/v1
-program: codex-config
-source_design_root: docs/design/command-owner-redesign
-source_branch: architecture/command-owner-redesign
-
-intake:
-  command: add-to-ledger
-  mode: multi-item
-  select_after_intake: false
-  create_dispatch: false
-  create_runway: false
-  execute_work: false
-
-required_ledger_fields:
-  - stable_work_item_id
-  - title
-  - status
-  - exact_source_section
-  - dependencies
-  - relevant_decisions
-  - relevant_behavior_contracts
-  - acceptance_summary
-
-initial_status: Open
+source_ids: COR-001 through COR-012
+original_design_snapshot: b3f31c44a1fc3287c33dd2955489f194afef66f6
+accepted_design_source: final immutable commit of architecture/command-owner-redesign after post-review amendments
+live_intake_commit_on_master: 7356a3fd9d8d487be8562af11cad56170f300616
+live_planning_authority:
+  - docs/plans/programs/codex-config/CURRENT.md
+  - docs/plans/programs/codex-config/LEDGER.md
+  - docs/plans/programs/codex-config/findings/command-owner-redesign-implementation-intake.md
 ```
 
-## Global Constraints
+Authoritative links use immutable commit URLs. Mutable branch links are navigation
+only.
 
-Every item inherits these constraints:
+## Program Rules Inherited by Every Item
 
-- use the accepted decisions in `decisions.md`;
-- use the phase order and two-generation protocol in
-  `04-migration-program.md`;
-- preserve behavior contracts rather than legacy skill topology;
-- do not create permanent parallel command names or `skills-v2` directories;
-- do not let candidate-generation skills control canonical planning state before
-  cutover;
-- use `skill-authoring` v1 before migrating target command-owner skills;
-- remove corresponding legacy ownership in the same ownership-transfer batch;
-- name every temporary bridge and its deletion condition;
-- stop after same-batch closeout without selecting successor work;
-- do not implement future parallel scheduling.
+- preserve `add-to-ledger -> plan-batch -> work-batch`;
+- keep items individually addressable;
+- let `plan-batch` shape at most one runnable batch;
+- preserve explicit dependencies and stop conditions;
+- use stable control and candidate validation generations before cutover;
+- record all three roots and the controlling generation;
+- remove matching legacy ownership during transfer work;
+- name every temporary bridge and deletion condition;
+- stop closeout before successor selection;
+- do not create permanent `skills-v2`, versioned commands, or parallel execution;
+- do not rewrite archived historical artifacts by default.
 
-## Dependency Overview
+## Ledger Mapping
 
-```text
-COR-001  Isolate stable and candidate generations
-  -> COR-002  Verify contracts and blocking decisions
-       -> COR-003  Skill contract schema and validators
-       -> COR-004  Planning artifact schemas and validators
-            COR-003 + COR-004
-              -> COR-005  Finalize skill-authoring v1
-                   COR-004 + COR-005
-                     -> COR-006  Behavioral scenario harness
-                          -> COR-007  Transfer add-to-ledger ownership
-                               -> COR-008  Transfer plan-batch ownership
-                                    -> COR-009  Transfer work-batch ownership
-                                         -> COR-010  Runner and installation cutover
-                                              -> COR-011  Delete legacy owners
-                                                   -> COR-012  Authoring convergence
-```
-
-Items with the same satisfied dependencies may both be eligible, but only one
-batch may be selected at a time.
+| Source | Ledger | Dependencies |
+|---|---|---|
+| COR-001 | CCFG-18 | None |
+| COR-002 | CCFG-19 | CCFG-18 |
+| COR-003 | CCFG-20 | CCFG-19 |
+| COR-004 | CCFG-21 | CCFG-19 |
+| COR-005 | CCFG-22 | CCFG-20; relevant CCFG-21 schemas only for optional planning-artifact reference |
+| COR-006 | CCFG-23 | CCFG-21 and CCFG-22 |
+| COR-007 | CCFG-24 | CCFG-22 and CCFG-23 |
+| COR-008 | CCFG-25 | CCFG-24 and resolved planning transaction |
+| COR-009 | CCFG-26 | CCFG-25 |
+| COR-010 | CCFG-27 | CCFG-26 |
+| COR-011 | CCFG-28 | CCFG-27 |
+| COR-012 | CCFG-29 | CCFG-28 |
 
 ---
 
-## COR-001 — Establish Stable and Candidate Generations
+## COR-001 / CCFG-18 — Establish Stable and Candidate Generations
 
 ### Purpose
 
-Create a proven control boundary before modifying skills that are actively used
-to plan and execute the migration.
+Establish and prove a stable control plane capable of planning and executing work
+against a separate candidate clone without loading candidate contracts, writing
+planning state to the wrong checkout, or allowing candidate sessions to control
+real planning state.
 
 ### Included scope
 
-- identify the stable checkout used by the default `CODEX_HOME`;
-- create a separate candidate checkout of
-  `architecture/command-owner-redesign`;
-- use a separate clone as the default candidate implementation;
-- create a separate candidate `CODEX_HOME`;
-- prove stable and candidate fresh sessions report their generation and source
-  paths;
-- prove the stable toolchain can edit the candidate checkout without changing
-  its own installed source;
-- document installation switching and rollback;
-- inspect selected, queued, active, and resumable planning state;
-- optionally evaluate a worktree only as a bounded experiment.
-
-### Excluded scope
-
-- no target skill rewrite;
-- no schema implementation;
-- no ledger-format migration;
-- no candidate-generation mutation of canonical planning state;
-- no cutover to candidate skills.
-
-### Dependencies
-
-```yaml
-depends_on: []
-```
-
-### Relevant decisions
-
-- `DEC-011`
-- `DEC-025`
-- `DEC-026`
-
-### Relevant behavior contracts
-
-- `STATE-DIAG-001`
-- `STATE-TRANSITION-002`
-- `STATE-HISTORY-004`
-
-### Acceptance evidence
-
-```yaml
-acceptance:
-  stable_checkout_unchanged: true
-  stable_generation_identity_proven: true
-  candidate_checkout_isolated: true
-  candidate_codex_home_isolated: true
-  candidate_generation_identity_proven: true
-  stable_can_edit_candidate_without_self_mutation: true
-  selected_old_generation_dispatch: null
-  queued_old_generation_runway: null
-  active_old_generation_runway: null
-  resumable_old_runner_state: false
-  rollback_documented: true
-```
-
-### Planning authority
-
-`plan-batch` may split this into environment creation and validation only when
-one bounded runway would otherwise mix unrelated machine setup and repository
-verification. A worktree must not be selected by assumption; a separate clone is
-the default.
-
----
-
-## COR-002 — Verify Source Contracts and Resolve Blocking Decisions
-
-### Purpose
-
-Verify that the accepted behavior contracts and target ownership model are
-complete enough to guide implementation without preserving accidental topology.
-
-### Included scope
-
-- review current skills, tests, manifests, agents, state tooling, and active
-  artifacts against `01-source-behavior-contracts.md`;
-- verify target ownership in `02-target-ownership-model.md`;
-- classify current tests as behavioral, schema/protocol, integration, or
-  migration-retention topology;
-- identify accidental structure and duplicate rule ownership;
-- resolve open decisions that block contract schemas or state mutation;
-- leave non-blocking naming and presentation decisions open.
-
-### Excluded scope
-
-- no target skill rewrite;
-- no parser or schema implementation;
-- no active ledger mutation beyond same-item closeout;
-- no implementation of later phases.
-
-### Dependencies
-
-```yaml
-depends_on:
-  - COR-001
-```
-
-### Relevant decisions
-
-- `DEC-001` through `DEC-010`
-- `DEC-013` through `DEC-020`
-- `DEC-022` through `DEC-026`
-- `OPEN-001`
-- `OPEN-002`
-- `OPEN-003`
-
-### Relevant behavior contracts
-
-- all contracts in `01-source-behavior-contracts.md`
-
-### Acceptance evidence
-
-```yaml
-acceptance:
-  external_behavior_contracts_have_ids: true
-  each_target_decision_has_one_owner: true
-  accidental_source_structure_identified: true
-  test_classification_complete_enough_for_harness: true
-  blocking_open_decisions_resolved_or_explicitly_gated: true
-```
-
-### Planning authority
-
-`plan-batch` may narrow this to one blocking decision or one evidence gap when
-full verification would require unresolved implementation discovery.
-
----
-
-## COR-003 — Implement `skill-contract/v1` Schema and Validators
-
-### Purpose
-
-Create the mechanically enforceable contract foundation used by hybrid skills
-and by `skill-authoring` v1.
-
-### Included scope
-
-- define `skill-contract/v1`;
-- locate and parse the canonical `## Contract` YAML block;
-- validate required sections and supported values;
-- validate `owns`, `delegates`, `requires`, `writes`, `forbids`, `outputs`,
-  `stops_when`, and references;
-- detect duplicate decision or durable-fact ownership;
-- detect unknown delegated targets and dependency cycles;
-- detect command-owner dependencies on retired broad owners;
-- add malformed, missing-field, duplicate-owner, reference, and cosmetic-
-  migration tests;
-- provide compact actionable validation errors.
-
-### Excluded scope
-
-- no migration of `add-to-ledger`, `plan-batch`, or `work-batch`;
-- no planning-artifact parser;
-- no candidate-generation control of real migration work.
-
-### Dependencies
-
-```yaml
-depends_on:
-  - COR-002
-```
-
-### Relevant decisions
-
-- `DEC-001`
-- `DEC-002`
-- `DEC-008`
-- `DEC-009`
-- `DEC-010`
-- `DEC-015`
-- `DEC-024`
-
-### Relevant behavior contracts
-
-- `STATE-CANONICAL-003`
-- ownership implications across all intake, planning, execution, and closeout
-  contracts
-
-### Acceptance evidence
-
-```yaml
-acceptance:
-  skill_contract_v1_parseable: true
-  required_field_validation: green
-  ownership_conflict_detection: green
-  dependency_and_reference_validation: green
-  retired_owner_dependency_detection: green
-  cosmetic_migration_detection: green
-```
-
-### Planning authority
-
-`plan-batch` may split parser/schema work from repository-wide ownership checks
-when they form independently testable seams. It must preserve the dependency
-that `skill-authoring` follows a working schema and core validator.
-
----
-
-## COR-004 — Implement Planning Artifact Schemas and Validators
-
-### Purpose
-
-Represent active dispatch, runway, execution evidence, and closeout facts as
-canonical structured contracts inside readable Markdown artifacts.
-
-### Included scope
-
-- define `planning-dispatch/v1`;
-- define `planning-runway/v1`;
-- define `planning-closeout/v1`;
-- locate and parse embedded operational contract blocks;
-- validate artifact identity, lineage, revisions, lifecycle state, dependencies,
-  risks, approvals, write scopes, validation classes, result contracts, recovery,
-  and closeout requirements;
-- enforce one canonical owner for each machine fact;
-- prototype a synthetic dispatch, runway, execution receipt, and closeout chain;
-- define read-only compatibility policy for active old-format artifacts.
-
-### Excluded scope
-
-- no migration of historical archives;
-- no parallel execution;
-- no SQLite canonical state;
-- no transfer of planning or execution ownership.
-
-### Dependencies
-
-```yaml
-depends_on:
-  - COR-002
-```
-
-### Relevant decisions
-
-- `DEC-007`
-- `DEC-008`
-- `DEC-010`
-- `DEC-016`
-- `DEC-022`
-- `DEC-023`
-- `OPEN-001`
-- `OPEN-002`
-- `OPEN-003`
-- `OPEN-004`
-- `OPEN-005`
-
-### Relevant behavior contracts
-
-- `PLAN-DISPATCH-005`
-- `PLAN-RUNWAY-006`
-- `PLAN-RISK-007`
-- `EXEC-RESUME-002`
-- `EXEC-VALIDATE-004`
-- `EXEC-REVIEW-005`
-- `EXEC-COMMIT-006`
-- `CLOSE-FINAL-001`
-- `CLOSE-RECONCILE-002`
-- `STATE-TRANSITION-002`
-- `STATE-CANONICAL-003`
-
-### Acceptance evidence
-
-```yaml
-acceptance:
-  planning_dispatch_v1_parseable: true
-  planning_runway_v1_parseable: true
-  planning_closeout_v1_parseable: true
-  canonicality_validation: green
-  lineage_and_dependency_validation: green
-  synthetic_vertical_chain: green
-  old_format_compatibility_policy: explicit_and_read_only
-```
-
-### Planning authority
-
-`plan-batch` may split dispatch, runway, and closeout schema work when one runway
-would be too broad, but it must preserve compatible versioning and the vertical
-prototype requirement.
-
----
-
-## COR-005 — Finalize and Validate `skill-authoring` v1
-
-### Purpose
-
-Provide the repository-specific authoring workflow before any target command
-owner is migrated.
-
-### Included scope
-
-- create `skills/skill-authoring/SKILL.md` at its final canonical path;
-- make it authoritative for hybrid skill structure, ownership contracts,
-  canonicality, procedure/decision/rationale separation, ambiguity reporting,
-  migration rules, and reference splitting;
-- define its boundary with the agent's generic skill-writing skill;
-- invoke the schema and validators rather than duplicating them in prose;
-- prevent cosmetic migration and silent conflict resolution;
-- validate it by migrating or auditing `port-by-contract` or an equivalent
-  representative skill;
-- install and test it only in the candidate `CODEX_HOME` before cutover.
-
-### Excluded scope
-
-- no migration of `add-to-ledger`, `plan-batch`, or `work-batch`;
-- no runtime dependency from command owners to `skill-authoring`;
-- no implicit inheritance or hidden include system.
-
-### Dependencies
-
-```yaml
-depends_on:
-  - COR-003
-  - COR-004
-```
-
-### Relevant decisions
-
-- `DEC-008`
-- `DEC-009`
-- `DEC-010`
-- `DEC-024`
-- `DEC-026`
-
-### Relevant behavior contracts
-
-- `STATE-CANONICAL-003`
-- target ownership implications across all command contracts
-
-### Acceptance evidence
-
-```yaml
-acceptance:
-  skill_authoring_v1_complete: true
-  skill_authoring_v1_schema_valid: true
-  generic_authoring_boundary_documented: true
-  ambiguity_and_conflict_reporting: green
-  cosmetic_migration_guard: green
-  representative_skill_trial: green
-  installed_only_in_candidate_codex_home: true
-  canonical_state_mutation_during_trial: false
-```
-
-### Planning authority
-
-`plan-batch` may narrow the representative trial but must not select a command-
-owner migration before the full v1 completion standard is met.
-
----
-
-## COR-006 — Build the Topology-Independent Behavioral Scenario Harness
-
-### Purpose
-
-Prove workflow behavior independently from legacy skill names, prose, modes, and
-dependency topology.
-
-### Included scope
-
-- create isolated planning-root fixtures;
-- cover intake, selection, scope shaping, dispatch, runway, execution, validation,
-  review, commit, recovery, resume, closeout, reconciliation, and no-successor
-  behavior;
-- assert initial canonical facts, invoked public command, transitions, writes,
-  forbidden writes, stop reasons, and evidence;
-- characterize current behavior and define the target-compatible interface;
-- run candidate-generation scenarios without touching the canonical planning
-  root.
+- fingerprint stable checkout, commit, default `CODEX_HOME`, and resolved links;
+- declare:
+  - `toolchain_source_root`;
+  - `canonical_planning_repository_root`;
+  - `canonical_planning_root`;
+  - `implementation_target_root`;
+  - `candidate_codex_home`;
+- create candidate clone from latest authoritative `master`;
+- create implementation branch;
+- merge the accepted design history with preserved ancestry;
+- verify imported design tree before amendments;
+- freeze design branch as provenance after integration;
+- create candidate `CODEX_HOME`;
+- add narrow temporary cross-checkout root/generation enforcement;
+- resolve stable helpers, references, schemas, workers, and reviewers from the
+  stable toolchain root;
+- run code operations and implementation commits under the candidate root;
+- keep planning reads/writes under the stable canonical root;
+- produce cross-repository receipts;
+- prove worker/reviewer generation identity;
+- prove candidate fixture-only validation and canonical-write rejection;
+- inventory old selected, queued, active, and resumable state;
+- prove pre-cutover rollback.
 
 ### Excluded scope
 
 - no command-owner migration;
-- no exact-prose preservation;
-- no requirement that retired owners remain installed;
-- no active planning-root mutation.
-
-### Dependencies
-
-```yaml
-depends_on:
-  - COR-004
-  - COR-005
-```
-
-### Relevant decisions
-
-- `DEC-015`
-- `DEC-018`
-- `DEC-019`
-- `DEC-020`
-- `DEC-026`
-
-### Relevant behavior contracts
-
-- all contracts in `01-source-behavior-contracts.md`
+- no `skill-contract/v1` implementation;
+- no `CURRENT.md` or ledger format migration;
+- no candidate-controlled canonical planning write;
+- no default generation switch;
+- no APR or Batch Runway deletion;
+- no ownership transfer;
+- no parallel execution.
 
 ### Acceptance evidence
 
 ```yaml
-acceptance:
-  source_characterization_scenarios_green: true
-  target_scenario_interface_defined: true
-  expectations_independent_of_legacy_skill_names: true
-  negative_write_assertions_present: true
-  active_planning_root_untouched: true
+stable_control:
+  checkout_on_authoritative_master: true
+  toolchain_commit_recorded: true
+  default_codex_home_recorded: true
+  required_links_resolve_to_one_stable_generation: true
+root_topology:
+  all_three_roots_explicit: true
+  cwd_inference_required: false
+  planning_write_outside_canonical_root_rejected: true
+  implementation_write_outside_candidate_root_rejected: true
+candidate_branch:
+  based_on_latest_authoritative_master: true
+  accepted_design_history_merged: true
+  imported_design_tree_verified: true
+candidate_installation:
+  separate_codex_home: true
+  fresh_fixture_only_session_green: true
+  canonical_planning_mutation_rejected: true
+cross_checkout_control:
+  stable_helper_resolution_independent_of_candidate_cwd: true
+  worker_generation_matches_controller: true
+  reviewer_generation_matches_controller: true
+  planning_and_implementation_receipts_distinct: true
+quiescence:
+  selected: null
+  queued: null
+  active: null
+  resumable_old_runner_state: false
+rollback:
+  stable_restore_rehearsal_green: true
+  candidate_canonical_write_occurred: false
 ```
 
-### Planning authority
+### Stop boundary
 
-`plan-batch` may split the harness by command family when fixtures and validation
-remain composable and the eventual deletion test covers the full workflow.
+- stop before consuming changed stable control code in the same session;
+- stop if sandbox cannot distinguish both repositories;
+- stop if stable helper resolves from candidate checkout;
+- stop if candidate can mutate canonical planning state;
+- stop after same-batch closeout without selecting CCFG-19.
 
 ---
 
-## COR-007 — Transfer Intake Ownership to `add-to-ledger`
+## COR-002 / CCFG-19 — Verify Source Contracts and Resolve Blocking Decisions
 
 ### Purpose
 
-Make `add-to-ledger` the sole owner of intake semantics and canonical ledger
-mutation.
+Complete source behavior verification and resolve decisions that block schemas,
+state transitions, and ownership transfer.
 
 ### Included scope
 
-- use `skill-authoring` v1 to migrate `add-to-ledger`;
-- preserve source identity, individually addressable findings, idempotence, and
-  revision-checked mutation;
-- implement or complete a narrow ledger-store mechanism;
-- remove APR intake and normalization authority;
-- remove the `legacy-removal` program-owner escape hatch;
-- remove APR command dependency for intake;
-- rewrite or delete topology tests that preserve APR intake ownership.
+- contract-to-source, owner, and scenario matrix;
+- source-versus-accidental-structure classification;
+- schema evolution and unknown-field policy;
+- narrow `ledger-store` apply-only contract;
+- runner public-command and no-successor-readiness boundary;
+- generation and branch topology verification;
+- multi-artifact planning transaction decision or explicit blocker;
+- test classification;
+- remaining user decisions recorded rather than guessed.
 
-### Excluded scope
-
-- no batch selection;
-- no dispatch or runway creation;
-- no migration of planning or execution ownership.
-
-### Dependencies
+### Acceptance
 
 ```yaml
-depends_on:
-  - COR-005
-  - COR-006
+contract_to_owner_map_complete: true
+contract_to_scenario_map_complete: true
+blocking_ownership_conflicts: 0
+schema_evolution_policy_accepted: true
+ledger_store_boundary_accepted: true
+runner_target_protocol_accepted: true
+planning_transaction_ready_or_explicitly_blocked: true
 ```
-
-### Relevant decisions
-
-- `DEC-001`
-- `DEC-002`
-- `DEC-014`
-- `DEC-015`
-- `DEC-016`
-- `DEC-019`
-- `DEC-024`
-
-### Relevant behavior contracts
-
-- `INTAKE-SOURCE-001`
-- `INTAKE-IDENTITY-002`
-- `INTAKE-NORMALIZE-003`
-- `INTAKE-MUTATE-004`
-- `INTAKE-STOP-005`
-- `STATE-TRANSITION-002`
-
-### Acceptance evidence
-
-```yaml
-acceptance:
-  add_to_ledger_owns_intake_decisions: true
-  add_to_ledger_broad_workflow_dependencies: 0
-  add_to_ledger_contract_validates: true
-  apr_intake_decisions_owned: 0
-  legacy_removal_program_owner_escape_hatch: false
-  intake_behavior_scenarios: green
-```
-
-### Planning authority
-
-This item may be split only if the ledger-store mechanism is a separately useful
-prerequisite. No split may leave APR and target intake as two normal owners.
 
 ---
 
-## COR-008 — Transfer Planning Ownership to `plan-batch`
+## COR-003 / CCFG-20 — Implement `skill-contract/v1` Schema and Validators
 
 ### Purpose
 
-Make `plan-batch` the sole owner of selection, scope shaping, dispatch, runway
-specification, risk, and validation-profile decisions.
+Implement the hybrid skill schema, audience profiles, and deterministic
+validators.
 
 ### Included scope
 
-- use `skill-authoring` v1 to migrate `plan-batch`;
-- move planning references under `skills/plan-batch/references/`;
-- produce hybrid dispatch and runway artifacts;
-- replace APR and Batch Runway planning dependencies with narrow mechanisms;
-- remove APR grouping, prioritization, selection, dispatch, and normal queue
-  preparation authority;
-- remove Batch Runway `create-spec`, semantic slice design, and validation-profile
-  selection authority;
-- rewrite or delete topology tests;
-- retain only caller-scoped read-only compatibility required by active artifacts.
+- exactly-one contract block;
+- required fields and audience profiles;
+- ownership, delegation, dependency, and reference validation;
+- reference-root and cycle validation;
+- schema evolution;
+- generation/source identity;
+- deterministic migration guards;
+- explicit limit: no claim to semantically understand arbitrary prose.
 
-### Excluded scope
-
-- no slice execution;
-- no closeout ownership transfer;
-- no runner cutover;
-- no migration of historical archives.
-
-### Dependencies
+### Acceptance
 
 ```yaml
-depends_on:
-  - COR-007
+schema_green: true
+ownership_conflict_tests_green: true
+delegation_reference_tests_green: true
+schema_compatibility_tests_green: true
+deterministic_migration_guard_green: true
 ```
-
-### Relevant decisions
-
-- `DEC-001`
-- `DEC-002`
-- `DEC-005`
-- `DEC-006`
-- `DEC-007`
-- `DEC-014`
-- `DEC-015`
-- `DEC-016`
-- `DEC-024`
-- `DEC-025`
-
-### Relevant behavior contracts
-
-- `PLAN-SOURCE-001`
-- `PLAN-ACTIVE-002`
-- `PLAN-SELECT-003`
-- `PLAN-SCOPE-004`
-- `PLAN-DISPATCH-005`
-- `PLAN-RUNWAY-006`
-- `PLAN-RISK-007`
-- `PLAN-STOP-008`
-- `STATE-DIAG-001`
-- `STATE-TRANSITION-002`
-
-### Acceptance evidence
-
-```yaml
-acceptance:
-  plan_batch_owns_candidate_selection: true
-  plan_batch_owns_scope_shaping: true
-  plan_batch_owns_dispatch_definition: true
-  plan_batch_owns_runway_specification: true
-  plan_batch_owns_validation_profile_selection: true
-  plan_batch_apr_dependency: false
-  plan_batch_batch_runway_dependency: false
-  apr_planning_decisions_owned: 0
-  batch_runway_create_spec_callers: 0
-  target_planning_scenarios: green
-```
-
-### Planning authority
-
-`plan-batch` may narrow this to preparatory mechanism work only when the selected
-dispatch states the immediate ownership transfer still required. A batch is not
-complete while the old owner remains an equally valid normal route.
 
 ---
 
-## COR-009 — Transfer Execution and Closeout Ownership to `work-batch`
+## COR-004 / CCFG-21 — Implement Planning Artifact Schemas and Validators
 
 ### Purpose
 
-Make `work-batch` the sole owner of execution lifecycle, recovery, acceptance,
-finalization, closeout, and same-batch reconciliation.
+Implement and prototype canonical active planning formats.
 
 ### Included scope
 
-- use `skill-authoring` v1 to migrate `work-batch`;
-- move execution, recovery, finalization, and retention references under
-  `skills/work-batch/references/`;
-- retain worker and reviewer as narrow independent agents;
-- produce hybrid execution receipts and closeout artifacts;
-- remove Batch Runway `execute-spec`, recovery, finalization, and commit-workflow
-  authority;
-- remove APR `closeout-runway` and same-batch reconciliation authority;
-- preserve the no-successor boundary;
-- rewrite or delete topology tests;
-- complete or explicitly migrate active old-format execution state before
-  cutover.
+- `planning-current/v1` in one canonical `CURRENT.md` block;
+- `planning-finding/v1` per finding in `LEDGER.md`;
+- derived index validation;
+- comparison with one global ledger block;
+- `planning-dispatch/v1`, `planning-runway/v1`, `planning-closeout/v1`;
+- expected revision and file hash;
+- atomic replace and receipts;
+- generation identity and lineage;
+- old-format read-only compatibility when active state requires it;
+- fault injection;
+- multi-artifact planning transaction decision or blocker.
 
-### Excluded scope
-
-- no new work intake;
-- no successor planning;
-- no runner installation cutover;
-- no physical deletion of all legacy directories yet.
-
-### Dependencies
+### Acceptance
 
 ```yaml
-depends_on:
-  - COR-008
+current_schema_and_atomicity_green: true
+finding_schema_and_multi_item_atomicity_green: true
+per_finding_default_confirmed_or_superseded: true
+dispatch_runway_closeout_schemas_green: true
+lineage_generation_validation_green: true
+fault_injection_green: true
 ```
-
-### Relevant decisions
-
-- `DEC-001`
-- `DEC-002`
-- `DEC-006`
-- `DEC-014`
-- `DEC-015`
-- `DEC-016`
-- `DEC-018`
-- `DEC-019`
-- `DEC-020`
-- `DEC-024`
-
-### Relevant behavior contracts
-
-- `EXEC-CURRENT-001`
-- `EXEC-RESUME-002`
-- `EXEC-WORKER-003`
-- `EXEC-VALIDATE-004`
-- `EXEC-REVIEW-005`
-- `EXEC-COMMIT-006`
-- `EXEC-RECOVER-007`
-- `EXEC-STOP-008`
-- `CLOSE-FINAL-001`
-- `CLOSE-RECONCILE-002`
-- `CLOSE-NEXT-003`
-- `STATE-TRANSITION-002`
-
-### Acceptance evidence
-
-```yaml
-acceptance:
-  work_batch_owns_execution_lifecycle: true
-  work_batch_owns_recovery: true
-  work_batch_owns_closeout: true
-  work_batch_owns_same_batch_reconciliation: true
-  work_batch_apr_dependency: false
-  work_batch_batch_runway_dependency: false
-  batch_runway_execute_spec_callers: 0
-  apr_closeout_decisions_owned: 0
-  target_execution_and_closeout_scenarios: green
-```
-
-### Planning authority
-
-This item may be split by execution seam only when each batch removes a named
-legacy decision and the remaining dual ownership is explicitly blocked from
-normal use.
 
 ---
 
-## COR-010 — Cut Over Runner, Manifest, Agents, and Installation
+## COR-005 / CCFG-22 — Finalize and Validate `skill-authoring` v1
+
+### Dependencies
+
+Hard dependency: CCFG-20.
+
+CCFG-21 is required only for the conditionally loaded planning-artifact reference
+and only for the schema versions that reference claims to support.
 
 ### Purpose
 
-Make all installed surfaces consume public target commands and safely switch the
-default toolchain from stable to candidate generation.
+Create one complete authoritative hybrid-skill authoring workflow.
 
 ### Included scope
 
-- remove APR and Batch Runway from command-owner feature dependencies;
-- separate runner installation from APR;
-- replace runner instructions that name old modes with public plan/work command
-  protocols;
-- update active docs, feature descriptions, agent metadata, and installation;
-- run complete candidate fixture workflows;
-- verify stable rollback;
-- confirm no selected, queued, active, or resumable old-generation state;
-- perform the installation switch as the final controlled action;
-- finish the controlling stable session without changing its loaded generation;
-- start a fresh candidate-generation diagnostic after cutover.
+- contract extraction;
+- ownership and ambiguity reporting;
+- procedure, branches, rationale, and reference separation;
+- deterministic migration guards;
+- generic skill-writing boundary;
+- one conditionally loaded planning-artifact reference under the same v1;
+- narrow evidence/analysis skill trial;
+- branching command-like skill trial.
 
-### Excluded scope
-
-- no backlog selection semantics in the runner;
-- no slice-design semantics in the runner;
-- no physical deletion of all legacy owner directories until the target
-  generation is proven current.
-
-### Dependencies
+### Acceptance
 
 ```yaml
-depends_on:
-  - COR-009
+core_complete: true
+one_skill_path: true
+one_contract_version: true
+narrow_skill_trial_green: true
+branching_command_trial_green: true
+planning_reference_declares_supported_schemas: true
+unsupported_schema_blocks: true
+candidate_only_installation_green: true
+runtime_dependency_from_command_owners: false
 ```
-
-### Relevant decisions
-
-- `DEC-011`
-- `DEC-016`
-- `DEC-017`
-- `DEC-018`
-- `DEC-026`
-
-### Relevant behavior contracts
-
-- `PLAN-STOP-008`
-- `EXEC-CURRENT-001`
-- `CLOSE-NEXT-003`
-- `STATE-DIAG-001`
-- `STATE-TRANSITION-002`
-- `STATE-HISTORY-004`
-
-### Acceptance evidence
-
-```yaml
-acceptance:
-  command_owner_manifest_legacy_dependencies: 0
-  runner_prompts_using_old_modes: 0
-  runner_installation_owned_by_apr_feature: false
-  candidate_full_fixture_workflow: green
-  no_old_generation_active_state: true
-  rollback_to_stable: proven
-  fresh_candidate_generation_diagnostic: green
-  default_toolchain_generation: candidate
-```
-
-### Planning authority
-
-`plan-batch` may split preparatory manifest/runner work from the final switch.
-The final switch must remain a bounded batch with explicit rollback and no active
-old-generation state.
 
 ---
 
-## COR-011 — Delete Architecture Program Runway and Batch Runway
+## COR-006 / CCFG-23 — Build the Topology-Independent Behavioral Harness
 
 ### Purpose
 
-Physically remove the retired broad owners and migration-only topology after the
-target generation is current.
+Prove behavior independently from legacy owners and exact prose.
 
-### Included scope
+### Required families
 
-- delete `skills/architecture-program-runway/`;
-- delete `skills/batch-runway/` after moving surviving references;
-- delete old modes and direct-command metadata;
-- delete topology tests, expired transition fixtures, and expired parsers;
-- remove duplicated rules and vocabulary;
-- preserve clearly archived historical artifacts without rewriting them;
-- run target behavioral scenarios after physical deletion.
+- intake and multi-item idempotence;
+- planning and scope guards;
+- execution, validation, review, commit, recovery, resume;
+- closeout and no successor;
+- three-root and generation isolation;
+- branch lineage and candidate fixture-only behavior;
+- planning, commit, and closeout fault injection;
+- installer, switch, and rollback;
+- physical deletion and historical readability;
+- contract ID coverage report.
 
-### Excluded scope
-
-- no new compatibility wrapper;
-- no historical archive rewrite;
-- no behavior narrowing without an accepted decision.
-
-### Dependencies
+### Acceptance
 
 ```yaml
-depends_on:
-  - COR-010
+source_characterization_green: true
+target_interfaces_green: true
+bootstrap_cutover_green: true
+fault_injection_green: true
+contract_coverage_complete: true
+legacy_topology_not_required: true
 ```
-
-### Relevant decisions
-
-- `DEC-005`
-- `DEC-006`
-- `DEC-014`
-- `DEC-015`
-- `DEC-016`
-- `DEC-022`
-
-### Relevant behavior contracts
-
-- all target behavior contracts;
-- `STATE-HISTORY-004`
-
-### Acceptance evidence
-
-```yaml
-acceptance:
-  architecture_program_runway_directory_exists: false
-  batch_runway_directory_exists: false
-  active_old_mode_references: 0
-  tests_requiring_old_owner_presence: 0
-  active_legacy_artifacts: 0
-  target_behavioral_scenarios: green
-```
-
-### Planning authority
-
-`plan-batch` may split deletion by owner only when the remaining owner has no
-normal caller and has an immediate measurable deletion condition.
 
 ---
 
-## COR-012 — Perform Contract-First Authoring Convergence
+## COR-007 / CCFG-24 — Transfer Intake Ownership to `add-to-ledger`
 
 ### Purpose
 
-Audit the completed target skills and refine the already-authoritative
-`skill-authoring` v1 after real dogfooding.
+Make `add-to-ledger` the sole owner of intake and canonical ledger mutation
+semantics.
 
-### Included scope
+### Same-work removal
 
-- audit `port-by-contract`, `add-to-ledger`, `plan-batch`, and `work-batch`;
-- collect authoring findings from the migration;
-- integrate compatible refinements to optional fields, report layout, size
-  heuristics, reference loading, and non-breaking validation;
-- remove temporary authoring exceptions and per-skill dialects;
-- document any semantic change as a new explicit schema decision.
+- APR intake and normalization authority;
+- APR normal ledger mutation route;
+- `legacy-removal` program-owner escape hatch.
 
-### Excluded scope
+### Acceptance
 
-- no recreation of retired owners;
-- no unrelated workflow redesign;
-- no silent `skill-contract/v2` semantics.
-
-### Dependencies
-
-```yaml
-depends_on:
-  - COR-011
-```
-
-### Relevant decisions
-
-- `DEC-008`
-- `DEC-009`
-- `DEC-010`
-- `DEC-024`
-
-### Relevant behavior contracts
-
-- `STATE-CANONICAL-003`
-- all command-owner behavior contracts as audit evidence
-
-### Acceptance evidence
-
-```yaml
-acceptance:
-  contract_first_target_skills_consistent: true
-  temporary_authoring_exceptions: 0
-  per_skill_contract_dialects: 0
-  skill_authoring_v1_convergence_audit: passed
-```
-
-### Planning authority
-
-`plan-batch` may split audit and compatible cleanup, but semantic contract
-changes require a separate explicit ledger item and accepted decision.
+- multi-item atomic intake;
+- source identity and idempotence;
+- stale revision refusal;
+- no selection or runway;
+- no broad owner dependency.
 
 ---
 
-## `add-to-ledger` Intake Instructions
+## COR-008 / CCFG-25 — Transfer Planning Ownership to `plan-batch`
 
-When this packet is ready to enter the program, the intake request must:
+### Purpose
 
-1. use `add-to-ledger` as the explicit intake boundary;
-2. create or update one ledger row for each `COR-001` through `COR-012`;
-3. link each row to its exact heading in this file;
-4. preserve dependencies exactly;
-5. keep every row individually addressable;
-6. leave every row unselected;
-7. avoid grouping them into preselected batches;
-8. stop without creating a dispatch, runway, or implementation change.
+Make `plan-batch` the sole owner of selection, scope shaping, dispatch, runway,
+risk, approvals, and validation profiles.
 
-The final intake report must list every row created or updated and confirm:
+### Same-work removal
+
+- APR grouping, ranking, selection, dispatch, and queue preparation;
+- Batch Runway `create-spec` semantic ownership.
+
+### Acceptance
+
+- resolved planning transaction;
+- exactly one runnable runway;
+- stale lineage and partial failure recovery;
+- no broad owner dependency;
+- planning stops before implementation.
+
+---
+
+## COR-009 / CCFG-26 — Transfer Execution and Closeout Ownership to `work-batch`
+
+### Purpose
+
+Make `work-batch` the sole owner of execution, recovery, validation acceptance,
+review coordination, commits, finalization, closeout, and same-batch
+reconciliation.
+
+### Same-work removal
+
+- Batch Runway `execute-spec`, recovery, and finalization ownership;
+- APR closeout and reconciliation ownership.
+
+### Acceptance
+
+- worker/reviewer contracts no longer depend on Batch Runway paths;
+- commit/receipt and partial-closeout recovery;
+- old-format active-state policy;
+- no successor selection;
+- no broad owner dependency.
+
+---
+
+## COR-010 / CCFG-27 — Prepare and Rehearse Candidate Cutover
+
+### Purpose
+
+Make candidate cutover-ready without changing the default generation.
+
+### Included scope
+
+- runner public protocols only;
+- remove successor-readiness interpretation;
+- manifests, agents, result contracts, and installer independent of old paths;
+- clean generation install from empty directory;
+- omitted feature and stale-link removal;
+- atomic switch rehearsal;
+- rollback checkpoint and rehearsal;
+- fresh candidate fixture workflows;
+- default generation remains stable;
+- legacy source directories may remain but are not installed normal routes.
+
+### Acceptance
 
 ```yaml
-selected_dispatch: null
-queued_runway: null
-active_runway: null
-implementation_started: false
+default_generation_switched: false
+command_owner_legacy_dependencies: 0
+runner_old_modes: 0
+runner_successor_readiness_decisions: 0
+agent_legacy_path_dependencies: 0
+clean_install_rehearsal_green: true
+legacy_routes_installed: 0
+atomic_switch_rehearsal_green: true
+rollback_rehearsal_green: true
+candidate_fixture_workflow_green: true
+canonical_candidate_writes: 0
 ```
+
+---
+
+## COR-011 / CCFG-28 — Remove Legacy Owners and Commit Final Cutover
+
+### Purpose
+
+Delete APR and Batch Runway from candidate source, prove clean absence, switch the
+default generation, validate it read-only, close CCFG-28 under the pinned stable
+controller, and stop.
+
+### Included scope
+
+- physical deletion;
+- removal of old modes, topology-only tests, expired fixtures and parsers;
+- reproducible active/historical scan;
+- clean install and negative direct invocation;
+- full validation and archived-history proof;
+- final checkpoint;
+- atomic default switch;
+- fresh candidate read-only diagnostic;
+- stable same-batch closeout and stop.
+
+### Acceptance
+
+```yaml
+legacy_directories_absent: true
+legacy_installed_routes: 0
+legacy_commands_callable: false
+target_and_full_tests_green: true
+atomic_switch_green: true
+fresh_candidate_read_only_diagnostic_green: true
+stable_controller_generation_unchanged: true
+stable_same_batch_closeout_complete: true
+stable_controller_stopped: true
+candidate_canonical_write_before_new_batch: false
+resulting_selected_queued_active: null
+```
+
+---
+
+## COR-012 / CCFG-29 — Contract-First Convergence and Final Integration
+
+### Purpose
+
+Converge one contract-first dialect and restore one integrated long-term source on
+`master`.
+
+### Included scope
+
+- audit migrated skills and planning references;
+- integrate compatible dogfood refinements;
+- remove temporary authoring exceptions;
+- merge implementation branch into latest `master` at quiescent state;
+- verify target toolchain content and contracts after merge;
+- rebind default `CODEX_HOME` to `master`;
+- run fresh master-bound validation;
+- remove temporary cross-checkout bridge;
+- retire candidate and design branches when safe.
+
+### Acceptance
+
+```yaml
+one_contract_first_dialect: true
+temporary_authoring_exceptions: 0
+implementation_merged_into_master: true
+default_toolchain_source_is_master: true
+fresh_master_bound_session_green: true
+cross_checkout_bridge_removed: true
+candidate_branch_retired_or_frozen: true
+selected: null
+queued: null
+active: null
+```
+
+## Intake and Planning Boundary
+
+All items remain unselected until a future explicit `plan-batch` invocation.
+Planning may split or narrow an item when its current scope cannot form one safe
+batch. It must preserve source identity, dependencies, and deferred work.
