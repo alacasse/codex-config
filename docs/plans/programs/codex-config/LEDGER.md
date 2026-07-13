@@ -24,6 +24,10 @@ ledger. This ledger is the only active executable backlog source under
 - Program current state: `docs/plans/programs/codex-config/CURRENT.md`
 - Workflow guide: `docs/workflow-guide.md`
 - Skill routing contract: `docs/skill-routing-contract.md`
+- Command-owner redesign intake:
+  `docs/plans/programs/codex-config/findings/command-owner-redesign-implementation-intake.md`
+- Authoritative command-owner redesign packet:
+  `https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md`
 - Planning Artifact Layout v1: `skills/planning-artifacts/SKILL.md`
 - Planning State Diagnostic: `skills/planning-state/SKILL.md`
 - Archived APR ledger snapshot:
@@ -62,6 +66,18 @@ row-by-row here.
 | CCFG-15. Vague ledger row splitting before runway expansion | Completed | GitHub issue #33; `docs/plans/programs/codex-config/findings/github-issue-33-vague-ledger-row-splitting.md` | Plan-batch / program runway planning guard | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/closeout.md`. `plan-batch` and `architecture-program-runway` now require vague or mixed-risk ledger rows to be split, blocked, or narrowed before selected dispatch and concrete runway creation. CCFG-11 remains open and must not resume from the displaced runway without applying this guard. |
 | CCFG-16. Deletion-test vocabulary ownership | Completed | GitHub issue #31; `docs/plans/programs/codex-config/findings/github-issue-31-deletion-test-vocabulary-ownership.md` | Skill cleanup / deletion-test evidence vocabulary | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/closeout.md`. `dead-surface-audit` owns canonical deletion-test evidence vocabulary; `legacy-removal`, `architecture-program-runway`, and `batch-runway` consume canonical statuses or locally defined non-canonical labels; focused CCFG-like regression coverage prevents unsupported generated deletion categories. Runtime behavior unchanged. |
 | CCFG-17. Absolute runway reference paths | Completed | GitHub issue #32; `docs/plans/programs/codex-config/findings/github-issue-32-absolute-runway-reference-paths.md` | Batch Runway create-spec | None | Closed by `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/closeout.md`. Batch Runway create-spec guidance now prefers repo-relative or skill-relative reusable skill references, focused tests guard the guidance and active generated artifacts, and completed historical runways were not rewritten. |
+| CCFG-18. Establish Stable and Candidate Generations | Open | [COR-001](https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-001--establish-stable-and-candidate-generations) | Command-owner redesign / isolation | A future `plan-batch` may select or narrow this dependency-free item | Source identity `COR-001`; [preserved intake details](findings/command-owner-redesign-implementation-intake.md#cor-001). Unselected. |
+| CCFG-19. Verify Source Contracts and Resolve Blocking Decisions | Open | [COR-002](https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-002--verify-source-contracts-and-resolve-blocking-decisions) | Command-owner redesign / contracts | Wait for CCFG-18 (`COR-001`) | Source identity `COR-002`; [preserved intake details](findings/command-owner-redesign-implementation-intake.md#cor-002). Unselected. |
+| CCFG-20. Implement `skill-contract/v1` Schema and Validators | Open | [COR-003](https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-003--implement-skill-contractv1-schema-and-validators) | Command-owner redesign / skill contracts | Wait for CCFG-19 (`COR-002`) | Source identity `COR-003`; [preserved intake details](findings/command-owner-redesign-implementation-intake.md#cor-003). Unselected. |
+| CCFG-21. Implement Planning Artifact Schemas and Validators | Open | [COR-004](https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-004--implement-planning-artifact-schemas-and-validators) | Command-owner redesign / planning contracts | Wait for CCFG-19 (`COR-002`) | Source identity `COR-004`; [preserved intake details](findings/command-owner-redesign-implementation-intake.md#cor-004). Unselected. |
+| CCFG-22. Finalize and Validate `skill-authoring` v1 | Open | [COR-005](https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-005--finalize-and-validate-skill-authoring-v1) | Command-owner redesign / authoring | Wait for CCFG-20 and CCFG-21 (`COR-003`, `COR-004`) | Source identity `COR-005`; [preserved intake details](findings/command-owner-redesign-implementation-intake.md#cor-005). Unselected. |
+| CCFG-23. Build the Topology-Independent Behavioral Scenario Harness | Open | [COR-006](https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-006--build-the-topology-independent-behavioral-scenario-harness) | Command-owner redesign / behavioral harness | Wait for CCFG-21 and CCFG-22 (`COR-004`, `COR-005`) | Source identity `COR-006`; [preserved intake details](findings/command-owner-redesign-implementation-intake.md#cor-006). Unselected. |
+| CCFG-24. Transfer Intake Ownership to `add-to-ledger` | Open | [COR-007](https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-007--transfer-intake-ownership-to-add-to-ledger) | Command-owner redesign / intake ownership | Wait for CCFG-22 and CCFG-23 (`COR-005`, `COR-006`) | Source identity `COR-007`; [preserved intake details](findings/command-owner-redesign-implementation-intake.md#cor-007). Unselected. |
+| CCFG-25. Transfer Planning Ownership to `plan-batch` | Open | [COR-008](https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-008--transfer-planning-ownership-to-plan-batch) | Command-owner redesign / planning ownership | Wait for CCFG-24 (`COR-007`) | Source identity `COR-008`; [preserved intake details](findings/command-owner-redesign-implementation-intake.md#cor-008). Unselected. |
+| CCFG-26. Transfer Execution and Closeout Ownership to `work-batch` | Open | [COR-009](https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-009--transfer-execution-and-closeout-ownership-to-work-batch) | Command-owner redesign / execution ownership | Wait for CCFG-25 (`COR-008`) | Source identity `COR-009`; [preserved intake details](findings/command-owner-redesign-implementation-intake.md#cor-009). Unselected. |
+| CCFG-27. Cut Over Runner, Manifest, Agents, and Installation | Open | [COR-010](https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-010--cut-over-runner-manifest-agents-and-installation) | Command-owner redesign / cutover | Wait for CCFG-26 (`COR-009`) | Source identity `COR-010`; [preserved intake details](findings/command-owner-redesign-implementation-intake.md#cor-010). Unselected. |
+| CCFG-28. Delete Architecture Program Runway and Batch Runway | Open | [COR-011](https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-011--delete-architecture-program-runway-and-batch-runway) | Command-owner redesign / legacy owner deletion | Wait for CCFG-27 (`COR-010`) | Source identity `COR-011`; [preserved intake details](findings/command-owner-redesign-implementation-intake.md#cor-011). Unselected; distinct from CCFG-11 deletion-test work. |
+| CCFG-29. Perform Contract-First Authoring Convergence | Open | [COR-012](https://github.com/alacasse/codex-config/blob/architecture/command-owner-redesign/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-012--perform-contract-first-authoring-convergence) | Command-owner redesign / authoring convergence | Wait for CCFG-28 (`COR-011`) | Source identity `COR-012`; [preserved intake details](findings/command-owner-redesign-implementation-intake.md#cor-012). Unselected. |
 
 ## Batch Queue
 
@@ -86,18 +102,21 @@ Queued batch: None.
    `docs/plans/programs/codex-config/CURRENT.md`.
 2. No batch is currently selected, queued, or active. A future explicit
    `plan-batch` request can select exactly one next batch from this ledger.
-3. Treat CCFG-6 and CCFG-9 through CCFG-10 as skill-cleanup backlog;
+3. Treat CCFG-18 through CCFG-29 as the unselected command-owner redesign
+   intake. Preserve their `COR-*` identities and dependencies; CCFG-18
+   (`COR-001`) is the first dependency-free redesign item.
+4. Treat CCFG-6 and CCFG-9 through CCFG-10 as skill-cleanup backlog;
    group only when a batch can stay bounded and validation can prove the
    cleanup.
-4. Treat CCFG-11 as open skill-cleanup work; do not execute the displaced
+5. Treat CCFG-11 as open skill-cleanup work; do not execute the displaced
    CCFG-11 runway as active state. Replan, split, block, or narrow it only with
    an explicit `plan-batch` request that applies the CCFG-13 validation-status,
    CCFG-14 risk-gate, CCFG-15 vague-row, and CCFG-16 deletion-test vocabulary
    guards.
-5. Treat CCFG-17 as completed closeout evidence, not queued work.
-6. Treat CCFG-1, CCFG-7, CCFG-8, and CCFG-12 through CCFG-17 as completed
+6. Treat CCFG-17 as completed closeout evidence, not queued work.
+7. Treat CCFG-1, CCFG-7, CCFG-8, and CCFG-12 through CCFG-17 as completed
    closeout evidence, not queued work.
-7. Do not revive APR or PST ledgers as active pickup sources. Use their archive
+8. Do not revive APR or PST ledgers as active pickup sources. Use their archive
    snapshots only for evidence.
 
 ## Closeout Rules
@@ -147,3 +166,6 @@ Queued batch: None.
   references, focused tests cover both the guidance and generated-artifact
   guard, and any remaining absolute-path allowance is limited to
   project-specific values or runtime handoffs.
+- Close CCFG-18 through CCFG-29 only from the acceptance evidence and
+  stop/planning boundary preserved in each corresponding `COR-*` section of
+  `docs/plans/programs/codex-config/findings/command-owner-redesign-implementation-intake.md`.

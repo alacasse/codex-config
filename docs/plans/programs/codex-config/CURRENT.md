@@ -30,7 +30,8 @@
 ## Active Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Active rows: CCFG-2 through CCFG-6 and CCFG-9 through CCFG-11.
+- Active rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and CCFG-18
+  through CCFG-29.
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:
@@ -59,6 +60,11 @@
 No batch is selected, queued, or active. CCFG-17 has concrete closeout evidence
 and same-batch program reconciliation is complete. Do not select successor work
 until a future explicit `plan-batch` request asks for another batch.
+
+The command-owner redesign intake is recorded as CCFG-18 through CCFG-29,
+preserving source identities COR-001 through COR-012. Every redesign item is
+unselected. CCFG-18 (`COR-001`) is the first dependency-free redesign item; a
+future explicit `plan-batch` invocation owns any selection or narrowing.
 
 CCFG-11 remains open, but its displaced runway is superseded planning evidence;
 do not execute it as active state without a future regenerated or amended runway
