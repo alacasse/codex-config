@@ -103,3 +103,111 @@ Exact helper-produced `cross_checkout_transition_receipt_to_dict` result:
   action_taken: Reused the exact retained pre-creation facts with the helper transition builder and validated strict context.
   follow_up: Keep pre-creation context alive or serialize a helper-owned rehydration form across creation-bearing delegation.
 ```
+
+## Slice 2: Candidate Amendment And Generation Install
+
+- Candidate amendment commit:
+  `9027bd1ea35e66e263dfced02a2b9f91835c1bd9`.
+- Amendment files:
+  `docs/design/command-owner-redesign/README.md` and
+  `docs/design/command-owner-redesign/09-live-precreation-amendment.md`.
+- Independent strict-context review: clean; the accepted snapshot remained
+  immutable and no command-owner production behavior was implemented.
+- Candidate installation: all manifest features installed into
+  `/home/alacasse/.codex-command-owner-redesign`; status and dry-run passed,
+  all 25 candidate links resolve only to the candidate repository, and
+  `auth.json` remains absent.
+- Stable installation: status and dry-run passed; no stable link resolves to
+  the candidate repository.
+- Candidate link-map SHA-256:
+  `fe3e451b3abc22e6f2268a8e2e40cf25a0c364f293a2a28f5c85e8d8909e22e1`.
+- Stable link-map SHA-256:
+  `64980fa8ab2ada06e10bfe591b899c26583586de82c17b352d8d3496a95d9f9e`.
+- Candidate installed-feature state SHA-256:
+  `bbd6e9f84f0e956ee0cd49d25677595da116b59767fef8a6bf749d35c222813f`.
+- Stable installed-feature state SHA-256:
+  `6f3b7eebe8e0ef39fd07028877c1de34ab66645ccd746ffc9a3f3c0ed1a1b8d3`.
+- Validation: 86 focused tests and 440 subtests passed; 3 focused manifest
+  tests and 137 subtests passed; Ruff, basedpyright, manifest JSON,
+  planning-state current/validate, stable/candidate status and dry-run, strict
+  context, repository identity, and diff checks passed.
+- Known-red diagnostic: full manifest validation remained exactly 3 failed,
+  18 passed, and 202 subtests passed in the documented unrelated wording
+  expectations.
+
+### Cross-Repository Receipts
+
+Exact helper-produced `cross_repository_receipt_to_dict` results:
+
+```json
+{
+  "candidate_implementation_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-18 Slice 2 candidate design amendment and isolated generation installation",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [],
+      "implementation_paths": [
+        "/home/alacasse/projects/codex-config-command-owner-redesign/docs/design/command-owner-redesign/README.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/docs/design/command-owner-redesign/09-live-precreation-amendment.md"
+      ]
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "cb8e4b739e1430d60fd31efc405cc4ce230c1c98",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "cb8e4b739e1430d60fd31efc405cc4ce230c1c98",
+      "canonical_planning_commit_before": "cb8e4b739e1430d60fd31efc405cc4ce230c1c98",
+      "implementation_commit_before": "9027bd1ea35e66e263dfced02a2b9f91835c1bd9"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  },
+  "stable_planning_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-18 Slice 2 stable planning receipt",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [
+        "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/completed-slices.md",
+        "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/runway.md"
+      ],
+      "implementation_paths": []
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "cb8e4b739e1430d60fd31efc405cc4ce230c1c98",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "cb8e4b739e1430d60fd31efc405cc4ce230c1c98",
+      "canonical_planning_commit_before": "cb8e4b739e1430d60fd31efc405cc4ce230c1c98",
+      "implementation_commit_before": "9027bd1ea35e66e263dfced02a2b9f91835c1bd9"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  }
+}
+```
+
+### Orchestration Anomaly
+
+```yaml
+- slice: 2
+  severity: low
+  category: strict_hash_transcription_error
+  observed: The coordinator supplied one manually mistyped candidate commit to the strict install gate.
+  impact: The installed helper failed closed before installation or any other write.
+  action_taken: Rebuilt the payload from the exact candidate HEAD and revalidated before installation.
+  follow_up: Derive strict payload commit fields directly from Git output instead of transcribing them.
+```
