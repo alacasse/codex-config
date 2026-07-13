@@ -372,9 +372,7 @@ commands. No source index or generated-doc refresh is required.
 
 ## Active Ledger
 
-| Slice | Status | Risk class | Candidate commit | Stable planning receipt | Validation | Review | Next proof |
-|---|---|---|---|---|---|---|---|
-| 3. Fixture isolation and rollback proof | Reviewed | evidence-only | Not applicable | Pending coordinator commit | Candidate and unchanged-default stable fixture sessions exact; canonical rejection, quiescence, installer, focused tests/lint/types/planning green; full manifest exact known-red baseline | Clean after required fix; shell CLI compatibility retained as non-blocking residual risk | Commit the focused stable evidence receipt |
+No pending slices.
 
 ## Orchestration Anomalies
 
@@ -388,6 +386,7 @@ orchestration_anomalies: []
 |---|---|---|---|---|
 | 1. Candidate roots and strict transition | `b044e3c` | `3fa5c4f` | success; exact reviewed merge tree and design subtree, helper-produced transition receipt, strict stable context, focused tests/lint/types/install/planning validation green, strict and planning reviews clean; full manifest unchanged at its exact known-red baseline | `completed-slices.md`; `git show --stat b044e3c`; `git show --stat 3fa5c4f` |
 | 2. Candidate amendment and generation install | `9027bd1` | `af0a1b9` | success; live amendment and immutable lineage reviewed, isolated candidate install complete, candidate/stable link maps separated, strict receipts and required validation green; full manifest unchanged at its exact known-red baseline | `completed-slices.md`; `git show --stat 9027bd1`; `git show --stat af0a1b9` |
+| 3. Fixture isolation and rollback proof | Not applicable | `218b249` | success; exact candidate fixture isolation, mechanical canonical-write rejection, unchanged-default stable rollback through compatible installed CLI, quiescence inventory, focused validation, and repeat strict review clean; shell CLI compatibility retained as non-blocking operational risk | `completed-slices.md`; `/tmp/ccfg-18-candidate-generation-fixture`; `git show --stat 218b249` |
 
 ## Slice 1: Candidate Roots And Strict Transition
 
