@@ -2,394 +2,313 @@
 
 ## Purpose
 
-This document defines measurable conditions for narrowing and deleting legacy
-workflow owners, modes, routing references, metadata, tests, fixtures, parsers,
-and duplicated vocabulary.
+This document defines measurable conditions for deleting
+`architecture-program-runway`, `batch-runway`, expired compatibility, stale
+installation routes, and the temporary cross-checkout bridge.
 
-Deletion is part of the target architecture, not optional cleanup after the
-migration. A transfer is incomplete while the old surface remains a valid normal
-owner of the same decision.
+Deletion is not established by document intent or repository search alone. It
+requires source, installation, direct-invocation, behavior, and historical
+classification evidence.
 
-## General Deletion Rules
+## General Rules
 
-- Historical references in clearly archived artifacts do not block deletion.
-- Active docs, skills, manifests, prompts, tests, and generated artifacts do
-  block deletion when they still require the old owner.
-- A failing topology test after behavior has moved is evidence to classify the
-  test, not automatic evidence to restore the old surface.
-- A compatibility path may block deletion only when it names a current caller,
-  reason, owner, allowed scope, and removal condition.
-- No permanent wrapper may exist solely to preserve an internal skill name or
-  mode.
-- Physical deletion followed by the full target scenario suite is the final
-  deletion test.
+- Physical deletion follows completed ownership transfer.
+- A temporary bridge with a live caller blocks deletion.
+- Historical references may remain only under classified archive roots.
+- A clean generation-specific `CODEX_HOME` is the installation source of truth.
+- Omitted features must be absent, not retained from prior installed state.
+- The default generation does not switch until candidate deletion proof passes.
+- Same-batch closeout after the switch is controlled by the already-loaded stable
+  controller and stops before successor selection.
 
-## `architecture-program-runway`
+## Reproducible Active-Surface Report
+
+Every deletion decision produces:
+
+```yaml
+deletion_report:
+  repository_commit: full-sha
+  candidate_generation_commit: full-sha
+  codex_home: absolute-path
+  active_file_roots: []
+  historical_file_roots: []
+  searched_identifiers: []
+  active_matches: []
+  allowed_historical_matches: []
+  unresolved_matches: []
+  installed_links: []
+  stale_installed_links: []
+  direct_invocation_results: []
+  clean_install_result: passed | failed
+  target_scenario_result: passed | failed
+  full_test_result: passed | failed
+```
+
+Allowed historical roots include clearly archived planning artifacts and closed
+reports. Active roots include skills, agents, manifests, scripts, current docs,
+prompts, tests, fixtures used by current runtime, and installed `CODEX_HOME`
+links.
+
+Unclassified matches block deletion.
+
+## Architecture Program Runway Deletion Conditions
+
+All must be true:
 
 ```yaml
 architecture_program_runway:
-  human_facing_callers: 0
-  command_owner_manifest_dependencies: 0
-  runner_prompt_references: 0
-  active_skill_references: 0
-  active_doc_routing_references: 0
-
-  intake_decisions_owned: 0
-  finding_normalization_owned: 0
-  ledger_mutation_decisions_owned: 0
-  grouping_decisions_owned: 0
-  candidate_selection_owned: 0
-  scope_shaping_owned: 0
-  dispatch_definition_owned: 0
-  queue_preparation_owned: 0
-  closeout_decisions_owned: 0
-  same_batch_reconciliation_owned: 0
-
-  old_mode_callers:
-    intake_findings: 0
-    group_batches: 0
-    select_next_batch: 0
-    create_next_runway: 0
-    closeout_runway: 0
-    reprioritize: 0
-
-  active_artifacts_requiring_skill_contract: 0
-  resumable_runner_states_requiring_skill: 0
-  compatibility_only_references: 0
+  intake_callers: 0
+  selection_callers: 0
+  dispatch_callers: 0
+  queue_callers: 0
+  closeout_callers: 0
+  runner_mode_callers: 0
+  command_owner_dependencies: 0
+  installed_feature_routes: 0
+  installed_symlinks: 0
+  active_schema_or_result_contract_dependencies: 0
+  active_old_format_artifacts_requiring_skill: 0
+  resumable_runs_requiring_skill: 0
   tests_requiring_presence: 0
-  migration_fixtures_requiring_presence: 0
-
-  allowed_remaining_references:
-    - clearly archived historical artifacts
-    - historical changelog entries
-    - source-baseline design evidence
-
-  final_action: delete_directory
-  final_path: skills/architecture-program-runway
+  direct_invocation_available: false
+  target_behavioral_scenarios_green: true
 ```
 
-### Deletion proof
+Surviving responsibilities must already belong to:
 
-1. Remove the directory in a candidate commit.
-2. Run command manifest and installation tests.
-3. Run intake, planning, execution, closeout, and runner scenario suites.
-4. Search active files for the old skill name and modes.
-5. Classify every remaining match as active defect or allowed historical
-   evidence.
-6. Reject any attempt to restore a wrapper without an accepted external
-   compatibility decision.
+- `add-to-ledger` for intake;
+- `plan-batch` for selection, shaping, dispatch, and queue preparation;
+- `work-batch` for same-batch closeout interpretation;
+- narrow state/artifact/ledger mechanisms for applying explicit decisions;
+- independent runner for process lifecycle only.
 
-## `batch-runway`
+## Batch Runway Deletion Conditions
+
+All must be true:
 
 ```yaml
 batch_runway:
-  human_facing_callers: 0
-  plan_batch_dependencies: 0
-  work_batch_dependencies: 0
-  command_owner_manifest_dependencies: 0
-  runner_prompt_references: 0
-  active_doc_routing_references: 0
-
   create_spec_callers: 0
   execute_spec_callers: 0
-  mode_inference_callers: 0
-
-  planning_decisions_owned: 0
-  slice_design_owned: 0
-  validation_profile_selection_owned: 0
-  execution_lifecycle_owned: 0
-  recovery_owned: 0
-  finalization_owned: 0
-  closeout_owned: 0
-
-  surviving_planning_references_moved_to: skills/plan-batch/references
-  surviving_execution_references_moved_to: skills/work-batch/references
-
-  active_specs_requiring_old_contract: 0
-  agent_result_schema_dependencies_on_old_skill_path: 0
-  compatibility_only_references: 0
+  recovery_callers: 0
+  finalization_callers: 0
+  command_owner_dependencies: 0
+  worker_contract_dependencies: 0
+  reviewer_contract_dependencies: 0
+  result_schema_dependencies: 0
+  installed_feature_routes: 0
+  installed_symlinks: 0
+  active_old_format_artifacts_requiring_skill: 0
+  resumable_runs_requiring_skill: 0
   tests_requiring_presence: 0
-  migration_fixtures_requiring_presence: 0
-
-  allowed_remaining_references:
-    - clearly archived historical artifacts
-    - historical changelog entries
-    - source-baseline design evidence
-
-  final_action: delete_directory
-  final_path: skills/batch-runway
+  direct_invocation_available: false
+  target_behavioral_scenarios_green: true
 ```
 
-### Deletion proof
+Surviving planning references live under `plan-batch`; execution, recovery,
+finalization, retention, and closeout references live under `work-batch` or a
+narrow neutral mechanism.
 
-1. Remove the directory in a candidate commit.
-2. Verify target planning and execution references resolve.
-3. Run worker and reviewer result-contract tests.
-4. Run plan and work scenario suites.
-5. Run active artifact scans for old paths and modes.
-6. Confirm completed historical artifacts remain readable without becoming
-   current pickup state.
+## Mode and Routing Deletion
 
-## Old Mode Names
+Remove active references to:
 
-```yaml
-old_mode_names:
-  active_skill_references: 0
-  active_docs_references: 0
-  manifest_references: 0
-  default_prompt_references: 0
-  runner_generated_prompt_references: 0
-  new_artifact_references: 0
-  active_test_expectations: 0
-  active_fixture_expectations: 0
-
-  names:
-    - intake-findings
-    - group-batches
-    - select-next-batch
-    - create-next-runway
-    - closeout-runway
-    - reprioritize
-    - create-spec
-    - execute-spec
-
-  allowed_remaining_references:
-    - archived historical artifacts
-    - source architecture analysis
+```text
+intake-findings
+group-batches
+select-next-batch
+create-next-runway
+closeout-runway
+create-spec
+execute-spec
 ```
 
-A public target operation may use a descriptive transition name such as
-`select_batch` or `queue_batch` when it is a narrow state operation, but it must
-not preserve a broad legacy mode that interprets human workflow intent.
+The words may remain in historical evidence only when classified as such.
 
-## Old Routing References
+Current command metadata, runner prompts, manifests, agents, and active docs must
+use public command protocols.
+
+## Installer and Clean-Generation Conditions
+
+Before final switch:
 
 ```yaml
-old_routing_references:
-  add_to_ledger_to_apr_edges: 0
-  plan_batch_to_apr_edges: 0
-  plan_batch_to_batch_runway_edges: 0
-  work_batch_to_batch_runway_edges: 0
-  work_batch_to_apr_edges: 0
-  runner_to_apr_mode_edges: 0
-  runner_to_batch_runway_mode_edges: 0
-  support_to_legacy_owner_edges: 0
-  bridge_state_sections_in_active_routing_docs: 0
+clean_generation:
+  built_from_empty_directory: true
+  one_candidate_source_commit: true
+  all_links_resolve_under_candidate_source_root: true
+  manifest_digest_recorded: true
+  contract_hashes_recorded: true
+  omitted_features_absent: true
+  stale_links: 0
+  APR_routes: 0
+  Batch_Runway_routes: 0
+  direct_old_commands_callable: false
 ```
 
-Target routing docs may retain a historical migration note only when it cannot
-be interpreted as current routing authority.
+The installer must not expose a partially replaced generation. A failed install
+leaves the previous default binding unchanged.
 
-## Direct-Command and Feature Metadata
+## Test and Fixture Deletion
+
+Delete or rewrite tests that only require:
+
+- old directories;
+- old mode names;
+- old dependency lists;
+- exact old ownership prose;
+- aliases or wrappers with no supported caller.
+
+Retain behavior tests for:
+
+- intake and one-batch planning;
+- active-state precedence;
+- risk and approval gates;
+- execution, recovery, and resume;
+- independent review and focused commits;
+- closeout and no successor selection;
+- root and generation isolation;
+- installation and rollback;
+- historical artifacts not becoming active.
+
+Expired migration fixtures and legacy parsers are removed when no active or
+resumable state requires them.
+
+## Historical Artifact Policy
+
+Archived artifacts may preserve old names and structures when:
+
+- their archive root is classified;
+- they are read-only evidence;
+- they cannot become active through normal pickup;
+- no installed old skill is required merely to read them;
+- active state and new artifacts use current schemas.
+
+## CCFG-27 Cutover-Preparation Conditions
+
+CCFG-27 closes only when:
 
 ```yaml
-old_direct_command_metadata:
-  installed_old_owner_features: 0
-  old_owner_display_commands: 0
-  old_owner_default_prompts: 0
-  old_owner_command_descriptions: 0
-  command_owner_requires_old_owner: 0
-  old_owner_install_links: 0
-
-runner_feature:
-  installed_through_apr_feature: false
-  public_command_protocols_only: true
+CCFG_27:
+  default_generation_switched: false
+  command_owner_legacy_dependencies: 0
+  runner_old_modes: 0
+  runner_successor_readiness_decisions: 0
+  agent_legacy_path_dependencies: 0
+  clean_candidate_install_rehearsal: passed
+  legacy_routes_installed_in_rehearsal: 0
+  atomic_switch_rehearsal: passed
+  rollback_rehearsal: passed
+  fresh_candidate_fixture_workflow: passed
+  canonical_candidate_writes: 0
+  quiescence_protocol: passed
 ```
 
-Deleting a feature entry must not remove runner files that have become an
-independent feature. Separate the runner before APR feature deletion.
+Legacy source directories may still exist after CCFG-27, but they are no longer
+normal routes and are not installed in the rehearsal generation.
 
-## Topology and Text-Contract Tests
+## CCFG-28 Final Deletion and Cutover Conditions
+
+Immediately before the switch:
 
 ```yaml
-old_topology_tests:
-  tests_asserting_apr_presence: 0
-  tests_asserting_batch_runway_presence: 0
-  tests_asserting_old_requires_lists: 0
-  tests_asserting_old_mode_phrases: 0
-  tests_asserting_runtime_owner_descriptions: 0
-  tests_asserting_bridge_state_sections: 0
-
-replacement_proof:
-  behavioral_scenarios_green: true
-  schema_contract_tests_green: true
-  forbidden_dependency_tests_green: true
-  physical_deletion_test_green: true
+pre_switch:
+  CCFG_27_closed: true
+  candidate_commit_pinned: true
+  stable_controller_generation_pinned: true
+  selected: null
+  queued: null
+  active: null
+  resumable_stable_runs: false
+  concurrent_canonical_writers: 0
+  rollback_checkpoint_valid: true
 ```
 
-### Test deletion decision rule
-
-Delete or rewrite a test when:
-
-- its only failure after migration is absence of an old skill, mode, dependency,
-  heading, phrase, alias, or wrapper;
-- it does not prove a named external compatibility contract;
-- target behavioral and schema tests protect the useful rule.
-
-Retain a compatibility test only when it records:
+Candidate source and clean installation:
 
 ```yaml
-compatibility_contract:
-  external_caller: exact caller
-  promised_surface: exact supported surface
-  reason: current requirement
-  owner: named owner
-  removal_condition: measurable condition
+candidate_source:
+  architecture_program_runway_directory_exists: false
+  batch_runway_directory_exists: false
+  active_old_mode_references: 0
+  topology_tests_requiring_presence: 0
+  active_legacy_parsers: 0
+clean_install:
+  legacy_features_installed: 0
+  legacy_symlinks_present: 0
+  direct_legacy_commands_callable: false
+  worker_reviewer_contracts_resolve: true
+  runner_public_protocols_only: true
 ```
 
-## Temporary Transition Fixtures
+Validation:
 
 ```yaml
-temporary_transition_fixtures:
-  selected_legacy_dispatches: 0
-  queued_legacy_runways: 0
-  active_legacy_runways: 0
-  resumable_legacy_runner_states: 0
-  old_parser_only_fixtures: 0
-  fixtures_without_owner: 0
-  fixtures_without_removal_condition: 0
-  final_migration_scenarios_green: true
+validation:
+  schema_and_dependency_validation: green
+  target_behavioral_scenarios: green
+  root_and_generation_scenarios: green
+  full_repository_tests: green
+  controlled_end_to_end_fixture: green
+  archived_history_readability: green
+  archived_history_active_pickup: false
 ```
 
-Fixtures retained only as historical test data must move under an explicitly
-historical fixture area and must not be consumed by current pickup logic.
-
-## Legacy Artifact Parsers
+Switch transaction:
 
 ```yaml
-legacy_artifact_parsers:
-  normal_new_artifact_writes: 0
-  mutation_operations: 0
-  active_legacy_artifacts: 0
-  resumable_legacy_runs: 0
-  callers: 0
-  tests_requiring_parser: 0
-  remaining_role: deleted
+cutover:
+  atomic_default_switch: green
+  fresh_candidate_read_only_diagnostic: green
+  stable_controller_generation_unchanged: true
+  stable_controller_reloaded_default_skills: false
+  candidate_canonical_write_before_new_batch: false
+  CCFG_28_same_batch_closeout_complete: true
+  stable_controller_stopped: true
+resulting_state:
+  default_generation: candidate
+  selected: null
+  queued: null
+  active: null
+  resumable_stable_run: false
 ```
 
-A legacy parser is read-only during migration. It may not emit new old-format
-artifacts or silently upgrade them during a state mutation.
+Failure before stable closeout restores the previous default binding. Candidate
+canonical work is not allowed until a new post-cutover batch starts.
 
-## Duplicated Rules and Vocabulary
+## CCFG-29 Bootstrap Bridge Deletion
 
-```yaml
-duplicated_rules_and_vocabulary:
-  intake_rule_owners: 1
-  candidate_selection_owners: 1
-  scope_shaping_owners: 1
-  dispatch_definition_owners: 1
-  runway_specification_owners: 1
-  validation_profile_selection_owners: 1
-  execution_lifecycle_owners: 1
-  recovery_owners: 1
-  closeout_reconciliation_owners: 1
-  lifecycle_vocabulary_authorities: 1
-  artifact_vocabulary_authorities: 1
-  deletion_test_status_owners: 1
-  support_skills_with_program_owner_escape_hatch: 0
-```
-
-The same rule may be summarized by callers, but summaries must point to the
-canonical owner and must not independently define procedure or values.
-
-## Legacy References in Agents
+The temporary cross-checkout bridge may be deleted only when:
 
 ```yaml
-agent_contracts:
-  worker_description_requires_batch_runway_name: false
-  reviewer_description_requires_batch_runway_name: false
-  result_schema_paths_require_batch_runway: false
-  worker_lifecycle_authority: false
-  reviewer_lifecycle_authority: false
-```
-
-Renaming `runway_worker` and `runway_reviewer` is not required for deletion if
-their contracts no longer depend on the deleted skill path or imply that Batch
-Runway remains the workflow owner.
-
-## Planning-State Narrowing Conditions
-
-`planning-state` survives, but its role must be measurable:
-
-```yaml
-planning_state:
-  candidate_selection_decisions: 0
-  scope_shaping_decisions: 0
-  dispatch_content_decisions: 0
-  slice_design_decisions: 0
-  validation_profile_selection_decisions: 0
-  recovery_decisions: 0
-  commit_acceptance_decisions: 0
-  successor_selection_decisions: 0
-
-  normalized_diagnostic_interface: versioned
-  transition_interface: explicit
-  expected_revision_validation: true
-  transition_receipts: true
-  projection_is_derived: true
-```
-
-If planning-state gains a high-level operation that makes one of the forbidden
-decisions, it has become a replacement broad workflow owner and the migration
-must stop.
-
-## Planning-Artifacts Narrowing Conditions
-
-```yaml
-planning_artifacts:
-  lifecycle_transition_decisions: 0
-  finding_status_decisions: 0
-  candidate_selection_decisions: 0
-  execution_decisions: 0
-
-  canonical_path_resolution: true
-  artifact_type_validation: true
-  lineage_validation: true
-  archive_placement: true
-```
-
-## Final Cutover Conditions
-
-```yaml
-final_cutover:
-  accepted_design_decisions_open_blockers: 0
-  selected_dispatch: null
-  queued_runway: null
-  active_runway: null
-  resumable_old_runner_run: false
-
-  add_to_ledger_target_scenarios_green: true
-  plan_batch_target_scenarios_green: true
-  work_batch_target_scenarios_green: true
-  closeout_target_scenarios_green: true
-  runner_target_scenarios_green: true
-
-  architecture_program_runway_deletion_conditions_met: true
-  batch_runway_deletion_conditions_met: true
-  old_mode_deletion_conditions_met: true
-  old_topology_test_deletion_conditions_met: true
-  legacy_parser_deletion_conditions_met: true
-
-  candidate_installation_green: true
-  stable_rollback_available: true
+CCFG_29:
+  implementation_branch_merged_into_latest_master: true
+  target_toolchain_content_verified: true
+  default_toolchain_rebound_to_master: true
+  fresh_master_bound_session_green: true
+  canonical_planning_root_is_master: true
+  implementation_target_root_is_master_for_future_work: true
+  temporary_cross_checkout_callers: 0
+  bridge_installed_routes: 0
+  bridge_source_deleted: true
+  candidate_branch_retired_or_frozen: true
 ```
 
 ## Final Deletion Test
 
-The architecture is complete only after this sequence succeeds:
+The final proof is:
 
 ```text
-remove architecture-program-runway
-remove batch-runway
-remove expired parsers, fixtures, modes, metadata, and topology tests
-install the candidate feature set
-run schema and dependency validation
-run all target behavioral scenarios
-run full repository tests
-run a controlled end-to-end intake -> plan -> work -> closeout workflow
-confirm no successor was selected
+physically delete old owners and expired bridges
+-> build clean candidate generation from empty directory
+-> prove old commands unavailable
+-> run target behavior and full repository tests
+-> perform controlled cutover
+-> close CCFG-28 without successor selection
+-> later integrate candidate into master under CCFG-29
+-> remove cross-checkout bridge
+-> run fresh master-bound smoke test
 ```
 
-If only old topology or text-contract tests fail, classify and remove those
-tests. Do not restore the old owners unless an explicit supported external
-contract is demonstrated.
+A compatibility wrapper that makes the old command work does not satisfy the
+proof.
