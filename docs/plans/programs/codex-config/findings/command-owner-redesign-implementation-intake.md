@@ -7,7 +7,7 @@ source_identity: COR-001 through COR-012
 original_design_snapshot: b3f31c44a1fc3287c33dd2955489f194afef66f6
 accepted_design_snapshot: caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c
 initial_intake_commit: 7356a3fd9d8d487be8562af11cad56170f300616
-state: every item open and unselected
+state: CCFG-18 blocked by missing pre-creation support; no item selected
 ```
 
 - Accepted immutable design packet:
@@ -64,17 +64,39 @@ migration work against a separate candidate clone without loading candidate
 contracts, writing planning state to the wrong checkout, or allowing candidate
 sessions to control real planning state.
 
+### Live pre-creation amendment
+
+The strict `cross-checkout-context/v1` contract is post-creation only: it
+requires `implementation_target_root` to be an existing Git repository at the
+declared `implementation_commit_before`. CCFG-18 requires that repository to be
+created during execution, while `plan-batch` cannot create it during planning.
+
+Preserve the strict contract unchanged and add the separate temporary
+`cross-checkout-precreation/v1` interface defined in
+`command-owner-redesign-bootstrap-decisions.md`. It binds the existing stable
+generation and canonical planning revision to absent intended candidate paths,
+the authoritative base commit, implementation branch, accepted design snapshot,
+and exact creation authority. It grants no workflow lifecycle authority and
+does not require a candidate commit before the repository exists.
+
+After repository lineage and candidate environment creation are verified,
+execution must emit a versioned transition receipt and validate the existing
+strict `cross-checkout-context/v1` before any further implementation work.
+
 ### Included
 
 - fingerprint stable checkout, commit, default `CODEX_HOME`, and resolved links;
 - declare toolchain, canonical planning, and implementation roots;
+- implement and validate `cross-checkout-precreation/v1` in a single-root stable
+  control batch, then install and reload it in a fresh stable session;
 - create candidate clone from latest authoritative `master`;
 - create implementation branch;
 - merge accepted design history ending at `caf343a...` with preserved ancestry;
 - verify imported design tree before amendments;
 - freeze the design branch as provenance after integration;
 - create separate candidate `CODEX_HOME`;
-- implement narrow temporary cross-checkout root and generation enforcement;
+- preserve strict `cross-checkout-context/v1` post-creation enforcement and
+  transition to it after candidate lineage and environment establishment;
 - resolve stable helpers, references, schemas, workers, and reviewers from the
   stable toolchain root;
 - execute code operations and commits under the candidate root;
@@ -118,6 +140,15 @@ candidate_installation:
   fresh_fixture_only_session_green: true
   canonical_planning_mutation_rejected: true
 cross_checkout_control:
+  precreation_interface: cross-checkout-precreation/v1
+  strict_postcreation_interface: cross-checkout-context/v1
+  strict_repository_and_revision_validation_preserved: true
+  absent_candidate_paths_validated_before_creation: true
+  exact_candidate_creation_targets_only: true
+  authoritative_base_commit_recorded: true
+  accepted_design_snapshot_recorded: true
+  versioned_transition_receipt_green: true
+  strict_context_validated_before_further_implementation: true
   stable_helper_resolution_independent_of_candidate_cwd: true
   worker_generation_matches_controller: true
   reviewer_generation_matches_controller: true
@@ -135,10 +166,20 @@ rollback:
 ### Stop boundary
 
 - stop before consuming changed stable control code in the same session;
+- stop if pre-creation support weakens `cross-checkout-context/v1`;
+- stop if the stable pre-creation support batch creates either candidate path;
+- stop after that stable-support closeout until installation and fresh-session
+  reload complete;
 - stop if sandbox cannot distinguish both repositories;
 - stop if stable helper resolves from candidate checkout;
 - stop if candidate can mutate canonical planning state;
 - stop after same-batch closeout without selecting CCFG-19.
+
+The accepted design package at
+`caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c` remains immutable. After candidate
+lineage is verified, the implementation branch must receive this same
+pre-creation amendment as an explicit live amendment before design evolution
+continues.
 
 ## COR-002 / CCFG-19 — Verify Source Contracts and Resolve Blocking Decisions
 

@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-18-stable-precreation-support/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-18-stable-control-bootstrap/closeout.md`
 - Run artifact location: `None selected`
@@ -32,8 +33,9 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-19 through CCFG-29.
-- Prepared ledger row: CCFG-18. The stable control bootstrap is complete; its
-  candidate-generation remainder remains under the same finding identity.
+- Pending ledger row: CCFG-18. The stable pre-creation support amendment is
+  controlled by the queued batch. Strict `cross-checkout-context/v1` remains
+  the post-creation contract, and candidate creation stays deferred.
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -47,7 +49,10 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-18-stable-precreation-support/runway.md`
+- Queued dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-18-stable-precreation-support/dispatch.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-18-stable-control-bootstrap`
@@ -60,34 +65,32 @@
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. CCFG-18 is `Prepared`, not `Closed`.
+Execute only the queued
+`ccfg-18-stable-precreation-support` runway through `work-batch`.
 
-Continue only in a fresh stable session loaded from the exact `master` commit
-that contains this closeout. In that session:
+The runway is a single-root stable-control migration. It adds and validates
+separate `cross-checkout-precreation/v1` support while preserving strict
+`cross-checkout-context/v1`. It must not create the candidate repository or
+candidate `CODEX_HOME`, perform a real install, reload changed stable control,
+or select CCFG-19.
 
-1. Verify every repo-owned installed link resolves to this stable checkout and
-   that candidate links remain zero.
-2. Install the committed stable feature set so the new helper link and feature
-   versions are present; then verify installed state and reload before using the
-   changed control for real work.
-3. Rerun `planning_state.py current` and `validate` against `docs/plans`.
-4. Invoke a new explicit `plan-batch CCFG-18` for only the remaining candidate
-   clone, candidate `CODEX_HOME`, lineage, identity, fixture-only, and rollback
-   scope.
-
-Do not select CCFG-19.
+After same-batch closeout, install and load the changed stable feature set in a
+fresh stable session. A later explicit `plan-batch CCFG-18` may then plan the
+remaining candidate-creation scope. No successor is selected now.
 
 ## Stop Conditions
 
-- Stop if the next session is not freshly loaded from the exact stable `master`
-  commit containing this closeout.
+- Stop if planning weakens strict `cross-checkout-context/v1` instead of adding
+  separate `cross-checkout-precreation/v1` support.
+- Stop if execution would create the candidate repository or candidate
+  `CODEX_HOME` instead of implementing stable pre-creation support only.
 - Stop if any installed link resolves to the redesign branch or candidate clone.
-- Stop if selected dispatch, queued batch, active runway, or resumable state
-  appears before the next explicit `plan-batch CCFG-18` request.
+- Stop if selected dispatch, active runway, another queued batch, or resumable
+  state appears outside the queued CCFG-18 batch.
 - Stop if planning would write outside the canonical stable planning repository.
 - Stop if candidate code or helpers would control canonical state before cutover.
-- Stop if the stable helper link or committed feature versions are missing after
-  the fresh-session install and reload.
+- Stop if the stable helper link or committed feature versions drift from the
+  installed stable generation.
 - Stop if work would repeat command-owner redesign intake or create new identities
   instead of amending CCFG-18 through CCFG-29.
 - Stop if work would select successor work, create another dispatch, or create

@@ -85,6 +85,103 @@ format. It owns no intake, selection, scope, runway, execution acceptance,
 closeout, or successor decision. Its deletion condition is CCFG-29 final
 integration.
 
+### Pre-creation bootstrap amendment
+
+`cross-checkout-context/v1` remains the strict post-creation interface. Its
+existing repository-root and exact-revision checks must not be weakened.
+
+CCFG-18 also requires a separate temporary pre-creation interface because the
+strict context cannot validate the implementation target before that repository
+exists:
+
+```text
+runway creation requires existing candidate repository
+candidate repository creation requires work-batch execution
+work-batch execution requires an existing runway
+```
+
+The accepted pre-creation shape is:
+
+```yaml
+interface: cross-checkout-precreation/v1
+
+stable_control:
+  toolchain_source_root: absolute-existing-git-root
+  toolchain_commit: full-sha
+  canonical_planning_repository_root: absolute-existing-git-root
+  canonical_planning_commit_before: full-sha
+  canonical_planning_root: absolute-existing-directory
+  codex_home: absolute-existing-directory
+  generation_role: stable
+  canonical_state_mutation_allowed: true
+
+candidate_intent:
+  implementation_target_root: absolute-intended-path
+  expected_repository_state: absent
+  candidate_codex_home: absolute-intended-path
+  expected_codex_home_state: absent
+  base_repository: alacasse/codex-config
+  base_commit: full-authoritative-master-sha
+  implementation_branch: explicit-name
+  accepted_design_snapshot: caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c
+
+creation_authority:
+  repository_creation_allowed: true
+  candidate_codex_home_creation_allowed: true
+  allowed_creation_roots:
+    - exact implementation_target_root
+    - exact candidate_codex_home
+```
+
+The pre-creation validator must validate the stable generation and canonical
+planning revision, require absolute intended paths, require the candidate
+repository to be absent, and require candidate `CODEX_HOME` to be absent or
+explicitly empty according to the implemented contract. It must reject overlap
+with stable or protected roots and reject an unexpected existing repository
+instead of reusing it. It records the authoritative base commit and accepted
+design snapshot and authorizes only the two exact creation targets.
+
+Like the strict context, it grants no intake, selection, scope-shaping,
+implementation-acceptance, closeout, or successor authority. It does not require
+an implementation commit before the repository exists.
+
+### Required pre-creation transition
+
+After candidate repository lineage and environment creation are verified,
+execution must emit a versioned transition receipt and construct the existing
+strict context:
+
+```text
+cross-checkout-precreation/v1
+  -> candidate repository and branch created
+  -> authoritative master ancestry verified
+  -> accepted design snapshot merged and verified
+  -> candidate CODEX_HOME created
+  -> actual candidate HEAD recorded
+  -> cross-checkout-context/v1 validated
+```
+
+No implementation beyond repository and environment establishment may continue
+until `cross-checkout-context/v1` validates successfully.
+
+### Pre-creation planning boundary
+
+The next explicit `plan-batch CCFG-18` may select one bounded single-root
+stable-control batch whose only purpose is to implement and validate
+`cross-checkout-precreation/v1`. That batch operates only on stable `master`,
+does not create either candidate path, updates the helper, consumer contracts,
+tests, manifest, and documentation, then stops after closeout. The changed
+stable feature set must be installed and loaded in a fresh stable session before
+the new interface controls real work.
+
+A later explicit `plan-batch CCFG-18` may plan actual candidate creation under
+the installed pre-creation contract. This is a required fresh-session boundary,
+not a preselected batch map.
+
+The accepted design snapshot remains frozen. After candidate lineage is
+verified, the implementation branch must receive the same amendment as an
+explicit live design amendment without rewriting the frozen snapshot.
+
 ## Minimum Gate Before `plan-batch CCFG-18`
 
 ```yaml
@@ -99,12 +196,17 @@ resumable_runner_state: false
 stable_checkout_path: known
 candidate_clone_path: known
 candidate_codex_home_path: known
+candidate_clone_state: absent
+candidate_codex_home_state: absent
+precreation_amendment_recorded: true
 accepted_design_snapshot: caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c
 ```
 
-The clone, implementation branch, accepted design merge, candidate CODEX_HOME,
-bridge, mechanical generation fingerprint, and rollback rehearsal belong inside
-CCFG-18.
+The next batch-planning pass may cover stable pre-creation support only. The
+clone, implementation branch, accepted design merge, candidate `CODEX_HOME`,
+strict-context transition, mechanical generation fingerprint, fixture-only
+validation, and rollback rehearsal remain inside CCFG-18 but wait for the
+stable-support closeout, install, and fresh-session reload.
 
 ## No Re-Intake or Selection
 
