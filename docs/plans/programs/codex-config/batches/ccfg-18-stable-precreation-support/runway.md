@@ -204,7 +204,6 @@ batch.
 
 | Slice | Status | Risk class | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|---|
-| 3. Manifest and release wiring | pending | migration | | | | Manifest, dry-run, final validation, and review green | Stop before real install or reload |
 
 ## Orchestration Anomalies
 
@@ -218,6 +217,7 @@ orchestration_anomalies: []
 |---|---|---|---|
 | 1. Pre-creation owner and transition evidence | `3d38ad8` | success; precreation 32 passed / 39 subtests, strict context 21 passed / 31 subtests, Ruff and basedpyright green, install dry-run green, test-quality and final review clean | `git show --stat 3d38ad8`; `git show 3d38ad8` |
 | 2. Stable consumer and agent propagation | `1fe399d` | success; helper/strict/custom-agent 65 passed / 226 subtests, focused manifest 3 passed / 135 subtests, Batch Runway/lifecycle 21 passed / 214 subtests, test-quality and final review clean; full manifest remained known-red at 3 failed / 18 passed | `git show --stat 1fe399d`; `git show 1fe399d` |
+| 3. Manifest and release wiring | `1d8dca1` | success; exact feature versions and sole helper owner validated, focused manifest 3 passed / 137 subtests, install dry-run and JSON validation green, test-quality and final review clean; full manifest remained known-red at 3 failed / 18 passed | `git show --stat 1d8dca1`; `git show 1d8dca1` |
 
 ## Slice 1: Pre-Creation Owner And Transition Evidence
 
