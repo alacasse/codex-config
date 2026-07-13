@@ -10,7 +10,7 @@
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-18-stable-control-bootstrap/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -31,7 +31,9 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-18 through CCFG-29.
+  CCFG-19 through CCFG-29.
+- Prepared ledger row: CCFG-18. The stable control bootstrap is complete; its
+  candidate-generation remainder remains under the same finding identity.
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -48,63 +50,44 @@
 - Queued batch: `None`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-17-absolute-runway-reference-paths`
+- Latest completed batch: `ccfg-18-stable-control-bootstrap`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-18-stable-control-bootstrap/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-18-stable-control-bootstrap/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-18-stable-control-bootstrap/closeout.md`
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. CCFG-18 through CCFG-29 remain open and
-unselected. CCFG-18 is the first dependency-free command-owner redesign item.
+No batch is selected, queued, or active. CCFG-18 is `Prepared`, not `Closed`.
 
-Before an explicit `plan-batch CCFG-18` request, verify in a fresh stable session:
+Continue only in a fresh stable session loaded from the exact `master` commit
+that contains this closeout. In that session:
 
-```yaml
-stable_checkout:
-  branch: master
-  clean_or_classified: true
-installed_generation:
-  default_codex_home_resolves_to_stable_checkout: true
-  required_skills_resolve_to_one_stable_commit: true
-  candidate_links: 0
-planning_state:
-  selected_dispatch: null
-  queued_runway: null
-  active_runway: null
-  resumable_runner_state: false
-project_values:
-  stable_checkout_path: known
-  candidate_clone_path: known
-  candidate_codex_home_path: known
-  accepted_design_snapshot: caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c
-```
+1. Verify every repo-owned installed link resolves to this stable checkout and
+   that candidate links remain zero.
+2. Install the committed stable feature set so the new helper link and feature
+   versions are present; then verify installed state and reload before using the
+   changed control for real work.
+3. Rerun `planning_state.py current` and `validate` against `docs/plans`.
+4. Invoke a new explicit `plan-batch CCFG-18` for only the remaining candidate
+   clone, candidate `CODEX_HOME`, lineage, identity, fixture-only, and rollback
+   scope.
 
-`plan-batch` may then select or narrow CCFG-18 only. CCFG-18 owns creation of the
-candidate clone, implementation branch, merge of the accepted design history,
-candidate `CODEX_HOME`, temporary cross-checkout control support, mechanical
-generation identity, fixture-only candidate validation, and pre-cutover rollback
-proof.
-
-Do not require those implementation results before planning CCFG-18; doing so
-would create a circular prerequisite.
-
-CCFG-11 remains open, but its displaced runway is superseded planning evidence.
-Do not execute it without a future regenerated or amended runway that applies the
-CCFG-13 validation status, CCFG-14 risk gates, CCFG-15 vague-row guard, and
-CCFG-16 deletion-test vocabulary rules.
+Do not select CCFG-19.
 
 ## Stop Conditions
 
-- Stop if installed skills do not resolve to one stable `master` generation.
+- Stop if the next session is not freshly loaded from the exact stable `master`
+  commit containing this closeout.
 - Stop if any installed link resolves to the redesign branch or candidate clone.
-- Stop if selected, queued, active, or resumable state appears before CCFG-18
-  planning.
+- Stop if selected dispatch, queued batch, active runway, or resumable state
+  appears before the next explicit `plan-batch CCFG-18` request.
 - Stop if planning would write outside the canonical stable planning repository.
 - Stop if candidate code or helpers would control canonical state before cutover.
+- Stop if the stable helper link or committed feature versions are missing after
+  the fresh-session install and reload.
 - Stop if work would repeat command-owner redesign intake or create new identities
   instead of amending CCFG-18 through CCFG-29.
 - Stop if work would select successor work, create another dispatch, or create
@@ -115,3 +98,5 @@ CCFG-16 deletion-test vocabulary rules.
 - Stop if work would copy archived history into the active ledger row-by-row.
 - Stop if a generic reusable skill receives project-specific paths, commands,
   caches, or planning layouts.
+- Stop if follow-up planning would mark CCFG-18 `Closed`, select CCFG-19, or
+  bypass the remaining CCFG-18 scope.

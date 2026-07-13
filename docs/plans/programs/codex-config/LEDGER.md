@@ -69,7 +69,7 @@ row-by-row here.
 | CCFG-15. Vague ledger row splitting before runway expansion | Completed | GitHub issue #33 | Planning guard | None | Closed with split, block, or narrow guard. |
 | CCFG-16. Deletion-test vocabulary ownership | Completed | GitHub issue #31 | Skill cleanup | None | Closed with canonical evidence vocabulary ownership. |
 | CCFG-17. Absolute runway reference paths | Completed | GitHub issue #32 | Batch Runway create-spec | None | Closed with repo-relative reusable references and active-artifact guard. |
-| CCFG-18. Establish Stable and Candidate Generations | Open | [COR-001](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-001--ccfg-18--establish-stable-and-candidate-generations) | Command-owner redesign / control-plane isolation | Future explicit `plan-batch` may select or narrow after the stable-generation preflight in `CURRENT.md` | Establish three roots, candidate clone/branch, accepted design merge, candidate CODEX_HOME, narrow cross-checkout enforcement, generation identity, fixture-only candidate validation, and pre-cutover rollback. Unselected. |
+| CCFG-18. Establish Stable and Candidate Generations | Prepared | [COR-001](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-001--ccfg-18--establish-stable-and-candidate-generations) | Command-owner redesign / control-plane isolation | In a fresh installed stable generation, invoke explicit `plan-batch CCFG-18` for the remaining scope | Stable `cross-checkout-context/v1` bootstrap completed in `c0615f63060e07e79101089b5599c8eff05f77f8..b75e68a`; see `batches/ccfg-18-stable-control-bootstrap/closeout.md`. Candidate clone/branch, accepted design merge, candidate CODEX_HOME, end-to-end identity, fixture-only validation, and rollback remain under CCFG-18. |
 | CCFG-19. Verify Source Contracts and Resolve Blocking Decisions | Open | [COR-002](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-002--ccfg-19--verify-source-contracts-and-resolve-blocking-decisions) | Command-owner redesign / contracts | Wait for CCFG-18 | Complete contract-to-owner/scenario map, schema evolution, ledger-store boundary, runner protocol, and planning transaction decision or blocker. Unselected. |
 | CCFG-20. Implement `skill-contract/v1` Schema and Validators | Open | [COR-003](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-003--ccfg-20--implement-skill-contractv1-schema-and-validators) | Command-owner redesign / skill contracts | Wait for CCFG-19 | Implement deterministic schema, ownership, delegation, reference, compatibility, and migration-residue validation. Unselected. |
 | CCFG-21. Implement Planning Artifact Schemas and Validators | Open | [COR-004](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-004--ccfg-21--implement-planning-artifact-schemas-and-validators) | Command-owner redesign / planning contracts | Wait for CCFG-19 | Prototype canonical CURRENT.md, per-finding ledger, dispatch/runway/closeout schemas, atomic writes, receipts, and fault injection. Unselected. |
@@ -98,16 +98,17 @@ Queued batch: None.
 | `ccfg-15-vague-ledger-row-splitting` | completed | `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-15-vague-ledger-row-splitting/runway.md` | CCFG-15 | Closed. |
 | `ccfg-16-deletion-test-vocabulary-ownership` | completed | `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-16-deletion-test-vocabulary-ownership/runway.md` | CCFG-16 | Closed. |
 | `ccfg-17-absolute-runway-reference-paths` | completed | `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-17-absolute-runway-reference-paths/runway.md` | CCFG-17 | Closed. |
+| `ccfg-18-stable-control-bootstrap` | completed | `docs/plans/programs/codex-config/batches/ccfg-18-stable-control-bootstrap/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-18-stable-control-bootstrap/runway.md` | CCFG-18 | Stable bootstrap completed; CCFG-18 is `Prepared`; candidate-generation remainder stays under CCFG-18. |
 
 ## Recommended Work Order
 
 1. Start pickup from root and program `CURRENT.md`.
 2. No batch is selected, queued, or active.
-3. Apply the stable-generation preflight before planning CCFG-18.
-4. Treat CCFG-18 through CCFG-29 as unselected redesign intake with preserved
-   identities and dependencies.
-5. Let `plan-batch` select, split, narrow, block, or group exactly one eligible
-   item.
+3. Continue in a fresh installed stable generation at the exact `master` commit
+   containing the CCFG-18 bootstrap closeout.
+4. Let a new explicit `plan-batch CCFG-18` select only the remaining CCFG-18
+   candidate-generation scope after planning-state diagnostics pass.
+5. Do not select CCFG-19 while CCFG-18 remains `Prepared`.
 6. Do not revive archived APR/PST ledgers as pickup sources.
 7. Keep CCFG-11 open but do not execute its displaced runway.
 
@@ -119,6 +120,9 @@ Queued batch: None.
   implementation root, relevant revisions, temporary bridges, and legacy
   ownership removed.
 - CCFG-18 closeout does not select CCFG-19.
+- The `ccfg-18-stable-control-bootstrap` closeout marks CCFG-18 `Prepared`, not
+  `Closed`, records the changed stable commit and fresh-session handoff, and
+  preserves all candidate-generation remainder under the same finding identity.
 - CCFG-27 does not switch the default generation.
 - CCFG-28 switches only after physical deletion and clean-install proof, then
   closes under the pinned stable controller and stops.
