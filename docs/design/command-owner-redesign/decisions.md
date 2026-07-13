@@ -13,6 +13,7 @@ accepted decisions in this register
 -> current migration phase contract
 -> stable behavior contract IDs
 -> target ownership model
+-> ledger work item linked from 07-implementation-ledger-intake.md
 -> selected implementation dispatch and runway
 -> repository source evidence
 -> GitHub issues and historical plans
@@ -163,19 +164,8 @@ id: DEC-011
 status: accepted
 decision: >-
   Do not create permanent skills-v2, skills-next, or version-suffixed human
-  commands. Develop target skills at final paths in an isolated branch or
-  worktree with a separate CODEX_HOME.
-```
-
-### DEC-012 — Use stable and candidate installation lanes
-
-```yaml
-id: DEC-012
-status: accepted
-decision: >-
-  The stable checkout and default CODEX_HOME perform and review migration work.
-  The candidate branch or worktree and separate CODEX_HOME test target skills in
-  fresh sessions.
+  commands. Develop target skills at final skills/<name>/ paths in an isolated
+  candidate checkout with a separate CODEX_HOME.
 ```
 
 ### DEC-013 — Limit `port-by-contract` during redesign bootstrap
@@ -330,7 +320,103 @@ versioning_policy:
     - reference-loading guidance
 ```
 
+### DEC-025 — Implementation enters through ledger intake, not a prebuilt batch map
+
+```yaml
+id: DEC-025
+status: accepted
+decision: >-
+  Convert the accepted design into individually addressable work items in
+  07-implementation-ledger-intake.md, ingest all items together through
+  add-to-ledger, and leave them unselected. plan-batch then selects and shapes at
+  most one eligible item per invocation, and work-batch executes only that runway.
+rationale: >-
+  The current workflow intentionally separates multi-item intake from one-batch
+  planning and execution. Predefining runnable batches in a design session would
+  bypass plan-batch ownership and reduce its ability to split, block, narrow, or
+  group work using current ledger state.
+required_contracts:
+  - INTAKE-SOURCE-001
+  - INTAKE-NORMALIZE-003
+  - INTAKE-STOP-005
+  - PLAN-SOURCE-001
+  - PLAN-SELECT-003
+  - PLAN-SCOPE-004
+  - PLAN-STOP-008
+  - EXEC-CURRENT-001
+  - CLOSE-NEXT-003
+consequences:
+  - 07-implementation-ledger-intake.md is not a dispatch, runway, or batch map
+  - one add-to-ledger invocation may create or update all program rows
+  - no row becomes selected during intake
+  - dependencies and source-section links remain durable in the ledger
+  - phase boundaries guide eligibility but do not predetermine slice structure
+```
+
+### DEC-026 — Stable skills bootstrap and control the candidate generation
+
+```yaml
+id: DEC-026
+status: accepted
+supersedes:
+  - DEC-012
+decision: >-
+  Use the untouched stable checkout and default CODEX_HOME as the control plane
+  for canonical intake, planning, and migration execution against a separate
+  candidate checkout. Candidate skills use a separate CODEX_HOME and remain
+  validation-only until an explicit cutover gate is satisfied.
+rationale: >-
+  The system is rewriting skills that it actively uses. Loading and modifying the
+  same installed source during one workflow could mix generations of ownership,
+  recovery, review, and closeout rules.
+candidate_checkout_policy:
+  default: separate_clone
+  worktree: allowed_only_after_explicit_isolation_validation
+session_generation_record:
+  required_fields:
+    - toolchain_generation
+    - toolchain_source_checkout
+    - target_repository_checkout
+    - codex_home
+    - canonical_planning_state_mutation_allowed
+stable_generation_may:
+  - mutate_canonical_ledger
+  - create_real_dispatch_and_runway
+  - execute_migration_batches_against_candidate_checkout
+candidate_generation_before_cutover_may:
+  - run_schema_tests
+  - run_behavioral_fixtures
+  - run_controlled_skill_trials
+candidate_generation_before_cutover_forbids:
+  - mutate_canonical_ledger
+  - select_or_execute_real_migration_work
+  - switch_generation_mid_command
+cutover_requires:
+  - no_selected_old_generation_dispatch
+  - no_queued_old_generation_runway
+  - no_active_old_generation_runway
+  - no_resumable_old_generation_runner_state
+  - target_behavioral_scenarios_green
+  - rollback_to_stable_installation_documented
+```
+
 ## Superseded Decisions
+
+### DEC-012 — Use stable and candidate installation lanes
+
+```yaml
+id: DEC-012
+status: superseded
+superseded_by: DEC-026
+previous_decision: >-
+  The stable checkout and default CODEX_HOME perform and review migration work.
+  The candidate branch or worktree and separate CODEX_HOME test target skills in
+  fresh sessions.
+reason_for_change: >-
+  The original decision did not define which generation may mutate canonical
+  state, did not prevent one command from mixing generations, and treated a
+  worktree as equally assumed despite it not yet being proven in this workflow.
+```
 
 ### DEC-021 — The skill-authoring meta-skill is implemented last
 
@@ -505,6 +591,12 @@ rejected:
   - id: REJECT-006
     approach: implement the redesign as one giant batch
     reason: weakens rollback and behavior-equivalence proof
+  - id: REJECT-007
+    approach: precompute implementation batches before ledger intake
+    reason: bypasses add-to-ledger and plan-batch ownership boundaries
+  - id: REJECT-008
+    approach: let candidate skills control their own real migration before cutover
+    reason: risks mixed-generation planning, execution, recovery, and closeout
 ```
 
 ## Decision Change Procedure
