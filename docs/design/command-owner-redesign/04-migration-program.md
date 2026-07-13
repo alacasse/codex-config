@@ -17,14 +17,14 @@ target_environment:
 phase_order:
   - phase-0-isolation-and-baseline
   - phase-1-contract-distillation
-  - phase-2-contract-formats-and-validators
+  - phase-2-contract-formats-validators-and-skill-authoring
   - phase-3-behavioral-scenario-harness
   - phase-4-add-to-ledger-transfer
   - phase-5-plan-batch-transfer
   - phase-6-work-batch-transfer
   - phase-7-runner-and-installation-cutover
   - phase-8-legacy-owner-deletion
-  - phase-9-skill-authoring-meta-skill
+  - phase-9-contract-first-authoring-convergence
 
 execution_policy:
   one_phase_active: true
@@ -33,7 +33,7 @@ execution_policy:
   phase_completion_requires:
     - acceptance_criteria_passed
     - required_behavioral_scenarios_passed
-    - legacy_ownership_reduced
+    - legacy_ownership_reduced_when_applicable
     - temporary_bridges_registered
     - no_unowned_compatibility
 ```
@@ -47,7 +47,7 @@ execution_policy:
   batch may be selected at a time.
 - A target surface must not become authoritative while the old owner remains an
   equally valid normal route.
-- Every implementation phase must remove or narrow named legacy ownership.
+- Every ownership-transfer phase must remove or narrow named legacy ownership.
 - A phase is not complete merely because target and legacy paths both work.
 - No batch may preserve a topology test solely because it currently passes.
 - No active old-format artifact may be abandoned or silently reinterpreted.
@@ -55,6 +55,10 @@ execution_policy:
   next batch.
 - Rollback uses Git history and the stable installation lane, not permanent
   runtime duplication.
+- `skill-authoring` v1 must be complete, authoritative, and validated before any
+  target command-owner skill is migrated.
+- Dogfood findings may refine compatible authoring guidance, but semantic changes
+  to ownership or canonicality require an explicit schema decision.
 
 ## Temporary Bridge Record
 
@@ -99,17 +103,16 @@ skills that are currently installed and used to perform the migration.
 - No target skill implementation.
 - No active ledger mutation.
 - No batch selection.
-- No creation of `skills-v2/`, `skills-next/`, or version-suffixed human
-  commands.
-- No in-place mutation of a checkout currently used by active coordinator,
-  worker, or reviewer sessions.
+- No permanent `skills-v2/`, `skills-next/`, or version-suffixed commands.
+- No in-place mutation of a checkout used by active coordinator, worker, or
+  reviewer sessions.
 
 ### Entry gate
 
 ```yaml
 required:
-  - source repository accessible
-  - stable installation identifiable
+  - source_repository_accessible
+  - stable_installation_identifiable
 ```
 
 ### Exit gate
@@ -157,8 +160,7 @@ The current runway skills are source implementation, not migration authority.
 
 ### Required work
 
-- Verify and complete the behavior contracts in
-  `01-source-behavior-contracts.md`.
+- Verify and complete `01-source-behavior-contracts.md`.
 - Verify and complete the target ownership model.
 - Map source tests to behavior contracts.
 - Identify accidental source structure.
@@ -195,11 +197,12 @@ implementation_started: false
 - deletion-test thought experiment for APR and Batch Runway;
 - human review of accepted and open decisions.
 
-## Phase 2 — Contract Formats and Validators
+## Phase 2 — Contract Formats, Validators, and `skill-authoring` v1
 
 ### Objective
 
-Validate the contract-first representation before broad workflow migration.
+Finalize the contract-first representation and the authoritative authoring
+workflow before migrating any target command-owner skill.
 
 ### Required work
 
@@ -208,19 +211,64 @@ Validate the contract-first representation before broad workflow migration.
 - Define and validate `planning-runway/v1`.
 - Define and validate `planning-closeout/v1`.
 - Implement lightweight block location, parsing, and schema validation.
-- Implement ownership conflict and reference checks.
-- Prototype the skill format on `port-by-contract` or a non-runtime copy of it.
+- Implement ownership-conflict, dependency, and reference checks.
+- Implement `skills/skill-authoring/SKILL.md` at its final canonical path.
+- Make `skill-authoring` v1 complete and authoritative for repository-specific
+  hybrid skill structure, ownership, canonicality, and migration rules.
+- Document the boundary with the agent's generic skill-writing guidance.
+- Validate `skill-authoring` on `port-by-contract` or an equivalent
+  representative skill before target-owner migration.
 - Prototype one synthetic dispatch, runway, execution receipt, and closeout
   chain.
+- Install `skill-authoring` only in the candidate `CODEX_HOME` until cutover.
 - Compare readability, ambiguity, context size, and validation coverage.
+
+### `skill-authoring` completion standard
+
+```yaml
+skill_authoring_v1:
+  complete: true
+  authoritative_for:
+    - hybrid_skill_structure
+    - ownership_contracts
+    - canonicality
+    - migration_rules
+    - ambiguity_reporting
+  validated_by:
+    - schema_tests
+    - malformed_contract_tests
+    - ownership_conflict_tests
+    - cosmetic_migration_tests
+    - representative_skill_migration_or_audit
+  runtime_dependency_of_command_owners: false
+```
+
+### Stable before dogfooding
+
+- required contract sections;
+- meaning of `owns`, `delegates`, `forbids`, `writes`, and `stops_when`;
+- machine-fact canonicality;
+- ownership-conflict behavior;
+- cosmetic-migration guard;
+- validator interfaces;
+- precedence over generic narrative-first formatting when the two conflict.
+
+### Compatibly refinable later
+
+- optional fields;
+- report formatting;
+- size-budget heuristics;
+- reference-loading recommendations;
+- additional non-breaking validation checks.
 
 ### Forbidden work
 
 - No production transfer of plan or work ownership.
 - No new normal command names.
-- No installation of prototypes as runtime skills.
-- No `skill-authoring` meta-skill yet.
-- No migration of historical artifacts.
+- No installation of synthetic prototypes as runtime skills.
+- No runtime dependency from command owners to `skill-authoring`.
+- No migration of historical planning artifacts.
+- No semantic schema change hidden as authoring guidance.
 
 ### Entry gate
 
@@ -237,6 +285,10 @@ planning_closeout_v1_parseable: true
 ownership_conflict_detection_proven: true
 reference_validation_proven: true
 canonicality_rules_documented: true
+skill_authoring_v1_complete: true
+skill_authoring_v1_authoritative: true
+skill_authoring_validated_on_representative_skill: true
+skill_authoring_candidate_install_green: true
 prototype_runtime_authority: false
 ```
 
@@ -246,7 +298,8 @@ prototype_runtime_authority: false
 - malformed and missing-field tests;
 - duplicate-owner tests;
 - unknown-reference tests;
-- structured/prose contradiction fixtures where mechanically detectable;
+- cosmetic-migration tests that reject YAML plus retained contradictory prose;
+- generic-authoring precedence tests or review fixtures;
 - human review of representative diffs.
 
 ## Phase 3 — Behavioral Scenario Harness
@@ -293,15 +346,19 @@ Each scenario must assert:
 
 ### Forbidden work
 
-- Do not make old skill names part of expected output unless the scenario is
-  explicitly testing a migration bridge.
+- Do not make old skill names part of expected output unless testing a named
+  migration bridge.
 - Do not rely on exact prose in `SKILL.md`.
 - Do not mutate the active repository planning root.
 
 ### Entry gate
 
-- Phase 2 schemas and validators accepted.
-- Contract IDs stable enough to label scenarios.
+```yaml
+required_phases:
+  - phase-2-contract-formats-validators-and-skill-authoring
+required_authoring_surface:
+  - skill-authoring/v1
+```
 
 ### Exit gate
 
@@ -311,14 +368,6 @@ target_scenario_interface_defined: true
 scenario_expectations_independent_of_legacy_skill_names: true
 active_planning_root_untouched: true
 ```
-
-### Validation
-
-- fixture isolation test;
-- file-effect assertions;
-- structured transition assertions;
-- negative write assertions;
-- source behavior review for any failing characterization.
 
 ## Phase 4 — `add-to-ledger` Ownership Transfer
 
@@ -338,18 +387,20 @@ Make `add-to-ledger` the sole owner of intake and canonical ledger mutation.
 ### Legacy ownership removed in the same phase
 
 - APR intake mode;
-- APR finding normalization authority;
-- APR normal ledger mutation authority;
+- APR finding-normalization authority;
+- APR normal ledger-mutation authority;
 - legacy-removal program-owner exception.
 
 ### Required work
 
-- Migrate `add-to-ledger` to `skill-contract/v1`.
+- Use `skill-authoring` v1 to migrate `add-to-ledger`.
 - Introduce or complete the narrow ledger-store interface.
 - Add behavioral intake and idempotence tests.
 - Remove command manifest dependencies on APR for intake.
 - Rewrite or delete text/topology tests that require APR intake ownership.
 - Keep any old-format ledger reader read-only and caller-scoped.
+- Record any compatible authoring-guidance refinement discovered through
+  dogfooding; do not invent local schema fields.
 
 ### Entry gate
 
@@ -361,6 +412,7 @@ required_scenarios:
   - duplicate-finding-intake
   - requested-missing-finding
   - stale-ledger-revision
+skill_authoring_v1_authoritative: true
 ```
 
 ### Exit gate
@@ -369,6 +421,7 @@ required_scenarios:
 add_to_ledger:
   owns_intake_decisions: true
   broad_workflow_dependencies: 0
+  contract_validates: true
   behavior_scenarios_green: true
 architecture_program_runway:
   intake_decisions_owned: 0
@@ -420,15 +473,14 @@ From Batch Runway:
 
 ### Required work
 
-- Migrate `plan-batch` to `skill-contract/v1`.
+- Use `skill-authoring` v1 to migrate `plan-batch`.
 - Move planning references under `skills/plan-batch/references/`.
 - Produce and validate hybrid dispatch and runway artifacts.
 - Replace APR and Batch Runway planning dependencies with narrow mechanisms.
-- Update runner planning invocation to the public plan command protocol when
-  useful without completing runner cutover early.
+- Update runner planning invocation only where needed for this transfer.
 - Remove or rewrite tests that require APR and Batch Runway planning topology.
-- Preserve a read-only old-format spec parser only if active artifacts require
-  it.
+- Preserve a read-only old-format spec parser only if active artifacts require it.
+- Record compatible authoring refinements centrally, not as a plan-batch dialect.
 
 ### Entry gate
 
@@ -447,6 +499,7 @@ required_scenarios:
 required_schemas:
   - planning-dispatch/v1
   - planning-runway/v1
+skill_authoring_v1_authoritative: true
 forbidden_state:
   - active_old_format_runway
 ```
@@ -462,6 +515,7 @@ plan_batch:
   owns_validation_profile_selection: true
   architecture_program_runway_dependency: false
   batch_runway_dependency: false
+  contract_validates: true
 architecture_program_runway:
   planning_decisions_owned: 0
 batch_runway:
@@ -515,15 +569,15 @@ From APR:
 
 ### Required work
 
-- Migrate `work-batch` to `skill-contract/v1`.
+- Use `skill-authoring` v1 to migrate `work-batch`.
 - Move execution, recovery, finalization, and retention references under
   `skills/work-batch/references/`.
 - Retain worker and reviewer as narrow independent agent mechanisms.
 - Produce and validate hybrid execution receipts and closeout artifacts.
 - Replace APR and Batch Runway dependencies with narrow mechanisms.
 - Remove or rewrite topology tests.
-- Complete any active old-format batch under its named contract or explicitly
-  migrate it before cutover.
+- Complete or explicitly migrate any active old-format batch before cutover.
+- Record compatible authoring refinements centrally, not as a work-batch dialect.
 
 ### Entry gate
 
@@ -542,6 +596,7 @@ required_scenarios:
   - no-successor-selection
 required_schema:
   - planning-closeout/v1
+skill_authoring_v1_authoritative: true
 ```
 
 ### Exit gate
@@ -554,6 +609,7 @@ work_batch:
   owns_same_batch_reconciliation: true
   architecture_program_runway_dependency: false
   batch_runway_dependency: false
+  contract_validates: true
 batch_runway:
   execute_spec_callers: 0
   execution_decisions_owned: 0
@@ -563,8 +619,8 @@ architecture_program_runway:
 
 ### Rollback boundary
 
-Rollback the complete execution ownership transfer. Do not restore an old
-closeout owner while leaving target work-batch finalization authoritative.
+Rollback the complete execution transfer. Do not restore an old closeout owner
+while leaving target work-batch finalization authoritative.
 
 ## Phase 7 — Runner and Installation Cutover
 
@@ -577,12 +633,12 @@ command protocols and narrow mechanisms.
 
 - Remove APR and Batch Runway from command-owner feature dependencies.
 - Separate runner installation from APR.
-- Replace runner phase instructions that name old modes with public plan and work
+- Replace runner instructions that name old modes with public plan and work
   command protocols.
 - Keep runner-owned concerns limited to process lifecycle, bounds, environment,
   sandbox, telemetry, and explicit loop policy.
 - Update active docs, prompts, manifests, and feature descriptions.
-- Install and run the candidate toolchain in the isolated `CODEX_HOME`.
+- Install `skill-authoring` and target command owners in the candidate lane.
 - Run a complete candidate plan and work workflow on a controlled fixture.
 
 ### Forbidden work
@@ -604,6 +660,7 @@ command_owner_manifest_legacy_dependencies: 0
 runner_prompts_using_old_modes: 0
 runner_installation_owned_by_apr_feature: false
 candidate_full_workflow_green: true
+skill_authoring_candidate_install_green: true
 stable_rollback_available: true
 ```
 
@@ -616,8 +673,7 @@ Physically remove the broad legacy owners and migration-only topology.
 ### Required work
 
 - Delete `skills/architecture-program-runway/`.
-- Delete `skills/batch-runway/` after moving surviving references to their target
-  owners.
+- Delete `skills/batch-runway/` after moving surviving references.
 - Delete old modes and direct-command metadata.
 - Delete migration-retention and topology tests that protect retired structure.
 - Delete expired transition fixtures and parsers.
@@ -647,27 +703,34 @@ target_behavioral_scenarios_green: true
 Rollback is the pre-deletion commit and stable installation. Do not recreate
 permanent compatibility wrappers.
 
-## Phase 9 — Skill-Authoring Meta-Skill
+## Phase 9 — Contract-First Authoring Convergence
 
 ### Objective
 
-Implement GitHub issue #49 only after the contract-first format and target
-owners have proven the authoring rules.
+Audit and refine the already-authoritative `skill-authoring` v1 after it has been
+dogfooded on all target command owners. This phase does not create the meta-skill.
 
 ### Required work
 
-- Create `skill-authoring` or the accepted final name.
-- Encode extraction, ownership conflict detection, procedure/rationale split,
-  reference loading, and validation guidance.
-- Invoke schema and ownership validators rather than duplicating them in prose.
-- Validate the meta-skill on a new skill and an audit of an existing target
-  skill.
+- Audit `port-by-contract`, `add-to-ledger`, `plan-batch`, and `work-batch` for
+  consistent use of `skill-contract/v1`.
+- Collect dogfood findings from phases 4 through 6.
+- Integrate compatible improvements to optional fields, report layout, size
+  heuristics, reference loading, and non-breaking validation.
+- Remove temporary authoring exceptions and per-skill dialects.
+- Confirm the generic skill-writing guidance boundary remains explicit.
+- Validate `skill-authoring` by creating one new representative skill and
+  auditing one existing target skill.
+- Declare `skill-contract/v1` and `skill-authoring` v1 mature when evidence
+  supports it.
 
 ### Forbidden work
 
-- No runtime dependency from command owners.
+- No runtime dependency from command owners to `skill-authoring`.
 - No ownership of planning state or workflow execution.
 - No implicit inheritance or hidden include system.
+- No semantic ownership or canonicality change without a new accepted schema
+  decision.
 - No cosmetic migration that preserves source prose by default.
 
 ### Entry gate
@@ -679,12 +742,15 @@ skill_contract_v1_validated_on:
   - plan-batch
   - work-batch
 planning_artifact_v1_chain_validated: true
-open_schema_questions: 0
+legacy_owner_deletion_complete: true
 ```
 
 ### Exit gate
 
 ```yaml
+skill_authoring_v1_mature: true
+target_skills_use_one_contract_dialect: true
+temporary_authoring_exceptions: 0
 meta_skill_runtime_dependencies: 0
 meta_skill_ownership_conflict_detection_proven: true
 cosmetic_migration_guard_proven: true
@@ -710,23 +776,24 @@ batch:
   rollback_boundary: string
 ```
 
-A batch is invalid when it:
+A batch is invalid if it introduces target ownership without naming the legacy
+ownership removed by the same transfer or its explicitly approved immediate
+cutover.
 
-- adds a new owner but removes no corresponding legacy ownership;
-- combines multiple migration phases without a dependency reason;
-- preserves old tests without classifying them;
-- introduces a compatibility route without a deletion condition;
-- creates more than one selected implementation batch;
-- authorizes future phase work;
-- treats coexistence as completion.
+## Program Completion
 
-## Handoff Boundaries
+The redesign program is complete only when:
 
-Use three separate fresh-session handoffs:
-
-1. **Architecture package review:** validate contracts, decisions, and phase
-   order; no implementation.
-2. **Implementation decomposition:** create ordered bounded batches and only the
-   first dispatch/runway; no implementation.
-3. **Batch execution:** execute only the selected batch, close and reconcile the
-   same batch, then stop.
+```yaml
+program_completion:
+  target_command_owners_authoritative: true
+  duplicate_workflow_decisions: 0
+  architecture_program_runway_deleted: true
+  batch_runway_deleted: true
+  old_modes_active_references: 0
+  behavior_scenarios_green: true
+  skill_authoring_v1_mature: true
+  active_artifacts_use_target_schemas: true
+  temporary_bridges: 0
+  successor_selection_boundary_proven: true
+```
