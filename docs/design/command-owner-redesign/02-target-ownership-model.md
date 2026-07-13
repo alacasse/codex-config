@@ -10,92 +10,79 @@ plan-batch     owns planning
 work-batch     owns execution and same-batch closeout
 ```
 
-Shared components are narrow mechanisms or evidence producers. They may apply,
-validate, serialize, inspect, render, delegate, or report an explicit decision.
-They may not independently reinterpret the human request or become an alternate
-owner of the same workflow.
+Shared components are narrow mechanisms or evidence producers. They may inspect,
+validate, resolve, serialize, apply an explicit caller decision, execute a
+command, commit accepted work, or report evidence. They may not reinterpret the
+human request or become an alternate owner of the same workflow.
 
-## Dependency Graph
+## Pre-Cutover Root Topology
 
-```text
-add-to-ledger
-├── planning-state.inspect
-├── planning-artifacts.resolve
-├── ledger-store.upsert
-└── legacy-removal [optional evidence only]
+```yaml
+toolchain_source_root:
+  physical_owner: stable checkout on authoritative master
+  authority:
+    - loaded stable skills
+    - controlling scripts
+    - schemas and references used by the stable controller
+    - worker and reviewer contracts used by the stable controller
 
-plan-batch
-├── planning-state.inspect
-├── planning-artifacts.resolve
-├── ledger-store.read
-├── artifact-schema.validate
-├── validation-profile-catalog
-└── planning-state.apply-transition
+canonical_planning_repository_root:
+  physical_owner: stable checkout on authoritative master
+  authority:
+    - CURRENT.md
+    - LEDGER.md
+    - selected dispatch
+    - queued or active runway
+    - closeout
+    - reconciliation receipts
 
-work-batch
-├── planning-state.inspect
-├── planning-artifacts.resolve
-├── worker agent
-├── reviewer agent
-├── optional specialist evidence reviews
-├── validation command mechanism
-├── commit mechanism
-├── artifact-schema.validate
-├── ledger-store.reconcile
-└── planning-state.apply-transition
-
-planning-state
-├── structured artifact parsers
-├── lifecycle model and invariants
-├── transition validation and receipts
-└── optional reporting projection adapter
-
-planning-artifacts
-├── canonical path resolution
-├── artifact lineage rules
-└── artifact type and placement validation
+implementation_target_root:
+  physical_owner: separate candidate clone
+  authority:
+    - candidate source
+    - candidate schemas and scripts
+    - candidate tests and fixtures
+    - migration implementation commits
 ```
+
+Every command records all roots and exact Git revisions. No root is inferred only
+from current working directory.
 
 ## Decision Ownership Matrix
 
-| Decision or responsibility | Target owner | Allowed mechanism or evidence input |
+| Decision or responsibility | Target owner | Allowed mechanism or evidence |
 |---|---|---|
-| Fresh finding intake | `add-to-ledger` | planning diagnostic |
-| Source identity preservation | `add-to-ledger` | ledger schema validator |
-| Finding normalization | `add-to-ledger` | normalization helpers |
-| Duplicate, merge, create, or no-op decision | `add-to-ledger` | ledger reader |
-| Canonical ledger mutation decision | `add-to-ledger` | ledger-store applies mutation |
-| Current-state diagnosis | `planning-state` | parser and validator |
-| Candidate eligibility | `plan-batch` | canonical ledger reader |
-| Candidate ranking and selection | `plan-batch` | no alternate workflow owner |
-| Grouping into one bounded batch | `plan-batch` | contract and scenario evidence |
-| Scope splitting, blocking, or narrowing | `plan-batch` | optional legacy or dead-surface evidence |
-| Batch kind and slice risk selection | `plan-batch` | supported-value schemas |
-| Approval-gate definition | `plan-batch` | risk policy catalog |
-| Selected dispatch content | `plan-batch` | artifact renderer and validator |
-| Runway slice design | `plan-batch` | runway schema and reference contracts |
-| Validation-profile selection | `plan-batch` | validation profile catalog |
-| Transition to selected or queued | `plan-batch` | planning-state applies transition |
-| Current slice selection | `work-batch` | runway progress reader |
-| Worker delegation | `work-batch` | registered worker agent |
-| Focused and profile validation decision | `work-batch` | validation command mechanism |
+| Fresh finding intake | `add-to-ledger` | normalized diagnostic |
+| Source identity and provenance | `add-to-ledger` | schema validation |
+| Normalize a finding | `add-to-ledger` | normalization helpers |
+| Create, update, merge, or no-op | `add-to-ledger` | ledger reader |
+| Canonical ledger mutation decision | `add-to-ledger` | `ledger-store` applies explicit mutation |
+| Current-state diagnosis | `planning-state` | structured parser and validator |
+| Candidate eligibility and ranking | `plan-batch` | canonical ledger reader |
+| Grouping into one bounded batch | `plan-batch` | behavior contracts and evidence |
+| Split, block, or narrow | `plan-batch` | optional evidence skills |
+| Batch kind and risk | `plan-batch` | supported-value catalogs |
+| Approval gates | `plan-batch` | risk policy catalog |
+| Dispatch content | `plan-batch` | renderer and validator |
+| Runway design | `plan-batch` | schema and planning references |
+| Validation-profile choice | `plan-batch` | validation catalog |
+| Selected and queued transition decision | `plan-batch` | `planning-state` applies transition |
+| Current slice choice | `work-batch` | runway progress reader |
+| Worker delegation | `work-batch` | registered worker |
+| Validation acceptance | `work-batch` | validation command mechanism |
 | Specialist review trigger | `work-batch` | evidence review catalog |
-| Final reviewer delegation and acceptance | `work-batch` | registered reviewer agent |
-| Commit acceptance | `work-batch` | Git commit mechanism |
-| Recovery action | `work-batch` | recovery contract |
-| Resume decision | `work-batch` | durable execution evidence |
-| Final validation and completion decision | `work-batch` | validation and closeout validators |
-| Finding closeout interpretation | `work-batch` | closeout evidence |
-| Same-batch ledger reconciliation | `work-batch` | ledger-store applies reconciliation |
-| Lifecycle transition to completed | `work-batch` | planning-state applies transition |
-| Successor-selection stopping boundary | `work-batch` | no mechanism may override it |
-| Artifact placement | `planning-artifacts` | path resolver |
-| Lifecycle serialization | `planning-state` | atomic serializer |
-| Artifact schema validation | schema tooling | no semantic workflow decision |
-| Legacy compatibility classification | `legacy-removal` | optional dead-surface evidence |
-| Deletion-test evidence status | `dead-surface-audit` | static and dynamic inspection |
-| Test-quality evidence | `test-quality-review` | tests and production contract evidence |
-| Multi-command loop policy | runner or explicit human request | public plan/work command protocols |
+| Reviewer delegation and verdict acceptance | `work-batch` | registered reviewer |
+| Commit acceptance | `work-batch` | commit mechanism |
+| Recovery and resume | `work-batch` | recovery contract and receipts |
+| Final completion | `work-batch` | validation and closeout validators |
+| Finding closeout interpretation | `work-batch` | execution evidence |
+| Same-batch ledger reconciliation | `work-batch` | `ledger-store` applies mutation |
+| Completed transition | `work-batch` | `planning-state` applies transition |
+| Successor-selection stop boundary | `work-batch` | no mechanism may override it |
+| Path and artifact placement | `planning-artifacts` | deterministic resolver |
+| Lifecycle validation and serialization | `planning-state` | explicit transition request |
+| Root and generation enforcement | temporary cross-checkout bridge | explicit execution context |
+| Loop count and process lifecycle | runner | public command results |
 
 ## Command Interfaces
 
@@ -105,15 +92,14 @@ planning-artifacts
 interface: add-to-ledger/v1
 inputs:
   - normalized planning diagnostic
-  - fresh source request or explicitly named source
+  - one or more explicit source requests
 outputs:
+  - canonical finding identities
   - ledger mutation receipt
-  - canonical finding identity
-  - resulting ledger revision
 owns:
   - intake eligibility
   - source identity
-  - finding normalization
+  - normalization
   - duplicate and merge decision
   - ledger mutation decision
 forbids:
@@ -121,20 +107,7 @@ forbids:
   - dispatch creation
   - runway creation
   - implementation
-  - finding closeout without evidence
-```
-
-Normal sequence:
-
-```text
-inspect state
--> resolve canonical ledger
--> preserve source identity
--> normalize finding
--> detect create, merge, update, or no-op
--> apply revision-checked mutation
--> validate resulting state
--> stop
+  - closeout without evidence
 ```
 
 ### `plan-batch`
@@ -143,41 +116,27 @@ inspect state
 interface: plan-batch/v1
 inputs:
   - normalized planning diagnostic
-  - canonical program ledger
-  - optional explicit existing finding preference
-  - optional current selected dispatch
+  - canonical ledger
+  - optional explicit existing finding
+  - explicit root and generation context
 outputs:
-  - existing-state report
-  - or one selected dispatch and one queued runway
+  one_of:
+    - existing-state report
+    - one selected dispatch and one queued runway
+    - blocked result
 owns:
   - state branch decision
-  - candidate selection
-  - scope shaping
+  - eligibility and selection
+  - grouping and scope shaping
   - dispatch definition
   - runway specification
-  - validation profile selection
+  - risk and validation profile
 forbids:
-  - fresh finding intake
+  - fresh intake
   - external backlog discovery
-  - slice implementation
-  - multiple batch creation
+  - implementation
+  - multiple runnable batches
   - successor planning during another command
-```
-
-Normal sequence:
-
-```text
-inspect state
--> active? report and stop
--> queued? report and stop
--> selected? validate and specify that dispatch
--> otherwise select exactly one bounded ledger candidate
--> split, block, or narrow when required
--> define dispatch
--> transition idle to selected
--> define runway
--> transition selected to queued
--> stop before implementation
 ```
 
 ### `work-batch`
@@ -187,9 +146,10 @@ interface: work-batch/v1
 inputs:
   - normalized planning diagnostic
   - exactly one queued or active runway
+  - explicit root and generation context
 outputs:
   - durable slice evidence
-  - focused commits
+  - implementation commits
   - closeout
   - same-batch reconciliation receipt
 owns:
@@ -197,79 +157,54 @@ owns:
   - current slice choice
   - worker and reviewer lifecycle
   - validation acceptance
-  - recovery
+  - recovery and resume
   - commit acceptance
   - finalization
   - same-batch reconciliation
 forbids:
-  - fresh finding intake
+  - intake
   - new batch selection
   - unrelated scope expansion
-  - successor selection after closeout
-```
-
-Normal sequence:
-
-```text
-inspect state
--> validate one queued or active runway
--> queued to active when required
--> select next incomplete slice
--> delegate worker
--> validate
--> delegate independent review
--> recover or stop when required
--> accept and commit clean slice
--> persist evidence and remaining work
--> repeat
--> final validation
--> create closeout
--> reconcile same batch
--> active to completed
--> stop without successor selection
+  - successor selection
 ```
 
 ## `planning-state` Target Role
 
-`planning-state` is the lifecycle state-machine authority and normalized
-persistence interface. It is not a workflow engine.
+`planning-state` is the lifecycle state-machine authority, not a workflow engine.
 
 It owns:
 
 - parsing canonical structured planning facts;
-- normalized current-state diagnostics;
+- normalized diagnostics;
 - lifecycle invariants;
+- expected revision and file-hash checks;
 - legal transition validation;
-- expected-revision checks;
-- pointer and artifact-lineage validation;
-- transition application;
-- atomic state serialization;
+- atomic serialization;
 - transition receipts;
-- optional derived reporting through a separated projection adapter.
+- optional derived projections through a separated adapter.
 
 It does not own:
 
-- which finding should be selected;
-- whether findings belong in one batch;
-- split, block, or narrow decisions;
+- candidate selection;
+- grouping or scope shaping;
 - dispatch content;
-- slice design;
-- validation-profile choice;
-- worker or reviewer selection;
+- runway design;
+- validation-profile selection;
+- worker or reviewer choice;
 - recovery policy;
 - commit acceptance;
 - finding closeout interpretation;
 - successor selection.
 
-Allowed interface style:
+Allowed form:
 
 ```text
-planning-state inspect
-planning-state validate
-planning-state apply-transition --operation <explicit-operation> --payload <decision>
+planning-state inspect --planning-root <absolute-root>
+planning-state validate --planning-root <absolute-root>
+planning-state apply-transition --operation <explicit-operation> --payload <caller-decision>
 ```
 
-Forbidden interface style:
+Forbidden form:
 
 ```text
 planning-state plan-next-batch
@@ -278,205 +213,216 @@ planning-state recover-current-slice
 planning-state select-successor
 ```
 
-The first style applies a decision. The second style hides a workflow owner
-behind a narrow name.
-
 ## `planning-artifacts` Target Role
 
-`planning-artifacts` owns structural conventions only:
+It owns structural conventions only:
 
-- artifact type names;
-- canonical path calculation;
+- artifact types and canonical locations;
 - program and batch lineage;
-- co-location rules;
 - archive placement;
-- human-readable and structured-block location conventions;
-- reference resolution.
+- structured-block location;
+- reference resolution;
+- detection that a planning write resolves under the canonical planning root.
 
-It does not own lifecycle state transitions, finding status changes, candidate
-selection, execution, or closeout decisions.
+It does not own lifecycle mutation, selection, execution, or closeout decisions.
 
-Lifecycle vocabulary belongs in a versioned state schema. Artifact vocabulary
-belongs in the artifact layout contract. The two must not be conflated.
+## `ledger-store` Apply-Only Contract
 
-## Specialized Evidence Skills
+`ledger-store` is a narrow revision-checked storage mechanism.
 
-### `legacy-removal`
+```yaml
+interface: ledger-store/v1
+read:
+  inputs:
+    - ledger_path
+  outputs:
+    - parsed_findings
+    - file_revision
 
-Target role:
+apply:
+  inputs:
+    - ledger_path
+    - expected_file_revision
+    - caller_decision:
+        action: create | update | merge | no-op | reconcile
+        finding_mutations: []
+        touched_finding_revisions: {}
+        idempotency_key: string
+  outputs:
+    - applied: true | false
+    - before_revision
+    - after_revision
+    - touched_finding_ids
+    - receipt
+```
 
-- classify legacy surfaces and compatibility commitments;
-- identify canonical model candidates;
-- classify cleanup residue;
-- produce compact planning evidence.
+It may validate:
 
-Forbidden target role:
+- schema and identity uniqueness;
+- expected revision;
+- caller-supplied mutation shape;
+- dependency references;
+- idempotency key replay;
+- resulting deterministic rendering.
 
-- owning a program ledger workflow;
-- mutating queue or selected state;
-- selecting a batch;
-- creating an execution runway as an alternate owner;
-- approving deletion;
-- executing cleanup;
-- closing findings.
+It may not decide:
 
-The current exception that permits legacy-removal to become a program owner is
-removed.
+- whether findings are semantically duplicates;
+- which finding is selected;
+- how scope is shaped;
+- whether evidence closes a finding;
+- which successor should be planned.
 
-### `dead-surface-audit`
+## Temporary Cross-Checkout Bridge
 
-Retain its evidence-only boundary. It owns deletion-test evidence vocabulary
-and caller evidence, not planning or execution authority.
+The bridge exists only for self-hosted migration before final convergence.
 
-### `test-quality-review`
+```yaml
+interface: cross-checkout-context/v1
+owns:
+  - root_binding_validation
+  - repository_identity_validation
+  - write_scope_validation
+  - generation_identity_capture
+  - cross_repository_receipt_format
+forbids:
+  - intake_decisions
+  - selection
+  - scope_shaping
+  - runway_design
+  - execution_acceptance
+  - closeout_interpretation
+  - successor_selection
+```
 
-Retain its independent review role. It may be invoked by work-batch or directly
-for a focused audit, but it owns no implementation or lifecycle decision.
+Required context:
 
-## Worker and Reviewer Agents
+```yaml
+execution_context:
+  toolchain_source_root: absolute-path
+  toolchain_commit: full-sha
+  canonical_planning_repository_root: absolute-path
+  canonical_planning_commit_before: full-sha
+  implementation_target_root: absolute-path
+  implementation_commit_before: full-sha
+  codex_home: absolute-path
+  generation_role: stable | candidate
+  canonical_state_mutation_allowed: true | false
+```
 
-The current worker and reviewer authority separation is a meaningful target
-contract even if their historical names later change.
+Planning writes outside the planning root and implementation writes outside the
+candidate root are rejected.
+
+## Worker and Reviewer Contracts
 
 Worker:
 
-- may implement only the delegated slice;
-- may run assigned focused validation;
-- may not review, commit, update ledger state, select work, or spawn agents.
+- implements only the delegated slice under `implementation_target_root`;
+- runs assigned focused validation there;
+- may not review, commit, mutate planning state, select work, or spawn agents;
+- returns its verified generation and repository identity.
 
 Reviewer:
 
 - remains read-only;
-- validates the exact current diff basis and evidence;
+- reviews the exact candidate diff basis;
+- verifies generation and repository identity;
 - may return clean, findings, or blocked;
-- may not modify, delegate, commit, or update lifecycle state.
+- may not modify, commit, delegate, or mutate lifecycle state.
 
 `work-batch` remains the only lifecycle coordinator.
 
 ## Runner Boundary
 
-The runner is an external orchestrator over public command protocols:
+Target runner protocol:
 
 ```text
-invoke plan-batch
+invoke fresh plan-batch
 -> optionally invoke work-batch
--> evaluate explicit stop policy
--> optionally invoke plan-batch again
+-> evaluate explicit loop bound
+-> optionally invoke another fresh plan-batch
 ```
 
-The runner may own:
+The runner owns:
 
-- run bounds;
-- fresh process lifecycle;
+- process lifecycle;
 - environment and sandbox selection;
-- command result validation;
-- telemetry and run receipts;
-- explicit multi-batch loop policy.
+- run bounds;
+- command result schema validation;
+- telemetry and receipts.
 
-The runner may not own:
+The runner does not own:
 
-- candidate selection semantics;
+- candidate eligibility;
+- successor readiness;
 - dispatch content;
-- runway slice design;
+- runway design;
 - slice acceptance;
-- same-batch reconciliation semantics.
+- closeout meaning.
 
-It must not depend on retired skill names or modes.
+Closeout reports only same-batch completion. A later `plan-batch` decides whether
+eligible work remains.
 
 ## Allowed Dependency Directions
 
 ```text
 command owner -> narrow mechanism
 command owner -> evidence producer
-command owner -> registered agent
+command owner -> registered worker/reviewer
+stable controller -> temporary root-binding bridge
 runner -> public command protocol
-evidence producer -> inspection mechanism
 schema validator -> schema and artifact input
-projection adapter -> canonical state input
+projection adapter -> canonical structured state
 ```
 
 ## Forbidden Dependency Directions
 
 ```text
-add-to-ledger -> plan-batch
-add-to-ledger -> work-batch
-
-plan-batch -> automatic add-to-ledger mutation
-plan-batch -> work-batch
-plan-batch -> architecture-program-runway
-plan-batch -> batch-runway
-
-work-batch -> plan-batch
-work-batch -> architecture-program-runway
-work-batch -> batch-runway
-work-batch -> successor selection
-
-planning-state -> command owner
-planning-state -> candidate selection
-planning-state -> scope shaping
-planning-state -> slice design
-planning-state -> recovery policy
-planning-state -> successor selection
-
+add-to-ledger -> plan-batch or work-batch
+plan-batch -> work-batch, APR, or Batch Runway
+work-batch -> plan-batch, APR, Batch Runway, or successor selection
+planning-state -> semantic command decision
 planning-artifacts -> lifecycle mutation
-planning-artifacts -> candidate selection
-
-legacy-removal -> queue or selected-state mutation
-legacy-removal -> execution
-
-dead-surface-audit -> queue or selected-state mutation
-dead-surface-audit -> deletion approval
-
-test-quality-review -> implementation
-test-quality-review -> lifecycle transition
-
-worker -> reviewer
-worker -> commit
-worker -> ledger mutation
-worker -> agent delegation
-
-reviewer -> implementation
-reviewer -> commit
-reviewer -> lifecycle transition
+ledger-store -> semantic duplicate, selection, scope, closeout, or successor decision
+cross-checkout bridge -> semantic workflow decision
+runner -> eligibility or successor-readiness decision
+worker -> reviewer, commit, planning mutation, or delegation
+reviewer -> implementation, commit, or lifecycle mutation
 ```
 
-## Current Skill Disposition
+## Post-Cutover Authority
 
-| Current surface | Target disposition |
-|---|---|
-| `add-to-ledger` | Retain and deepen into the sole intake owner. |
-| `plan-batch` | Retain and deepen into the sole planning owner. |
-| `work-batch` | Retain and deepen into the sole execution and same-batch closeout owner. |
-| `port-by-contract` | Retain; migrate to contract-first representation after the format is validated. |
-| `architecture-program-runway` | Decompose and delete. No final replacement skill with equivalent breadth. |
-| `batch-runway` | Split planning references into `plan-batch`, execution references into `work-batch`, then delete. |
-| `planning-state` | Retain as a narrow state and transition interface; split projection code internally when useful. |
-| `planning-artifacts` | Retain and narrow to artifact structure and path resolution. |
-| `legacy-removal` | Retain as evidence support; remove program-owner escape hatch. |
-| `dead-surface-audit` | Retain. |
-| `test-quality-review` | Retain. |
-| `runway_worker` | Retain authority contract; rename only if useful after ownership migration. |
-| `runway_reviewer` | Retain authority contract; rename only if useful after ownership migration. |
-| architecture-program runner | Retain only as an independent orchestrator over public command protocols. |
+After CCFG-28:
 
-## Real Ownership Transfer Acceptance Criteria
+```text
+implementation branch
+  = candidate toolchain source
 
-A command-owner migration is complete only when all are true:
+master checkout
+  = canonical planning repository
+```
 
-1. The command executes its workflow without loading another broad workflow
-   skill.
-2. Its manifest dependencies contain only narrow mechanisms and evidence
-   producers.
-3. The target scenario suite passes after physical removal or disabling of the
-   old owner path for that responsibility.
-4. The old owner no longer contains the transferred decision, even as a normal
-   compatibility route.
-5. Tests no longer require the old dependency or mode name.
-6. State mechanisms receive explicit decisions rather than infer human intent.
-7. New active artifacts are produced only in the target format.
-8. A fresh agent reads the command contract, normalized state, and explicitly
-   named artifacts without replaying the historical routing chain.
-9. Any temporary old-format reader is read-only, caller-scoped, and has a
-   deletion condition.
-10. The batch records the exact source ownership removed, not only the target
-    surface added.
+CCFG-29 owns final quiescent convergence:
+
+```text
+merge implementation branch into latest master
+-> verify toolchain content and contracts
+-> rebind default CODEX_HOME to master
+-> verify fresh session
+-> remove cross-checkout bridge
+-> retire candidate branch when safe
+```
+
+## Real Ownership Transfer Acceptance
+
+A command-owner transfer is complete only when:
+
+1. the command performs its workflow without loading another broad owner;
+2. dependencies contain only narrow mechanisms and evidence producers;
+3. behavior scenarios pass after disabling or deleting the old path;
+4. the old owner no longer contains the transferred decision as a normal route;
+5. topology tests no longer require the old dependency;
+6. state mechanisms receive explicit decisions;
+7. new active artifacts use target formats;
+8. temporary readers and bridges have explicit deletion conditions;
+9. the batch records source ownership removed, not only target surface added.
