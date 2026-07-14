@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Repo-local skill contract validation
+
+Problem: command-owner redesigns had no closed, machine-checkable contract for
+skill ownership and dependencies, and no deterministic before/after proof that
+a migration actually moved ownership instead of retaining broad dependencies,
+duplicating durable facts, or only renaming a skill.
+
+Decision: add the closed-world `skill-contract/v1` schema, one repo-owned
+validator and CLI, explicit audience and graph policies, and a versioned
+migration-policy input for fixture-backed before/after comparisons.
+
+Expected effect: repository tests can now prove structural contracts, catalog
+ownership, dependency/reference integrity, and migration outcomes without
+parsing prose or depending on installed runtime state. This boundary is
+intentionally repo-local: current skills, `codex-features.json`, and installed
+state are unchanged. CCFG-22 owns the future runtime-consumer and installation
+decision.
+
 ### Stable cross-checkout pre-creation support
 
 Problem: strict `cross-checkout-context/v1` validation requires the candidate

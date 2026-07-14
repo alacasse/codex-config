@@ -142,6 +142,20 @@ class ValidationResult:
         return not self.diagnostics
 
 
+@dataclass(frozen=True)
+class _OwnershipTransfer:
+    key: str
+    field: str
+    from_owner: str
+    to_owner: str
+
+
+@dataclass(frozen=True)
+class _MigrationPolicy:
+    retired_broad_owners: frozenset[str]
+    expected_ownership_transfers: tuple[_OwnershipTransfer, ...]
+
+
 def validate_skill_contracts(
     contract_paths: Iterable[str | Path],
     *,
@@ -156,27 +170,30 @@ def validate_skill_contracts(
 ) -> ValidationResult:
     """Validate explicit document paths through the canonical schema.
 
-    Comparison inputs reserve the single public seam for the migration guards
-    added by a later slice. Supplying them before that behavior exists fails
-    closed instead of silently ignoring caller intent. Set ``complete_catalog``
-    when a one-document input is the entire catalog rather than a structural
-    document-validation subset.
+    Set ``complete_catalog`` when a one-document input is the entire catalog
+    rather than a structural document-validation subset. Before/after inputs
+    and their explicit policy activate deterministic migration guards through
+    this same interface.
     """
 
     root = Path(toolchain_root).resolve()
     schema_path = root / SCHEMA_RELATIVE_PATH
     diagnostics: list[Diagnostic] = []
 
-    if any(
-        value is not None
-        for value in (before_contract_paths, after_contract_paths, migration_policy)
-    ):
+    comparison_inputs = (
+        before_contract_paths,
+        after_contract_paths,
+        migration_policy,
+    )
+    comparison_requested = any(value is not None for value in comparison_inputs)
+    comparison_complete = all(value is not None for value in comparison_inputs)
+    if comparison_requested and not comparison_complete:
         diagnostics.append(
             Diagnostic(
                 path="<comparison>",
                 location="$",
                 code="comparison.not_available",
-                message="before/after migration comparison is not available in this slice",
+                message="comparison requires before paths, after paths, and migration policy",
             )
         )
 
@@ -184,17 +201,12 @@ def validate_skill_contracts(
     if validator is None:
         return ValidationResult(contracts=(), diagnostics=tuple(sorted(diagnostics)))
 
-    parsed_contracts: list[ParsedSkillContract] = []
-    normalized_paths = sorted({Path(path).resolve() for path in contract_paths})
-    for path in normalized_paths:
-        parsed = _validate_document(
-            path,
-            validator,
-            expected_producer_identity=expected_producer_identity,
-            diagnostics=diagnostics,
-        )
-        if parsed is not None:
-            parsed_contracts.append(parsed)
+    normalized_paths, parsed_contracts = _parse_contract_paths(
+        contract_paths,
+        validator=validator,
+        expected_producer_identity=expected_producer_identity,
+        diagnostics=diagnostics,
+    )
 
     if len(parsed_contracts) == len(normalized_paths):
         _validate_catalog(
@@ -210,10 +222,80 @@ def validate_skill_contracts(
             diagnostics=diagnostics,
         )
 
+    if comparison_complete:
+        before_paths, before_contracts = _parse_contract_paths(
+            cast(Iterable[str | Path], before_contract_paths),
+            validator=validator,
+            expected_producer_identity=None,
+            diagnostics=diagnostics,
+        )
+        after_paths, after_contracts = _parse_contract_paths(
+            cast(Iterable[str | Path], after_contract_paths),
+            validator=validator,
+            expected_producer_identity=None,
+            diagnostics=diagnostics,
+        )
+        policy = _parse_migration_policy(
+            cast(Mapping[str, object], migration_policy),
+            diagnostics,
+        )
+        if not before_paths:
+            diagnostics.append(
+                Diagnostic(
+                    path="<before-catalog>",
+                    location="$",
+                    code="migration.empty_catalog",
+                    message="before catalog must contain at least one contract",
+                )
+            )
+        if not after_paths:
+            diagnostics.append(
+                Diagnostic(
+                    path="<after-catalog>",
+                    location="$",
+                    code="migration.empty_catalog",
+                    message="after catalog must contain at least one contract",
+                )
+            )
+        if (
+            policy is not None
+            and before_paths
+            and after_paths
+            and len(before_contracts) == len(before_paths)
+            and len(after_contracts) == len(after_paths)
+        ):
+            _validate_migration(
+                before_contracts,
+                after_contracts,
+                policy=policy,
+                diagnostics=diagnostics,
+            )
+
     return ValidationResult(
         contracts=tuple(parsed_contracts),
         diagnostics=tuple(sorted(diagnostics)),
     )
+
+
+def _parse_contract_paths(
+    contract_paths: Iterable[str | Path],
+    *,
+    validator: Draft7Validator,
+    expected_producer_identity: ProducerIdentity | None,
+    diagnostics: list[Diagnostic],
+) -> tuple[tuple[Path, ...], list[ParsedSkillContract]]:
+    normalized_paths = tuple(sorted({Path(path).resolve() for path in contract_paths}))
+    parsed_contracts: list[ParsedSkillContract] = []
+    for path in normalized_paths:
+        parsed = _validate_document(
+            path,
+            validator,
+            expected_producer_identity=expected_producer_identity,
+            diagnostics=diagnostics,
+        )
+        if parsed is not None:
+            parsed_contracts.append(parsed)
+    return normalized_paths, parsed_contracts
 
 
 def _load_validator(
@@ -815,6 +897,445 @@ def _unique_indexed(values: Sequence[str]) -> tuple[tuple[int, str], ...]:
     return tuple(unique)
 
 
+def _parse_migration_policy(
+    payload: Mapping[str, object],
+    diagnostics: list[Diagnostic],
+) -> _MigrationPolicy | None:
+    start = len(diagnostics)
+    expected_fields = {
+        "interface",
+        "retired_broad_owners",
+        "expected_ownership_transfers",
+    }
+    actual_fields = set(payload)
+    if actual_fields != expected_fields:
+        diagnostics.append(
+            Diagnostic(
+                path="<migration-policy>",
+                location="$",
+                code="migration.invalid_policy",
+                message=(
+                    f"policy fields must be exactly {sorted(expected_fields)!r}; "
+                    f"got {sorted(actual_fields)!r}"
+                ),
+            )
+        )
+
+    interface = payload.get("interface")
+    if interface != "skill-contract-migration-policy/v1":
+        diagnostics.append(
+            Diagnostic(
+                path="<migration-policy>",
+                location="$.interface",
+                code="migration.invalid_policy",
+                message=(
+                    "interface must be exactly "
+                    "'skill-contract-migration-policy/v1'"
+                ),
+            )
+        )
+
+    retired = _policy_string_list(
+        payload.get("retired_broad_owners"),
+        location="$.retired_broad_owners",
+        diagnostics=diagnostics,
+    )
+    raw_transfers = payload.get("expected_ownership_transfers")
+    transfers: list[_OwnershipTransfer] = []
+    by_key: dict[str, _OwnershipTransfer] = {}
+    if not isinstance(raw_transfers, list):
+        diagnostics.append(
+            Diagnostic(
+                path="<migration-policy>",
+                location="$.expected_ownership_transfers",
+                code="migration.invalid_policy",
+                message="expected_ownership_transfers must be an array",
+            )
+        )
+    else:
+        for index, raw_transfer in enumerate(cast(list[object], raw_transfers)):
+            transfer = _parse_ownership_transfer(
+                raw_transfer,
+                index=index,
+                diagnostics=diagnostics,
+            )
+            if transfer is None:
+                continue
+            previous = by_key.get(transfer.key)
+            if previous is not None and previous != transfer:
+                diagnostics.append(
+                    Diagnostic(
+                        path="<migration-policy>",
+                        location=f"$.expected_ownership_transfers[{index}].key",
+                        code="migration.policy_key_conflict",
+                        message=(
+                            f"transfer key {transfer.key!r} has different policies"
+                        ),
+                    )
+                )
+                continue
+            if previous is None:
+                by_key[transfer.key] = transfer
+                transfers.append(transfer)
+
+    retired_set = frozenset(retired)
+    for index, transfer in enumerate(transfers):
+        if transfer.from_owner not in retired_set:
+            diagnostics.append(
+                Diagnostic(
+                    path="<migration-policy>",
+                    location=f"$.expected_ownership_transfers[{index}].from_owner",
+                    code="migration.invalid_policy",
+                    message=(
+                        f"source owner {transfer.from_owner!r} is not named in "
+                        "retired_broad_owners"
+                    ),
+                )
+            )
+        if transfer.from_owner == transfer.to_owner:
+            diagnostics.append(
+                Diagnostic(
+                    path="<migration-policy>",
+                    location=f"$.expected_ownership_transfers[{index}]",
+                    code="migration.invalid_policy",
+                    message="ownership transfer source and target must differ",
+                )
+            )
+
+    if len(diagnostics) != start:
+        return None
+    return _MigrationPolicy(
+        retired_broad_owners=retired_set,
+        expected_ownership_transfers=tuple(transfers),
+    )
+
+
+def _policy_string_list(
+    value: object,
+    *,
+    location: str,
+    diagnostics: list[Diagnostic],
+) -> tuple[str, ...]:
+    if not isinstance(value, list):
+        diagnostics.append(
+            Diagnostic(
+                path="<migration-policy>",
+                location=location,
+                code="migration.invalid_policy",
+                message="value must be an array of non-empty strings",
+            )
+        )
+        return ()
+    items = cast(list[object], value)
+    if any(not isinstance(item, str) or not item.strip() for item in items):
+        diagnostics.append(
+            Diagnostic(
+                path="<migration-policy>",
+                location=location,
+                code="migration.invalid_policy",
+                message="value must be an array of non-empty strings",
+            )
+        )
+        return ()
+    return tuple(cast(list[str], items))
+
+
+def _parse_ownership_transfer(
+    value: object,
+    *,
+    index: int,
+    diagnostics: list[Diagnostic],
+) -> _OwnershipTransfer | None:
+    location = f"$.expected_ownership_transfers[{index}]"
+    fields = {"key", "field", "from_owner", "to_owner"}
+    if not isinstance(value, Mapping):
+        diagnostics.append(
+            Diagnostic(
+                path="<migration-policy>",
+                location=location,
+                code="migration.invalid_policy",
+                message=f"transfer fields must be exactly {sorted(fields)!r}",
+            )
+        )
+        return None
+    transfer_payload = cast(Mapping[str, object], value)
+    if set(transfer_payload) != fields:
+        diagnostics.append(
+            Diagnostic(
+                path="<migration-policy>",
+                location=location,
+                code="migration.invalid_policy",
+                message=f"transfer fields must be exactly {sorted(fields)!r}",
+            )
+        )
+        return None
+    string_values = {
+        field: transfer_payload[field]
+        for field in ("key", "field", "from_owner", "to_owner")
+    }
+    if any(
+        not isinstance(item, str) or not item.strip()
+        for item in string_values.values()
+    ):
+        diagnostics.append(
+            Diagnostic(
+                path="<migration-policy>",
+                location=location,
+                code="migration.invalid_policy",
+                message="transfer values must be non-empty strings",
+            )
+        )
+        return None
+    field = cast(str, string_values["field"])
+    if field not in {"decision", "durable_fact"}:
+        diagnostics.append(
+            Diagnostic(
+                path="<migration-policy>",
+                location=f"{location}.field",
+                code="migration.invalid_policy",
+                message="transfer field must be 'decision' or 'durable_fact'",
+            )
+        )
+        return None
+    return _OwnershipTransfer(
+        key=cast(str, string_values["key"]),
+        field=field,
+        from_owner=cast(str, string_values["from_owner"]),
+        to_owner=cast(str, string_values["to_owner"]),
+    )
+
+
+def _validate_migration(
+    before_contracts: Sequence[ParsedSkillContract],
+    after_contracts: Sequence[ParsedSkillContract],
+    *,
+    policy: _MigrationPolicy,
+    diagnostics: list[Diagnostic],
+) -> None:
+    before = _unique_catalog_identities(
+        before_contracts,
+        label="before",
+        diagnostics=diagnostics,
+    )
+    after = _unique_catalog_identities(
+        after_contracts,
+        label="after",
+        diagnostics=diagnostics,
+    )
+    if before is None or after is None:
+        return
+
+    _validate_retired_dependencies(after.values(), policy, diagnostics)
+    _validate_expected_transfers(before, after, policy, diagnostics)
+    _validate_migration_durable_fact_duplicates(after.values(), diagnostics)
+    _validate_cosmetic_renames(before, after, diagnostics)
+
+
+def _unique_catalog_identities(
+    contracts: Sequence[ParsedSkillContract],
+    *,
+    label: str,
+    diagnostics: list[Diagnostic],
+) -> dict[str, _ContractView] | None:
+    grouped: dict[str, list[_ContractView]] = {}
+    for contract in contracts:
+        view = _contract_view(contract)
+        grouped.setdefault(view.name, []).append(view)
+
+    ambiguous = False
+    for name, views in sorted(grouped.items()):
+        if len(views) < 2:
+            continue
+        ambiguous = True
+        for view in views:
+            diagnostics.append(
+                Diagnostic(
+                    path=str(view.parsed.path),
+                    location="$.identity.name",
+                    code="migration.ambiguous_catalog_identity",
+                    message=f"{label} catalog identity {name!r} appears more than once",
+                )
+            )
+    if ambiguous:
+        return None
+    return {name: views[0] for name, views in grouped.items()}
+
+
+def _validate_retired_dependencies(
+    after: Iterable[_ContractView],
+    policy: _MigrationPolicy,
+    diagnostics: list[Diagnostic],
+) -> None:
+    retired = policy.retired_broad_owners
+    for view in sorted(after, key=lambda item: str(item.parsed.path)):
+        dependency_fields = (
+            ("$.requires.mechanisms", view.required_mechanisms),
+            ("$.requires.evidence_skills", view.required_evidence_skills),
+        )
+        for prefix, targets in dependency_fields:
+            for index, target in _unique_indexed(targets):
+                if target in retired:
+                    diagnostics.append(
+                        Diagnostic(
+                            path=str(view.parsed.path),
+                            location=f"{prefix}[{index}]",
+                            code="migration.retained_broad_owner_dependency",
+                            message=f"dependency on retired broad owner {target!r} remains",
+                        )
+                    )
+        for index, delegation in enumerate(view.delegates):
+            target = cast(str, delegation["target"])
+            if target in retired:
+                diagnostics.append(
+                    Diagnostic(
+                        path=str(view.parsed.path),
+                        location=f"$.delegates[{index}].target",
+                        code="migration.retained_broad_owner_dependency",
+                        message=f"delegation to retired broad owner {target!r} remains",
+                    )
+                )
+
+
+def _validate_expected_transfers(
+    before: Mapping[str, _ContractView],
+    after: Mapping[str, _ContractView],
+    policy: _MigrationPolicy,
+    diagnostics: list[Diagnostic],
+) -> None:
+    for index, transfer in enumerate(policy.expected_ownership_transfers):
+        source_before = before.get(transfer.from_owner)
+        if source_before is None or transfer.key not in _owned_keys(
+            source_before, transfer.field
+        ):
+            diagnostics.append(
+                Diagnostic(
+                    path="<migration-policy>",
+                    location=f"$.expected_ownership_transfers[{index}]",
+                    code="migration.policy_source_mismatch",
+                    message=(
+                        f"before owner {transfer.from_owner!r} does not own "
+                        f"{transfer.field} {transfer.key!r}"
+                    ),
+                )
+            )
+            continue
+
+        target_after = after.get(transfer.to_owner)
+        if target_after is None or transfer.key not in _owned_keys(
+            target_after, transfer.field
+        ):
+            diagnostics.append(
+                Diagnostic(
+                    path=(
+                        str(target_after.parsed.path)
+                        if target_after is not None
+                        else "<after-catalog>"
+                    ),
+                    location=_ownership_location(transfer.field),
+                    code="migration.ownership_not_moved",
+                    message=(
+                        f"expected {transfer.field} {transfer.key!r} to move to "
+                        f"{transfer.to_owner!r}"
+                    ),
+                )
+            )
+
+        source_after = after.get(transfer.from_owner)
+        if source_after is not None and transfer.key in _owned_keys(
+            source_after, transfer.field
+        ):
+            diagnostics.append(
+                Diagnostic(
+                    path=str(source_after.parsed.path),
+                    location=_ownership_location(transfer.field),
+                    code="migration.ownership_not_moved",
+                    message=(
+                        f"retired owner {transfer.from_owner!r} still owns "
+                        f"{transfer.field} {transfer.key!r}"
+                    ),
+                )
+            )
+
+
+def _owned_keys(view: _ContractView, field: str) -> frozenset[str]:
+    values = view.decisions if field == "decision" else view.durable_facts
+    return frozenset(values)
+
+
+def _ownership_location(field: str) -> str:
+    return "$.owns.decisions" if field == "decision" else "$.owns.durable_facts"
+
+
+def _validate_migration_durable_fact_duplicates(
+    after: Iterable[_ContractView],
+    diagnostics: list[Diagnostic],
+) -> None:
+    owners: dict[str, list[tuple[_ContractView, int]]] = {}
+    for view in after:
+        for index, fact in _unique_indexed(view.durable_facts):
+            owners.setdefault(fact, []).append((view, index))
+    for fact, fact_owners in sorted(owners.items()):
+        if len(fact_owners) < 2:
+            continue
+        names = tuple(sorted(view.name for view, _ in fact_owners))
+        for view, index in fact_owners:
+            diagnostics.append(
+                Diagnostic(
+                    path=str(view.parsed.path),
+                    location=f"$.owns.durable_facts[{index}]",
+                    code="migration.duplicated_durable_fact",
+                    message=f"durable fact {fact!r} remains duplicated across {names!r}",
+                )
+            )
+
+
+def _validate_cosmetic_renames(
+    before: Mapping[str, _ContractView],
+    after: Mapping[str, _ContractView],
+    diagnostics: list[Diagnostic],
+) -> None:
+    removed = tuple(before[name] for name in sorted(set(before) - set(after)))
+    added = tuple(after[name] for name in sorted(set(after) - set(before)))
+    before_by_fingerprint: dict[str, list[_ContractView]] = {}
+    for view in removed:
+        before_by_fingerprint.setdefault(_contract_fingerprint(view), []).append(view)
+
+    for view in added:
+        matches = before_by_fingerprint.get(_contract_fingerprint(view), [])
+        if len(matches) == 1:
+            diagnostics.append(
+                Diagnostic(
+                    path=str(view.parsed.path),
+                    location="$.identity.name",
+                    code="migration.rename_without_contract_change",
+                    message=(
+                        f"skill {matches[0].name!r} was renamed to {view.name!r} "
+                        "without another structured contract change"
+                    ),
+                )
+            )
+        elif len(matches) > 1:
+            diagnostics.append(
+                Diagnostic(
+                    path=str(view.parsed.path),
+                    location="$.identity.name",
+                    code="migration.ambiguous_rename",
+                    message=(
+                        f"new identity {view.name!r} matches multiple removed contracts"
+                    ),
+                )
+            )
+
+
+def _contract_fingerprint(view: _ContractView) -> str:
+    contract = dict(view.parsed.contract)
+    identity = dict(cast(Mapping[str, object], contract["identity"]))
+    identity.pop("name")
+    contract["identity"] = identity
+    contract.pop("producer")
+    return json.dumps(contract, sort_keys=True, separators=(",", ":"))
+
+
 def _schema_error_key(error: ValidationError) -> tuple[str, str, str]:
     return (_json_location(error.absolute_path), str(error.validator), error.message)
 
@@ -927,20 +1448,97 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     validate_parser.add_argument("--toolchain-root", required=True)
     validate_parser.add_argument("paths", nargs="+")
+    compare_parser = subparsers.add_parser(
+        "compare",
+        help="compare explicit before and after skill catalogs",
+    )
+    compare_parser.add_argument("--toolchain-root", required=True)
+    compare_parser.add_argument("--policy", required=True)
+    compare_parser.add_argument("before")
+    compare_parser.add_argument("after")
     return parser
+
+
+def _load_cli_policy(path: Path) -> tuple[Mapping[str, object] | None, tuple[Diagnostic, ...]]:
+    try:
+        loaded = json.loads(
+            path.read_text(encoding="utf-8"),
+            object_pairs_hook=_unique_json_object,
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as error:
+        return None, (
+            Diagnostic(
+                path=str(path.resolve()),
+                location="$",
+                code="migration.policy_unavailable",
+                message=str(error),
+            ),
+        )
+    if not isinstance(loaded, dict):
+        return None, (
+            Diagnostic(
+                path=str(path.resolve()),
+                location="$",
+                code="migration.invalid_policy",
+                message="migration policy JSON must contain one object",
+            ),
+        )
+    return cast(dict[str, object], loaded), ()
+
+
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key {key!r}")
+        result[key] = value
+    return result
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
-    if args.command != "validate":
+    if args.command == "validate":
+        expansion = _expand_cli_paths(cast(list[str], args.paths))
+        result = validate_skill_contracts(
+            expansion.paths,
+            toolchain_root=cast(str, args.toolchain_root),
+        )
+        diagnostics = tuple(sorted((*expansion.diagnostics, *result.diagnostics)))
+    elif args.command == "compare":
+        before = _expand_cli_paths([cast(str, args.before)])
+        after = _expand_cli_paths([cast(str, args.after)])
+        policy, policy_diagnostics = _load_cli_policy(Path(cast(str, args.policy)))
+        if policy is None:
+            diagnostics = tuple(
+                sorted(
+                    (
+                        *before.diagnostics,
+                        *after.diagnostics,
+                        *policy_diagnostics,
+                    )
+                )
+            )
+        else:
+            result = validate_skill_contracts(
+                after.paths,
+                toolchain_root=cast(str, args.toolchain_root),
+                complete_catalog=False,
+                before_contract_paths=before.paths,
+                after_contract_paths=after.paths,
+                migration_policy=policy,
+            )
+            diagnostics = tuple(
+                sorted(
+                    (
+                        *before.diagnostics,
+                        *after.diagnostics,
+                        *result.diagnostics,
+                    )
+                )
+            )
+    else:
         raise AssertionError(f"unhandled command: {args.command}")
 
-    expansion = _expand_cli_paths(cast(list[str], args.paths))
-    result = validate_skill_contracts(
-        expansion.paths,
-        toolchain_root=cast(str, args.toolchain_root),
-    )
-    diagnostics = tuple(sorted((*expansion.diagnostics, *result.diagnostics)))
     for diagnostic in diagnostics:
         print(diagnostic, file=sys.stderr)
     return 0 if not diagnostics else 1

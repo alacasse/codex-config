@@ -1,0 +1,12 @@
+{
+  "interface": "skill-contract-migration-policy/v1",
+  "retired_broad_owners": ["legacy-owner"],
+  "expected_ownership_transfers": [
+    {
+      "key": "selection_decision",
+      "field": "decision",
+      "from_owner": "legacy-owner",
+      "to_owner": "command-owner"
+    }
+  ]
+}
