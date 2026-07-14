@@ -24,6 +24,37 @@ _CONTRACT_HEADING: Final = re.compile(r"^## Contract[ \t]*$")
 _FENCE_OPEN: Final = re.compile(
     r"^ {0,3}(?P<marker>`{3,}|~{3,})(?P<info>.*)$",
 )
+_HUMAN_WORKFLOW_DECISIONS: Final = frozenset(
+    {
+        "candidate_selection",
+        "closeout_interpretation",
+        "dispatch_definition",
+        "execution_acceptance",
+        "finding_intake",
+        "runway_specification",
+        "scope_shaping",
+        "successor_selection",
+        "validation_profile_selection",
+    }
+)
+_EVIDENCE_FORBIDDEN_STATE: Final = frozenset(
+    {
+        "active_runway",
+        "batch_selection",
+        "candidate_selection",
+        "closeout",
+        "closeout_interpretation",
+        "closeout_state",
+        "execution_acceptance",
+        "execution_state",
+        "finding_selection",
+        "queue_state",
+        "queued_runway",
+        "same_batch_reconciliation",
+        "selected_dispatch",
+        "successor_selection",
+    }
+)
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
@@ -78,6 +109,13 @@ class ProducerIdentity:
 
 
 @dataclass(frozen=True)
+class SharedMechanismPolicy:
+    """Explicit durable facts allowed to have more than one structured owner."""
+
+    authorized_durable_facts: frozenset[str]
+
+
+@dataclass(frozen=True)
 class ParsedSkillContract:
     """A schema-valid contract and its source document."""
 
@@ -102,6 +140,8 @@ def validate_skill_contracts(
     *,
     toolchain_root: str | Path,
     expected_producer_identity: ProducerIdentity | None = None,
+    shared_mechanism_policy: SharedMechanismPolicy | None = None,
+    complete_catalog: bool | None = None,
     before_contract_paths: Iterable[str | Path] | None = None,
     after_contract_paths: Iterable[str | Path] | None = None,
     migration_policy: Mapping[str, object] | None = None,
@@ -110,7 +150,9 @@ def validate_skill_contracts(
 
     Comparison inputs reserve the single public seam for the migration guards
     added by a later slice. Supplying them before that behavior exists fails
-    closed instead of silently ignoring caller intent.
+    closed instead of silently ignoring caller intent. Set ``complete_catalog``
+    when a one-document input is the entire catalog rather than a structural
+    document-validation subset.
     """
 
     root = Path(toolchain_root).resolve()
@@ -145,6 +187,18 @@ def validate_skill_contracts(
         )
         if parsed is not None:
             parsed_contracts.append(parsed)
+
+    if len(parsed_contracts) == len(normalized_paths):
+        _validate_catalog(
+            parsed_contracts,
+            shared_mechanism_policy=shared_mechanism_policy,
+            validate_relationships=(
+                complete_catalog
+                if complete_catalog is not None
+                else len(parsed_contracts) > 1
+            ),
+            diagnostics=diagnostics,
+        )
 
     return ValidationResult(
         contracts=tuple(parsed_contracts),
@@ -317,6 +371,221 @@ def _validate_expected_producer(
                     message=f"expected {expected_value!r}; got {actual!r}",
                 )
             )
+
+
+@dataclass(frozen=True)
+class _ContractView:
+    parsed: ParsedSkillContract
+    name: str
+    audience: str
+    decisions: tuple[str, ...]
+    durable_facts: tuple[str, ...]
+    writes: tuple[str, ...]
+    forbids: tuple[str, ...]
+    delegates: tuple[Mapping[str, object], ...]
+
+
+def _validate_catalog(
+    contracts: Sequence[ParsedSkillContract],
+    *,
+    shared_mechanism_policy: SharedMechanismPolicy | None,
+    validate_relationships: bool,
+    diagnostics: list[Diagnostic],
+) -> None:
+    views = tuple(_contract_view(contract) for contract in contracts)
+    known_targets = frozenset(view.name for view in views)
+
+    for view in views:
+        _validate_owned_forbidden_conflicts(view, diagnostics)
+        _validate_audience_profile(view, diagnostics)
+
+    if not validate_relationships:
+        return
+
+    for view in views:
+        _validate_delegate_targets(view, known_targets, diagnostics)
+
+    _validate_duplicate_command_decisions(views, diagnostics)
+    _validate_duplicate_durable_facts(
+        views,
+        shared_mechanism_policy=shared_mechanism_policy,
+        diagnostics=diagnostics,
+    )
+
+
+def _contract_view(parsed: ParsedSkillContract) -> _ContractView:
+    contract = parsed.contract
+    identity = cast(Mapping[str, object], contract["identity"])
+    owns = cast(Mapping[str, object], contract["owns"])
+    return _ContractView(
+        parsed=parsed,
+        name=cast(str, identity["name"]),
+        audience=cast(str, identity["audience"]),
+        decisions=tuple(cast(list[str], owns["decisions"])),
+        durable_facts=tuple(cast(list[str], owns["durable_facts"])),
+        writes=tuple(cast(list[str], contract["writes"])),
+        forbids=tuple(cast(list[str], contract["forbids"])),
+        delegates=tuple(cast(list[Mapping[str, object]], contract["delegates"])),
+    )
+
+
+def _validate_owned_forbidden_conflicts(
+    view: _ContractView,
+    diagnostics: list[Diagnostic],
+) -> None:
+    forbidden = frozenset(view.forbids)
+    for field, owned_values in (
+        ("decisions", view.decisions),
+        ("writes", view.writes),
+    ):
+        for index, identifier in _unique_indexed(owned_values):
+            if identifier in forbidden:
+                diagnostics.append(
+                    Diagnostic(
+                        path=str(view.parsed.path),
+                        location=(
+                            f"$.owns.decisions[{index}]"
+                            if field == "decisions"
+                            else f"$.writes[{index}]"
+                        ),
+                        code="ownership.owned_and_forbidden",
+                        message=(
+                            f"{field[:-1]} {identifier!r} is both owned and forbidden"
+                        ),
+                    )
+                )
+
+
+def _validate_audience_profile(
+    view: _ContractView,
+    diagnostics: list[Diagnostic],
+) -> None:
+    if view.audience == "support-mechanism":
+        for index, decision in _unique_indexed(view.decisions):
+            if decision in _HUMAN_WORKFLOW_DECISIONS:
+                diagnostics.append(
+                    Diagnostic(
+                        path=str(view.parsed.path),
+                        location=f"$.owns.decisions[{index}]",
+                        code="audience.support_owns_human_decision",
+                        message=(
+                            "support mechanism may not own human workflow decision "
+                            f"{decision!r}"
+                        ),
+                    )
+                )
+    elif view.audience == "evidence-skill":
+        for location_prefix, identifiers in (
+            ("$.owns.decisions", view.decisions),
+            ("$.owns.durable_facts", view.durable_facts),
+            ("$.writes", view.writes),
+        ):
+            for index, identifier in _unique_indexed(identifiers):
+                if identifier in _EVIDENCE_FORBIDDEN_STATE:
+                    diagnostics.append(
+                        Diagnostic(
+                            path=str(view.parsed.path),
+                            location=f"{location_prefix}[{index}]",
+                            code="audience.evidence_owns_workflow_state",
+                            message=(
+                                "evidence skill may not own workflow state "
+                                f"{identifier!r}"
+                            ),
+                        )
+                    )
+
+
+def _validate_delegate_targets(
+    view: _ContractView,
+    known_targets: frozenset[str],
+    diagnostics: list[Diagnostic],
+) -> None:
+    for index, delegation in enumerate(view.delegates):
+        target = cast(str, delegation["target"])
+        if target not in known_targets:
+            diagnostics.append(
+                Diagnostic(
+                    path=str(view.parsed.path),
+                    location=f"$.delegates[{index}].target",
+                    code="catalog.unknown_delegate_target",
+                    message=f"delegated target {target!r} is not present in the catalog",
+                )
+            )
+
+
+def _validate_duplicate_command_decisions(
+    views: Sequence[_ContractView],
+    diagnostics: list[Diagnostic],
+) -> None:
+    owners: dict[str, list[tuple[_ContractView, int]]] = {}
+    for view in views:
+        if view.audience != "human-command-owner":
+            continue
+        for index, decision in _unique_indexed(view.decisions):
+            owners.setdefault(decision, []).append((view, index))
+
+    for decision, decision_owners in sorted(owners.items()):
+        if len(decision_owners) < 2:
+            continue
+        owner_names = tuple(sorted(view.name for view, _ in decision_owners))
+        for view, index in decision_owners:
+            other_names = tuple(name for name in owner_names if name != view.name)
+            diagnostics.append(
+                Diagnostic(
+                    path=str(view.parsed.path),
+                    location=f"$.owns.decisions[{index}]",
+                    code="ownership.duplicate_command_decision",
+                    message=(
+                        f"command decision {decision!r} is also owned by "
+                        f"{', '.join(other_names)!r}"
+                    ),
+                )
+            )
+
+
+def _validate_duplicate_durable_facts(
+    views: Sequence[_ContractView],
+    *,
+    shared_mechanism_policy: SharedMechanismPolicy | None,
+    diagnostics: list[Diagnostic],
+) -> None:
+    authorized: frozenset[str] = (
+        shared_mechanism_policy.authorized_durable_facts
+        if shared_mechanism_policy is not None
+        else frozenset()
+    )
+    owners: dict[str, list[tuple[_ContractView, int]]] = {}
+    for view in views:
+        for index, fact in _unique_indexed(view.durable_facts):
+            owners.setdefault(fact, []).append((view, index))
+
+    for fact, fact_owners in sorted(owners.items()):
+        if len(fact_owners) < 2 or fact in authorized:
+            continue
+        owner_names = tuple(sorted(view.name for view, _ in fact_owners))
+        for view, index in fact_owners:
+            other_names = tuple(name for name in owner_names if name != view.name)
+            diagnostics.append(
+                Diagnostic(
+                    path=str(view.parsed.path),
+                    location=f"$.owns.durable_facts[{index}]",
+                    code="ownership.duplicate_durable_fact",
+                    message=(
+                        f"durable fact {fact!r} is also owned by "
+                        f"{', '.join(other_names)!r}"
+                    ),
+                )
+            )
+
+
+def _unique_indexed(values: Sequence[str]) -> tuple[tuple[int, str], ...]:
+    seen: set[str] = set()
+    unique: list[tuple[int, str]] = []
+    for index, value in enumerate(values):
+        if value not in seen:
+            seen.add(value)
+            unique.append((index, value))
+    return tuple(unique)
 
 
 def _schema_error_key(error: ValidationError) -> tuple[str, str, str]:

@@ -1,0 +1,225 @@
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from scripts.skill_contract import SharedMechanismPolicy, validate_skill_contracts
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+FIXTURES = REPO_ROOT / "tests/fixtures/skill-contracts/catalog"
+VALID_CATALOG = FIXTURES / "valid-ownership"
+
+
+def _contract(name: str, audience: str) -> dict[str, Any]:
+    return {
+        "schema": "skill-contract/v1",
+        "identity": {"name": name, "audience": audience},
+        "producer": {
+            "toolchain_generation": "candidate",
+            "toolchain_commit": "3" * 40,
+            "schema_version": "skill-contract/v1",
+        },
+        "purpose": f"Validate {name}.",
+        "owns": {"decisions": [], "durable_facts": []},
+        "reads": {"required": [], "conditional": []},
+        "writes": [],
+        "requires": {"mechanisms": [], "evidence_skills": []},
+        "delegates": [],
+        "forbids": [],
+        "outputs": {"one_of": []},
+        "stops_when": [],
+        "references": [],
+    }
+
+
+def _write_contract(root: Path, contract: dict[str, Any]) -> Path:
+    path = root / str(contract["identity"]["name"]) / "SKILL.md"
+    path.parent.mkdir(parents=True)
+    path.write_text(
+        "# Fixture\n\n## Contract\n\n```yaml\n"
+        f"{yaml.safe_dump(contract, sort_keys=False)}```\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def _write_catalog(root: Path, *contracts: dict[str, Any]) -> tuple[Path, ...]:
+    return tuple(_write_contract(root, contract) for contract in contracts)
+
+
+def _fixture_paths(root: Path) -> tuple[Path, ...]:
+    return tuple(sorted(root.rglob("SKILL.md")))
+
+
+def _codes(result: object) -> set[str]:
+    return {item.code for item in result.diagnostics}  # type: ignore[attr-defined]
+
+
+def test_valid_catalog_exercises_every_audience_profile() -> None:
+    result = validate_skill_contracts(
+        _fixture_paths(VALID_CATALOG),
+        toolchain_root=REPO_ROOT,
+    )
+
+    assert result.is_valid
+    assert {
+        contract.contract["identity"]["audience"]
+        for contract in result.contracts
+    } == {
+        "human-command-owner",
+        "support-mechanism",
+        "evidence-skill",
+        "authoring-support",
+    }
+
+
+def test_rejects_owned_decisions_and_writes_that_are_also_forbidden(
+    tmp_path: Path,
+) -> None:
+    conflicting = _contract("conflicting", "human-command-owner")
+    conflicting["owns"]["decisions"] = ["state_transition"]
+    conflicting["writes"] = ["state_transition"]
+    conflicting["forbids"] = ["state_transition"]
+
+    result = validate_skill_contracts(
+        _write_catalog(tmp_path, conflicting),
+        toolchain_root=REPO_ROOT,
+    )
+
+    assert [diagnostic.code for diagnostic in result.diagnostics] == [
+        "ownership.owned_and_forbidden",
+        "ownership.owned_and_forbidden",
+    ]
+    assert {diagnostic.location for diagnostic in result.diagnostics} == {
+        "$.owns.decisions[0]",
+        "$.writes[0]",
+    }
+
+
+def test_rejects_duplicate_human_command_owner_decisions(tmp_path: Path) -> None:
+    first = _contract("first", "human-command-owner")
+    second = _contract("second", "human-command-owner")
+    first["owns"]["decisions"] = ["candidate_selection"]
+    second["owns"]["decisions"] = ["candidate_selection"]
+
+    result = validate_skill_contracts(
+        _write_catalog(tmp_path, first, second),
+        toolchain_root=REPO_ROOT,
+    )
+
+    assert _codes(result) == {"ownership.duplicate_command_decision"}
+    assert len(result.diagnostics) == 2
+
+
+def test_shared_mechanism_policy_explicitly_authorizes_named_durable_fact(
+    tmp_path: Path,
+) -> None:
+    first = _contract("first", "support-mechanism")
+    second = _contract("second", "support-mechanism")
+    first["owns"]["durable_facts"] = ["shared_projection"]
+    second["owns"]["durable_facts"] = ["shared_projection"]
+    paths = _write_catalog(tmp_path, first, second)
+
+    rejected = validate_skill_contracts(paths, toolchain_root=REPO_ROOT)
+    accepted = validate_skill_contracts(
+        paths,
+        toolchain_root=REPO_ROOT,
+        shared_mechanism_policy=SharedMechanismPolicy(
+            authorized_durable_facts=frozenset({"shared_projection"})
+        ),
+    )
+
+    assert _codes(rejected) == {"ownership.duplicate_durable_fact"}
+    assert len(rejected.diagnostics) == 2
+    assert accepted.is_valid
+
+
+def test_support_mechanism_rejects_only_controlled_human_decisions(
+    tmp_path: Path,
+) -> None:
+    support = _contract("support", "support-mechanism")
+    support["owns"]["decisions"] = ["candidate_selection", "local_bookkeeping"]
+
+    result = validate_skill_contracts(
+        _write_catalog(tmp_path, support),
+        toolchain_root=REPO_ROOT,
+    )
+
+    assert _codes(result) == {"audience.support_owns_human_decision"}
+    assert len(result.diagnostics) == 1
+    assert "candidate_selection" in result.diagnostics[0].message
+
+
+def test_evidence_skill_rejects_controlled_workflow_state_in_each_owner_field(
+    tmp_path: Path,
+) -> None:
+    evidence = _contract("evidence", "evidence-skill")
+    evidence["owns"]["decisions"] = ["candidate_selection", "evidence_sorting"]
+    evidence["owns"]["durable_facts"] = ["queued_runway", "review_findings"]
+    evidence["writes"] = ["closeout", "review_report"]
+
+    result = validate_skill_contracts(
+        _write_catalog(tmp_path, evidence),
+        toolchain_root=REPO_ROOT,
+    )
+
+    assert _codes(result) == {"audience.evidence_owns_workflow_state"}
+    assert {diagnostic.location for diagnostic in result.diagnostics} == {
+        "$.owns.decisions[0]",
+        "$.owns.durable_facts[0]",
+        "$.writes[0]",
+    }
+
+
+def test_authoring_support_has_no_extra_audience_restrictions(tmp_path: Path) -> None:
+    authoring = _contract("authoring", "authoring-support")
+    authoring["owns"]["decisions"] = ["candidate_selection"]
+    authoring["owns"]["durable_facts"] = ["queued_runway"]
+    authoring["writes"] = ["closeout"]
+
+    result = validate_skill_contracts(
+        _write_catalog(tmp_path, authoring),
+        toolchain_root=REPO_ROOT,
+    )
+
+    assert result.is_valid
+
+
+def test_rejects_unknown_delegated_target_at_catalog_validation(
+    tmp_path: Path,
+) -> None:
+    delegator = _contract("delegator", "human-command-owner")
+    delegator["delegates"] = [
+        {"responsibility": "path_resolution", "target": "missing-target"}
+    ]
+
+    result = validate_skill_contracts(
+        _write_catalog(tmp_path, delegator),
+        toolchain_root=REPO_ROOT,
+        complete_catalog=True,
+    )
+
+    assert _codes(result) == {"catalog.unknown_delegate_target"}
+    assert len(result.contracts) == 1
+    assert result.diagnostics[0].location == "$.delegates[0].target"
+    assert result.diagnostics[0].path == str(
+        (tmp_path / "delegator/SKILL.md").resolve()
+    )
+
+
+def test_catalog_diagnostics_are_sorted_and_path_qualified(tmp_path: Path) -> None:
+    first = _contract("zeta", "human-command-owner")
+    second = _contract("alpha", "human-command-owner")
+    first["owns"]["decisions"] = ["candidate_selection"]
+    second["owns"]["decisions"] = ["candidate_selection"]
+
+    result = validate_skill_contracts(
+        reversed(_write_catalog(tmp_path, first, second)),
+        toolchain_root=REPO_ROOT,
+    )
+
+    assert result.diagnostics == tuple(sorted(result.diagnostics))
+    assert all(Path(diagnostic.path).is_absolute() for diagnostic in result.diagnostics)
