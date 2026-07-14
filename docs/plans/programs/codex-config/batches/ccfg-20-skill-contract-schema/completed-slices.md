@@ -38,6 +38,107 @@
   follow_up: Treat the reconciled 9833e92 planning commit as the stable baseline for subsequent slice receipts.
 ```
 
+## Slice 3: Validate Delegation, Dependencies, And References
+
+- Candidate commit: `82e67ba08128f117b008718a78cc9e0a19b9c983`.
+- Candidate files: `scripts/skill_contract.py`,
+  `tests/test_skill_contract_catalog.py`, five contract/reference fixtures.
+- Graph result: delegation, required mechanisms, and required evidence skills
+  resolve against the explicit catalog or an explicit external-mechanism
+  policy; dependency and reference cycles reject deterministically.
+- Reference result: only `references[*].path` creates an edge; `load_when`
+  remains trigger data. Missing, non-file, outside-root, symlink, and `..`
+  escapes reject after strict resolution against the explicit toolchain root.
+- Validation: 34 schema and catalog tests passed; both Slice 3 CLI harnesses
+  passed; Ruff passed; basedpyright reported zero errors; `git diff --check`
+  passed.
+- Review: independent strict-context review was clean over the complete
+  task-scoped diff and actual resolved fixture paths.
+- Behavior changed: yes, structured dependency and reference graph validation
+  now runs through the same `validate_skill_contracts` interface.
+- Cleanup residue: none.
+
+### Orchestration Anomaly
+
+```yaml
+- slice: 3
+  severity: low
+  category: unexpected_head_change
+  observed: Stable HEAD moved from 90ca7aa to 6de7789 after the worker lease and before reviewer delegation because the unrelated CCFG-30 intake was committed.
+  impact: The prepared reviewer payload became stale; the candidate diff and Slice 3 scope were unchanged.
+  action_taken: Froze review, inspected the exact stable commit, confirmed it changed only the unselected CCFG-30 row and note, then regenerated and revalidated the reviewer lease.
+  follow_up: Preserve CCFG-30 as unselected intake and continue exact per-handoff lease checks.
+```
+
+### Slice 3 Cross-Repository Receipts
+
+Exact helper-produced `cross_repository_receipt_to_dict` results:
+
+```json
+{
+  "candidate_implementation_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-20 Slice 3 delegation dependency and reference validation",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [],
+      "implementation_paths": [
+        "/home/alacasse/projects/codex-config-command-owner-redesign/scripts/skill_contract.py",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/test_skill_contract_catalog.py",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/catalog/invalid-reference-cycle/first/SKILL.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/catalog/invalid-reference-cycle/second/SKILL.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/catalog/valid-references/alpha/SKILL.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/catalog/valid-references/alpha/references/details.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/catalog/valid-references/beta/SKILL.md"
+      ]
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "6de7789ff3f9677bbae3bd8fb081c8f9c5bb39c7",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "6de7789ff3f9677bbae3bd8fb081c8f9c5bb39c7",
+      "canonical_planning_commit_before": "6de7789ff3f9677bbae3bd8fb081c8f9c5bb39c7",
+      "implementation_commit_before": "82e67ba08128f117b008718a78cc9e0a19b9c983"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  },
+  "stable_planning_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-20 Slice 3 stable planning receipt",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [
+        "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/completed-slices.md"
+      ],
+      "implementation_paths": []
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "6de7789ff3f9677bbae3bd8fb081c8f9c5bb39c7",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "6de7789ff3f9677bbae3bd8fb081c8f9c5bb39c7",
+      "canonical_planning_commit_before": "6de7789ff3f9677bbae3bd8fb081c8f9c5bb39c7",
+      "implementation_commit_before": "82e67ba08128f117b008718a78cc9e0a19b9c983"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  }
+}
+```
+
 ## Slice 2: Validate Catalog Ownership And Audience Profiles
 
 - Candidate commit: `dfc5fadbc654d5f81683cd23da8fcf4105d35f16`.
