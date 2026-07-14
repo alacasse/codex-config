@@ -312,15 +312,16 @@ Reviewer brief for every slice:
 
 | Slice | Risk | Status | Candidate commit | Stable receipt | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|---|---|
-| 1. Schema and interface | migration | pending | | | | | Schema tests, Ruff, basedpyright, independent review | |
-| 2. Ownership and profiles | migration | pending | | | | | Catalog tests and independent review | |
-| 3. Delegation and references | migration | pending | | | | | Graph/root cases and independent review | |
-| 4. Migration guards and integration | migration | pending | | | | | Migration tests, CLI proof, final validation | |
+| None | None | Complete | None | None | Complete | Clean | None | All four slices are archived below; same-batch closeout is complete. |
 
 ## Completed Slice Archive
 
 | Slice | Risk | Candidate commit | Stable planning receipt | Outcome | Audit references |
 |---|---|---|---|---|---|
+| 1. Schema and interface | migration | `2f8f7a8` | `5341385` | success; closed-world schema and interface, 17 tests, repeat review clean | `completed-slices.md`; `git show --stat 2f8f7a8`; `git show --stat 5341385` |
+| 2. Ownership and profiles | migration | `dfc5fad` | `90ca7aa` | success; catalog ownership and all four audience profiles, 26 tests, repeat review clean | `completed-slices.md`; `git show --stat dfc5fad`; `git show --stat 90ca7aa` |
+| 3. Delegation and references | migration | `82e67ba` | `5eb57d5` | success; structured graph and strict reference containment, 34 tests, review clean | `completed-slices.md`; `git show --stat 82e67ba`; `git show --stat 5eb57d5` |
+| 4. Migration guards and integration | migration | `3e54155` | `07230ba` | success; deterministic before/after guards, 42 tests, exact known-red baseline, review clean | `completed-slices.md`; `git show --stat 3e54155`; `git show --stat 07230ba`; final evidence-order review `4871782` |
 
 ## Slice 1: Establish Closed-World Schema And Interface
 
@@ -595,18 +596,29 @@ fixture, commit, and review evidence.
 ## Orchestration Anomalies
 
 ```yaml
-orchestration_anomalies: []
+orchestration_anomalies:
+  - slice: 1
+    severity: low
+    category: unexpected_head_change
+    status: resolved_no_impact
+  - slice: 3
+    severity: low
+    category: unexpected_head_change
+    status: resolved_no_impact
 ```
 
 ## Convergence Assessment
 
-- Phase: queued.
-- Scope trend: fixed to one schema/validator module and fixture catalogs.
-- Closed: none.
-- Deferred: current skill migration and CCFG-21 through CCFG-29.
+- Phase: closure.
+- Scope trend: shrinking.
+- Closed: the schema/interface, ownership profiles, structured dependency and
+  reference graph, and deterministic migration guards; all five CCFG-20 exit
+  keys are green.
+- Deferred: current skill migration and CCFG-21 through CCFG-30 remain open and
+  unselected.
 - Temporary bridge: strict cross-checkout context retained through CCFG-29.
 - Cleanup residue: none created; installed surface intentionally absent.
 - Blockers: none.
-- Completion forecastable: yes, four bounded slices and five exit keys.
-- Next proof required: Slice 1 schema/interface implementation with green
-  focused validation and independent review.
+- Completion forecastable: complete.
+- Next proof required: none for CCFG-20. A future explicit `plan-batch` request
+  owns any successor selection.

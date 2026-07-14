@@ -7,9 +7,11 @@
   `docs/plans/programs/codex-config/LEDGER.md`
 - Included finding: CCFG-20, Implement `skill-contract/v1` Schema and
   Validators
-- Dispatch state: queued through the co-located concrete runway
+- Dispatch state: completed through the co-located concrete runway and
+  `closeout.md`
 - Expected runway:
   `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/runway.md`
+- Successor selected: no
 
 ## Selection Decision
 
