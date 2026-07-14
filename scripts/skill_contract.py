@@ -6,7 +6,7 @@ import argparse
 import json
 import re
 import sys
-from collections.abc import Hashable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final, cast
@@ -116,6 +116,13 @@ class SharedMechanismPolicy:
 
 
 @dataclass(frozen=True)
+class ExternalMechanismPolicy:
+    """Explicit mechanism targets allowed to resolve outside the catalog."""
+
+    allowed_mechanisms: frozenset[str]
+
+
+@dataclass(frozen=True)
 class ParsedSkillContract:
     """A schema-valid contract and its source document."""
 
@@ -141,6 +148,7 @@ def validate_skill_contracts(
     toolchain_root: str | Path,
     expected_producer_identity: ProducerIdentity | None = None,
     shared_mechanism_policy: SharedMechanismPolicy | None = None,
+    external_mechanism_policy: ExternalMechanismPolicy | None = None,
     complete_catalog: bool | None = None,
     before_contract_paths: Iterable[str | Path] | None = None,
     after_contract_paths: Iterable[str | Path] | None = None,
@@ -191,7 +199,9 @@ def validate_skill_contracts(
     if len(parsed_contracts) == len(normalized_paths):
         _validate_catalog(
             parsed_contracts,
+            toolchain_root=root,
             shared_mechanism_policy=shared_mechanism_policy,
+            external_mechanism_policy=external_mechanism_policy,
             validate_relationships=(
                 complete_catalog
                 if complete_catalog is not None
@@ -382,13 +392,25 @@ class _ContractView:
     durable_facts: tuple[str, ...]
     writes: tuple[str, ...]
     forbids: tuple[str, ...]
+    required_mechanisms: tuple[str, ...]
+    required_evidence_skills: tuple[str, ...]
     delegates: tuple[Mapping[str, object], ...]
+    references: tuple[Mapping[str, object], ...]
+
+
+@dataclass(frozen=True)
+class _GraphEdge:
+    target: str
+    path: Path
+    location: str
 
 
 def _validate_catalog(
     contracts: Sequence[ParsedSkillContract],
     *,
+    toolchain_root: Path,
     shared_mechanism_policy: SharedMechanismPolicy | None,
+    external_mechanism_policy: ExternalMechanismPolicy | None,
     validate_relationships: bool,
     diagnostics: list[Diagnostic],
 ) -> None:
@@ -402,13 +424,36 @@ def _validate_catalog(
     if not validate_relationships:
         return
 
+    external_mechanisms: frozenset[str] = (
+        external_mechanism_policy.allowed_mechanisms
+        if external_mechanism_policy is not None
+        else frozenset()
+    )
+    dependency_edges: dict[str, tuple[_GraphEdge, ...]] = {}
     for view in views:
-        _validate_delegate_targets(view, known_targets, diagnostics)
+        dependency_edges[view.name] = _validate_dependency_targets(
+            view,
+            known_targets=known_targets,
+            external_mechanisms=external_mechanisms,
+            diagnostics=diagnostics,
+        )
 
     _validate_duplicate_command_decisions(views, diagnostics)
     _validate_duplicate_durable_facts(
         views,
         shared_mechanism_policy=shared_mechanism_policy,
+        diagnostics=diagnostics,
+    )
+    _validate_cycles(
+        dependency_edges,
+        code="dependency.cycle",
+        label="dependency cycle",
+        display=lambda value: value,
+        diagnostics=diagnostics,
+    )
+    _validate_reference_graph(
+        views,
+        toolchain_root=toolchain_root,
         diagnostics=diagnostics,
     )
 
@@ -417,6 +462,7 @@ def _contract_view(parsed: ParsedSkillContract) -> _ContractView:
     contract = parsed.contract
     identity = cast(Mapping[str, object], contract["identity"])
     owns = cast(Mapping[str, object], contract["owns"])
+    requires = cast(Mapping[str, object], contract["requires"])
     return _ContractView(
         parsed=parsed,
         name=cast(str, identity["name"]),
@@ -425,7 +471,12 @@ def _contract_view(parsed: ParsedSkillContract) -> _ContractView:
         durable_facts=tuple(cast(list[str], owns["durable_facts"])),
         writes=tuple(cast(list[str], contract["writes"])),
         forbids=tuple(cast(list[str], contract["forbids"])),
+        required_mechanisms=tuple(cast(list[str], requires["mechanisms"])),
+        required_evidence_skills=tuple(
+            cast(list[str], requires["evidence_skills"])
+        ),
         delegates=tuple(cast(list[Mapping[str, object]], contract["delegates"])),
+        references=tuple(cast(list[Mapping[str, object]], contract["references"])),
     )
 
 
@@ -495,22 +546,198 @@ def _validate_audience_profile(
                     )
 
 
-def _validate_delegate_targets(
+def _validate_dependency_targets(
     view: _ContractView,
+    *,
     known_targets: frozenset[str],
+    external_mechanisms: frozenset[str],
     diagnostics: list[Diagnostic],
-) -> None:
+) -> tuple[_GraphEdge, ...]:
+    edges: list[_GraphEdge] = []
     for index, delegation in enumerate(view.delegates):
         target = cast(str, delegation["target"])
-        if target not in known_targets:
+        location = f"$.delegates[{index}].target"
+        if target in known_targets:
+            edges.append(
+                _GraphEdge(target=target, path=view.parsed.path, location=location)
+            )
+        elif target not in external_mechanisms:
             diagnostics.append(
                 Diagnostic(
                     path=str(view.parsed.path),
-                    location=f"$.delegates[{index}].target",
+                    location=location,
                     code="catalog.unknown_delegate_target",
-                    message=f"delegated target {target!r} is not present in the catalog",
+                    message=(
+                        f"delegated target {target!r} is neither in the catalog nor "
+                        "an allowed external mechanism"
+                    ),
                 )
             )
+
+    for index, target in _unique_indexed(view.required_mechanisms):
+        location = f"$.requires.mechanisms[{index}]"
+        if target in known_targets:
+            edges.append(
+                _GraphEdge(target=target, path=view.parsed.path, location=location)
+            )
+        elif target not in external_mechanisms:
+            diagnostics.append(
+                Diagnostic(
+                    path=str(view.parsed.path),
+                    location=location,
+                    code="catalog.unknown_required_mechanism",
+                    message=(
+                        f"required mechanism {target!r} is neither in the catalog nor "
+                        "explicitly allowed externally"
+                    ),
+                )
+            )
+
+    for index, target in _unique_indexed(view.required_evidence_skills):
+        location = f"$.requires.evidence_skills[{index}]"
+        if target in known_targets:
+            edges.append(
+                _GraphEdge(target=target, path=view.parsed.path, location=location)
+            )
+        else:
+            diagnostics.append(
+                Diagnostic(
+                    path=str(view.parsed.path),
+                    location=location,
+                    code="catalog.unknown_required_evidence_skill",
+                    message=f"required evidence skill {target!r} is not in the catalog",
+                )
+            )
+    return tuple(sorted(edges, key=lambda edge: (edge.target, edge.location)))
+
+
+def _validate_reference_graph(
+    views: Sequence[_ContractView],
+    *,
+    toolchain_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    contract_paths = frozenset(view.parsed.path for view in views)
+    edges: dict[str, tuple[_GraphEdge, ...]] = {}
+    for view in views:
+        view_edges: list[_GraphEdge] = []
+        for index, reference in enumerate(view.references):
+            raw_path = cast(str, reference["path"])
+            location = f"$.references[{index}].path"
+            candidate = Path(raw_path)
+            if not candidate.is_absolute():
+                candidate = view.parsed.path.parent / candidate
+            try:
+                resolved = candidate.resolve(strict=True)
+            except FileNotFoundError:
+                diagnostics.append(
+                    Diagnostic(
+                        path=str(view.parsed.path),
+                        location=location,
+                        code="reference.missing",
+                        message=f"referenced path {raw_path!r} does not exist",
+                    )
+                )
+                continue
+            except (OSError, RuntimeError) as error:
+                diagnostics.append(
+                    Diagnostic(
+                        path=str(view.parsed.path),
+                        location=location,
+                        code="reference.unavailable",
+                        message=f"cannot resolve referenced path {raw_path!r}: {error}",
+                    )
+                )
+                continue
+
+            if not resolved.is_relative_to(toolchain_root):
+                diagnostics.append(
+                    Diagnostic(
+                        path=str(view.parsed.path),
+                        location=location,
+                        code="reference.outside_toolchain_root",
+                        message=(
+                            f"referenced path {raw_path!r} resolves outside the explicit "
+                            f"toolchain root: {resolved}"
+                        ),
+                    )
+                )
+                continue
+            if not resolved.is_file():
+                diagnostics.append(
+                    Diagnostic(
+                        path=str(view.parsed.path),
+                        location=location,
+                        code="reference.not_file",
+                        message=f"referenced path {raw_path!r} is not a file",
+                    )
+                )
+                continue
+            if resolved in contract_paths:
+                view_edges.append(
+                    _GraphEdge(
+                        target=str(resolved),
+                        path=view.parsed.path,
+                        location=location,
+                    )
+                )
+        edges[str(view.parsed.path)] = tuple(
+            sorted(view_edges, key=lambda edge: (edge.target, edge.location))
+        )
+
+    _validate_cycles(
+        edges,
+        code="reference.cycle",
+        label="reference cycle",
+        display=lambda value: str(Path(value).relative_to(toolchain_root)),
+        diagnostics=diagnostics,
+    )
+
+
+def _validate_cycles(
+    edges: Mapping[str, Sequence[_GraphEdge]],
+    *,
+    code: str,
+    label: str,
+    display: Callable[[str], str],
+    diagnostics: list[Diagnostic],
+) -> None:
+    state: dict[str, int] = {}
+    stack: list[str] = []
+    emitted: set[tuple[str, ...]] = set()
+
+    def visit(node: str) -> None:
+        state[node] = 1
+        stack.append(node)
+        for edge in edges.get(node, ()):
+            target_state = state.get(edge.target, 0)
+            if target_state == 0:
+                visit(edge.target)
+            elif target_state == 1:
+                start = stack.index(edge.target)
+                cycle = _canonical_cycle(tuple(stack[start:]))
+                if cycle not in emitted:
+                    emitted.add(cycle)
+                    shown = (*cycle, cycle[0])
+                    diagnostics.append(
+                        Diagnostic(
+                            path=str(edge.path),
+                            location=edge.location,
+                            code=code,
+                            message=f"{label}: {' -> '.join(display(item) for item in shown)}",
+                        )
+                    )
+        stack.pop()
+        state[node] = 2
+
+    for node in sorted(edges):
+        if state.get(node, 0) == 0:
+            visit(node)
+
+
+def _canonical_cycle(cycle: tuple[str, ...]) -> tuple[str, ...]:
+    rotations = tuple(cycle[index:] + cycle[:index] for index in range(len(cycle)))
+    return min(rotations)
 
 
 def _validate_duplicate_command_decisions(
