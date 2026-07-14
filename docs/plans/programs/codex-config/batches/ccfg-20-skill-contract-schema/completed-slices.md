@@ -38,7 +38,98 @@
   follow_up: Treat the reconciled 9833e92 planning commit as the stable baseline for subsequent slice receipts.
 ```
 
-### Cross-Repository Receipts
+## Slice 2: Validate Catalog Ownership And Audience Profiles
+
+- Candidate commit: `dfc5fadbc654d5f81683cd23da8fcf4105d35f16`.
+- Candidate files: `scripts/skill_contract.py`,
+  `tests/test_skill_contract_catalog.py`, and six catalog fixture contracts.
+- Ownership result: controlled decisions and durable facts have one
+  deterministic owner unless an explicit shared-mechanism policy names the
+  fact; owns/forbids conflicts and unknown delegated targets reject.
+- Audience result: human command owners, support mechanisms, evidence skills,
+  and authoring support use one schema with profile-specific structured rules.
+  No project name or prose interpretation enters validation.
+- Validation: 26 schema and catalog tests passed; both Slice 2 CLI harnesses
+  passed; Ruff passed; basedpyright reported zero errors; `git diff --check`
+  passed.
+- Review correction: the first review found that a one-contract catalog could
+  bypass unknown-delegation validation. The worker added a one-delegator
+  regression and repeat independent review was clean.
+- Behavior changed: yes, the candidate validator now applies catalog ownership
+  and audience-profile rules through `validate_skill_contracts`.
+- Cleanup residue: none.
+
+### Slice 2 Cross-Repository Receipts
+
+Exact helper-produced `cross_repository_receipt_to_dict` results:
+
+```json
+{
+  "candidate_implementation_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-20 Slice 2 catalog ownership and audience profiles",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [],
+      "implementation_paths": [
+        "/home/alacasse/projects/codex-config-command-owner-redesign/scripts/skill_contract.py",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/test_skill_contract_catalog.py",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/catalog/valid-ownership/command-owner/SKILL.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/catalog/valid-ownership/support/SKILL.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/catalog/valid-ownership/evidence/SKILL.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/catalog/valid-ownership/authoring/SKILL.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/catalog/invalid-duplicate-owner/first/SKILL.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/catalog/invalid-duplicate-owner/second/SKILL.md"
+      ]
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "5341385f273618e80c684990fba051cadb9f339d",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "5341385f273618e80c684990fba051cadb9f339d",
+      "canonical_planning_commit_before": "5341385f273618e80c684990fba051cadb9f339d",
+      "implementation_commit_before": "dfc5fadbc654d5f81683cd23da8fcf4105d35f16"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  },
+  "stable_planning_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-20 Slice 2 stable planning receipt",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [
+        "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/completed-slices.md"
+      ],
+      "implementation_paths": []
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "5341385f273618e80c684990fba051cadb9f339d",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "5341385f273618e80c684990fba051cadb9f339d",
+      "canonical_planning_commit_before": "5341385f273618e80c684990fba051cadb9f339d",
+      "implementation_commit_before": "dfc5fadbc654d5f81683cd23da8fcf4105d35f16"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  }
+}
+```
+
+## Slice 1 Cross-Repository Receipts
 
 Exact helper-produced `cross_repository_receipt_to_dict` results:
 
