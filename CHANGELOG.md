@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+### Cross-flight execution leases
+
+Problem: committing a queued cross-checkout plan normally advances repository
+history, but the later execution flight treated the durable plan-time revisions
+as a still-live delegation context and routed that expected movement through
+generic anomaly recovery.
+
+Decision: distinguish immutable planning snapshots, one-time `work-batch`
+startup reconciliation, short-lived exact execution leases, and durable
+execution receipts. Keep compatibility classification with `work-batch`, keep
+mechanical refresh and strict validation with the Batch Runway-installed helper,
+renew the lease before every worker and reviewer handoff, and preserve the
+temporary bridge's CCFG-29 final-integration deletion condition. Publish the
+joined stable metadata as `plan-batch` 1.0.6, `work-batch` 1.0.7, and
+`batch-runway` 1.5.2 without installing or switching generations.
+
+Expected effect: a normal queued-plan commit or explicitly reviewed compatible
+between-flight movement can start the same selected runway without weakening
+exact handoff identity, scope validation, receipt provenance, or project-neutral
+workflow contracts.
+
 ### Stable cross-checkout pre-creation support
 
 Problem: strict `cross-checkout-context/v1` validation requires the candidate

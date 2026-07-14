@@ -7,6 +7,7 @@ from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
+from scripts import cross_checkout_context as context_owner
 from scripts import install_codex_config
 
 
@@ -176,11 +177,15 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 )
             },
             {
-                "plan-batch": "1.0.5",
-                "work-batch": "1.0.6",
-                "batch-runway": "1.5.1",
+                "plan-batch": "1.0.6",
+                "work-batch": "1.0.7",
+                "batch-runway": "1.5.2",
                 "custom-agents": "1.4.1",
             },
+        )
+        self.assertEqual(
+            context_owner.DELETION_CONDITION,
+            "CCFG-29 final integration",
         )
 
     def test_cross_checkout_consumers_share_the_temporary_runtime_contract(
@@ -208,6 +213,12 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         execute_core = (
             REPO_ROOT / "skills/batch-runway/references/execute-slice-core-v1.md"
         ).read_text(encoding="utf-8")
+        execute_spec = (
+            REPO_ROOT / "skills/batch-runway/references/execute-spec.md"
+        ).read_text(encoding="utf-8")
+        execute_recovery = (
+            REPO_ROOT / "skills/batch-runway/references/execute-recovery-v1.md"
+        ).read_text(encoding="utf-8")
         execution_contract = (
             REPO_ROOT / "skills/batch-runway/references/execution-contract-v2.md"
         ).read_text(encoding="utf-8")
@@ -232,6 +243,32 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         )
         work_strict = self.markdown_section(
             work_batch, "Explicit Strict Cross-Checkout Execution"
+        )
+        work_startup = self.markdown_section(
+            work_batch, "Cross-Checkout Startup Reconciliation"
+        )
+        lifecycle_vocabulary = self.markdown_section(
+            consumer_contract, "Lifecycle Vocabulary"
+        )
+        startup_contract = self.markdown_section(
+            consumer_contract, "Startup Classifications And Controlled Paths"
+        )
+        receipt_contract = self.markdown_section(
+            consumer_contract, "Lease Renewal And Execution Receipts"
+        )
+        execute_startup = self.markdown_section(
+            execute_spec, "Cross-Checkout Startup Routing"
+        )
+        recovery_boundary = self.markdown_section(
+            execute_recovery, "Cross-Checkout Movement Boundary"
+        )
+        helper_owner_boundary = self.bounded_text(
+            consumer_contract,
+            "The mechanism is a temporary bridge",
+            "## Lifecycle Vocabulary",
+        )
+        coordinator_owner_boundary = self.markdown_section(
+            consumer_contract, "Planning And Propagation"
         )
         batch_precreation = " ".join(
             (
@@ -352,10 +389,11 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 work_strict,
                 (
                     "../batch-runway/references/cross-checkout-context-v1.md",
-                    "Revalidate the exact payload and canonical planning root with "
-                    "the installed helper",
-                    "before every worker or reviewer delegation",
-                    "propagate the required mechanical context in each handoff",
+                    "Complete startup reconciliation before the first strict handoff",
+                    "Immediately before every worker and reviewer delegation",
+                    "`prepare_cross_checkout_context_refresh(...)` again",
+                    "newly prepared exact live execution lease",
+                    "Never pass the planning snapshot as the handoff lease",
                     "pre-creation result field cannot satisfy this strict "
                     "post-creation contract",
                     "adds no step for ordinary single-root batches",
@@ -377,11 +415,11 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 (
                     "`cross-checkout-context-v1.md` for explicit strict "
                     "post-creation work",
-                    "revalidate the complete strict payload, canonical planning "
-                    "root, "
-                    "generation identity, repository revisions, and intended "
-                    "write scope with the installed helper",
-                    "before every worker and reviewer delegation",
+                    "require `work-batch` startup reconciliation before the first "
+                    "strict handoff",
+                    "new exact live execution lease immediately before every worker "
+                    "and reviewer delegation",
+                    "validating write scope separately",
                     "Pre-creation verification cannot satisfy this strict invariant",
                     "invariant adds no step for ordinary single-root handoffs",
                 ),
@@ -536,6 +574,171 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("scripts/cross_checkout_context.py", consumer_contract)
         self.assertIn("temporary bridge", consumer_contract)
         self.assertIn("project-owned deletion condition", consumer_contract)
+        self.assertIn(
+            "`prepare_cross_checkout_context_refresh(...)` operation",
+            startup_contract,
+        )
+        for mechanical_fact in (
+            "helper owns parsing",
+            "root and revision validation",
+            "generation binding",
+            "write-scope validation",
+            "receipt data",
+        ):
+            with self.subTest(mechanical_fact=mechanical_fact):
+                self.assertIn(mechanical_fact, helper_owner_boundary)
+        self.assertIn("workflow lifecycle authority", helper_owner_boundary)
+
+        for semantic_owner, contract in (
+            ("work-batch", work_startup),
+            ("shared-contract", startup_contract),
+        ):
+            normalized_contract = contract.lower()
+            sentences = normalized_contract.split(". ")
+            with self.subTest(semantic_owner=semantic_owner):
+                self.assertIn("`work-batch` owns", contract)
+                self.assertIn("planned and live", normalized_contract)
+                self.assertIn("strictly parsed refreshed payload", normalized_contract)
+                self.assertTrue(
+                    any(
+                        "helper" in sentence
+                        and "does not" in sentence
+                        and "classif" in sentence
+                        and "accept" in sentence
+                        for sentence in sentences
+                    ),
+                    f"{semantic_owner} must deny classification and acceptance "
+                    "authority to helper output",
+                )
+
+        normalized_coordinator_ownership = coordinator_owner_boundary.lower()
+        for authority in (
+            "selection",
+            "execution acceptance",
+            "closeout",
+        ):
+            with self.subTest(coordinator_authority=authority):
+                self.assertIn(authority, normalized_coordinator_ownership)
+        self.assertIn("coordinator remains the owner", normalized_coordinator_ownership)
+
+        lifecycle_terms = (
+            "planning snapshot",
+            "startup reconciliation",
+            "live execution lease",
+            "execution receipt",
+        )
+        normalized_lifecycle = lifecycle_vocabulary.lower()
+        for term in lifecycle_terms:
+            with self.subTest(lifecycle_term=term):
+                self.assertIn(term, normalized_lifecycle)
+
+        for producer, contract in (
+            ("plan-batch", plan_strict),
+            ("create-spec", create_strict),
+        ):
+            normalized_contract = contract.lower()
+            with self.subTest(producer=producer):
+                self.assertIn("planning snapshot", normalized_contract)
+                self.assertIn(
+                    "immutable historical planning evidence",
+                    normalized_contract,
+                )
+                self.assertIn("not a live execution lease", normalized_contract)
+                self.assertIn("same selected scope", normalized_contract)
+                self.assertIn("fresh live lease", normalized_contract)
+                self.assertIn("commit that contains", normalized_contract)
+
+        expected_classifications = {
+            "expected-queue-establishment",
+            "compatible-between-flight-change",
+            "conflicting-between-flight-change",
+        }
+        for owner, contract in (
+            ("work-batch", work_startup),
+            ("shared-contract", startup_contract),
+        ):
+            found = {
+                classification
+                for classification in expected_classifications
+                if classification in contract
+            }
+            with self.subTest(startup_owner=owner):
+                self.assertEqual(expected_classifications, found)
+                self.assertIn("runway", contract)
+                self.assertIn("changed path", contract)
+                self.assertIn("prepare_cross_checkout_context_refresh(...)", contract)
+
+        self.assertIn(
+            "`work-batch` owns the normal queued-to-executing transition",
+            work_startup,
+        )
+        self.assertIn("before generic unexpected-movement recovery", work_startup)
+        self.assertIn("immutable planning snapshot", work_startup)
+        self.assertIn("strictly parsed refreshed payload", work_startup)
+        self.assertIn("validate_write_scope(...)` separately", work_startup)
+        self.assertIn(
+            "do not rewrite the planning snapshot or record accepted startup "
+            "movement as an orchestration anomaly",
+            work_startup,
+        )
+
+        for consumer, contract in (
+            ("work-batch", work_strict),
+            ("batch-runway", execute_precreation),
+        ):
+            normalized_contract = contract.lower()
+            with self.subTest(lease_consumer=consumer):
+                self.assertIn(
+                    "immediately before every worker and reviewer delegation",
+                    normalized_contract,
+                )
+                self.assertIn("exact live execution lease", normalized_contract)
+                self.assertIn("planning snapshot", normalized_contract)
+
+        for receipt_owner, contract in (
+            ("work-batch", work_strict),
+            ("shared-contract", receipt_contract),
+        ):
+            normalized_contract = contract.lower().replace("-", " ")
+            sentences = normalized_contract.split(". ")
+            with self.subTest(receipt_owner=receipt_owner):
+                self.assertTrue(
+                    any(
+                        all(
+                            term in sentence
+                            for term in (
+                                "execution receipt",
+                                "accepted action",
+                                "exact live lease",
+                                "validated scope",
+                            )
+                        )
+                        for sentence in sentences
+                    ),
+                    f"{receipt_owner} must tie each accepted-action receipt to "
+                    "its exact live lease and validated scope",
+                )
+                self.assertTrue(
+                    any(
+                        ("must not" in sentence or "never use" in sentence)
+                        and "planning snapshot revisions" in sentence
+                        and (
+                            "later action" in sentence
+                            or "live action evidence" in sentence
+                        )
+                        for sentence in sentences
+                    ),
+                    f"{receipt_owner} must reject planning-snapshot revisions "
+                    "as later action provenance",
+                )
+
+        self.assertIn("before unexpected-movement recovery", execute_startup)
+        self.assertIn("is not, by itself, a recovery trigger", recovery_boundary)
+        self.assertIn("conflicting-between-flight-change", recovery_boundary)
+        self.assertIn(
+            "No post-lease movement may reach delegation on the old lease",
+            recovery_boundary,
+        )
 
         normalized_precreation = " ".join(precreation_contract.split())
         self.assertIn(
@@ -576,6 +779,8 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             "skills/batch-runway/references/create-spec.md",
             "skills/batch-runway/references/cross-checkout-context-v1.md",
             "skills/batch-runway/references/cross-checkout-precreation-v1.md",
+            "skills/batch-runway/references/execute-spec.md",
+            "skills/batch-runway/references/execute-recovery-v1.md",
             "skills/batch-runway/references/execute-slice-core-v1.md",
             "skills/batch-runway/references/execution-contract-v2.md",
             "skills/batch-runway/references/project-values.md",

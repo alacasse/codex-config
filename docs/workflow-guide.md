@@ -94,6 +94,22 @@ the normal direct commands for the ledger-driven workflow.
 2. Use `add-to-ledger` for follow-up work that should become executable
    backlog.
 
+### Queued plan to execution flight
+
+A normal `plan-batch` flight ends after its selected dispatch, queued runway,
+and active planning state are committed. That queued-plan commit is a normal
+flight boundary: the persisted cross-checkout context is an immutable planning
+snapshot, not an execution lease that must continue to match a later live
+`HEAD`.
+
+At the start of the later `work-batch` flight, startup reconciliation confirms
+that the same runway remains selected and classifies reviewed repository
+movement as expected queue establishment, compatible between-flight change, or
+conflicting between-flight change. Only accepted movement proceeds. Immediately
+before each worker or reviewer delegation, the coordinator obtains a fresh,
+strictly validated live execution lease and validates its scope; the durable
+execution receipt records that exact lease rather than the planning snapshot.
+
 ## Rules
 
 - The program ledger is the only normal executable backlog source for
