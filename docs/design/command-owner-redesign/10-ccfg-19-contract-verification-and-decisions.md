@@ -5,9 +5,10 @@
 This is the live CCFG-19 candidate amendment to the accepted command-owner
 design. Slice 1 records joined evidence. Slice 2 records only the approved
 schema and ledger-store outcomes. Slice 3 records only the approved runner
-boundary and verifies the retained stable/candidate topology. These slices do
-not implement the boundaries or make the current APR, Batch Runway,
-runner-phase, import, file, or test topology a target contract.
+boundary and verifies the retained stable/candidate topology. Slice 4 resolves
+OPEN-003 and audits the seven-key CCFG-19 exit gate. These slices do not
+implement the boundaries or make the current APR, Batch Runway, runner-phase,
+import, file, or test topology a target contract.
 
 ```yaml
 ccfg_19_record:
@@ -35,11 +36,20 @@ ccfg_19_record:
     candidate_base_commit: 07c5d41882b6df83bc8298854a83d59a3006b555
     accepted_decision: DEC-017
     ccfg_18_topology_evidence_commit: 968f41d1ad752e817af518b12fb8f96273b76e0d
+  slice_4:
+    user_response: Approve all four
+    stable_approval_receipt_commit: 4b3695d8628361649aab1f9d2a8defedd6e738cb
+    candidate_base_commit: baeef7a736c1b1874b8bfd47a59343e3711907a6
+    accepted_decision: DEC-038
+    resolved_question: OPEN-003
   acceptance_keys:
+    contract_to_owner_map_complete: true
+    contract_to_scenario_map_complete: true
+    blocking_ownership_conflicts: 0
     schema_evolution_policy_accepted: true
     ledger_store_boundary_accepted: true
     runner_target_protocol_accepted: true
-    planning_transaction_ready_or_explicitly_blocked: false
+    planning_transaction_ready_or_explicitly_blocked: true
 ```
 
 The candidate checkout supplies the source and test evidence below. The stable
@@ -474,3 +484,142 @@ slice_3_acceptance:
 The approved OPEN-003 planning transaction remains for Slice 4. CCFG-20
 through CCFG-29 remain deferred and unselected; Slice 3 performs no generation
 switch, bridge removal, implementation, or successor selection.
+
+## Slice 4 Planning Transaction And Exit Audit
+
+The stable planning receipt at commit
+`4b3695d8628361649aab1f9d2a8defedd6e738cb` retains the user's exact response
+`Approve all four` and the approved OPEN-003 staged saga. DEC-038 resolves
+OPEN-003 without implementing a transaction, changing a schema, or transferring
+planning ownership.
+
+### Idempotent four-stage saga
+
+| Stage | Operation | Required binding or CAS inputs | Durable result |
+|---|---|---|---|
+| 1 | Write and validate dispatch. | Before the write, the append-only record binds the transaction ID, program/finding/batch, exact initial ledger/state revision and idle expectation, dispatch path and payload/hash, intended runway path, command-owner/schema versions, and four-stage plan. | Append the observed dispatch revision and validation result. |
+| 2 | CAS idle to selected, then persist the selected transition receipt. | Before the CAS, append its exact input using the initial state revision and observed Stage 1 dispatch revision. | Append the observed selected-state revision, receipt revision, and validation result. |
+| 3 | Write and validate runway. | After Stage 2 and before the write, append the now-computable exact runway payload/hash bound to the observed dispatch revision and expected selected-state revision. The extension must persist first. | Append the observed runway revision and validation result. |
+| 4 | CAS selected to queued, then persist the queued transition receipt. | Before the CAS, append its exact input using the observed selected state, dispatch revision, and runway revision. | Append the observed queued-state revision, receipt revision, and validation result. |
+
+The transaction ID is also the idempotency key for one append-only transaction
+record. Initial intent contains only values known before Stage 1; it explicitly
+does not claim a future runway payload/revision or transition/receipt output
+revision. Prior fields are immutable. Every later input is appended before its
+corresponding effect, and every observed artifact, state, receipt revision, and
+validation result is appended immediately afterward.
+
+An extension is legal only in the exact next saga state with all prior receipts
+and revisions matching. Before any retry write or CAS, the caller must match
+every immutable binding established so far. Exact retry returns or reconstructs
+the same completed-stage result and resumes at the first incomplete stage.
+Reusing the ID with different payload, batch, state, or artifact lineage blocks;
+ambiguous partial evidence also blocks.
+
+For a CAS applied before its receipt is appended, recovery consults the durable
+pre-effect transaction-record input and observed state, then reconstructs and
+appends the same receipt without reapplying the transition. This is the narrow
+receipt-recovery requirement, not permission for `planning-state` or a store to
+choose a batch or interpret planning semantics.
+
+### Full fault model
+
+| Failure checkpoint | Required recovery |
+|---|---|
+| Before dispatch write | Require the immutable initial-intent record to match, then retry Stage 1. |
+| During or after dispatch write, before validation/output append | Atomic persistence leaves the dispatch missing or present. Retry an absent exact write; validate a present artifact and append its observed revision/result; block on mismatch. |
+| After dispatch observation append | Append the exact selected-CAS input for the next saga state, then resume Stage 2. |
+| Before idle-to-selected CAS | Require the exact selected-CAS input extension and all prior bindings to match. |
+| After idle-to-selected CAS, before selected receipt/output append | Do not reapply the CAS. Consult the pre-effect record and observed state, recover the same receipt, and append observed state/receipt revisions and validation; block on ambiguity. |
+| After selected output append | Exact replay returns the same receipt, then atomically append the now-computable runway input before Stage 3. |
+| Before runway write | Require the persisted exact runway payload/hash, observed dispatch-revision binding, expected selected-state revision, and all prior bindings to match. |
+| During or after runway write, before validation/output append | Atomic persistence leaves the runway missing or present. Retry an absent exact write; validate a present artifact and append its observed revision/result; block on mismatch. |
+| After runway observation append | Append the exact queued-CAS input for the next saga state, then resume Stage 4. |
+| Before selected-to-queued CAS | Require the exact queued-CAS input extension and all prior bindings to match. |
+| After selected-to-queued CAS, before queued receipt/output append | Do not reapply the CAS. Consult the pre-effect record and observed state, recover the same receipt, and append observed state/receipt revisions and validation; block on ambiguity. |
+| After queued output append | Exact replay returns the completed saga result without rewriting artifacts or transitions. |
+
+At every checkpoint, the append-only transaction record and every durably
+written dispatch, selected transition, selected receipt, runway, queued
+transition, or queued receipt remain visible. Rollback may append a blocker or
+recovery state, but deletion must not erase or hide any of those facts. CCFG-21
+owns the transaction-record schema, prototype, atomicity, and fault-injection
+implementation. CCFG-25 owns integration into `plan-batch` and the planning
+ownership transfer.
+
+### Remaining open decisions
+
+No direct CCFG-19 evidence makes OPEN-004 through OPEN-008 necessary for one of
+the seven exit keys. They remain open, explicitly non-blocking, and deferred:
+
+| Question | CCFG-19 status | Deferred decision point |
+|---|---|---|
+| OPEN-004 universal versus overrideable per-slice commit profile | Non-blocking | CCFG-26 execution/commit ownership. |
+| OPEN-005 exact slice-count rule | Non-blocking | CCFG-25 planning ownership. |
+| OPEN-006 final Python module split | Non-blocking | CCFG-21 implementation seams. |
+| OPEN-007 worker/reviewer renaming | Non-blocking | CCFG-26 or CCFG-28 after ownership transfer and deletion shape are known. |
+| OPEN-008 prototype-directory retention | Non-blocking | CCFG-21 only if a reviewable comparison requires it. |
+
+### Seven-key exit audit
+
+| Acceptance key | Required value | Traceable evidence | Audit result |
+|---|---:|---|---|
+| `contract_to_owner_map_complete` | `true` | All 31 rows in Joined Contract Evidence name one target owner; `ownership_conflict_computation` reports zero missing owners. | Satisfied. |
+| `contract_to_scenario_map_complete` | `true` | Scenario Resolution Addendum resolves all 16 referenced gaps, and all 31 joined rows name resolved scenarios. | Satisfied. |
+| `blocking_ownership_conflicts` | `0` | `ownership_conflict_computation` reports zero contracts with zero or multiple target decision owners and records the apparent-overlap dispositions. | Satisfied. |
+| `schema_evolution_policy_accepted` | `true` | DEC-036 and `slice_2_acceptance`, authorized by the exact approval response. | Satisfied. |
+| `ledger_store_boundary_accepted` | `true` | DEC-037 and `slice_2_acceptance`, authorized by the exact approval response. | Satisfied. |
+| `runner_target_protocol_accepted` | `true` | DEC-017 and `slice_3_acceptance`, including retained runner responsibilities and absent successor readiness. | Satisfied. |
+| `planning_transaction_ready_or_explicitly_blocked` | `true` | DEC-038 resolves OPEN-003 with one append-only transaction record, known-value initial intent, state-gated input/output extensions, ordered stages, exact CAS inputs, idempotency, mismatch blocking, visible partial evidence, receipt recovery, and deletion prohibition. | Satisfied. |
+
+```yaml
+ccfg_19_exit_audit:
+  acceptance_keys:
+    contract_to_owner_map_complete: true
+    contract_to_scenario_map_complete: true
+    blocking_ownership_conflicts: 0
+    schema_evolution_policy_accepted: true
+    ledger_store_boundary_accepted: true
+    runner_target_protocol_accepted: true
+    planning_transaction_ready_or_explicitly_blocked: true
+  keys_audited: 7
+  keys_satisfied: 7
+  blocking_decisions_remaining: 0
+  open_003:
+    status: resolved
+    decision: DEC-038
+    transaction_record: append_only
+    initial_intent_binds_future_values: false
+    later_bindings: exact_next_state_extensions_before_effects
+  non_blocking_open_decisions:
+    - OPEN-004
+    - OPEN-005
+    - OPEN-006
+    - OPEN-007
+    - OPEN-008
+  record_status: decision_complete_pending_stable_same_batch_closeout
+  implementation_started: false
+  successor_selected: null
+```
+
+### Deferred implementation remains unselected
+
+```yaml
+deferred_implementation:
+  CCFG-20: skill-contract-v1 schema and validators
+  CCFG-21: planning schemas, append-only transaction record, saga prototype, atomicity, and fault injection
+  CCFG-22: skill-authoring-v1 completion and validation
+  CCFG-23: topology-independent behavioral scenario harness
+  CCFG-24: add-to-ledger intake ownership transfer
+  CCFG-25: plan-batch ownership transfer and DEC-038 integration
+  CCFG-26: work-batch execution and closeout ownership transfer
+  CCFG-27: candidate cutover preparation and rehearsal
+  CCFG-28: legacy-owner deletion and final candidate cutover
+  CCFG-29: contract-first convergence and final integration
+selected_findings: []
+```
+
+The candidate CCFG-19 decision record satisfies all seven acceptance keys and
+is ready for coordinator-owned review, candidate commit, and stable same-batch
+closeout. It does not close CCFG-19 itself, select a successor, or authorize any
+deferred implementation.

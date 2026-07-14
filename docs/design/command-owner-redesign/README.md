@@ -108,7 +108,7 @@ the canonical planning authority before cutover.
 | `07-implementation-ledger-intake.md` | Individually addressable work items COR-001 through COR-012; not a batch map. |
 | `08-review-resolution.md` | Resolution of the independent review findings and accepted post-intake amendments. |
 | `09-live-precreation-amendment.md` | Live CCFG-18 pre-creation amendment and exact candidate lineage. |
-| `10-ccfg-19-contract-verification-and-decisions.md` | Live CCFG-19 candidate amendment joining contract, owner, scenario, and test evidence; later approved decisions are recorded here. |
+| `10-ccfg-19-contract-verification-and-decisions.md` | Final CCFG-19 candidate decision record joining contract, owner, scenario, test, schema, storage, runner, topology, transaction, and seven-key exit evidence. |
 | `decisions.md` | Accepted, superseded, open, deferred, and rejected decisions. |
 
 ## Three-Root Bootstrap Topology

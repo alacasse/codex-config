@@ -804,6 +804,210 @@ implementation_owners:
   closeout_integration: CCFG-26
 ```
 
+### DEC-038 — Planning selection is an idempotent staged saga
+
+```yaml
+id: DEC-038
+status: accepted
+resolves:
+  - OPEN-003
+refines:
+  - DEC-003
+  - DEC-007
+  - DEC-033
+  - DEC-037
+approved_via:
+  response: Approve all four
+  planning_receipt_commit: 4b3695d8628361649aab1f9d2a8defedd6e738cb
+  planning_receipt_path: docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md
+decision: >-
+  plan-batch prepares one batch through an idempotent four-stage saga: write and
+  validate the dispatch; compare-and-swap idle to selected and persist its
+  transition receipt; write and validate a runway bound to the dispatch
+  revision; then compare-and-swap selected to queued and persist its transition
+  receipt. One transaction/idempotency ID binds every stage. Retry resumes only
+  after matching every immutable batch, payload, state, and artifact-lineage
+  binding established so far. Mismatch blocks, partial evidence remains visible,
+  and rollback deletion cannot hide durable saga artifacts, transitions,
+  receipts, or the transaction record.
+transaction_record:
+  persistence: append_only
+  transaction_id: idempotency_key_for_whole_saga
+  prior_fields: immutable
+  initial_intent_before_stage_1:
+    binds:
+      - program_identity
+      - finding_identity
+      - batch_identity
+      - exact_initial_ledger_and_state_revision
+      - expected_initial_state_idle
+      - dispatch_path
+      - exact_dispatch_payload_and_hash
+      - intended_runway_path
+      - command_owner_version
+      - schema_versions
+      - exact_four_stage_plan
+    does_not_bind_future_values:
+      - runway_payload_or_hash
+      - dispatch_or_runway_observed_revision
+      - selected_or_queued_transition_output_revision
+      - selected_or_queued_receipt_revision
+  extension_rules:
+    exact_next_saga_state_only: true
+    prior_receipts_and_revisions_must_match: true
+    later_input_appended_before_corresponding_effect: true
+    observed_output_appended_immediately_after_effect: true
+    key_payload_or_lineage_mismatch: block
+  append_sequence:
+    - initial_intent_before_stage_1
+    - observed_dispatch_revision_and_validation_after_stage_1
+    - exact_selected_cas_input_before_stage_2
+    - observed_selected_state_receipt_and_validation_after_stage_2
+    - exact_runway_payload_hash_and_lineage_before_stage_3
+    - observed_runway_revision_and_validation_after_stage_3
+    - exact_queued_cas_input_before_stage_4
+    - observed_queued_state_receipt_and_validation_after_stage_4
+stages:
+  - number: 1
+    operation: write_and_validate_dispatch
+    required_transaction_record_state: initial_intent_bound
+    inputs:
+      - program_identity
+      - batch_identity
+      - transaction_id
+      - dispatch_path
+      - exact_dispatch_payload
+    outputs:
+      - validated_dispatch_revision
+    append_after_effect:
+      - observed_dispatch_revision
+      - dispatch_validation_result
+  - number: 2
+    operation: cas_idle_to_selected_and_persist_transition_receipt
+    append_before_effect: exact_selected_cas_input
+    cas_inputs:
+      expected_state: idle
+      expected_state_revision: required
+      program_identity: required
+      batch_identity: required
+      transaction_id: required
+      dispatch_path: required
+      dispatch_revision: stage_1_validated_revision
+    outputs:
+      - selected_state_revision
+      - selected_transition_receipt
+    append_after_effect:
+      - observed_selected_state_revision
+      - observed_selected_transition_receipt_revision
+      - selected_transition_validation_result
+  - number: 3
+    operation: write_and_validate_runway
+    append_before_effect:
+      - exact_runway_payload_and_hash
+      - observed_dispatch_revision_binding
+      - expected_selected_state_revision
+    precondition: runway_input_extension_persisted
+    inputs:
+      - program_identity
+      - batch_identity
+      - transaction_id
+      - selected_state_revision
+      - selected_transition_receipt_identity
+      - dispatch_path
+      - dispatch_revision
+      - runway_path
+      - exact_runway_payload
+    binding:
+      runway_dispatch_revision: stage_1_validated_revision
+    outputs:
+      - validated_runway_revision
+    append_after_effect:
+      - observed_runway_revision
+      - runway_validation_result
+  - number: 4
+    operation: cas_selected_to_queued_and_persist_transition_receipt
+    append_before_effect: exact_queued_cas_input
+    cas_inputs:
+      expected_state: selected
+      expected_state_revision: stage_2_selected_state_revision
+      program_identity: required
+      batch_identity: required
+      transaction_id: required
+      dispatch_path: required
+      dispatch_revision: stage_1_validated_revision
+      runway_path: required
+      runway_revision: stage_3_validated_revision
+    outputs:
+      - queued_state_revision
+      - queued_transition_receipt
+    append_after_effect:
+      - observed_queued_state_revision
+      - observed_queued_transition_receipt_revision
+      - queued_transition_validation_result
+retry:
+  prerequisite: match_all_immutable_transaction_record_bindings_established_so_far
+  exact_transaction_and_lineage: resume_at_first_incomplete_stage
+  completed_stage: return_or_recover_same_result_without_reapplying
+  key_or_payload_mismatch: block
+  state_or_artifact_lineage_mismatch: block
+  ambiguous_partial_evidence: block
+receipt_recovery:
+  transition_applied_receipt_missing: >-
+    consult the established pre-effect transaction-record input and observed
+    state, then recover and append the same receipt without reapplying the
+    transition
+  missing_transaction_binding_or_ambiguous_state: block
+fault_checkpoints:
+  - point: before_dispatch_write
+    recovery: require_matching_initial_intent_then_retry_stage_1
+  - point: after_dispatch_write_before_validation
+    recovery: keep_visible_validate_exact_dispatch_and_append_observation_or_block
+  - point: after_dispatch_validation
+    recovery: resume_stage_2
+  - point: before_idle_to_selected_cas
+    recovery: require_exact_selected_cas_input_extension_then_retry_cas
+  - point: after_idle_to_selected_cas_before_receipt
+    recovery: consult_record_and_observed_state_then_append_same_receipt_without_reapplying_cas
+  - point: after_selected_transition_receipt
+    recovery: exact_replay_returns_receipt_then_resume_stage_3
+  - point: before_runway_write
+    recovery: require_persisted_exact_runway_input_extension_then_retry_stage_3
+  - point: after_runway_write_before_validation
+    recovery: keep_visible_validate_exact_runway_and_append_observation_or_block
+  - point: after_runway_validation
+    recovery: resume_stage_4
+  - point: before_selected_to_queued_cas
+    recovery: require_exact_queued_cas_input_extension_then_retry_cas
+  - point: after_selected_to_queued_cas_before_receipt
+    recovery: consult_record_and_observed_state_then_append_same_receipt_without_reapplying_cas
+  - point: after_queued_transition_receipt
+    recovery: exact_replay_returns_completed_saga_result
+interrupted_artifact_write:
+  persistence_requirement: atomic_replacement_then_reread_validation
+  recovery: missing_means_retry_exact_write; exact_valid_means_resume; otherwise_block
+partial_evidence:
+  visibility: required
+  records:
+    - append_only_transaction_record
+    - dispatch
+    - selected_transition_and_receipt
+    - runway
+    - queued_transition_and_receipt
+rollback:
+  deletion_of_durable_saga_evidence: forbidden
+  may_not_hide:
+    - append_only_transaction_record
+    - dispatch
+    - selected_transition
+    - selected_transition_receipt
+    - runway
+    - queued_transition
+    - queued_transition_receipt
+implementation_owners:
+  transaction_schema_prototype_and_fault_injection: CCFG-21
+  planning_ownership_transfer_and_integration: CCFG-25
+```
+
 ## Superseded Decisions
 
 ```yaml
@@ -824,21 +1028,12 @@ implementation_owners:
 - id: OPEN-002
   status: resolved
   resolved_by: DEC-033
+- id: OPEN-003
+  status: resolved
+  resolved_by: DEC-038
 ```
 
 ## Open Decisions
-
-### OPEN-003 — Multi-artifact planning transaction
-
-```yaml
-id: OPEN-003
-status: open
-question: >-
-  How should plan-batch recoverably apply dispatch creation, selected transition,
-  runway creation, and queued transition?
-blocks:
-  - final_plan_batch_state_mutation_protocol
-```
 
 ### OPEN-004 — One commit per accepted slice
 
@@ -849,6 +1044,9 @@ question: >-
   Is one focused commit per accepted slice universal or a default execution
   profile with explicit overrides?
 recommended_option: default_with_explicit_override
+blocking_for_ccfg_19: false
+deferred: true
+decision_point: CCFG-26
 ```
 
 ### OPEN-005 — Exact slice-count rule
@@ -859,6 +1057,9 @@ status: open
 question: >-
   Is 3-5 slices a hard constraint, warning, or heuristic?
 recommended_option: warning_level_heuristic
+blocking_for_ccfg_19: false
+deferred: true
+decision_point: CCFG-25
 ```
 
 ### OPEN-006 — Final Python module split
@@ -870,6 +1071,9 @@ question: >-
   What final module split implements diagnostics, transitions, ledger mutation,
   artifact parsing, validation, closeout, and projections?
 recommended_option: decide_from_behavior_seams
+blocking_for_ccfg_19: false
+deferred: true
+decision_point: CCFG-21
 ```
 
 ### OPEN-007 — Worker and reviewer names
@@ -880,6 +1084,9 @@ status: open
 question: >-
   Should runway_worker and runway_reviewer be renamed after Batch Runway deletion?
 recommended_option: defer_renaming
+blocking_for_ccfg_19: false
+deferred: true
+decision_point: CCFG-26_or_CCFG-28
 ```
 
 ### OPEN-008 — Prototype directory retention
@@ -891,6 +1098,9 @@ question: >-
   Should representation experiments live under prototypes/contract-first or only
   in tests and design documents?
 recommended_option: use_only_when_reviewable_comparison_requires_it
+blocking_for_ccfg_19: false
+deferred: true
+decision_point: CCFG-21
 ```
 
 ## Deferred Ideas
