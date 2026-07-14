@@ -7,6 +7,7 @@ import subprocess
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 from typing import Final, Literal, TypeAlias, TypeVar, cast
 from urllib.parse import urlsplit
 
@@ -83,6 +84,7 @@ __all__ = [
     "GenerationIdentity",
     "AllowedWriteScope",
     "RepositoryRevisions",
+    "CrossCheckoutRefreshPreparation",
     "CrossRepositoryReceipt",
     "PrecreationStableControl",
     "CandidateIntent",
@@ -92,6 +94,7 @@ __all__ = [
     "CreatedCandidateIdentity",
     "CrossCheckoutTransitionReceipt",
     "parse_cross_checkout_context",
+    "prepare_cross_checkout_context_refresh",
     "parse_cross_checkout_precreation",
     "capture_generation_identity",
     "validate_write_scope",
@@ -160,6 +163,16 @@ class RepositoryRevisions:
     toolchain_commit: str
     canonical_planning_commit_before: str
     implementation_commit_before: str
+
+
+@dataclass(frozen=True)
+class CrossCheckoutRefreshPreparation:
+    """Mechanical planned and live facts for one refreshed strict payload."""
+
+    planned_revisions: RepositoryRevisions
+    live_revisions: RepositoryRevisions
+    refreshed_payload: Mapping[str, object]
+    refreshed_context: CrossCheckoutContext
 
 
 @dataclass(frozen=True)
@@ -256,6 +269,64 @@ class CrossCheckoutTransitionReceipt:
 def parse_cross_checkout_context(payload: Mapping[str, object]) -> CrossCheckoutContext:
     """Return a validated context or raise before any caller can act on it."""
 
+    interface, execution_context = _parse_cross_checkout_context_fields(payload)
+    _validate_execution_context_identity(execution_context)
+    return CrossCheckoutContext(
+        interface=interface,
+        execution_context=execution_context,
+    )
+
+
+def prepare_cross_checkout_context_refresh(
+    payload: Mapping[str, object],
+) -> CrossCheckoutRefreshPreparation:
+    """Prepare live revision facts without deciding whether movement is accepted."""
+
+    _, execution_context = _parse_cross_checkout_context_fields(payload)
+    _validate_root_roles(
+        toolchain_source_root=execution_context.toolchain_source_root,
+        canonical_planning_repository_root=(
+            execution_context.canonical_planning_repository_root
+        ),
+        implementation_target_root=execution_context.implementation_target_root,
+        codex_home=execution_context.codex_home,
+    )
+    live_revisions = _capture_live_repository_revisions(execution_context)
+    _validate_generation_binding(execution_context)
+
+    raw_execution_context = cast(
+        Mapping[str, object], payload["execution_context"]
+    )
+    refreshed_execution_context = dict(raw_execution_context)
+    refreshed_execution_context.update(
+        {
+            "toolchain_commit": live_revisions.toolchain_commit,
+            "canonical_planning_commit_before": (
+                live_revisions.canonical_planning_commit_before
+            ),
+            "implementation_commit_before": (
+                live_revisions.implementation_commit_before
+            ),
+        }
+    )
+    refreshed_payload: Mapping[str, object] = MappingProxyType(
+        {
+            "interface": payload["interface"],
+            "execution_context": MappingProxyType(refreshed_execution_context),
+        }
+    )
+    refreshed_context = parse_cross_checkout_context(refreshed_payload)
+    return CrossCheckoutRefreshPreparation(
+        planned_revisions=_repository_revisions(execution_context),
+        live_revisions=live_revisions,
+        refreshed_payload=refreshed_payload,
+        refreshed_context=refreshed_context,
+    )
+
+
+def _parse_cross_checkout_context_fields(
+    payload: Mapping[str, object],
+) -> tuple[str, ExecutionContext]:
     _require_exact_fields(payload, _TOP_LEVEL_FIELDS, "context")
     interface = _require_string(payload, "interface", "context")
     if interface != INTERFACE:
@@ -312,10 +383,7 @@ def parse_cross_checkout_context(payload: Mapping[str, object]) -> CrossCheckout
         generation_role=generation_role,
         canonical_state_mutation_allowed=canonical_state_mutation_allowed,
     )
-    _validate_execution_context_identity(execution_context)
-    return CrossCheckoutContext(
-        interface=interface, execution_context=execution_context
-    )
+    return interface, execution_context
 
 
 def parse_cross_checkout_precreation(
@@ -1500,6 +1568,37 @@ def _validate_execution_context_identity(execution_context: ExecutionContext) ->
     _validate_generation_binding(execution_context)
 
 
+def _repository_revisions(
+    execution_context: ExecutionContext,
+) -> RepositoryRevisions:
+    return RepositoryRevisions(
+        toolchain_commit=execution_context.toolchain_commit,
+        canonical_planning_commit_before=(
+            execution_context.canonical_planning_commit_before
+        ),
+        implementation_commit_before=execution_context.implementation_commit_before,
+    )
+
+
+def _capture_live_repository_revisions(
+    execution_context: ExecutionContext,
+) -> RepositoryRevisions:
+    return RepositoryRevisions(
+        toolchain_commit=_capture_repository_revision(
+            "toolchain_source_root",
+            execution_context.toolchain_source_root,
+        ),
+        canonical_planning_commit_before=_capture_repository_revision(
+            "canonical_planning_repository_root",
+            execution_context.canonical_planning_repository_root,
+        ),
+        implementation_commit_before=_capture_repository_revision(
+            "implementation_target_root",
+            execution_context.implementation_target_root,
+        ),
+    )
+
+
 def _validate_write_scope_paths(
     context: CrossCheckoutContext,
     *,
@@ -1774,6 +1873,15 @@ def _validate_repository_revision(
     revision_field: str,
     expected_revision: str,
 ) -> None:
+    actual_revision = _capture_repository_revision(root_field, root)
+    if actual_revision != expected_revision:
+        raise CrossCheckoutContextError(
+            f"context.execution_context.{revision_field} does not match HEAD for "
+            f"{root_field}: expected {actual_revision}, got {expected_revision}"
+        )
+
+
+def _capture_repository_revision(root_field: str, root: Path) -> str:
     reported_root = _run_git(root, root_field, "rev-parse", "--show-toplevel")
     try:
         canonical_reported_root = Path(reported_root).resolve(strict=True)
@@ -1788,12 +1896,7 @@ def _validate_repository_revision(
             f"got {str(root)!r}, repository root is {str(canonical_reported_root)!r}"
         )
 
-    actual_revision = _run_git(root, root_field, "rev-parse", "HEAD")
-    if actual_revision != expected_revision:
-        raise CrossCheckoutContextError(
-            f"context.execution_context.{revision_field} does not match HEAD for "
-            f"{root_field}: expected {actual_revision}, got {expected_revision}"
-        )
+    return _run_git(root, root_field, "rev-parse", "HEAD")
 
 
 def _run_git(root: Path, root_field: str, *git_args: str) -> str:

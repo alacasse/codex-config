@@ -5,6 +5,7 @@ import dataclasses
 import subprocess
 import tempfile
 import unittest
+from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
 from unittest import mock
@@ -238,6 +239,184 @@ class CrossCheckoutContextTests(unittest.TestCase):
             )
             hook(receipt)
         hook.assert_not_called()
+
+    def test_prepares_an_unchanged_strict_context_without_changing_payload_facts(
+        self,
+    ) -> None:
+        payload = self._payload()
+
+        preparation = context_owner.prepare_cross_checkout_context_refresh(payload)
+
+        expected_revisions = context_owner.RepositoryRevisions(
+            toolchain_commit=self.stable_commit,
+            canonical_planning_commit_before=self.stable_commit,
+            implementation_commit_before=self.implementation_commit,
+        )
+        self.assertEqual(preparation.planned_revisions, expected_revisions)
+        self.assertEqual(preparation.live_revisions, expected_revisions)
+        self.assertEqual(preparation.refreshed_payload, payload)
+        self.assertEqual(
+            preparation.refreshed_context,
+            context_owner.parse_cross_checkout_context(payload),
+        )
+        with self.assertRaises(TypeError):
+            cast(dict[str, object], preparation.refreshed_payload)["interface"] = (
+                "cross-checkout-context/v2"
+            )
+        refreshed_execution = cast(
+            dict[str, object], preparation.refreshed_payload["execution_context"]
+        )
+        with self.assertRaises(TypeError):
+            refreshed_execution["implementation_commit_before"] = "0" * 40
+
+    def test_prepares_live_revisions_after_queue_establishment_advances_head(
+        self,
+    ) -> None:
+        payload = self._payload()
+        original_payload = copy.deepcopy(payload)
+        self._move_head(self.stable_root, "queue-establishment")
+        live_stable_commit = self._git(self.stable_root, "rev-parse", "HEAD")
+
+        with self.assertRaisesRegex(
+            context_owner.CrossCheckoutContextError,
+            "toolchain_commit does not match HEAD for toolchain_source_root",
+        ):
+            context_owner.parse_cross_checkout_context(payload)
+
+        preparation = context_owner.prepare_cross_checkout_context_refresh(payload)
+
+        self.assertEqual(
+            preparation.planned_revisions,
+            context_owner.RepositoryRevisions(
+                toolchain_commit=self.stable_commit,
+                canonical_planning_commit_before=self.stable_commit,
+                implementation_commit_before=self.implementation_commit,
+            ),
+        )
+        self.assertEqual(
+            preparation.live_revisions,
+            context_owner.RepositoryRevisions(
+                toolchain_commit=live_stable_commit,
+                canonical_planning_commit_before=live_stable_commit,
+                implementation_commit_before=self.implementation_commit,
+            ),
+        )
+        expected_payload = copy.deepcopy(payload)
+        expected_execution = self._execution_payload(expected_payload)
+        expected_execution["toolchain_commit"] = live_stable_commit
+        expected_execution["canonical_planning_commit_before"] = live_stable_commit
+        self.assertEqual(preparation.refreshed_payload, expected_payload)
+        self.assertEqual(payload, original_payload)
+        self.assertEqual(
+            preparation.refreshed_context,
+            context_owner.parse_cross_checkout_context(preparation.refreshed_payload),
+        )
+
+    def test_prepares_live_revisions_after_implementation_advances_head(self) -> None:
+        payload = self._payload()
+        self._move_head(self.implementation_root, "implementation-advancement")
+        live_implementation_commit = self._git(
+            self.implementation_root, "rev-parse", "HEAD"
+        )
+
+        preparation = context_owner.prepare_cross_checkout_context_refresh(payload)
+
+        self.assertEqual(
+            preparation.planned_revisions.implementation_commit_before,
+            self.implementation_commit,
+        )
+        self.assertEqual(
+            preparation.live_revisions.implementation_commit_before,
+            live_implementation_commit,
+        )
+        refreshed_execution = cast(
+            Mapping[str, object],
+            preparation.refreshed_payload["execution_context"],
+        )
+        self.assertEqual(
+            refreshed_execution["implementation_commit_before"],
+            live_implementation_commit,
+        )
+
+    def test_rejects_repository_movement_after_refresh_preparation(self) -> None:
+        preparation = context_owner.prepare_cross_checkout_context_refresh(
+            self._payload()
+        )
+        self._move_head(self.implementation_root, "after-lease-preparation")
+
+        with self.assertRaisesRegex(
+            context_owner.CrossCheckoutContextError,
+            "implementation_commit_before does not match HEAD for "
+            "implementation_target_root",
+        ):
+            context_owner.parse_cross_checkout_context(
+                preparation.refreshed_payload
+            )
+        with self.assertRaisesRegex(
+            context_owner.CrossCheckoutContextError,
+            "implementation_commit_before does not match HEAD for "
+            "implementation_target_root",
+        ):
+            context_owner.validate_write_scope(
+                preparation.refreshed_context,
+                canonical_planning_root=self.planning_root,
+            )
+
+    def test_refreshes_candidate_shaped_historical_planning_payload(self) -> None:
+        payload = self._payload()
+        execution = self._execution_payload(payload)
+        execution["toolchain_source_root"] = str(self.implementation_root)
+        execution["toolchain_commit"] = self.implementation_commit
+        execution["generation_role"] = "candidate"
+        execution["canonical_state_mutation_allowed"] = False
+        self._move_head(self.stable_root, "historical-planning")
+        self._move_head(self.implementation_root, "historical-implementation")
+
+        with self.assertRaises(context_owner.CrossCheckoutContextError):
+            context_owner.parse_cross_checkout_context(payload)
+
+        preparation = context_owner.prepare_cross_checkout_context_refresh(payload)
+
+        self.assertEqual(
+            preparation.planned_revisions,
+            context_owner.RepositoryRevisions(
+                toolchain_commit=self.implementation_commit,
+                canonical_planning_commit_before=self.stable_commit,
+                implementation_commit_before=self.implementation_commit,
+            ),
+        )
+        self.assertEqual(
+            preparation.live_revisions.toolchain_commit,
+            preparation.live_revisions.implementation_commit_before,
+        )
+        self.assertEqual(
+            preparation.refreshed_context.execution_context.generation_role,
+            "candidate",
+        )
+
+    def test_refresh_preparation_rejects_override_fields_and_invalid_binding(
+        self,
+    ) -> None:
+        override_payload = self._payload()
+        self._execution_payload(override_payload)["live_revisions"] = {
+            "implementation_commit_before": "0" * 40
+        }
+        with self.assertRaisesRegex(
+            context_owner.CrossCheckoutContextError,
+            "contains unsupported fields: live_revisions",
+        ):
+            context_owner.prepare_cross_checkout_context_refresh(override_payload)
+
+        invalid_binding = self._payload()
+        invalid_execution = self._execution_payload(invalid_binding)
+        invalid_execution["toolchain_source_root"] = str(self.implementation_root)
+        invalid_execution["toolchain_commit"] = self.implementation_commit
+        with self.assertRaisesRegex(
+            context_owner.CrossCheckoutContextError,
+            "generation_role 'stable' requires toolchain_source_root to equal "
+            "canonical_planning_repository_root",
+        ):
+            context_owner.prepare_cross_checkout_context_refresh(invalid_binding)
 
     def test_validates_planning_and_implementation_write_scopes(self) -> None:
         context = context_owner.parse_cross_checkout_context(self._payload())
@@ -651,6 +830,9 @@ class CrossCheckoutContextTests(unittest.TestCase):
 
     def test_public_api_is_data_only_and_has_no_workflow_authority(self) -> None:
         context = context_owner.parse_cross_checkout_context(self._payload())
+        refresh_preparation = (
+            context_owner.prepare_cross_checkout_context_refresh(self._payload())
+        )
         generation_identity = context_owner.capture_generation_identity(context)
         receipt = context_owner.build_cross_repository_receipt(
             context,
@@ -674,6 +856,7 @@ class CrossCheckoutContextTests(unittest.TestCase):
                 "GenerationIdentity",
                 "AllowedWriteScope",
                 "RepositoryRevisions",
+                "CrossCheckoutRefreshPreparation",
                 "CrossRepositoryReceipt",
                 "PrecreationStableControl",
                 "CandidateIntent",
@@ -683,6 +866,7 @@ class CrossCheckoutContextTests(unittest.TestCase):
                 "CreatedCandidateIdentity",
                 "CrossCheckoutTransitionReceipt",
                 "parse_cross_checkout_context",
+                "prepare_cross_checkout_context_refresh",
                 "parse_cross_checkout_precreation",
                 "capture_generation_identity",
                 "validate_write_scope",
@@ -736,6 +920,15 @@ class CrossCheckoutContextTests(unittest.TestCase):
                     "toolchain_commit",
                     "canonical_planning_commit_before",
                     "implementation_commit_before",
+                ),
+            ),
+            (
+                refresh_preparation,
+                (
+                    "planned_revisions",
+                    "live_revisions",
+                    "refreshed_payload",
+                    "refreshed_context",
                 ),
             ),
             (
