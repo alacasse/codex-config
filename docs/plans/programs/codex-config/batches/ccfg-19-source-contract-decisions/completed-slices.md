@@ -279,3 +279,97 @@ Exact helper-produced `cross_repository_receipt_to_dict` results:
   }
 }
 ```
+
+## Slice 4: Resolve OPEN-003 And Audit The CCFG-19 Exit Gate
+
+- Candidate commit: `13d7f63d258c82760a330a9a61e62ea99d7a493f`.
+- Accepted decision: DEC-038 resolves OPEN-003 with one append-only transaction
+  record and transaction/idempotency ID across the approved four-stage saga.
+- Binding model: known initial intent is immutable before Stage 1; later inputs
+  are state-gated and appended before their effects; observed artifact, state,
+  transition, and receipt revisions are appended immediately after their
+  effects; no future value is claimed as pre-bound.
+- Retry and recovery: every retry matches all established immutable bindings
+  before any write or CAS; mismatches block; ledger-written/receipt-missing
+  recovery never reapplies an already-applied CAS; partial evidence remains
+  visible and rollback deletion cannot hide durable evidence.
+- Fault model: 12 before/after checkpoints cover all artifact writes,
+  transitions, and receipt persistence points.
+- Exit audit: all seven CCFG-19 acceptance keys have traceable evidence from the
+  joined 31-row matrix, conflict computation, DEC-036, DEC-037, DEC-017, and
+  DEC-038. OPEN-004 through OPEN-008 remain non-blocking and deferred.
+- Review correction: initial review rejected impossible Stage 1 binding of
+  future runway and output revisions. The worker adopted the realizable
+  append-only model; repeat independent strict-context review was clean.
+- Final validation: 285 source/topology tests, 3 focused manifest tests, and 31
+  workflow-boundary tests passed; both ancestry checks, candidate-range
+  `git diff --check`, record existence, and stable planning-state current and
+  validate passed. Full manifest validation remained exactly at its documented
+  3-failed/18-passed wording baseline with the same three failures.
+- Deferred: CCFG-20 through CCFG-29 remain unselected implementation work.
+
+### Cross-Repository Receipts
+
+Exact helper-produced `cross_repository_receipt_to_dict` results:
+
+```json
+{
+  "candidate_implementation_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-19 Slice 4 OPEN-003 decision and exit audit",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [],
+      "implementation_paths": [
+        "/home/alacasse/projects/codex-config-command-owner-redesign/docs/design/command-owner-redesign/10-ccfg-19-contract-verification-and-decisions.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/docs/design/command-owner-redesign/decisions.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/docs/design/command-owner-redesign/README.md"
+      ]
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "4b3695d8628361649aab1f9d2a8defedd6e738cb",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "4b3695d8628361649aab1f9d2a8defedd6e738cb",
+      "canonical_planning_commit_before": "4b3695d8628361649aab1f9d2a8defedd6e738cb",
+      "implementation_commit_before": "13d7f63d258c82760a330a9a61e62ea99d7a493f"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  },
+  "stable_planning_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-19 Slice 4 stable planning receipt",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [
+        "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/completed-slices.md",
+        "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md"
+      ],
+      "implementation_paths": []
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "4b3695d8628361649aab1f9d2a8defedd6e738cb",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "4b3695d8628361649aab1f9d2a8defedd6e738cb",
+      "canonical_planning_commit_before": "4b3695d8628361649aab1f9d2a8defedd6e738cb",
+      "implementation_commit_before": "13d7f63d258c82760a330a9a61e62ea99d7a493f"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  }
+}
+```
