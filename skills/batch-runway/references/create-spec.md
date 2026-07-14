@@ -73,12 +73,22 @@ explicitly declares separate existing toolchain, canonical-planning, and
 implementation repository roots, read
 `cross-checkout-context-v1.md` before writing the runway. Validate the complete
 payload and canonical planning root with the installed helper, then preserve
-both verbatim in the runway under a required execution-context section. Stop
+both verbatim in the runway under a required planning-snapshot section. Stop
 instead of emitting the runway when the context is missing or mismatched. Do
 not add that section to ordinary single-root runways. A dispatch naming
 `cross-checkout-precreation/v1` does not use this strict branch before a
 validated helper-produced transition receipt plus green strict context exists;
 its pre-transition strict verification remains `null`.
+
+Apply the shared cross-checkout lifecycle vocabulary to that section: label the
+complete validated plan-time payload and canonical planning root as the
+runway's **planning snapshot**. The snapshot is immutable historical planning
+evidence, not a live execution lease or a promise about future live `HEAD`.
+Preserve it after the containing plan commit or later between-flight commits
+advance `HEAD`; do not hand-edit its revisions or rewrite the queued runway to
+embed the commit that contains it. Startup reconciliation must preserve the
+same selected scope and acquire a fresh live lease before any later delegated
+handoff.
 
 The spec must include:
 
@@ -98,8 +108,8 @@ The spec must include:
 - stop conditions
 - only for work that explicitly names `cross-checkout-context/v1` or explicitly
   declares separate existing toolchain, canonical-planning, and implementation
-  repository roots: the complete validated strict payload and explicit
-  canonical planning root
+  repository roots: a planning-snapshot section containing the complete
+  validated plan-time payload and explicit canonical planning root
 - for explicitly pre-creation work only: the complete validated
   `cross-checkout-precreation/v1` payload and absolute installed helper path
 

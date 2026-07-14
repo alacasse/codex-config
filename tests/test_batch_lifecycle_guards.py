@@ -8,6 +8,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 EXECUTION_CONTRACT = REPO_ROOT / "skills/batch-runway/references/execution-contract-v1.md"
 FINALIZE_BATCH = REPO_ROOT / "skills/batch-runway/references/finalize-batch-v1.md"
 LEDGER_RETENTION = REPO_ROOT / "skills/batch-runway/references/ledger-retention-v1.md"
+CROSS_CHECKOUT_CONTEXT = (
+    REPO_ROOT / "skills/batch-runway/references/cross-checkout-context-v1.md"
+)
 
 
 class BatchLifecycleGuardTests(unittest.TestCase):
@@ -84,6 +87,81 @@ class BatchLifecycleGuardTests(unittest.TestCase):
         self.assertIn("preserve the queued runway", text)
         self.assertIn("explicitly asks to cancel or abandon it", text)
         self.assertIn("documented blocker makes execution unsafe", text)
+
+    def test_cross_checkout_contract_defines_four_lifecycle_concepts(self) -> None:
+        text = " ".join(
+            CROSS_CHECKOUT_CONTEXT.read_text(encoding="utf-8").split()
+        )
+
+        self.assertIn(
+            "A **planning snapshot** is the complete validated plan-time payload "
+            "and canonical planning root persisted in the queued runway.",
+            text,
+        )
+        self.assertIn(
+            "**Startup reconciliation** is the workflow decision made once before "
+            "`work-batch` consumes queued work.",
+            text,
+        )
+        self.assertIn(
+            "A **live execution lease** is a short-lived complete context prepared "
+            "from live repository facts and accepted by strict context parsing.",
+            text,
+        )
+        self.assertIn(
+            "An **execution receipt** is durable, immutable evidence of an "
+            "accepted action.",
+            text,
+        )
+        self.assertIn(
+            "must be exact for one worker or reviewer handoff",
+            text,
+        )
+        self.assertIn(
+            "Before every worker or final-reviewer delegation, the execution "
+            "coordinator must revalidate the payload with the installed helper",
+            text,
+        )
+        self.assertIn(
+            "The coordinator must reject a missing, null, or mismatched identity",
+            text,
+        )
+        self.assertIn(
+            "Repository movement invalidates the lease rather than changing the "
+            "planning snapshot.",
+            text,
+        )
+
+    def test_cross_checkout_planning_producers_persist_immutable_snapshots(
+        self,
+    ) -> None:
+        producer_paths = (
+            "skills/plan-batch/SKILL.md",
+            "skills/batch-runway/references/create-spec.md",
+        )
+
+        for relative_path in producer_paths:
+            text = self.normalized(relative_path)
+            with self.subTest(path=relative_path):
+                self.assertIn("cross-checkout-context-v1.md", text)
+                self.assertIn(
+                    "complete validated plan-time payload and canonical planning "
+                    "root",
+                    text,
+                )
+                self.assertIn("**planning snapshot**", text)
+                self.assertIn("immutable historical planning evidence", text)
+                self.assertIn("not a live execution lease", text)
+                self.assertIn("future live `HEAD`", text)
+                self.assertIn("same selected scope", text)
+                self.assertIn("fresh live lease", text)
+                self.assertIn("do not hand-edit its revisions", text.lower())
+                self.assertIn("commit that contains", text)
+
+        create_spec = self.normalized(
+            "skills/batch-runway/references/create-spec.md"
+        )
+        self.assertIn("required planning-snapshot section", create_spec)
 
     def test_architecture_program_closeout_rejects_dispatch_runway_only_evidence(
         self,

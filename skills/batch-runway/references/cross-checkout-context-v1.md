@@ -16,6 +16,31 @@ Explicitly cross-checkout execution requires Standard Execution Contract v2
 and Registered Agent Result Contract v2 so both delegated roles can report the
 verified identity. Stop rather than reinterpret a v1 result schema.
 
+## Lifecycle Vocabulary
+
+Use these four concepts throughout cross-checkout planning and execution:
+
+- A **planning snapshot** is the complete validated plan-time payload and
+  canonical planning root persisted in the queued runway. It is durable,
+  immutable historical planning evidence for the selected scope, roots,
+  generation, and revisions used to create the plan. It may differ from live
+  `HEAD` after the containing plan commit or later between-flight commits and
+  is not a live execution lease. Never rewrite it to chase `HEAD` or to embed
+  the commit that contains the runway.
+- **Startup reconciliation** is the workflow decision made once before
+  `work-batch` consumes queued work. It compares the immutable planning
+  snapshot with live repository facts, preserves the same selected scope, and
+  decides whether execution may acquire a fresh live lease. It does not mutate
+  the planning snapshot or grant the helper lifecycle authority.
+- A **live execution lease** is a short-lived complete context prepared from
+  live repository facts and accepted by strict context parsing. Its roots,
+  revisions, generation, Codex home, mutation policy, and write scope must be
+  exact for one worker or reviewer handoff. Repository movement invalidates
+  the lease rather than changing the planning snapshot.
+- An **execution receipt** is durable, immutable evidence of an accepted
+  action. It records the exact live execution lease and scope actually used;
+  it neither rewrites nor substitutes for the planning snapshot.
+
 ## Stable Helper Bootstrap
 
 For an explicitly cross-checkout operation:
@@ -43,9 +68,14 @@ successor decision.
 
 ## Planning And Propagation
 
-`create-spec` must preserve the complete validated payload and canonical
-planning root in the generated runway. It must not synthesize project-specific
-absolute paths inside reusable skill text.
+`create-spec` must preserve the complete validated plan-time payload and
+canonical planning root in the generated runway as its planning snapshot. The
+snapshot remains immutable historical evidence after the containing plan
+commit or later between-flight commits advance `HEAD`; it is not a promise that
+the payload remains a valid live execution lease. Do not hand-edit its
+revisions, rewrite it to chase `HEAD`, or create a self-referential series of
+plan commits. It must not synthesize project-specific absolute paths inside
+reusable skill text.
 
 Before every worker or final-reviewer delegation, the execution coordinator
 must revalidate the payload with the installed helper and include in the
