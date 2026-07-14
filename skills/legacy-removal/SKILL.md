@@ -63,7 +63,7 @@ architecture-program-runway
   owns: grouping, prioritization, multi-batch program state, selected batch brief
 
 batch-runway
-  owns: concrete 3-5 slice spec creation and execution workflow
+  owns: concrete spec creation, semantic slice boundaries, and execution workflow
 ```
 
 Do not use this skill to implement code, execute slices, make commits, or
@@ -145,7 +145,8 @@ temporary transition period with a removal condition.
    - Use `architecture-program-runway` when the ledger spans multiple findings,
      seams, risk classes, or possible batches.
    - Use `batch-runway create-spec` when exactly one clear selected batch is
-     ready for a concrete 3-5 slice runway spec.
+     ready for a concrete runway whose slice shape will be derived from semantic
+     execution boundaries.
 
 ## Test preservation rules
 
@@ -364,7 +365,7 @@ old-vocabulary taxonomy, aliases, facades, or temporary scaffolding.
 
 | Batch ID | Goal | Included findings | Deferred findings | Validation class | Risk | Suggested slice shape |
 | --- | --- | --- | --- | --- | --- | --- |
-| LR-B1 | <goal> | L1, L2 | L3 | focused/unit/harness/docs/manual | low/medium/high | 3-5 compact slice ideas |
+| LR-B1 | <goal> | L1, L2 | L3 | focused/unit/harness/docs/manual | low/medium/high | semantic slice ideas with boundary reasons |
 
 ## Dispatch handoff or selected dispatch packet
 
@@ -385,7 +386,7 @@ the handoff.
 - Owner seam:
 - Validation class:
 - Guardrails:
-- Suggested 3-5 slice shape:
+- Suggested semantic slice shape and boundary reasons:
 - Stop conditions:
 - Expected Batch Runway spec path or naming convention:
 

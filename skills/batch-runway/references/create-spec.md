@@ -28,16 +28,68 @@ Steps:
    `projection_rebuild_authority` is missing or incompatible, stop with that
    blocker or record an explicit fallback decision before scanning; do not
    query SQLite directly or silently scrape historical planning files.
-6. Pick 3-5 tightly related slices that can execute sequentially.
-7. Keep each slice independently testable and committable.
-8. Store the spec in the project's local planning location.
-9. Prefer `lean-runway` unless the work touches high-risk production behavior or
+6. Start with one slice, then derive any additional slices from the semantic
+   execution boundaries below.
+7. Keep each slice independently testable, reviewable, and committable.
+8. Record the required `slice_shape` rationale.
+9. Store the spec in the project's local planning location.
+10. Prefer `lean-runway` unless the work touches high-risk production behavior or
    subagent file access is unreliable.
 
 After the Planning State Diagnostic handoff, Batch Runway still makes the
 semantic planning decision: whether to create a spec, report an existing queued
-or active spec, choose 3-5 slices, select validation, and define subagent briefs.
+or active spec, derive semantic slice boundaries, select validation, and define
+subagent briefs.
 Do not move those decisions into `planning-state`.
+
+## Semantic Slice Shape
+
+Start with one slice. Add a split only when the split creates a meaningful
+independent execution boundary and at least one concrete condition applies:
+
+- different owner seams must change independently;
+- a later slice consumes a new API, artifact, or boundary produced by an earlier
+  slice, and the intermediate state is valid and testable;
+- risk classes or approval gates differ;
+- validation profiles, harnesses, repositories, generations, or execution
+  environments differ;
+- an independent commit, rollback, or review boundary materially reduces risk;
+- destructive cleanup or contract narrowing must be isolated from
+  characterization, decision, or migration work;
+- one combined diff would be too broad for a reviewer to verify against one
+  coherent acceptance contract.
+
+Merge proposed slices when they share the same owner seam, risk, validation,
+and acceptance boundary and there is no useful independently shippable
+intermediate state. Every slice must remain independently testable, reviewable,
+and committable.
+
+There is no normative numeric range. A cohesive one-slice runway is valid. More
+than five slices are not rejected solely because of count, but every boundary
+must have a concrete rationale. Generic documentation, metadata, tests, or
+closeout work that naturally belongs with the behavior it supports must not
+become a standalone slice without an independent owner, risk, validation,
+rollback, or acceptance boundary.
+
+Every generated runway must record a compact `slice_shape` rationale:
+
+- For one slice, state that the work has one owner, risk, validation, and
+  acceptance boundary.
+- For multiple slices, name every adjacent pair, such as `1 -> 2`, and the
+  applicable split condition. The rationale must identify the valid intermediate
+  state or independent risk-reduction boundary; a count alone is insufficient.
+
+Examples:
+
+- One slice: one helper behavior change, focused regression tests, and directly
+  associated contract, documentation, and metadata updates share one owner and
+  validation boundary.
+- Producer/consumer split: slice 1 introduces a stable API with green tests;
+  slice 2 migrates consumers to that API, so the intermediate state is valid and
+  each diff has an independent review boundary.
+- Risky split: characterization or migration remains separate from destructive
+  cleanup or contract narrowing because approval and rollback requirements
+  differ.
 
 When the project uses Planning Artifact Layout v1, store the concrete spec at:
 
@@ -103,7 +155,8 @@ The spec must include:
 - ledger retention strategy reference
 - validation profile and focused validation commands with status classes
 - execution ledger
-- 3-5 slice sections
+- `slice_shape` rationale
+- one or more slice sections derived from semantic execution boundaries
 - final validation
 - stop conditions
 - only for work that explicitly names `cross-checkout-context/v1` or explicitly

@@ -72,7 +72,7 @@ can be resumed without relying on a single conversation transcript.
 The repository is organized around the parts of my Codex setup that are stable
 enough to version and reuse:
 
-* reusable skills for multi-slice implementation, review, planning, porting,
+* reusable skills for bounded implementation, review, planning, porting,
   legacy cleanup, and test-quality review
 * custom agents for focused exploration, implementation, and review roles
 * ownership tooling for distinguishing repo-owned Codex files from vendor-owned
@@ -125,7 +125,7 @@ ledger and batch workflow.
 
 | Skill | Purpose | How it is used |
 | --- | --- | --- |
-| `batch-runway` | Provides bounded multi-slice runway spec mechanics, per-slice validation, commits, ledger updates, and implementation/review delegation. | Invoked behind `plan-batch` or `work-batch` when a command-owned batch needs concrete spec creation or execution contracts. |
+| `batch-runway` | Provides bounded runway spec mechanics, semantic slice boundaries, per-slice validation, commits, ledger updates, and implementation/review delegation. | Invoked behind `plan-batch` or `work-batch` when a command-owned batch needs concrete spec creation or execution contracts. |
 | `architecture-program-runway` | Provides program-ledger grouping, sequencing, selected dispatch, queue state, and closeout reconciliation. | Invoked behind `add-to-ledger`, `plan-batch`, or `work-batch` when broad findings need durable grouping, selected-batch state, or completed-batch reconciliation. |
 | `test-quality-review` | Reviews tests for behavioral confidence, regression protection, assertion strength, fixture friction, and design signals. | Invoked by review routes or directly for focused test audits where coverage percentage is not the main question. |
 | `dead-surface-audit` | Finds code surfaces kept alive by tests that assert imports, aliases, topology, or compatibility shape rather than behavior. | Invoked as evidence support when legacy, review, or planning work needs proof about test-retained dead surfaces. |

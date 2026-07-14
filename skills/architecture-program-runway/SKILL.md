@@ -10,8 +10,8 @@ Agent-facing program-ledger support for `add-to-ledger`, `plan-batch`, and
 intake, batch planning, or batch closeout; use the command-owner skill first,
 then apply this workflow when program-level grouping, sequencing, selected
 dispatch packets, queue state, or closeout reconciliation are needed.
-`batch-runway` owns the concrete 3-5 slice execution spec and per-slice
-execution workflow.
+`batch-runway` owns the concrete execution spec, semantic slice boundaries, and
+per-slice execution workflow.
 
 Use `../planning-artifacts/SKILL.md` for Planning Artifact Layout v1 placement,
 naming, active-state file shape, batch directories, archives, and run/output
@@ -38,8 +38,8 @@ re-derive grouping from scratch after the ledger and batch queue exist.
 - The main agent owns `architecture-program-runway` decisions and edits.
 - This skill manages program-level state: durable ledger, finding grouping,
   batch queue, selected dispatch packet, and closeout reconciliation.
-- `batch-runway` owns the concrete 3-5 slice spec and execution workflow for
-  exactly one selected batch.
+- `batch-runway` owns the concrete spec, semantic slice shape, and execution
+  workflow for exactly one selected batch.
 - Slice implementation and review stay delegated through `batch-runway` to
   `runway_worker` and `runway_reviewer`.
 - Fresh spec-creation agents do not own global program prioritization. They
@@ -56,12 +56,12 @@ queue state that point a fresh `batch-runway create-spec` pass at exactly one
 selected batch.
 
 `batch-runway` owns the concrete runway artifact after that selected dispatch
-is handed off: the 3-5 slice spec, validation profile selection, slice active
-ledger, completed-slice archive, review routing, commit receipts, and per-slice
-execution workflow. It may name covered and deferred program findings in the
-runway for traceability, but it does not reselect the program batch or mutate
-the program findings ledger as part of routine spec creation or slice
-execution.
+is handed off: the semantically sliced spec, validation profile selection,
+slice active ledger, completed-slice archive, review routing, commit receipts,
+and per-slice execution workflow. It may name covered and deferred program
+findings in the runway for traceability, but it does not reselect the program
+batch or mutate the program findings ledger as part of routine spec creation or
+slice execution.
 
 The normal flow is:
 
@@ -175,7 +175,13 @@ Group findings into the same future batch only when most of these are true:
 - Each slice can be independently validated and committed.
 - Earlier slices create a boundary consumed by later slices, without requiring a
   broad behavior migration.
-- The batch can fit in 3-5 slices without carrying unrelated context.
+- The work can be expressed through cohesive semantic slice boundaries without
+  carrying unrelated context.
+
+Do not use a target slice count as a grouping heuristic. A cohesive batch may
+produce one slice, while a complex batch may produce more than five when every
+boundary is independently justified. Group and split on ownership, risk,
+validation, sequencing, and acceptance boundaries instead.
 
 Split findings into separate batches when they touch different owner modules,
 mix test-only and production-harness work, require different stop conditions,
@@ -297,7 +303,8 @@ The brief should include:
 - Explicitly excluded or deferred finding IDs with one-line rationale.
 - Goal, owner seam, validation class, and required guardrails.
 - Dependencies already satisfied and dependencies still blocking.
-- Suggested 3-5 slice shape, if known, without full execution contracts.
+- Optional `slice_shape` rationale, if known, describing semantic boundaries
+  without full execution contracts or a target count.
 - Stop conditions that should prevent spec creation or execution.
 - Expected runway spec path or naming convention.
 - For active legacy-removal programs, classified legacy surfaces, forbidden

@@ -148,7 +148,8 @@ validation.
 
 After contract distillation, use the smallest workflow that fits:
 
-- Use `batch-runway` when one bounded 3-5 slice port plan is enough.
+- Use `batch-runway` when one bounded port plan with a cohesive semantic slice
+  shape is enough.
 - Use `architecture-program-runway` when multiple workstreams, staged ledgers,
   or repeated batches are needed.
 

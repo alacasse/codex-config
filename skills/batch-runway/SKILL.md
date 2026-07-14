@@ -1,6 +1,6 @@
 ---
 name: batch-runway
-description: Agent-facing runtime support used by plan-batch and work-batch for multi-slice runway spec mechanics, execution contracts, per-slice validation, commits, ledger updates, and implementation/review delegation.
+description: Agent-facing runtime support used by plan-batch and work-batch for runway spec mechanics, execution contracts, per-slice validation, commits, ledger updates, and implementation/review delegation.
 ---
 
 # Batch Runway
@@ -283,8 +283,9 @@ In `create-spec` mode:
 7. Write one local plan file in the project planning location. If the project
    uses Planning Artifact Layout v1 and a selected batch directory exists,
    write the spec to that batch directory as `runway.md`.
-8. Pick 3-5 tightly related slices that can execute sequentially.
-9. Keep each slice independently testable and committable.
+8. Derive the slice count from semantic execution boundaries using
+   `references/create-spec.md`, and record the required `slice_shape` rationale.
+9. Keep each slice independently testable, reviewable, and committable.
 10. Stop before coding.
 
 ## Execute-Spec Summary

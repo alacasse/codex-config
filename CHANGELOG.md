@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Semantic runway slice boundaries
+
+Problem: reusable planning workflows required or suggested three to five slices,
+which could expand cohesive work into filler slices or compress complex work at
+non-semantic boundaries.
+
+Decision: make slice count an output of scope analysis. Batch Runway now starts
+with one slice, adds splits only for independently useful owner, producer/
+consumer, risk, validation, environment, rollback, cleanup, or review
+boundaries, and records a compact `slice_shape` rationale. Architecture Program
+Runway, Port By Contract, and Legacy Removal now hand off semantic slice shapes
+without a numeric target. Publish `batch-runway` 1.5.3,
+`architecture-program-runway` 1.1.8, `port-by-contract` 1.0.2, and
+`legacy-removal` 1.0.9 without installing or reloading them.
+
+Expected effect: cohesive one-slice runways stay cohesive, every multi-slice
+boundary has an execution reason, and justified larger runways are not rejected
+solely because of slice count while existing risk, validation, review, and
+commit requirements remain intact.
+
 ### Cross-flight execution leases
 
 Problem: committing a queued cross-checkout plan normally advances repository

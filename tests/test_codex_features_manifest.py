@@ -179,7 +179,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             {
                 "plan-batch": "1.0.6",
                 "work-batch": "1.0.7",
-                "batch-runway": "1.5.2",
+                "batch-runway": "1.5.3",
                 "custom-agents": "1.4.1",
             },
         )
