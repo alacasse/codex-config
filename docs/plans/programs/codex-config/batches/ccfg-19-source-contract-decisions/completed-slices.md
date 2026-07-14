@@ -178,3 +178,104 @@ Exact helper-produced `cross_repository_receipt_to_dict` results:
   }
 }
 ```
+
+## Slice 3: Accept Runner Boundary And Verify Generation Topology
+
+- Candidate commit: `baeef7a736c1b1874b8bfd47a59343e3711907a6`.
+- Accepted decision: DEC-017 preserves the runner's process lifecycle,
+  environment and sandbox selection, telemetry, receipts, result validation,
+  and stop-policy responsibilities while adding the approved public-command
+  sequence, explicit loop bounds, fresh `plan-batch` iteration, and prohibition
+  on successor-readiness semantics.
+- Current direct APR/Batch Runway phase routing, closeout readiness,
+  closeout-to-select behavior, and topology-only tests are classified as later
+  rewrite/delete targets, not supported target contracts.
+- Topology evidence: corrected CCFG-18 closeout and completed-slice evidence at
+  `968f41d1ad752e817af518b12fb8f96273b76e0d` proves roots, generation
+  identities, lineage, branch, isolated installation, canonical-write
+  rejection, rollback, and unchanged default generation; fixture receipt
+  `34202189a20313cbb3420e03507dd0165c0df2b6` is linked.
+- Review correction: initial review rejected accidental narrowing of accepted
+  runner responsibilities. The worker restored all seven responsibilities;
+  repeat independent strict-context review was clean.
+- Validation: DEC-017 and Slice 3 YAML parsed; Markdown fences balanced;
+  candidate ancestry checks and `git diff --check` passed.
+- Implementation: none. No runner, installer, manifest, agent, test, generation,
+  or bridge behavior changed.
+
+### Orchestration Anomaly
+
+```yaml
+- slice: 3
+  severity: low
+  category: worker_project_check_outside_handoff
+  observed: The worker ran read-only install.sh --status once in each checkout before recognizing that the docs-only handoff did not authorize project-level checks.
+  impact: Both commands exited zero and reported no changes; their output was excluded from Slice 3 acceptance evidence.
+  action_taken: Directed the worker to stop project-level checks, relied only on durable CCFG-18 evidence, disclosed the deviation to the reviewer, and repeated clean review after the in-scope correction.
+  follow_up: Keep worker handoffs explicit that read-only installer status is still a coordinator-owned project check unless assigned.
+```
+
+### Cross-Repository Receipts
+
+Exact helper-produced `cross_repository_receipt_to_dict` results:
+
+```json
+{
+  "candidate_implementation_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-19 Slice 3 runner and topology decisions",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [],
+      "implementation_paths": [
+        "/home/alacasse/projects/codex-config-command-owner-redesign/docs/design/command-owner-redesign/10-ccfg-19-contract-verification-and-decisions.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/docs/design/command-owner-redesign/decisions.md"
+      ]
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "a0fdef399955f17a778c7d8b61ea56a4fca49e76",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "a0fdef399955f17a778c7d8b61ea56a4fca49e76",
+      "canonical_planning_commit_before": "a0fdef399955f17a778c7d8b61ea56a4fca49e76",
+      "implementation_commit_before": "baeef7a736c1b1874b8bfd47a59343e3711907a6"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  },
+  "stable_planning_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-19 Slice 3 stable planning receipt",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [
+        "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/completed-slices.md",
+        "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md"
+      ],
+      "implementation_paths": []
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "a0fdef399955f17a778c7d8b61ea56a4fca49e76",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "a0fdef399955f17a778c7d8b61ea56a4fca49e76",
+      "canonical_planning_commit_before": "a0fdef399955f17a778c7d8b61ea56a4fca49e76",
+      "implementation_commit_before": "baeef7a736c1b1874b8bfd47a59343e3711907a6"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  }
+}
+```
