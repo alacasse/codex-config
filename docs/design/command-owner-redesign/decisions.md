@@ -199,16 +199,71 @@ decision: >-
 ```yaml
 id: DEC-017
 status: accepted
+approved_via:
+  response: Approve all four
+  planning_receipt_commit: a0fdef399955f17a778c7d8b61ea56a4fca49e76
+  planning_receipt_path: docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md
 decision: >-
-  The runner may invoke plan-batch and work-batch, enforce explicit loop bounds,
-  and own process, sandbox, telemetry, and stop-policy concerns. It does not own
-  selection, slice design, execution acceptance, closeout meaning, or successor
-  readiness.
+  The runner invokes and validates the public plan-batch and work-batch command
+  protocols, enforces an explicit loop bound, and retains responsibility for
+  process lifecycle, environment and sandbox selection, telemetry and receipts,
+  command-result validation, and stop policy. A later loop iteration begins
+  with a fresh plan-batch invocation. The runner does not interpret closeout
+  readiness, and successor readiness is absent from its target result and
+  transition semantics.
 target_protocol:
-  - invoke_plan_batch
-  - optionally_invoke_work_batch
-  - evaluate_explicit_loop_bound
-  - optionally_invoke_fresh_plan_batch
+  command_sequence:
+    - invoke_public_plan_batch
+    - validate_plan_batch_result
+    - invoke_public_work_batch_when_plan_batch_returns_executable_work
+    - validate_work_batch_result
+  loop:
+    bound: explicit
+    later_iteration_starts_with: fresh_plan_batch_invocation
+    closeout_readiness_interpretation: forbidden
+  child_process_lifecycle:
+    owner: runner
+    responsibilities:
+      - launch
+      - observe
+      - collect_result
+      - terminate_or_wait_on_stop
+  retained_runner_responsibilities:
+    - process_lifecycle
+    - environment_selection
+    - sandbox_selection
+    - telemetry
+    - receipts
+    - command_result_validation
+    - stop_policy
+  result_and_transition_semantics:
+    may_report:
+      - invoked_public_command
+      - validated_command_result
+      - child_process_outcome
+      - loop_count_and_bound
+      - selected_environment_and_sandbox
+      - telemetry_and_receipt_evidence
+    must_not_report_or_consume:
+      - next_batch_ready
+      - successor_ready
+      - closeout_derived_successor_readiness
+      - selected_successor_identity
+forbidden_authority:
+  - finding_selection
+  - slice_design
+  - execution_acceptance
+  - closeout_meaning
+  - successor_readiness
+  - successor_selection
+related_boundary:
+  same_batch_closeout: DEC-018
+implementation_owners:
+  behavioral_harness: CCFG-23
+  planning_owner_transfer: CCFG-25
+  execution_and_closeout_owner_transfer: CCFG-26
+  runner_rehearsal: CCFG-27
+  legacy_phase_deletion: CCFG-28
 ```
 
 ### DEC-018 — Same-batch closeout never selects a successor

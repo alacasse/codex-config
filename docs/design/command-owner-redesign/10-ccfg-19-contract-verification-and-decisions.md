@@ -3,10 +3,11 @@
 ## Amendment Boundary
 
 This is the live CCFG-19 candidate amendment to the accepted command-owner
-design. Slice 1 records joined evidence. Slice 2 records only the schema and
-ledger-store outcomes approved by the user; it does not implement either
-boundary or make the current APR, Batch Runway, runner-phase, import, file, or
-test topology a target contract.
+design. Slice 1 records joined evidence. Slice 2 records only the approved
+schema and ledger-store outcomes. Slice 3 records only the approved runner
+boundary and verifies the retained stable/candidate topology. These slices do
+not implement the boundaries or make the current APR, Batch Runway,
+runner-phase, import, file, or test topology a target contract.
 
 ```yaml
 ccfg_19_record:
@@ -28,10 +29,16 @@ ccfg_19_record:
     accepted_decisions:
       - DEC-036
       - DEC-037
+  slice_3:
+    user_response: Approve all four
+    stable_approval_receipt_commit: a0fdef399955f17a778c7d8b61ea56a4fca49e76
+    candidate_base_commit: 07c5d41882b6df83bc8298854a83d59a3006b555
+    accepted_decision: DEC-017
+    ccfg_18_topology_evidence_commit: 968f41d1ad752e817af518b12fb8f96273b76e0d
   acceptance_keys:
     schema_evolution_policy_accepted: true
     ledger_store_boundary_accepted: true
-    runner_target_protocol_accepted: false
+    runner_target_protocol_accepted: true
     planning_transaction_ready_or_explicitly_blocked: false
 ```
 
@@ -149,9 +156,10 @@ The following apparent overlaps are not hidden by that count:
 | Evidence skills classify legacy, deletion, or test quality while plan/work owners act. | DEC-019 and the evidence contracts make those skills evidence producers only. | CCFG-24/25 remove the remaining legacy-removal program-owner exception. |
 | The current runner reads `next_batch_ready` while `work-batch` must not select a successor. | This is a protocol/behavior conflict in accidental runner topology, not two accepted target selection owners: `plan-batch` alone selects, and the runner owns only loop/process lifecycle. | Slice 3 records the approved public-command protocol; CCFG-27/28 replace the current runner paths/tests. |
 
-The Slice 1 computation found no target-owner ambiguity. DEC-036 and DEC-037 now
-resolve the schema and store detail; the runner protocol and OPEN-003 remain
-separate approved outcomes for Slices 3 and 4.
+The Slice 1 computation found no target-owner ambiguity. DEC-036 and DEC-037
+resolve the schema and store detail. DEC-017 now records the approved runner
+protocol without preserving current phase topology. OPEN-003 remains the
+separate approved outcome for Slice 4.
 
 ## Current Test Module Classification
 
@@ -329,6 +337,140 @@ slice_2_acceptance:
   implementation_started: false
 ```
 
-The approved runner boundary remains for Slice 3 and the approved OPEN-003
-transaction remains for Slice 4. CCFG-20 through CCFG-29 remain deferred
-implementation owners; this record selects none of them.
+At the Slice 2 exit, the approved runner boundary remained for Slice 3 and the
+approved OPEN-003 transaction remained for Slice 4. CCFG-20 through CCFG-29
+remain deferred implementation owners; this record selects none of them.
+
+## Slice 3 Approved Runner And Topology Boundaries
+
+The stable planning receipt at commit
+`a0fdef399955f17a778c7d8b61ea56a4fca49e76` retains the user's exact response
+`Approve all four` and the complete approved runner outcome. Slice 3 records
+that outcome under the existing single runner decision owner, DEC-017. DEC-018
+continues to own the distinct rule that `work-batch` closes only its current
+batch and stops.
+
+### Public-command runner protocol
+
+```yaml
+runner_target_protocol:
+  decision_owner: DEC-017
+  command_sequence:
+    - invoke_public_plan_batch
+    - validate_plan_batch_result
+    - invoke_public_work_batch_when_plan_batch_returns_executable_work
+    - validate_work_batch_result
+  loop:
+    bound: explicit
+    later_iteration_starts_with: fresh_plan_batch_invocation
+    closeout_readiness_interpretation: forbidden
+  child_process_lifecycle:
+    owner: runner
+    responsibilities:
+      - launch
+      - observe
+      - collect_result
+      - terminate_or_wait_on_stop
+  retained_runner_responsibilities:
+    - process_lifecycle
+    - environment_selection
+    - sandbox_selection
+    - telemetry
+    - receipts
+    - command_result_validation
+    - stop_policy
+  target_result_and_transition_semantics:
+    may_report:
+      - invoked_public_command
+      - validated_command_result
+      - child_process_outcome
+      - loop_count_and_bound
+      - selected_environment_and_sandbox
+      - telemetry_and_receipt_evidence
+    successor_readiness_present: false
+    forbidden_fields_or_meanings:
+      - next_batch_ready
+      - successor_ready
+      - closeout_derived_successor_readiness
+      - selected_successor_identity
+  semantic_authority_retained_by_commands:
+    plan_batch:
+      - finding_selection
+      - successor_planning
+      - dispatch_and_runway_design
+    work_batch:
+      - execution_acceptance
+      - same_batch_closeout_meaning
+```
+
+An explicit loop bound authorizes only another iteration. It does not make a
+closed batch evidence that a successor exists or is ready. Every later
+iteration starts by invoking `plan-batch` as a fresh public command; that
+command alone may select and prepare later work. The runner validates public
+command results and retains process lifecycle, environment and sandbox
+selection, telemetry and receipt handling, and stop-policy responsibility. It
+neither reconstructs APR or Batch Runway phases nor derives a successor
+transition from closeout.
+
+### Current topology is migration evidence
+
+The current implementation still routes directly through APR and Batch Runway
+phases and exposes closeout-derived `next_batch_ready` behavior. Those surfaces
+characterize the migration source; they do not define the accepted protocol.
+The existing findings already own their rewrite and deletion:
+
+| Current surface | Disposition | Existing finding owner |
+|---|---|---|
+| APR planning phases and Batch Runway create-spec routing | Move selection, scope, dispatch, runway, risk, approval, and validation-profile behavior behind public `plan-batch`; remove the old decision path. | CCFG-25; final legacy deletion in CCFG-28. |
+| Batch Runway execute/recovery/finalize phases and APR closeout routing | Move execution through same-batch reconciliation behind public `work-batch`; remove closeout interpretation from APR. | CCFG-26; final legacy deletion in CCFG-28. |
+| Runner fixed-phase dispatch, phase prompts, phase observations, and facade/import topology | Rewrite against public command invocation, result validation, explicit loop bounds, and process lifecycle. | CCFG-27; delete remaining legacy topology in CCFG-28. |
+| `next_batch_ready`, closeout-readiness checks, and closeout-to-select transitions in T11 and T13 | Replace with a fresh `plan-batch` invocation on a later bounded iteration; delete the closeout-derived successor protocol. | CCFG-27; deletion completion in CCFG-28. |
+| Topology-only assertions across T02, T05, T08-T13, T16-T20, T27, and T28 | Replace only behavior that survives at the public command seam; delete assertions whose only subject is APR, Batch Runway, a fixed phase, facade/import location, or dependency topology. | CCFG-23 owns topology-independent scenarios; CCFG-25 through CCFG-27 supply migrated behavior; CCFG-28 removes obsolete tests. |
+
+This disposition does not authorize test, runner, installer, manifest, agent,
+or source changes in CCFG-19.
+
+### CCFG-18 durable generation evidence
+
+The canonical CCFG-18
+[`closeout.md`](https://github.com/alacasse/codex-config/blob/968f41d1ad752e817af518b12fb8f96273b76e0d/docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/closeout.md)
+and
+[`completed-slices.md`](https://github.com/alacasse/codex-config/blob/968f41d1ad752e817af518b12fb8f96273b76e0d/docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/completed-slices.md)
+at corrected durable closeout commit
+`968f41d1ad752e817af518b12fb8f96273b76e0d` are the topology record. The
+fixture-isolation and rollback ledger receipt within that record is
+`34202189a20313cbb3420e03507dd0165c0df2b6`.
+They establish these facts:
+
+| Fact | Durable evidence |
+|---|---|
+| Roots and generations | Stable repository `/home/alacasse/projects/codex-config` with `/home/alacasse/.codex` and canonical-write authority; candidate repository `/home/alacasse/projects/codex-config-command-owner-redesign` with `/home/alacasse/.codex-command-owner-redesign` and no canonical-write authority. |
+| Authoritative base and accepted snapshot | `da5b97165eb8d8c9f809a64937bcc9d753032ee7` and `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c` are both ancestors of the ancestry-preserving merge `b044e3c348922663aa074638227aae8d2633cfe3`. |
+| Candidate branch and established head | Branch `implementation/command-owner-redesign`; CCFG-18 candidate evidence head `9027bd1ea35e66e263dfced02a2b9f91835c1bd9`. The Slice 3 base `07c5d41882b6df83bc8298854a83d59a3006b555` remains on that branch with both lineage commits as ancestors. |
+| Isolated installation | Stable and candidate status checks passed, all 25 candidate links resolved only to the candidate repository, stable links did not resolve to the candidate, and candidate `auth.json` remained absent. |
+| Canonical-write rejection | The candidate strict context mechanically rejected a canonical-planning write request; the fixture session wrote only below its fixture root. |
+| Quiescence and rollback | Selected, queued, active, and resumable fixture state were all absent; stable default-path rollback passed through the normal shell Codex CLI. |
+| Default generation | `default_generation_switched: false`; stable links and the stable default generation remained unchanged. Slice 3 remains controlled by the stable helper and stable `CODEX_HOME`. |
+
+```yaml
+slice_3_acceptance:
+  approval:
+    exact_response: Approve all four
+    stable_receipt_commit: a0fdef399955f17a778c7d8b61ea56a4fca49e76
+  runner_target_protocol_accepted:
+    value: true
+    decision: DEC-017
+  topology_verification:
+    value: true
+    durable_ccfg_18_closeout_commit: 968f41d1ad752e817af518b12fb8f96273b76e0d
+    fixture_evidence_receipt_commit: 34202189a20313cbb3420e03507dd0165c0df2b6
+    current_candidate_branch: implementation/command-owner-redesign
+    current_candidate_head: 07c5d41882b6df83bc8298854a83d59a3006b555
+  successor_readiness_in_target_semantics: false
+  implementation_started: false
+  default_generation_switched: false
+```
+
+The approved OPEN-003 planning transaction remains for Slice 4. CCFG-20
+through CCFG-29 remain deferred and unselected; Slice 3 performs no generation
+switch, bridge removal, implementation, or successor selection.
