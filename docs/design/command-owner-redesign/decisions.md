@@ -598,6 +598,157 @@ bridge_record:
   deletion_condition: CCFG_29_final_integration_complete
 ```
 
+### DEC-036 — Schema evolution is closed-world and reader-first
+
+```yaml
+id: DEC-036
+status: accepted
+refines:
+  - DEC-008
+  - DEC-010
+  - DEC-031
+approved_via:
+  response: Approve all four
+  planning_receipt_commit: 19e0746cdc7f681ebe4e6b0ab0be62640097ea6f
+  planning_receipt_path: docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md
+decision: >-
+  While v1 is active, writers emit v1 and readers accept only explicitly
+  supported versions and fields. Unknown versions block. Unknown v1 fields
+  reject unless that schema names a bounded allowlist exception. Optional
+  additions require an accepted compatibility decision and a coordinated
+  reader-before-writer rollout. Required-field changes and semantic ownership
+  changes require a new version.
+v1_policy:
+  writer_emits: v1
+  reader_accepts:
+    - v1
+  unknown_schema_version: block
+  unknown_fields: reject
+  unknown_field_exception:
+    requires:
+      - schema_name
+      - allowed_fields
+      - accepted_compatibility_decision
+      - bounded_scope
+      - removal_condition
+    may_not_override:
+      - unknown_version_block
+      - required_field_change_requires_new_version
+      - semantic_ownership_change_requires_new_version
+  optional_field_addition:
+    requires:
+      - accepted_compatibility_decision
+      - readers_accept_before_writers_emit
+  required_field_change:
+    requires: new_schema_version
+  semantic_ownership_change:
+    requires:
+      - new_schema_version
+      - accepted_architecture_decision
+  deprecation:
+    v1_reader_support_required_until: named_migration_condition_satisfied
+    silent_removal_within_v1: forbidden
+producer_identity:
+  required:
+    - toolchain_generation
+    - toolchain_commit
+    - schema_version
+implementation_owners:
+  skill_contract_v1: CCFG-20
+  planning_artifact_schemas: CCFG-21
+  behavioral_scenarios: CCFG-23
+```
+
+### DEC-037 — `ledger-store/v1` applies caller decisions with whole-ledger CAS
+
+```yaml
+id: DEC-037
+status: accepted
+refines:
+  - DEC-002
+  - DEC-003
+  - DEC-033
+approved_via:
+  response: Approve all four
+  planning_receipt_commit: 19e0746cdc7f681ebe4e6b0ab0be62640097ea6f
+  planning_receipt_path: docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md
+decision: >-
+  ledger-store/v1 is an apply-only storage mechanism. It reads and rewrites the
+  whole ledger under file-level compare-and-swap, validates the revisions of
+  every touched finding, binds each idempotency key to one exact caller payload,
+  renders deterministically, replaces atomically, and makes a
+  ledger-written/receipt-missing result recoverable without applying the
+  mutation twice. Command owners retain every semantic workflow decision.
+read:
+  inputs:
+    - ledger_path
+  outputs:
+    - parsed_findings
+    - file_revision
+apply:
+  inputs:
+    - ledger_path
+    - expected_file_revision
+    - caller_decision:
+        action: create | update | merge | no-op | reconcile
+        finding_mutations: []
+        touched_finding_revisions: {}
+        idempotency_key: string
+  outputs:
+    - outcome: applied | exact_replay
+    - before_revision
+    - after_revision
+    - touched_finding_ids
+    - receipt
+cas:
+  scope: whole_ledger
+  expected_file_revision_mismatch: reject_without_write
+  touched_finding_revision_mismatch: reject_without_write
+idempotency:
+  evaluation_order:
+    - reject_existing_key_payload_mismatch
+    - return_existing_exact_key_payload_result
+    - validate_cas_for_new_key
+  exact_key_and_payload_replay: return_same_result_without_reapplying
+  same_key_different_payload: reject
+  durable_binding:
+    - idempotency_key
+    - exact_apply_request
+    - before_revision
+    - after_revision
+    - touched_finding_ids
+write_contract:
+  parse_and_apply_in_memory: required
+  deterministic_rendering: required
+  atomic_replacement: required
+  reread_and_validate: required
+receipt_recovery:
+  ledger_written_receipt_missing: recover_same_receipt_from_durable_exact_replay_evidence
+  reapply_mutation: forbidden
+  missing_or_ambiguous_replay_evidence: block
+allowed_mechanical_checks:
+  - schema_and_identity_uniqueness
+  - expected_file_revision
+  - caller_payload_shape
+  - dependency_references
+  - touched_finding_revisions
+  - exact_idempotency_replay
+  - deterministic_resulting_render
+forbidden_semantic_decisions:
+  - duplicate_or_merge_meaning
+  - finding_selection
+  - scope_shaping
+  - closeout_interpretation
+  - successor_selection
+semantic_decision_owners:
+  intake_mutation: add-to-ledger
+  same_batch_reconciliation: work-batch
+implementation_owners:
+  store_and_fault_injection: CCFG-21
+  intake_integration: CCFG-24
+  closeout_integration: CCFG-26
+```
+
 ## Superseded Decisions
 
 ```yaml

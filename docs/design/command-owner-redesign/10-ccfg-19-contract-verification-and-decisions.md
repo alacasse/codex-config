@@ -3,9 +3,10 @@
 ## Amendment Boundary
 
 This is the live CCFG-19 candidate amendment to the accepted command-owner
-design. Slice 1 records evidence only. It does not change an accepted decision,
-implement a target schema or mechanism, or make the current APR, Batch Runway,
-runner-phase, import, file, or test topology a target contract.
+design. Slice 1 records joined evidence. Slice 2 records only the schema and
+ledger-store outcomes approved by the user; it does not implement either
+boundary or make the current APR, Batch Runway, runner-phase, import, file, or
+test topology a target contract.
 
 ```yaml
 ccfg_19_record:
@@ -20,9 +21,16 @@ ccfg_19_record:
     contract_to_scenario_map_complete: true
     blocking_ownership_conflicts: 0
     accepted_decisions_changed: false
-  later_slices:
-    schema_evolution_policy_accepted: false
-    ledger_store_boundary_accepted: false
+  slice_2:
+    user_response: Approve all four
+    stable_approval_receipt_commit: 19e0746cdc7f681ebe4e6b0ab0be62640097ea6f
+    candidate_base_commit: db0f37dc5a62205c3e33df9dbb82ded05fc04b47
+    accepted_decisions:
+      - DEC-036
+      - DEC-037
+  acceptance_keys:
+    schema_evolution_policy_accepted: true
+    ledger_store_boundary_accepted: true
     runner_target_protocol_accepted: false
     planning_transaction_ready_or_explicitly_blocked: false
 ```
@@ -73,7 +81,7 @@ every contract reference resolvable without inventing behavior.
 | `partial-execution` | Define: completed-slice evidence survives while the active runway identifies the next incomplete slice; completed work is not replayed. | Current procedure: `skills/batch-runway/references/execute-recovery-v1.md`; target behavioral proof belongs to CCFG-23. |
 | `resume-after-interruption` | Remap to `resume-active-batch`. | Same command-level behavior; interruption is one cause of active-batch pickup. |
 | `stale-placeholder-closeout` | Define: unresolved commit/review placeholders block closeout; the self-referential final commit uses only `this closeout commit`. | `tests/test_batch_lifecycle_guards.py::test_active_batch_artifacts_do_not_keep_unresolved_commit_placeholders` and `test_batch_runway_documents_final_closeout_commit_placeholder_policy`. |
-| `stale-state-revision` | Define: an expected state or artifact revision mismatch rejects mutation before write and emits stable blocker evidence. | Existing artifact-lineage checks in `scripts/planning_state.py`; whole-state CAS detail remains for Slice 2 and CCFG-21. |
+| `stale-state-revision` | Define: an expected state or artifact revision mismatch rejects mutation before write and emits stable blocker evidence. | Existing artifact-lineage checks in `scripts/planning_state.py`; DEC-037 accepts whole-ledger CAS and CCFG-21 owns implementation proof. |
 | `structured-prose-contradiction` | Remap to `current-prose-does-not-own-pointers`. | Both assert that structured canonical pointers win and contradictory prose cannot redefine them. |
 | `legacy-evidence-no-state-writes` | Define: `legacy-removal` may classify and hand off evidence but may not select, queue, execute, reconcile, or write lifecycle state. | DEC-019 is the target authority. Current `skills/legacy-removal/SKILL.md` and `tests/test_planning_state_consumer_projection_routing.py` methods that preserve legacy-removal program authority are conflicting migration evidence, not proof of the prohibition; CCFG-24/25 must rewrite them. |
 | `deletion-evidence-no-state-writes` | Define: `dead-surface-audit` returns deletion-test evidence vocabulary only and cannot approve or execute deletion or mutate planning state. | `skills/dead-surface-audit/SKILL.md`; `tests/test_deletion_test_vocabulary_ownership.py::test_dead_surface_audit_owns_only_deletion_test_evidence_vocabulary`. |
@@ -90,7 +98,7 @@ a disposition, not a claim that an existing topology test proves the contract.
 | `INTAKE-SOURCE-001` | `skills/add-to-ledger/SKILL.md` purpose and Stops; `docs/skill-routing-contract.md` Executable Work Source | `add-to-ledger` | `fresh-finding-intake`, `requested-missing-finding` | supported source behavior | T20 `test_executable_work_source_boundary_is_explicit`; T28 command-owner routing assertions. Replace text coupling with CCFG-23 command behavior. |
 | `INTAKE-IDENTITY-002` | `skills/add-to-ledger/SKILL.md` source intake boundary; `docs/workflow-guide.md` external-source pipeline | `add-to-ledger` | `fresh-finding-intake`, `duplicate-finding-intake` | supported source behavior | No direct behavioral test. Replace the gap with CCFG-23 fresh/duplicate intake scenarios. |
 | `INTAKE-NORMALIZE-003` | `skills/add-to-ledger/SKILL.md`; APR Vague Row Selection Guard | `add-to-ledger` | `fresh-finding-intake`, `vague-mixed-risk-finding` | supported source behavior | T16 vague-row methods and T28 `test_plan_batch_blocks_direct_planning_from_ccfg11_like_vague_rows`; replace with target intake/planning boundary proof. |
-| `INTAKE-MUTATE-004` | canonical `docs/plans/programs/codex-config/LEDGER.md`; `docs/workflow-guide.md` pipeline | `add-to-ledger` | `fresh-finding-intake`, `duplicate-finding-intake`, `stale-ledger-revision` | supported behavior with a target mechanism gap | No current intake CAS/idempotency test. Replace with CCFG-21 store fixtures and CCFG-23 intake scenarios after the Slice 2 decision. |
+| `INTAKE-MUTATE-004` | canonical `docs/plans/programs/codex-config/LEDGER.md`; `docs/workflow-guide.md` pipeline | `add-to-ledger` | `fresh-finding-intake`, `duplicate-finding-intake`, `stale-ledger-revision` | supported behavior with a target mechanism gap | No current intake CAS/idempotency test. Add CCFG-21 store fixtures and CCFG-23 intake scenarios against DEC-037. |
 | `INTAKE-STOP-005` | `skills/add-to-ledger/SKILL.md` Stops | `add-to-ledger` | `intake-stops-before-planning` | supported source behavior | T20 command-input/source-boundary methods. Replace prose assertions with no-dispatch/no-runway file-effect proof. |
 | `PLAN-SOURCE-001` | `skills/plan-batch/SKILL.md`; `docs/skill-routing-contract.md` Command Input Contract | `plan-batch` | `empty-ledger`, `one-eligible-finding`, `requested-missing-finding` | supported source behavior | T20 source-boundary methods and T28 command-owner routing methods; replace with target interface scenarios. |
 | `PLAN-ACTIVE-002` | `skills/plan-batch/SKILL.md`; `skills/planning-state/SKILL.md` Diagnostic-First Pickup | `plan-batch` | `selected-dispatch-exists`, `queued-runway-exists`, `active-runway-exists` | supported source behavior | T17 `test_work_batch_preserves_queued_plan_batch_output_without_closeout`; T26 current/validate active-field methods. Retain diagnostics, replace prose coupling. |
@@ -112,7 +120,7 @@ a disposition, not a claim that an existing topology test proves the contract.
 | `CLOSE-RECONCILE-002` | `skills/work-batch/SKILL.md`; APR closeout-runway boundary | `work-batch` | `same-batch-reconciliation`, `closeout-without-execution-evidence` | supported source behavior | T17 closeout evidence rejection; T20 `test_work_batch_reconciles_same_batch_closeout`; T26 closeout evidence validation. Replace APR mode with target command behavior. |
 | `CLOSE-NEXT-003` | `skills/work-batch/SKILL.md`; `docs/workflow-guide.md` same-batch stop rule | `work-batch` | `no-successor-selection` | supported source behavior | T11's `next_batch_ready` methods prove conflicting accidental runner protocol, not this target contract; T17/T20 prove the command stop in prose. Replace all with CCFG-23/27 public-command behavior after Slice 3. |
 | `STATE-DIAG-001` | `skills/planning-state/SKILL.md`; `scripts/planning_state.py` `current` and `validate` commands | `planning-state` | `current-state-diagnostic`, `missing-current-file`, `archived-artifact-not-pickup-authority` | supported source behavior | T26 current/validate, missing-current, warning, and historical-precedence methods. Retain behavioral diagnostics; rewrite only format-specific cases under CCFG-21. |
-| `STATE-TRANSITION-002` | `scripts/planning_state.py::select_batch`, `queue_batch`, `_transition_receipt` | `planning-state` | `legal-state-transitions`, `illegal-state-transition`, `stale-state-revision` | supported behavior with a target mechanism gap | T26 select/queue/receipt and conflict methods. Retain current transition characterization; add whole-state revision/fault tests after Slice 2 and CCFG-21. |
+| `STATE-TRANSITION-002` | `scripts/planning_state.py::select_batch`, `queue_batch`, `_transition_receipt` | `planning-state` | `legal-state-transitions`, `illegal-state-transition`, `stale-state-revision` | supported behavior with a target mechanism gap | T26 select/queue/receipt and conflict methods. Retain current characterization; CCFG-21 adds DEC-037 whole-ledger revision and fault proof. |
 | `STATE-CANONICAL-003` | DEC-010, DEC-032, DEC-033; planning-state canonical/projection validators | `planning-state` (cross-artifact canonicality; `ledger-store` may validate applied finding records but does not redefine the ownership rule) | `duplicate-machine-fact-owner`, `current-prose-does-not-own-pointers` | accepted target decision | T26 canonical/projection schema methods and T27 single-owner/noncanonical-projection methods. Rewrite to accepted CCFG-20/21 schemas; no current file topology is preserved. |
 | `STATE-HISTORY-004` | `scripts/planning_state.py` active-first loading; Planning State Diagnostic-First Pickup | `planning-state` | `archived-artifact-not-pickup-authority` | supported source behavior | T26 historical-artifact, redirect, stale-warning, and missing-current methods. Retain behavior; delete only expired compatibility readers after migration evidence. |
 | `EVIDENCE-LEGACY-001` | DEC-019; current `skills/legacy-removal/SKILL.md` is conflicting migration evidence because it retains broader program authority | `legacy-removal` (classification only) | `legacy-evidence-no-state-writes` | accepted target decision | T27 legacy-removal owner/handoff methods conflict with the target prohibition rather than proving it. Rewrite to evidence-only authority during CCFG-24/25; delete obsolete program-owner exception proof. |
@@ -137,12 +145,13 @@ The following apparent overlaps are not hidden by that count:
 |---|---|---|
 | Current APR and Batch Runway procedures make planning, execution, and closeout decisions also assigned to command owners. | DEC-001, DEC-005, DEC-006, and DEC-014 already select one target command owner; the old locations are migration topology, not co-owners. | CCFG-24 through CCFG-28 transfer behavior and remove the old decision paths. |
 | Command owners decide lifecycle intent while `planning-state` applies transitions. | DEC-003 and the target ownership matrix separate semantic choice from validation/serialization. | CCFG-21 implements explicit transition requests; no selection logic moves into `planning-state`. |
-| `add-to-ledger`/`work-batch` decide ledger meaning while `ledger-store` applies mutations. | The accepted target model already makes storage apply-only. Slice 2 must decide CAS, idempotency, and receipt detail, not duplicate semantic ownership. | Keep `ledger_store_boundary_accepted: false` until user approval. |
+| `add-to-ledger`/`work-batch` decide ledger meaning while `ledger-store` applies mutations. | DEC-037 accepts whole-ledger CAS, exact replay, and receipt recovery while preserving command-owner semantics. | CCFG-21 implements the store; CCFG-24/26 integrate it without moving semantic decisions. |
 | Evidence skills classify legacy, deletion, or test quality while plan/work owners act. | DEC-019 and the evidence contracts make those skills evidence producers only. | CCFG-24/25 remove the remaining legacy-removal program-owner exception. |
 | The current runner reads `next_batch_ready` while `work-batch` must not select a successor. | This is a protocol/behavior conflict in accidental runner topology, not two accepted target selection owners: `plan-batch` alone selects, and the runner owns only loop/process lifecycle. | Slice 3 records the approved public-command protocol; CCFG-27/28 replace the current runner paths/tests. |
 
-OPEN-003 and the unaccepted schema, store, and runner details therefore remain
-real decision gates without making the target owner map ambiguous.
+The Slice 1 computation found no target-owner ambiguity. DEC-036 and DEC-037 now
+resolve the schema and store detail; the runner protocol and OPEN-003 remain
+separate approved outcomes for Slices 3 and 4.
 
 ## Current Test Module Classification
 
@@ -195,7 +204,7 @@ method_inventory_audit:
 | T27 | `tests/test_planning_state_consumer_projection_routing.py` | text-contract | 3/18 exceptions: topology = `test_batch_runway_feature_depends_on_planning_state`, `test_architecture_program_feature_depends_on_planning_state`, `test_legacy_removal_feature_depends_on_planning_state`. | Replace old consumer/owner prose with accepted target seams; retain noncanonical projection and evidence-only boundaries as behavioral/schema proof. |
 | T28 | `tests/test_skill_routing_rule_ownership.py` | text-contract | None. | Replace transitional routing-owner prose with end-to-end command-owner contract tests; delete old runtime split assertions after CCFG-24 through CCFG-26. |
 
-## Slice 1 Exit and Deferred Decisions
+## Slice 1 Evidence Exit
 
 All 31 contracts now have defensible source evidence (including explicit
 inference and target-mechanism gaps, or an explicit target-only
@@ -204,13 +213,122 @@ classification, and test disposition evidence. All 28 current test modules have
 one primary classification, and the exhaustive mixed-module selectors assign
 all 465 current test methods exactly once.
 
-Slice 1 deliberately leaves these decision gates open:
+Slice 1 left these decision gates for the user approval packet:
 
 - schema evolution and explicit v1 exception policy;
 - whole-ledger CAS and the exact apply-only `ledger-store/v1` boundary;
 - the runner public-command protocol and removal of `next_batch_ready`;
 - OPEN-003 transaction staging, partial evidence, receipt recovery, and retry.
 
-Those gates require the user approval packet before later slices may update
-`decisions.md`. CCFG-20 through CCFG-29 remain deferred implementation owners;
-this record selects none of them.
+## Slice 2 Approved Boundaries
+
+The stable planning receipt at commit
+`19e0746cdc7f681ebe4e6b0ab0be62640097ea6f` records the user's exact response
+`Approve all four`. Slice 2 consumes only the schema-evolution and ledger-store
+parts of that approval as DEC-036 and DEC-037.
+
+### Closed-world schema evolution
+
+DEC-036 accepts this behavior for every v1 contract and planning-artifact
+schema:
+
+| Concern | Accepted behavior |
+|---|---|
+| Writer version | While v1 is active, writers emit v1. |
+| Unknown version | Block; do not fall back to prose or a permissive reader. |
+| Unknown v1 field | Reject unless that schema has an explicit accepted allowlist exception for the named field. |
+| Optional addition | Requires an accepted compatibility decision. Readers deploy support before writers emit the field. |
+| Required-field change | Requires a new schema version; it cannot ship as a v1 exception. |
+| Semantic ownership change | Requires a new schema version and an accepted architecture decision. |
+| Deprecation | v1 readers retain support until the named migration condition passes; silent v1 removal is forbidden. |
+| Producer identity | Emitted active contracts retain `toolchain_generation`, `toolchain_commit`, and `schema_version`. |
+| Per-schema exception | Names the schema, allowed fields, accepted decision, bounded scope, and removal condition; it cannot waive the unknown-version or new-version rules. |
+
+The deprecation and producer-identity rows preserve the already accepted
+[`03-contract-first-formats.md`](03-contract-first-formats.md) contract. They do
+not add an unapproved compatibility path.
+
+Current strict validators in `scripts/cross_checkout_context.py`, runner result
+schemas, and `tests/test_cross_checkout_context.py::test_rejects_missing_and_unsupported_fields`
+demonstrate fail-closed validation techniques. Current `scripts/planning_state.py`
+fixtures, legacy readers, `test_json_protocol_normalizes_wrapped_live_style_fields`,
+and `test_bootstrap_contract_represents_graphify_compatibility_evidence`
+demonstrate migration and compatibility constraints. Neither family is silently
+standardized: DEC-036 is the policy, and CCFG-20/21 must implement it separately
+for each declared schema.
+
+### Apply-only `ledger-store/v1`
+
+DEC-037 accepts one storage boundary:
+
+```yaml
+ledger_store_v1:
+  read:
+    inputs: [ledger_path]
+    outputs: [parsed_findings, file_revision]
+  apply:
+    inputs:
+      - ledger_path
+      - expected_file_revision
+      - caller_decision:
+          action: create | update | merge | no-op | reconcile
+          finding_mutations: []
+          touched_finding_revisions: {}
+          idempotency_key: string
+    outputs:
+      - outcome: applied | exact_replay
+      - before_revision
+      - after_revision
+      - touched_finding_ids
+      - receipt
+  whole_ledger_cas:
+    file_revision_mismatch: reject_without_write
+    touched_finding_revision_mismatch: reject_without_write
+  idempotency:
+    evaluation_order:
+      - reject_existing_key_payload_mismatch
+      - return_existing_exact_key_payload_result
+      - validate_cas_for_new_key
+    exact_key_and_payload_replay: return_same_result_without_reapplying
+    same_key_different_payload: reject
+  persistence:
+    deterministic_rendering: required
+    atomic_replacement: required
+    reread_and_validate: required
+  receipt_recovery:
+    ledger_written_receipt_missing: recover_from_durable_exact_replay_evidence
+    second_application: forbidden
+    missing_or_ambiguous_evidence: block
+```
+
+The store may mechanically check schema and identity uniqueness, file and
+touched-finding revisions, caller payload shape, dependency references, exact
+idempotency replay, and deterministic rendering. It may not decide semantic
+duplicates, merge meaning, selection, scope, closeout, or successors.
+`add-to-ledger` owns intake mutation meaning; `work-batch` owns same-batch
+reconciliation meaning.
+
+### Evidence, conflicts, and deferred implementation
+
+| Boundary | Source or accepted evidence | Conflict disposition | Deferred implementation owners |
+|---|---|---|---|
+| Schema evolution | `03-contract-first-formats.md`; DEC-008, DEC-010, DEC-031; strict validators and permissive planning-state examples as contrasting evidence | Per-schema DEC-036 rules replace any inference that one current parser's strictness or permissiveness is universal. | CCFG-20 skill schema; CCFG-21 planning schemas; CCFG-23 scenarios. |
+| Ledger storage | `02-target-ownership-model.md`; DEC-002, DEC-003, DEC-033; current whole-file ledger and planning-state revision evidence | DEC-037 assigns only apply mechanics to the store; semantic decisions remain with command owners, so no duplicate target owner is created. | CCFG-21 store/fault injection; CCFG-24 intake integration; CCFG-26 closeout integration. |
+
+```yaml
+slice_2_acceptance:
+  approval:
+    exact_response: Approve all four
+    stable_receipt_commit: 19e0746cdc7f681ebe4e6b0ab0be62640097ea6f
+  schema_evolution_policy_accepted:
+    value: true
+    decision: DEC-036
+  ledger_store_boundary_accepted:
+    value: true
+    decision: DEC-037
+  implementation_started: false
+```
+
+The approved runner boundary remains for Slice 3 and the approved OPEN-003
+transaction remains for Slice 4. CCFG-20 through CCFG-29 remain deferred
+implementation owners; this record selects none of them.
