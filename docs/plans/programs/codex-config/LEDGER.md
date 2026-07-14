@@ -81,11 +81,12 @@ row-by-row here.
 | CCFG-27. Prepare and Rehearse Candidate Cutover | Open | [COR-010](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-010--ccfg-27--prepare-and-rehearse-candidate-cutover) | Command-owner redesign / cutover preparation | Wait for CCFG-26 | Prepare runner, manifest, agents, installer, clean candidate generation, switch rehearsal, rollback, and quiescence. Default generation remains stable. Unselected. |
 | CCFG-28. Remove Legacy Owners and Commit Final Cutover | Open | [COR-011](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-011--ccfg-28--remove-legacy-owners-and-commit-final-cutover) | Command-owner redesign / deletion and final switch | Wait for CCFG-27 | Delete APR and Batch Runway from candidate, prove clean install/no legacy route, switch default generation, obtain candidate read-only diagnostic, close under pinned stable controller, and stop. Unselected; distinct from CCFG-11. |
 | CCFG-29. Contract-First Convergence and Final Integration | Open | [COR-012](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-012--ccfg-29--contract-first-convergence-and-final-integration) | Command-owner redesign / convergence and integration | Wait for CCFG-28 | Converge one dialect, merge candidate into latest master, rebind default toolchain to master, remove cross-checkout bridge, and retire temporary branches. Unselected. |
-| CCFG-30. Separate Planning Snapshots from Live Execution Leases | Open | `notes/cross-flight-execution-baseline-plan.md`; user-reported CCFG-19/CCFG-20 startup failure on 2026-07-14 | Batch Runway / cross-checkout execution lifecycle | Eligible for a future explicit `plan-batch` after CCFG-20 same-batch closeout; do not widen the current runway | Preserve exact revision validation for active handoffs while making queued plan commits and compatible between-flight commits normal startup reconciliation. Unselected. |
+| CCFG-30. Separate Planning Snapshots from Live Execution Leases | Pending | `notes/cross-flight-execution-baseline-plan.md`; `batches/ccfg-30-cross-flight-execution-leases/dispatch.md` | Batch Runway / cross-checkout execution lifecycle | Execute only through `batches/ccfg-30-cross-flight-execution-leases/runway.md`; stable control checkout only | Preserve exact revision validation for active handoffs while making queued plan commits and compatible between-flight commits normal startup reconciliation. Controlled by the queued runway. |
 
 ## Batch Queue
 
-Queued batch: `None`.
+Queued batch:
+`docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/runway.md`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
@@ -104,13 +105,14 @@ Queued batch: `None`.
 | `ccfg-18-candidate-generation` | completed | `docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/runway.md` | CCFG-18 | Completed in candidate range `da5b971..9027bd1` and stable planning range `da5b971..968f41d`; corrected closeout proves lineage, strict transition, generation isolation, fixture-only operation, quiescence, and unchanged-default rollback through the primary shell CLI. CCFG-19 remains unselected. |
 | `ccfg-19-source-contract-decisions` | completed | `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md` | CCFG-19 | Completed in candidate range `9027bd1..13d7f63`; all seven exit keys are evidenced and OPEN-003 is resolved. Same-batch closeout selected no successor. |
 | `ccfg-20-skill-contract-schema` | completed | `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/runway.md` | CCFG-20 | Completed in candidate range `13d7f63..3e54155`; all five COR-003 keys are green, final range review is clean, and same-batch closeout selected no successor. |
+| `ccfg-30-cross-flight-execution-leases` | queued | `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/runway.md` | CCFG-30 | Stable-control migration only; separate planning snapshots from startup reconciliation and exact live leases without touching the redesign candidate. |
 
 ## Recommended Work Order
 
 1. Start pickup from root and program `CURRENT.md`.
-2. CCFG-18 through CCFG-20 are closed; no batch is selected, active, or queued.
-3. Await an explicit `plan-batch` request before selecting any open row.
-4. Keep CCFG-21 through CCFG-30 unselected until that explicit request.
+2. CCFG-18 through CCFG-20 are closed; CCFG-30 is the only queued batch.
+3. Execute only `ccfg-30-cross-flight-execution-leases` through `work-batch`.
+4. Keep CCFG-21 through CCFG-29 and all older open rows unselected.
 5. Do not revive archived APR/PST ledgers as pickup sources.
 6. Keep CCFG-11 open but do not execute its displaced runway.
 
