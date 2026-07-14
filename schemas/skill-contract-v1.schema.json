@@ -1,0 +1,175 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/alacasse/codex-config/schemas/skill-contract-v1.schema.json",
+  "title": "Skill Contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "identity",
+    "producer",
+    "purpose",
+    "owns",
+    "reads",
+    "writes",
+    "requires",
+    "delegates",
+    "forbids",
+    "outputs",
+    "stops_when",
+    "references"
+  ],
+  "properties": {
+    "schema": {
+      "const": "skill-contract/v1"
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "audience"],
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/identifier"
+        },
+        "audience": {
+          "enum": [
+            "human-command-owner",
+            "support-mechanism",
+            "evidence-skill",
+            "authoring-support"
+          ]
+        }
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "toolchain_generation",
+        "toolchain_commit",
+        "schema_version"
+      ],
+      "properties": {
+        "toolchain_generation": {
+          "enum": ["stable", "candidate"]
+        },
+        "toolchain_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "schema_version": {
+          "const": "skill-contract/v1"
+        }
+      }
+    },
+    "purpose": {
+      "$ref": "#/definitions/nonEmptyString"
+    },
+    "owns": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decisions", "durable_facts"],
+      "properties": {
+        "decisions": {
+          "$ref": "#/definitions/identifierList"
+        },
+        "durable_facts": {
+          "$ref": "#/definitions/identifierList"
+        }
+      }
+    },
+    "reads": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "conditional"],
+      "properties": {
+        "required": {
+          "$ref": "#/definitions/identifierList"
+        },
+        "conditional": {
+          "$ref": "#/definitions/identifierList"
+        }
+      }
+    },
+    "writes": {
+      "$ref": "#/definitions/identifierList"
+    },
+    "requires": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mechanisms", "evidence_skills"],
+      "properties": {
+        "mechanisms": {
+          "$ref": "#/definitions/identifierList"
+        },
+        "evidence_skills": {
+          "$ref": "#/definitions/identifierList"
+        }
+      }
+    },
+    "delegates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["responsibility", "target"],
+        "properties": {
+          "responsibility": {
+            "$ref": "#/definitions/identifier"
+          },
+          "target": {
+            "$ref": "#/definitions/identifier"
+          }
+        }
+      }
+    },
+    "forbids": {
+      "$ref": "#/definitions/identifierList"
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["one_of"],
+      "properties": {
+        "one_of": {
+          "$ref": "#/definitions/identifierList"
+        }
+      }
+    },
+    "stops_when": {
+      "$ref": "#/definitions/identifierList"
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "load_when"],
+        "properties": {
+          "path": {
+            "$ref": "#/definitions/nonEmptyString"
+          },
+          "load_when": {
+            "$ref": "#/definitions/identifierList"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": ".*\\S.*"
+    },
+    "identifier": {
+      "$ref": "#/definitions/nonEmptyString"
+    },
+    "identifierList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/identifier"
+      }
+    }
+  }
+}
