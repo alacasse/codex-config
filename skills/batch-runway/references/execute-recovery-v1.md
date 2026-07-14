@@ -16,6 +16,29 @@ Use this reference only when routine slice execution leaves the normal path.
 - subagent tooling or custom agents are unavailable
 - a compact handoff was insufficient
 
+## Cross-Checkout Movement Boundary
+
+A queued `cross-checkout-context/v1` planning snapshot that no longer equals
+live repository revisions is not, by itself, a recovery trigger. First route
+through the normal `work-batch` startup reconciliation contract. Movement
+accepted as `expected-queue-establishment` or
+`compatible-between-flight-change` proceeds through helper refresh preparation
+without an orchestration anomaly.
+
+If the reviewed startup evidence cannot be classified confidently, record
+`conflicting-between-flight-change`; do not invent a fourth classification.
+Use this recovery lane only to freeze delegation, preserve the evidence, and
+report the amendment or replanning blocker. Recovery cannot accept the movement
+or replace the queued runway.
+
+After startup, a live execution lease remains exact for one handoff. An exact
+coordinator commit following an accepted action may advance a repository; verify
+that commit and its intended paths, then prepare a fresh lease through the
+normal slice loop. Freeze delegation and use workspace reconciliation when a
+repository moves between lease preparation and handoff, when movement is not
+explained by an accepted coordinator action, or when strict revalidation fails.
+No post-lease movement may reach delegation on the old lease.
+
 ## Validation Failure Handling
 
 1. Inspect the failure enough to classify it.

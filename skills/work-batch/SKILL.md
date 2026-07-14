@@ -34,6 +34,66 @@ only with a named external contract, explicit user instruction, or temporary
 removal condition. Use legacy and dead-surface support only for exceptional
 residue investigations that the active runway or review route requires.
 
+## Cross-Checkout Startup Reconciliation
+
+When the queued or active runway carries a `cross-checkout-context/v1`
+planning snapshot, `work-batch` owns the normal queued-to-executing transition.
+Run this reconciliation once before treating the persisted payload as a live
+execution lease and before generic unexpected-movement recovery. This lane does
+not apply to ordinary single-root work or to
+`cross-checkout-precreation/v1` before its validated strict transition.
+
+1. Use the Planning State Diagnostic to confirm that `current` and `validate`
+   are safe to consume and that the same runway is still the only queued or
+   active batch. Stop if selection or scope changed.
+2. Capture the declared repository roots, branches, live revisions, and
+   worktree status, plus the installed helper path, active Codex home, and
+   generation role. Preserve unrelated dirty files; a dirty path that overlaps
+   a controlled path is conflicting.
+3. Compare the planning-snapshot revisions with live revisions. For every
+   advanced repository role, review the complete intervening commit range and
+   its changed paths before accepting movement.
+4. Classify the movement as exactly one of these three values; there is no
+   fourth or implicit fallback:
+   - `expected-queue-establishment` when revisions are unchanged. If revisions
+     advanced, it accepts movement only when the sole advanced repository is
+     the canonical planning repository, every changed path is a canonical
+     active-state path or the same batch's dispatch or runway, and the Planning
+     State Diagnostic still identifies that runway as current.
+   - `compatible-between-flight-change` only when every commit and path in each
+     advanced range was reviewed and none changes or overlaps a controlled
+     owner or invalidates the queued runway's declared baseline.
+   - `conflicting-between-flight-change` for controlled overlap, repository
+     root or branch drift, generation identity drift, a dirty-file conflict, an
+     invalidated baseline, or evidence that cannot be classified confidently.
+     Unknown evidence uses this value and stops before delegation.
+
+Derive controlled paths for the current runway rather than embedding project
+values in this skill. The set comes from canonical active-state paths resolved
+by the Planning State Diagnostic and planning-layout contract; the queued
+runway and same batch's dispatch; its source finding and source note; its
+acceptance, validation, and stop contract; the manifest and its declared
+contract owners; the resolved installed helper owner; declared roots and
+baselines; and every pending slice allowlist. Compatibility review must
+preserve the same selected scope and may not exempt a path merely because it
+belongs to another commit.
+
+After `expected-queue-establishment` or
+`compatible-between-flight-change` is accepted, call the installed helper's
+`prepare_cross_checkout_context_refresh(...)` with the immutable planning
+snapshot. Use only its strictly parsed refreshed payload as the first live
+execution lease, and call `validate_write_scope(...)` separately for the
+intended handoff paths. The helper supplies planned and live facts; it does not
+choose the classification or accept movement. A conflicting classification,
+refresh failure, or scope failure stops before delegation and uses recovery
+only to preserve and report the fail-closed state.
+
+Record compact startup reconciliation evidence containing the runway path,
+classification, planned and accepted live stable and implementation revisions,
+reviewed commit ranges, and changed-path basis. This evidence is an execution
+fact; do not rewrite the planning snapshot or record accepted startup movement
+as an orchestration anomaly.
+
 ## Explicit Cross-Checkout Pre-Creation Execution
 
 When the queued or active runway explicitly names
@@ -60,11 +120,26 @@ step for ordinary single-root or strict cross-checkout batches.
 When the queued or active runway explicitly names
 `cross-checkout-context/v1` or explicitly declares separate existing toolchain,
 canonical-planning, and implementation repository roots, read
-`../batch-runway/references/cross-checkout-context-v1.md`. Revalidate the exact
-payload and canonical planning root with the installed helper before every
-worker or reviewer delegation, propagate the required mechanical context in
-each handoff, and reject missing, null, or mismatched verified identity in the
-agent result. Stop before delegation on any validation failure.
+`../batch-runway/references/cross-checkout-context-v1.md`. Complete startup
+reconciliation before the first strict handoff. Immediately before every worker
+and reviewer delegation, call
+`prepare_cross_checkout_context_refresh(...)` again, validate the intended
+write scope separately, and propagate that newly prepared exact live execution
+lease, the canonical planning root, and the installed helper path. Never pass
+the planning snapshot as the handoff lease. Reject missing, null, or mismatched
+verified identity in the agent result and stop before delegation on any
+validation failure.
+
+After an accepted worker or reviewer action, an exact coordinator commit may
+advance a repository. Before the next handoff, verify that movement against the
+accepted commit and intended paths, then prepare a new lease. Repository
+movement between lease preparation and handoff, or movement not explained by an
+accepted coordinator action, is fail-closed unexpected movement and routes to
+`../batch-runway/references/execute-recovery-v1.md`.
+
+For each accepted action, keep an execution receipt that identifies the exact
+live lease and validated scope used for that handoff. The receipt must not use
+planning-snapshot revisions as though they were live action evidence.
 
 When the runway names `cross-checkout-precreation/v1`, use the separate
 pre-creation contract above until its validated transition; the pre-creation

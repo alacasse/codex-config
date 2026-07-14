@@ -66,6 +66,29 @@ for compatibility questions, non-routine execution, recovery, and finalization.
    configuration yet, stop and ask for a restart or new thread rather than
    falling back to main-agent implementation.
 
+## Cross-Checkout Startup Routing
+
+For a queued runway whose persisted planning snapshot uses
+`cross-checkout-context/v1`, route through `work-batch` startup reconciliation
+before strict delegation validation and before unexpected-movement recovery.
+Do not parse a stale planning snapshot as though it were the first live
+execution lease.
+
+Require compact evidence that Planning State Diagnostic still identifies the
+same runway as the only queued or active batch and that `work-batch` classified
+the reviewed commit ranges and changed paths as exactly one of
+`expected-queue-establishment`, `compatible-between-flight-change`, or
+`conflicting-between-flight-change`. Only the first two classifications may
+continue to helper refresh preparation. The conflicting classification stops
+before delegation; evidence that cannot be classified confidently is
+conflicting rather than a fourth classification.
+
+For accepted movement, require the helper-produced strictly parsed refreshed
+payload and separately validated write scope before the first handoff. Record
+the compact startup facts defined by `cross-checkout-context-v1.md`. Accepted
+startup movement is not an orchestration anomaly. Ordinary single-root and
+pre-creation work gain no step from this route.
+
 ## Routine Slice Routing
 
 For routine slice execution, use `execute-slice-core-v1.md` and the selected
@@ -95,6 +118,12 @@ Apply the selected validation profile for routine validation. Run project-level
 harnesses or generated/index refreshes per slice only when the active profile,
 spec, or changed surface requires them; use explicit fresh output paths when a
 harness writes artifacts.
+
+For strict cross-checkout execution, prepare a new exact live execution lease
+immediately before every worker and reviewer handoff. A verified accepted
+coordinator commit may be followed by normal lease renewal. Movement between
+preparation and handoff, or movement not explained by an accepted coordinator
+action, enters `execute-recovery-v1.md` and cannot reach delegation.
 
 Use the expanded convergence template only when scope is expanding, significant
 uncertainty exists, blockers are present, or final batch reporting is being

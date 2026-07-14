@@ -41,6 +41,54 @@ Use these four concepts throughout cross-checkout planning and execution:
   action. It records the exact live execution lease and scope actually used;
   it neither rewrites nor substitutes for the planning snapshot.
 
+## Startup Classifications And Controlled Paths
+
+`work-batch` owns startup reconciliation and must classify repository movement
+as exactly one of these three values, with no fourth or implicit fallback:
+
+- `expected-queue-establishment` means revisions are unchanged. If revisions
+  advanced, it accepts movement only when the sole advanced repository is the
+  canonical planning repository, every changed path is a canonical active-state
+  path or the same batch's dispatch or runway, while Planning State Diagnostic
+  still reports that runway as the only queued or active batch.
+- `compatible-between-flight-change` means every intervening commit and changed
+  path was reviewed and none overlaps or changes a controlled owner, replaces
+  selected scope, or invalidates a declared baseline.
+- `conflicting-between-flight-change` means controlled overlap, repository root
+  or branch drift, generation identity drift, a dirty-file conflict, an
+  invalidated baseline, or evidence that cannot be classified confidently.
+  Unknown evidence uses this classification and stops before delegation.
+
+Derive controlled paths from the current Planning State Diagnostic and planning
+layout, the queued runway and same batch's dispatch, the source finding and
+source note, the runway's acceptance contract, the manifest and its declared
+owners, the resolved installed helper owner, declared roots and baselines, and
+pending slice allowlists. Do not hard-code project paths, commands, cache
+locations, issue names, or planning layout in reusable workflow text.
+
+Accepted startup movement must route through the installed helper's
+`prepare_cross_checkout_context_refresh(...)` operation. The helper returns
+planned and live revision facts plus a strictly parsed refreshed payload; it
+does not classify or accept movement. Validate the intended write scope
+separately. Accepted startup movement is normal execution evidence, not an
+orchestration anomaly.
+
+## Lease Renewal And Execution Receipts
+
+Prepare a new exact live execution lease immediately before every worker and
+reviewer handoff, even when the repository revisions have not changed since the
+prior handoff. If an accepted coordinator commit advanced a repository after an
+accepted action, verify that exact commit and intended path set before renewal.
+Movement between lease preparation and handoff, or movement not explained by an
+accepted coordinator action, invalidates the lease and enters fail-closed
+recovery.
+
+Startup evidence records the runway path, classification, planned and accepted
+live stable and implementation revisions, reviewed commit ranges, and
+changed-path basis. Each execution receipt records the exact live lease and
+validated scope used for its accepted action. Never use planning-snapshot
+revisions as the execution receipt for a later action.
+
 ## Stable Helper Bootstrap
 
 For an explicitly cross-checkout operation:
@@ -53,9 +101,13 @@ For an explicitly cross-checkout operation:
    `scripts/cross_checkout_context.py` below the payload's declared
    `toolchain_source_root`. Require the payload's `codex_home` to match the
    active session's Codex home. Stop on either mismatch.
-4. Load that helper and call `parse_cross_checkout_context` with the complete
-   payload. Treat every validation error as a blocker before writes or agent
-   delegation.
+4. At plan time or for a live execution lease, load that helper and call
+   `parse_cross_checkout_context` with the complete payload. At
+   `work-batch` startup, do not strict-parse the historical planning snapshot
+   before reconciliation. After `work-batch` accepts movement, call
+   `prepare_cross_checkout_context_refresh(...)`; its refreshed payload must
+   pass the unchanged strict parser. Treat every applicable validation error as
+   a blocker before writes or agent delegation.
 5. Before a write-bearing slice handoff, call `validate_write_scope` with the
    explicit canonical planning root and all intended planning and
    implementation paths. Candidate and stable read-only contexts must not
@@ -77,11 +129,14 @@ revisions, rewrite it to chase `HEAD`, or create a self-referential series of
 plan commits. It must not synthesize project-specific absolute paths inside
 reusable skill text.
 
-Before every worker or final-reviewer delegation, the execution coordinator
-must revalidate the payload with the installed helper and include in the
-handoff:
+Before every worker or reviewer delegation, the execution coordinator must
+revalidate the payload with the installed helper by calling
+`prepare_cross_checkout_context_refresh(...)` against the immutable planning
+snapshot. It must use the helper's strictly parsed refreshed payload as the
+new live execution lease, validate the handoff's write scope separately, and
+include in the handoff:
 
-- the exact context payload;
+- the exact live execution lease payload, never the planning snapshot;
 - the explicit canonical planning root;
 - the absolute installed helper path used for validation; and
 - whether the current handoff is write-bearing or read-only.
