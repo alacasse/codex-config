@@ -7,7 +7,8 @@
   `docs/plans/programs/codex-config/LEDGER.md`
 - Included finding: CCFG-19, Verify Source Contracts and Resolve Blocking
   Decisions
-- Dispatch state: queued through the co-located concrete runway
+- Dispatch state: completed through the co-located concrete runway and
+  `closeout.md`
 - Expected runway:
   `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md`
 - Successor selected: no

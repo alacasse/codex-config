@@ -339,7 +339,7 @@ Decision gate state:
 
 | Slice | Risk | Status | Candidate commit | Stable receipt | Focused validation | Review | Notes |
 |---|---|---|---|---|---|---|---|
-| None | None | Complete | None | None | Complete | Clean | All four slices are archived below; proceed only through same-batch closeout. |
+| None | None | Complete | None | None | Complete | Clean | All four slices are archived below; same-batch closeout is complete. |
 
 Completed slice details move to `completed-slices.md` after each accepted stable
 receipt. Keep only active rows and compact evidence here.
@@ -686,11 +686,11 @@ approval prompts do not belong in this log.
 
 ## Convergence Assessment
 
-- Phase: all four slices complete; same-batch closeout in progress.
+- Phase: closure complete.
 - Scope trend: bounded to one design-only CCFG-19 amendment.
 - Closed in execution: four slices; DEC-036, DEC-037, DEC-017, and DEC-038
   accepted with all seven CCFG-19 exit keys evidenced.
 - Remaining slices: none.
 - Blockers: none.
-- Completion forecastable: yes; final reconciliation and review remain.
+- Completion forecastable: complete.
 - Successor selected: no.
