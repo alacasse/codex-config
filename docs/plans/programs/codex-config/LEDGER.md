@@ -84,11 +84,11 @@ row-by-row here.
 | CCFG-28. Remove Legacy Owners and Commit Final Cutover | Open | [COR-011](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-011--ccfg-28--remove-legacy-owners-and-commit-final-cutover) | Command-owner redesign / deletion and final switch | Wait for CCFG-27 | Delete APR and Batch Runway from candidate, prove clean install/no legacy route, switch default generation, obtain candidate read-only diagnostic, close under pinned stable controller, and stop. Unselected; distinct from CCFG-11. |
 | CCFG-29. Contract-First Convergence and Final Integration | Open | [COR-012](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-012--ccfg-29--contract-first-convergence-and-final-integration) | Command-owner redesign / convergence and integration | Wait for CCFG-28 | Converge one dialect, merge candidate into latest master, rebind default toolchain to master, remove cross-checkout bridge, and retire temporary branches. Unselected. |
 | CCFG-30. Separate Planning Snapshots from Live Execution Leases | Closed | `notes/cross-flight-execution-baseline-plan.md`; `batches/ccfg-30-cross-flight-execution-leases/dispatch.md` | Batch Runway / cross-checkout execution lifecycle | None | Closed by `batches/ccfg-30-cross-flight-execution-leases/closeout.md`: all ten regression scenarios, exact live-lease validation, joined lifecycle proof, linked-state checks, and clean exact-range review are green. No successor was selected. |
-| CCFG-31. Narrow ready/blocked live-lease preflight | Open | GitHub issue #53; `findings/github-issue-53-narrow-live-lease-preflight.md` | Batch Runway / cross-checkout execution lifecycle | Plan only through a future explicit `plan-batch`; preserve strict per-handoff leases while deleting the broad startup protocol | Independent simplification and deletion finding. Historical CCFG-30 artifacts remain read-only, the normal coordinator result is only `ready` or `blocked`, the runway may not exceed three slices, and CCFG-29 remains the sole bridge-removal owner. Unselected. |
+| CCFG-31. Narrow ready/blocked live-lease preflight | Pending | GitHub issue #53; `findings/github-issue-53-narrow-live-lease-preflight.md` | Batch Runway / cross-checkout execution lifecycle | Execute only `batches/ccfg-31-narrow-live-lease-preflight/runway.md`; preserve strict per-handoff leases while deleting the broad startup protocol | Controlled by the queued two-slice mixed-risk batch. Historical CCFG-30 artifacts remain read-only, the normal coordinator result is only `ready` or `blocked`, and CCFG-29 remains the sole bridge-removal owner. |
 
 ## Batch Queue
 
-Queued batch: `None`.
+Queued batch: `ccfg-31-narrow-live-lease-preflight`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
@@ -108,15 +108,16 @@ Queued batch: `None`.
 | `ccfg-19-source-contract-decisions` | completed | `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md` | CCFG-19 | Completed in candidate range `9027bd1..13d7f63`; all seven exit keys are evidenced and OPEN-003 is resolved. Same-batch closeout selected no successor. |
 | `ccfg-20-skill-contract-schema` | completed | `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/runway.md` | CCFG-20 | Completed in candidate range `13d7f63..3e54155`; all five COR-003 keys are green, final range review is clean, and same-batch closeout selected no successor. |
 | `ccfg-30-cross-flight-execution-leases` | completed | `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/runway.md` | CCFG-30 | Completed in stable range `d8f3952^..7917ace`; all ten regression scenarios and final range review are green; same-batch closeout selected no successor. |
+| `ccfg-31-narrow-live-lease-preflight` | queued | `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/runway.md` | CCFG-31 | Two producer/consumer slices; prove the narrow preflight, migrate consumers, delete the broad startup protocol, and stop before successor selection. |
 
 ## Recommended Work Order
 
 1. Start pickup from root and program `CURRENT.md`.
-2. CCFG-18 through CCFG-20 and CCFG-30 are closed; no batch is selected,
-   queued, or active.
-3. Stop before successor selection. A future explicit `plan-batch` request owns
-   the next bounded selection from this ledger.
-4. Keep CCFG-21 through CCFG-29, CCFG-31, and all older open rows unselected.
+2. CCFG-18 through CCFG-20 and CCFG-30 are closed; CCFG-31 is the sole queued
+   batch.
+3. Execute only `batches/ccfg-31-narrow-live-lease-preflight/runway.md` through
+   `work-batch`, reconcile the same batch, and stop before successor selection.
+4. Keep CCFG-21 through CCFG-29 and all older open rows unselected.
 5. Do not revive archived APR/PST ledgers as pickup sources.
 6. Keep CCFG-11 open but do not execute its displaced runway.
 
