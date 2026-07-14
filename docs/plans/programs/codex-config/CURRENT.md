@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/closeout.md`
 - Run artifact location: `None selected`
@@ -31,8 +32,9 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-20 through CCFG-29.
-- Pending ledger row: `None`.
+  CCFG-21 through CCFG-29.
+- Pending ledger row: CCFG-20, controlled by the queued
+  `ccfg-20-skill-contract-schema` dispatch/runway pair.
 - Closed ledger rows: CCFG-18 and CCFG-19. CCFG-19 joined the 31 source
   contracts and accepted the schema, ledger-store, runner, and OPEN-003
   transaction decisions without implementing successor work.
@@ -49,8 +51,10 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Queued dispatch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/runway.md`
+- Queued dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/dispatch.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-19-source-contract-decisions`
@@ -63,9 +67,10 @@
 
 ## Next Safe Action
 
-No batch is selected, active, or queued. Await an explicit `plan-batch` request
-before selecting from the canonical ledger. Do not infer a successor from
-CCFG-19 closeout or prepare CCFG-20 implicitly.
+Execute the queued CCFG-20 runway through an explicit `work-batch` request.
+Start from this file and the queued runway, preserve the strict
+`cross-checkout-context/v1` payload, and stop same-batch closeout before
+selecting or preparing CCFG-21.
 
 ## Stop Conditions
 
@@ -81,6 +86,10 @@ CCFG-19 closeout or prepare CCFG-20 implicitly.
 - Stop if work would repeat command-owner redesign intake or create new
   identities instead of amending CCFG-18 through CCFG-29.
 - Stop if work treats CCFG-19 as active after its completed closeout.
+- Stop if work bypasses the queued CCFG-20 runway, replaces it, or selects a
+  second batch.
+- Stop if CCFG-20 execution migrates current skills, registers an installed
+  feature, or absorbs CCFG-21 through CCFG-29.
 - Stop if work would select from archived APR/PST ledgers instead of the canonical
   codex-config ledger.
 - Stop if work would execute the displaced CCFG-11 runway without replanning.

@@ -71,7 +71,7 @@ row-by-row here.
 | CCFG-17. Absolute runway reference paths | Completed | GitHub issue #32 | Batch Runway create-spec | None | Closed with repo-relative reusable references and active-artifact guard. |
 | CCFG-18. Establish Stable and Candidate Generations | Closed | [COR-001](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-001--ccfg-18--establish-stable-and-candidate-generations) plus live pre-creation amendment in `findings/command-owner-redesign-implementation-intake.md` | Command-owner redesign / control-plane isolation | None | Closed by `batches/ccfg-18-candidate-generation/closeout.md`: authoritative and accepted-design lineage, strict transition, isolated candidate installation, fixture-only operation, canonical-write rejection, quiescence, and unchanged-default stable rollback are proven. CCFG-19 remains unselected. |
 | CCFG-19. Verify Source Contracts and Resolve Blocking Decisions | Closed | [COR-002](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-002--ccfg-19--verify-source-contracts-and-resolve-blocking-decisions) | Command-owner redesign / contracts | None | Closed by `batches/ccfg-19-source-contract-decisions/closeout.md`: all 31 contracts are joined, all seven acceptance keys are evidenced, DEC-036/037/017/038 are accepted, and OPEN-003 is resolved. CCFG-20 through CCFG-29 remain unselected. |
-| CCFG-20. Implement `skill-contract/v1` Schema and Validators | Open | [COR-003](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-003--ccfg-20--implement-skill-contractv1-schema-and-validators) | Command-owner redesign / skill contracts | Wait for CCFG-19 | Implement deterministic schema, ownership, delegation, reference, compatibility, and migration-residue validation. Unselected. |
+| CCFG-20. Implement `skill-contract/v1` Schema and Validators | Pending | [COR-003](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-003--ccfg-20--implement-skill-contractv1-schema-and-validators) | Command-owner redesign / skill contracts | Execute `batches/ccfg-20-skill-contract-schema/runway.md` through `work-batch` | Queued as one repo-local schema/validator migration with four slices. Current skills, installed feature registration, and CCFG-21+ remain excluded. |
 | CCFG-21. Implement Planning Artifact Schemas and Validators | Open | [COR-004](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-004--ccfg-21--implement-planning-artifact-schemas-and-validators) | Command-owner redesign / planning contracts | Wait for CCFG-19 | Prototype canonical CURRENT.md, per-finding ledger, dispatch/runway/closeout schemas, atomic writes, receipts, and fault injection. Unselected. |
 | CCFG-22. Finalize and Validate `skill-authoring` v1 | Open | [COR-005](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-005--ccfg-22--finalize-and-validate-skill-authoring-v1) | Command-owner redesign / authoring | Hard dependency: CCFG-20. Relevant CCFG-21 schema only for the optional planning-artifact reference | Complete one authoritative core, conditional planning reference, narrow-skill trial, and branching-command trial. Unselected. |
 | CCFG-23. Build the Topology-Independent Behavioral Scenario Harness | Open | [COR-006](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-006--ccfg-23--build-the-topology-independent-behavioral-harness) | Command-owner redesign / behavioral harness | Wait for CCFG-21 and CCFG-22 | Cover behavior, three-root/generation isolation, fault injection, clean install, cutover, rollback, deletion, and contract-ID coverage. Unselected. |
@@ -84,7 +84,7 @@ row-by-row here.
 
 ## Batch Queue
 
-Queued batch: `None`.
+Queued batch: `ccfg-20-skill-contract-schema`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
@@ -102,13 +102,15 @@ Queued batch: `None`.
 | `ccfg-18-stable-precreation-support` | completed | `docs/plans/programs/codex-config/batches/ccfg-18-stable-precreation-support/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-18-stable-precreation-support/runway.md` | CCFG-18 | Stable support completed in `e012d93..314fbcb` and left CCFG-18 blocked on installation/fresh-session reload; the current queued batch records that gate as satisfied. Candidate paths remain absent. |
 | `ccfg-18-candidate-generation` | completed | `docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-18-candidate-generation/runway.md` | CCFG-18 | Completed in candidate range `da5b971..9027bd1` and stable planning range `da5b971..968f41d`; corrected closeout proves lineage, strict transition, generation isolation, fixture-only operation, quiescence, and unchanged-default rollback through the primary shell CLI. CCFG-19 remains unselected. |
 | `ccfg-19-source-contract-decisions` | completed | `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md` | CCFG-19 | Completed in candidate range `9027bd1..13d7f63`; all seven exit keys are evidenced and OPEN-003 is resolved. Same-batch closeout selected no successor. |
+| `ccfg-20-skill-contract-schema` | queued | `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/runway.md` | CCFG-20 | Four-slice repo-local schema/validator migration under strict cross-checkout context; no current skill migration or installed feature registration. |
 
 ## Recommended Work Order
 
 1. Start pickup from root and program `CURRENT.md`.
-2. CCFG-18 and CCFG-19 are closed; no batch is selected, active, or queued.
-3. Await an explicit `plan-batch` request before selecting any open row.
-4. Keep CCFG-20 through CCFG-29 unselected until that explicit request.
+2. CCFG-18 and CCFG-19 are closed; CCFG-20 is the only queued batch.
+3. Execute CCFG-20 only through an explicit `work-batch` request and its
+   co-located runway.
+4. Keep CCFG-21 through CCFG-29 unselected through CCFG-20 same-batch closeout.
 5. Do not revive archived APR/PST ledgers as pickup sources.
 6. Keep CCFG-11 open but do not execute its displaced runway.
 
@@ -125,6 +127,9 @@ Queued batch: `None`.
   `batches/ccfg-19-source-contract-decisions/closeout.md` with all seven
   COR-002 acceptance keys evidenced and OPEN-003 resolved. Its closeout cleared
   queued state and selected no successor.
+- CCFG-20 may close only when all five COR-003 acceptance keys are green with
+  candidate commit, validation, fixture, and independent review evidence. Its
+  closeout must clear same-batch state and select no successor.
 - The `ccfg-18-stable-control-bootstrap` closeout marks CCFG-18 `Prepared`, not
   `Closed`, records the changed stable commit and fresh-session handoff, and
   preserves all candidate-generation remainder under the same finding identity.
