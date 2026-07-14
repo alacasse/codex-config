@@ -301,7 +301,8 @@ CCFG-19 `Blocked`; do not guess or select a successor.
 
 Decision gate state:
 
-- Status: pending explicit user approval.
+- Status: approved by the user on 2026-07-13 with the exact response
+  `Approve all four`.
 - Accepted Slice 1 candidate evidence:
   `db0f37dc5a62205c3e33df9dbb82ded05fc04b47`.
 - Stable Slice 1 planning receipt:
@@ -309,7 +310,30 @@ Decision gate state:
 - Evidence result: 31 joined contracts, 16 resolved scenario gaps, 28 test
   modules and 465 test methods classified, zero blocking target-owner
   conflicts, and clean repeat independent review.
-- Approved decisions: none. Slices 2 through 4 remain blocked on this gate.
+- Approved schema-evolution decision: writers emit v1; unknown versions block;
+  unknown v1 fields are rejected unless an explicit schema allowlist accepts
+  them; optional additions require an accepted compatibility decision and a
+  coordinated reader-before-writer rollout; required-field or semantic
+  ownership changes require a new version; every per-schema exception is named
+  and bounded.
+- Approved `ledger-store/v1` decision: apply-only whole-ledger CAS, touched
+  finding revisions, exact idempotency-key replay, key/payload mismatch
+  rejection, deterministic rendering, atomic replacement, and recoverable
+  ledger-written/receipt-missing evidence; semantic workflow decisions remain
+  with command owners.
+- Approved runner decision: invoke and validate public `plan-batch` and
+  `work-batch` command protocols, own explicit loop bounds and child-process
+  lifecycle, and use a fresh `plan-batch` invocation for a later successor;
+  successor readiness is absent from the target runner result and transition
+  semantics.
+- Approved OPEN-003 decision: an idempotent staged saga writes and validates the
+  dispatch, CASes idle to selected with a receipt, writes and validates a runway
+  bound to the dispatch revision, then CASes selected to queued with a receipt;
+  one transaction/idempotency ID binds all stages, retry requires identical
+  batch and artifact lineage, mismatches block, partial evidence remains
+  visible, and rollback deletion cannot hide durable artifacts or receipts.
+- Approval gate result: complete. Slices 2 through 4 may record only these
+  approved outcomes.
 
 ## Execution Ledger
 
