@@ -299,17 +299,34 @@ active batch intact. If the user explicitly decides that a blocking item cannot
 be resolved in this batch, record that decision and close the batch with
 CCFG-19 `Blocked`; do not guess or select a successor.
 
+Decision gate state:
+
+- Status: pending explicit user approval.
+- Accepted Slice 1 candidate evidence:
+  `db0f37dc5a62205c3e33df9dbb82ded05fc04b47`.
+- Stable Slice 1 planning receipt:
+  `0448652a041916b3686640f16a601314210ac107`.
+- Evidence result: 31 joined contracts, 16 resolved scenario gaps, 28 test
+  modules and 465 test methods classified, zero blocking target-owner
+  conflicts, and clean repeat independent review.
+- Approved decisions: none. Slices 2 through 4 remain blocked on this gate.
+
 ## Execution Ledger
 
 | Slice | Risk | Status | Candidate commit | Stable receipt | Focused validation | Review | Notes |
 |---|---|---|---|---|---|---|---|
-| 1. Join contract evidence | evidence-only | Pending | None | None | Pending | Pending | Creates the joined record and README link. |
 | 2. Accept schema and ledger boundaries | decision-only | Pending | None | None | Pending | Pending | No schema or store implementation. |
 | 3. Accept runner boundary and verify topology | decision-only | Pending | None | None | Pending | Pending | No runner or installer implementation. |
 | 4. Resolve OPEN-003 and audit exit gate | decision-only | Pending | None | None | Pending | Pending | Close or explicitly block CCFG-19; no successor. |
 
 Completed slice details move to `completed-slices.md` after each accepted stable
 receipt. Keep only active rows and compact evidence here.
+
+## Completed Slice Archive
+
+| Slice | Risk | Candidate commit | Stable planning receipt | Outcome | Audit references |
+|---|---|---|---|---|---|
+| 1. Join contract evidence | evidence-only | `db0f37d` | `0448652` | success; 31 contracts joined to source, one target owner, scenarios, classification, and test dispositions; 16 scenario gaps resolved; all 465 methods across 28 modules classified; repeat independent review clean; accepted decisions unchanged | `completed-slices.md`; `git show --stat db0f37d`; `git show --stat 0448652` |
 
 ## Slice 1: Join Contract, Owner, Scenario, And Test Evidence
 
