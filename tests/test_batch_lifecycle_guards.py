@@ -220,6 +220,65 @@ class BatchLifecycleGuardTests(unittest.TestCase):
         )
         self.assertIn("there is no fourth or implicit fallback", work_batch)
 
+    def test_unchanged_head_uncommitted_queue_establishment_is_narrowly_expected(
+        self,
+    ) -> None:
+        startup = self.normalized_section(
+            WORK_BATCH,
+            "Cross-Checkout Startup Reconciliation",
+        )
+        expected_case = startup[
+            startup.index("- `expected-queue-establishment`") : startup.index(
+                "- `compatible-between-flight-change`"
+            )
+        ]
+        conflicting_case = startup[
+            startup.index("- `conflicting-between-flight-change`") : startup.index(
+                "Derive controlled paths"
+            )
+        ]
+
+        for requirement in (
+            "unchanged-HEAD uncommitted queue establishment",
+            "Planning State Diagnostic",
+            "same runway as the only queued or active batch",
+            "review of the complete dirty diff",
+            "canonical active-state path",
+            "same current batch's dispatch or runway",
+            "selected scope",
+            "planning snapshot facts",
+            "source finding and source note",
+            "acceptance, validation and stop contract",
+            "every other controlled owner",
+            "match their accepted basis",
+        ):
+            self.assertIn(requirement, expected_case)
+
+        for conflict in (
+            "arbitrary dirty controlled path",
+            "untracked source path that is not one of the allowed queue artifacts",
+            "pending implementation allowlist overlap",
+            "helper or contract owner edit",
+            "evidence that cannot be classified confidently",
+            "stops before delegation",
+        ):
+            self.assertIn(conflict, conflicting_case)
+
+        self.assertIn(
+            "Use the Planning State Diagnostic to confirm that `current` and "
+            "`validate` are safe to consume",
+            startup,
+        )
+        self.assertIn(
+            "The uncommitted queue exception is content-scoped, not a blanket "
+            "exemption for controlled paths.",
+            startup,
+        )
+        self.assertIn(
+            "stop if any non-queue content or unknown path is present",
+            startup,
+        )
+
     def test_startup_reconciliation_derives_project_neutral_controlled_paths(
         self,
     ) -> None:

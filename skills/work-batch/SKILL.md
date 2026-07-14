@@ -48,14 +48,23 @@ not apply to ordinary single-root work or to
    active batch. Stop if selection or scope changed.
 2. Capture the declared repository roots, branches, live revisions, and
    worktree status, plus the installed helper path, active Codex home, and
-   generation role. Preserve unrelated dirty files; a dirty path that overlaps
-   a controlled path is conflicting.
+   generation role. Preserve unrelated dirty files. Except for the narrow
+   unchanged-HEAD uncommitted queue-establishment case below, a dirty path that
+   overlaps a controlled path is conflicting.
 3. Compare the planning-snapshot revisions with live revisions. For every
    advanced repository role, review the complete intervening commit range and
    its changed paths before accepting movement.
 4. Classify the movement as exactly one of these three values; there is no
    fourth or implicit fallback:
-   - `expected-queue-establishment` when revisions are unchanged. If revisions
+   - `expected-queue-establishment` when revisions are unchanged and the
+     worktree has no dirty controlled path; preserve unrelated dirty files. It
+     also accepts an unchanged-HEAD uncommitted queue establishment only when
+     the Planning State Diagnostic still identifies the same runway as the only
+     queued or active batch and review of the complete dirty diff proves every
+     dirty path is a canonical active-state path or the same current batch's
+     dispatch or runway. The selected scope, planning snapshot facts, source
+     finding and source note, acceptance, validation and stop contract, and
+     every other controlled owner must match their accepted basis. If revisions
      advanced, it accepts movement only when the sole advanced repository is
      the canonical planning repository, every changed path is a canonical
      active-state path or the same batch's dispatch or runway, and the Planning
@@ -63,10 +72,13 @@ not apply to ordinary single-root work or to
    - `compatible-between-flight-change` only when every commit and path in each
      advanced range was reviewed and none changes or overlaps a controlled
      owner or invalidates the queued runway's declared baseline.
-   - `conflicting-between-flight-change` for controlled overlap, repository
-     root or branch drift, generation identity drift, a dirty-file conflict, an
-     invalidated baseline, or evidence that cannot be classified confidently.
-     Unknown evidence uses this value and stops before delegation.
+   - `conflicting-between-flight-change` for controlled overlap outside that
+     narrow uncommitted queue case, an arbitrary dirty controlled path, an
+     untracked source path that is not one of the allowed queue artifacts, a
+     pending implementation allowlist overlap, a helper or contract owner edit,
+     repository root or branch drift, generation identity drift, a dirty-file
+     conflict, an invalidated baseline, or evidence that cannot be classified
+     confidently. Unknown evidence uses this value and stops before delegation.
 
 Derive controlled paths for the current runway rather than embedding project
 values in this skill. The set comes from canonical active-state paths resolved
@@ -77,6 +89,11 @@ contract owners; the resolved installed helper owner; declared roots and
 baselines; and every pending slice allowlist. Compatibility review must
 preserve the same selected scope and may not exempt a path merely because it
 belongs to another commit.
+
+The uncommitted queue exception is content-scoped, not a blanket exemption for
+controlled paths. Review the complete dirty diff against the accepted planning
+basis before classifying it, and stop if any non-queue content or unknown path
+is present.
 
 After `expected-queue-establishment` or
 `compatible-between-flight-change` is accepted, call the installed helper's
