@@ -31,7 +31,7 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-21 through CCFG-29.
+  CCFG-21 through CCFG-29, plus CCFG-31.
 - Pending ledger row: `None`.
 - Closed ledger rows: CCFG-18 through CCFG-20 and CCFG-30. CCFG-30 separates
   durable planning snapshots from reviewed startup reconciliation, exact live

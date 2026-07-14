@@ -84,6 +84,7 @@ row-by-row here.
 | CCFG-28. Remove Legacy Owners and Commit Final Cutover | Open | [COR-011](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-011--ccfg-28--remove-legacy-owners-and-commit-final-cutover) | Command-owner redesign / deletion and final switch | Wait for CCFG-27 | Delete APR and Batch Runway from candidate, prove clean install/no legacy route, switch default generation, obtain candidate read-only diagnostic, close under pinned stable controller, and stop. Unselected; distinct from CCFG-11. |
 | CCFG-29. Contract-First Convergence and Final Integration | Open | [COR-012](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-012--ccfg-29--contract-first-convergence-and-final-integration) | Command-owner redesign / convergence and integration | Wait for CCFG-28 | Converge one dialect, merge candidate into latest master, rebind default toolchain to master, remove cross-checkout bridge, and retire temporary branches. Unselected. |
 | CCFG-30. Separate Planning Snapshots from Live Execution Leases | Closed | `notes/cross-flight-execution-baseline-plan.md`; `batches/ccfg-30-cross-flight-execution-leases/dispatch.md` | Batch Runway / cross-checkout execution lifecycle | None | Closed by `batches/ccfg-30-cross-flight-execution-leases/closeout.md`: all ten regression scenarios, exact live-lease validation, joined lifecycle proof, linked-state checks, and clean exact-range review are green. No successor was selected. |
+| CCFG-31. Narrow ready/blocked live-lease preflight | Open | GitHub issue #53; `findings/github-issue-53-narrow-live-lease-preflight.md` | Batch Runway / cross-checkout execution lifecycle | Plan only through a future explicit `plan-batch`; preserve strict per-handoff leases while deleting the broad startup protocol | Independent simplification and deletion finding. Historical CCFG-30 artifacts remain read-only, the normal coordinator result is only `ready` or `blocked`, the runway may not exceed three slices, and CCFG-29 remains the sole bridge-removal owner. Unselected. |
 
 ## Batch Queue
 
@@ -115,7 +116,7 @@ Queued batch: `None`.
    queued, or active.
 3. Stop before successor selection. A future explicit `plan-batch` request owns
    the next bounded selection from this ledger.
-4. Keep CCFG-21 through CCFG-29 and all older open rows unselected.
+4. Keep CCFG-21 through CCFG-29, CCFG-31, and all older open rows unselected.
 5. Do not revive archived APR/PST ledgers as pickup sources.
 6. Keep CCFG-11 open but do not execute its displaced runway.
 
