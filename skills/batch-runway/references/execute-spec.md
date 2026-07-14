@@ -66,28 +66,27 @@ for compatibility questions, non-routine execution, recovery, and finalization.
    configuration yet, stop and ask for a restart or new thread rather than
    falling back to main-agent implementation.
 
-## Cross-Checkout Startup Routing
+## Cross-Checkout Preflight Routing
 
 For a queued runway whose persisted planning snapshot uses
-`cross-checkout-context/v1`, route through `work-batch` startup reconciliation
-before strict delegation validation and before unexpected-movement recovery.
+`cross-checkout-context/v1`, route through the `work-batch` ready/blocked
+preflight before strict delegation validation and before unexpected-movement
+recovery, following the canonical `cross-checkout-context-v1.md` bridge.
 Do not parse a stale planning snapshot as though it were the first live
 execution lease.
 
 Require compact evidence that Planning State Diagnostic still identifies the
-same runway as the only queued or active batch and that `work-batch` classified
-the reviewed commit ranges and changed paths as exactly one of
-`expected-queue-establishment`, `compatible-between-flight-change`, or
-`conflicting-between-flight-change`. Only the first two classifications may
-continue to helper refresh preparation. The conflicting classification stops
-before delegation; evidence that cannot be classified confidently is
-conflicting rather than a fourth classification.
+same runway as the only queued or active batch. Require `work-batch` to supply
+the exact current queue transaction paths and call the canonical bridge's
+`preflight_cross_checkout_live_lease(...)`. Proceed only on `status: ready`
+with a non-null strictly parsed `live_context`; `status: blocked`, a null
+context, or helper failure stops before delegation without reinterpreting the
+diagnostic reason.
 
-For accepted movement, require the helper-produced strictly parsed refreshed
-payload and separately validated write scope before the first handoff. Record
-the compact startup facts defined by `cross-checkout-context-v1.md`. Accepted
-startup movement is not an orchestration anomaly. Ordinary single-root and
-pre-creation work gain no step from this route.
+Validate write scope separately before the first handoff. Record only the
+compact preflight facts defined by `cross-checkout-context-v1.md`; do not create
+a separate lifecycle artifact. Ordinary single-root and pre-creation work gain
+no step from this route.
 
 ## Routine Slice Routing
 

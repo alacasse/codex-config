@@ -110,7 +110,7 @@ class BatchLifecycleGuardTests(unittest.TestCase):
         self.assertIn("explicitly asks to cancel or abandon it", text)
         self.assertIn("documented blocker makes execution unsafe", text)
 
-    def test_cross_checkout_contract_defines_four_lifecycle_concepts(self) -> None:
+    def test_cross_checkout_contract_keeps_the_narrow_safety_boundary(self) -> None:
         text = " ".join(
             CROSS_CHECKOUT_CONTEXT.read_text(encoding="utf-8").split()
         )
@@ -118,11 +118,6 @@ class BatchLifecycleGuardTests(unittest.TestCase):
         self.assertIn(
             "A **planning snapshot** is the complete validated plan-time payload "
             "and canonical planning root persisted in the queued runway.",
-            text,
-        )
-        self.assertIn(
-            "**Startup reconciliation** is the workflow decision made once before "
-            "`work-batch` consumes queued work.",
             text,
         )
         self.assertIn(
@@ -140,8 +135,8 @@ class BatchLifecycleGuardTests(unittest.TestCase):
             text,
         )
         self.assertIn(
-            "Before every worker or reviewer delegation, the execution "
-            "coordinator must revalidate the payload with the installed helper",
+            "Immediately before the first worker or reviewer delegation, the "
+            "execution coordinator must run the ready/blocked preflight",
             text,
         )
         self.assertIn(
@@ -153,6 +148,10 @@ class BatchLifecycleGuardTests(unittest.TestCase):
             "planning snapshot.",
             text,
         )
+        self.assertIn("preflight_cross_checkout_live_lease(...)`", text)
+        self.assertIn("Proceed only on `status: ready`", text)
+        self.assertIn("`status: blocked` has a null context", text)
+        self.assertIn("consumers must not reinterpret its reason", text)
 
     def test_cross_checkout_planning_producers_persist_immutable_snapshots(
         self,
@@ -185,129 +184,39 @@ class BatchLifecycleGuardTests(unittest.TestCase):
         )
         self.assertIn("required planning-snapshot section", create_spec)
 
-    def test_cross_checkout_startup_has_exactly_three_classifications(self) -> None:
-        expected = {
-            "expected-queue-establishment",
-            "compatible-between-flight-change",
-            "conflicting-between-flight-change",
-        }
-        classification_sections = (
-            (WORK_BATCH, "Cross-Checkout Startup Reconciliation"),
-            (CROSS_CHECKOUT_CONTEXT, "Startup Classifications And Controlled Paths"),
-        )
-
-        for path, heading in classification_sections:
-            section = self.markdown_section(path, heading)
-            found = set(
-                re.findall(r"^\s*- `([^`]+)`", section, flags=re.MULTILINE)
-            )
-            with self.subTest(path=path.relative_to(REPO_ROOT), heading=heading):
-                self.assertEqual(expected, found)
-
+    def test_cross_checkout_startup_has_one_ready_blocked_preflight(self) -> None:
         work_batch = self.normalized_section(
             WORK_BATCH,
-            "Cross-Checkout Startup Reconciliation",
+            "Cross-Checkout Ready/Blocked Preflight",
         )
+
         self.assertIn("`work-batch` owns the normal queued-to-executing transition", work_batch)
-        self.assertIn("before generic unexpected-movement recovery", work_batch)
-        self.assertIn(
-            "the same runway is still the only queued or active batch",
-            work_batch,
-        )
-        self.assertIn(
-            "`expected-queue-establishment` when revisions are unchanged",
-            work_batch,
-        )
-        self.assertIn("there is no fourth or implicit fallback", work_batch)
+        self.assertIn("the same runway is still the only queued or active batch", work_batch)
+        self.assertIn("exact queue-establishment transaction", work_batch)
+        self.assertIn("`preflight_cross_checkout_live_lease(...)`", work_batch)
+        self.assertIn("Proceed only when it returns `status: ready`", work_batch)
+        self.assertIn("Treat `status: blocked`", work_batch)
+        self.assertIn("without reclassifying it", work_batch)
 
-    def test_unchanged_head_uncommitted_queue_establishment_is_narrowly_expected(
+    def test_work_batch_supplies_only_the_exact_current_queue_transaction(
         self,
     ) -> None:
-        startup = self.normalized_section(
+        preflight = self.normalized_section(
             WORK_BATCH,
-            "Cross-Checkout Startup Reconciliation",
-        )
-        expected_case = startup[
-            startup.index("- `expected-queue-establishment`") : startup.index(
-                "- `compatible-between-flight-change`"
-            )
-        ]
-        conflicting_case = startup[
-            startup.index("- `conflicting-between-flight-change`") : startup.index(
-                "Derive controlled paths"
-            )
-        ]
-
-        for requirement in (
-            "unchanged-HEAD uncommitted queue establishment",
-            "Planning State Diagnostic",
-            "same runway as the only queued or active batch",
-            "review of the complete dirty diff",
-            "canonical active-state path",
-            "same current batch's dispatch or runway",
-            "selected scope",
-            "planning snapshot facts",
-            "source finding and source note",
-            "acceptance, validation and stop contract",
-            "every other controlled owner",
-            "match their accepted basis",
-        ):
-            self.assertIn(requirement, expected_case)
-
-        for conflict in (
-            "arbitrary dirty controlled path",
-            "untracked source path that is not one of the allowed queue artifacts",
-            "pending implementation allowlist overlap",
-            "helper or contract owner edit",
-            "evidence that cannot be classified confidently",
-            "stops before delegation",
-        ):
-            self.assertIn(conflict, conflicting_case)
-
-        self.assertIn(
-            "Use the Planning State Diagnostic to confirm that `current` and "
-            "`validate` are safe to consume",
-            startup,
-        )
-        self.assertIn(
-            "The uncommitted queue exception is content-scoped, not a blanket "
-            "exemption for controlled paths.",
-            startup,
-        )
-        self.assertIn(
-            "stop if any non-queue content or unknown path is present",
-            startup,
+            "Cross-Checkout Ready/Blocked Preflight",
         )
 
-    def test_startup_reconciliation_derives_project_neutral_controlled_paths(
+        self.assertIn("Planning State Diagnostic", preflight)
+        self.assertIn("same runway is still the only queued or active batch", preflight)
+        self.assertIn("canonical active-state paths", preflight)
+        self.assertIn("same batch's dispatch and runway", preflight)
+        self.assertIn("Supply only those exact paths", preflight)
+        self.assertIn("do not infer a project-wide path taxonomy", preflight)
+        self.assertIn("does not mutate planning state", preflight)
+
+    def test_cross_checkout_preflight_consumers_remain_project_neutral(
         self,
     ) -> None:
-        work_batch = self.normalized_section(
-            WORK_BATCH,
-            "Cross-Checkout Startup Reconciliation",
-        )
-
-        capture_facts = (
-            "declared repository roots, branches, live revisions, and worktree status",
-            "installed helper path, active Codex home, and generation role",
-            "complete intervening commit range and its changed paths",
-        )
-        for fact in capture_facts:
-            self.assertIn(fact, work_batch)
-
-        controlled_sources = (
-            "canonical active-state paths resolved by the Planning State Diagnostic",
-            "queued runway and same batch's dispatch",
-            "source finding and source note",
-            "acceptance, validation, and stop contract",
-            "manifest and its declared contract owners",
-            "resolved installed helper owner",
-            "declared roots and baselines",
-            "pending slice allowlist",
-        )
-        for source in controlled_sources:
-            self.assertIn(source, work_batch)
-
         reusable_surfaces = (
             WORK_BATCH,
             CROSS_CHECKOUT_CONTEXT,
@@ -329,9 +238,9 @@ class BatchLifecycleGuardTests(unittest.TestCase):
                     self.assertNotIn(value, text)
 
     def test_cross_checkout_execution_renews_live_leases_and_receipts(self) -> None:
-        startup = self.normalized_section(
+        preflight = self.normalized_section(
             WORK_BATCH,
-            "Cross-Checkout Startup Reconciliation",
+            "Cross-Checkout Ready/Blocked Preflight",
         )
         strict_execution = self.normalized_section(
             WORK_BATCH,
@@ -342,35 +251,11 @@ class BatchLifecycleGuardTests(unittest.TestCase):
             "Stable Helper Bootstrap",
         )
 
-        accepted_route = re.search(
-            r"After (?P<classifications>.+?) is accepted, call the installed "
-            r"helper's `prepare_cross_checkout_context_refresh\(\.\.\.\)`",
-            startup,
-        )
-        if accepted_route is None:
-            self.fail("startup reconciliation does not route accepted classifications")
-        self.assertEqual(
-            1,
-            startup.count("prepare_cross_checkout_context_refresh(...)"),
-        )
-        accepted_classifications = set(
-            re.findall(r"`([^`]+)`", accepted_route.group("classifications"))
-        )
-        self.assertEqual(
-            {
-                "expected-queue-establishment",
-                "compatible-between-flight-change",
-            },
-            accepted_classifications,
-        )
+        self.assertIn("`preflight_cross_checkout_live_lease(...)`", preflight)
+        self.assertIn("non-null, strictly parsed `live_context`", preflight)
+        self.assertIn("`validate_write_scope(...)` separately", preflight)
         self.assertIn(
-            "A conflicting classification, refresh failure, or scope failure "
-            "stops before delegation",
-            startup,
-        )
-        self.assertIn("validate_write_scope(...)` separately", startup)
-        self.assertIn(
-            "Immediately before every worker and reviewer delegation, call "
+            "Immediately before every later worker and reviewer delegation, call "
             "`prepare_cross_checkout_context_refresh(...)` again",
             strict_execution,
         )
@@ -379,26 +264,14 @@ class BatchLifecycleGuardTests(unittest.TestCase):
             strict_execution,
         )
         self.assertIn(
-            "do not strict-parse the historical planning snapshot before "
-            "reconciliation",
+            "do not treat the snapshot itself as a live lease",
             helper_bootstrap,
         )
         self.assertIn("Never pass the planning snapshot as the handoff lease", strict_execution)
         self.assertIn(
-            "The helper supplies planned and live facts; it does not choose the "
-            "classification or accept movement.",
-            startup,
+            "the helper remains mechanical and does not mutate planning state",
+            preflight,
         )
-
-        startup_evidence = startup[startup.index("Record compact startup") :]
-        for fact in (
-            "runway path",
-            "classification",
-            "planned and accepted live stable and implementation revisions",
-            "reviewed commit ranges",
-            "changed-path basis",
-        ):
-            self.assertIn(fact, startup_evidence)
 
         self.assertIn(
             "execution receipt that identifies the exact live lease and validated "
@@ -411,10 +284,10 @@ class BatchLifecycleGuardTests(unittest.TestCase):
             strict_execution,
         )
 
-    def test_cross_checkout_recovery_starts_after_normal_reconciliation(self) -> None:
+    def test_cross_checkout_recovery_preserves_blocked_preflight(self) -> None:
         execute_spec = self.normalized_section(
             EXECUTE_SPEC,
-            "Cross-Checkout Startup Routing",
+            "Cross-Checkout Preflight Routing",
         )
         recovery = self.normalized_section(
             EXECUTE_RECOVERY,
@@ -422,34 +295,14 @@ class BatchLifecycleGuardTests(unittest.TestCase):
         )
 
         self.assertIn(
-            "route through `work-batch` startup reconciliation before strict "
+            "route through the `work-batch` ready/blocked preflight before strict "
             "delegation validation and before unexpected-movement recovery",
             execute_spec,
         )
         self.assertIn("is not, by itself, a recovery trigger", recovery)
-        accepted_recovery_route = recovery[
-            recovery.index("Movement accepted as") : recovery.index(
-                "without an orchestration anomaly"
-            )
-        ]
-        self.assertEqual(
-            {
-                "expected-queue-establishment",
-                "compatible-between-flight-change",
-            },
-            set(re.findall(r"`([^`]+)`", accepted_recovery_route)),
-        )
-        self.assertEqual(1, recovery.count("without an orchestration anomaly"))
-        self.assertIn(
-            "If the reviewed startup evidence cannot be classified confidently, "
-            "record `conflicting-between-flight-change`",
-            recovery,
-        )
-        self.assertIn(
-            "Use this recovery lane only to freeze delegation, preserve the "
-            "evidence, and report the amendment or replanning blocker.",
-            recovery,
-        )
+        self.assertIn("A ready result supplies the first strictly parsed live context", recovery)
+        self.assertIn("A blocked result, null context, helper failure", recovery)
+        self.assertIn("without reinterpreting the helper's reason", recovery)
         self.assertIn("Recovery cannot accept the movement or replace the queued runway", recovery)
         self.assertIn("moves between lease preparation and handoff", recovery)
         self.assertIn("No post-lease movement may reach delegation on the old lease", recovery)

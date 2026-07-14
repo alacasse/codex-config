@@ -177,9 +177,9 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 )
             },
             {
-                "plan-batch": "1.0.6",
-                "work-batch": "1.0.7",
-                "batch-runway": "1.5.3",
+                "plan-batch": "1.0.7",
+                "work-batch": "1.0.8",
+                "batch-runway": "1.5.4",
                 "custom-agents": "1.4.1",
             },
         )
@@ -191,582 +191,122 @@ class CodexFeaturesManifestTests(unittest.TestCase):
     def test_cross_checkout_consumers_share_the_temporary_runtime_contract(
         self,
     ) -> None:
-        plan_batch = (REPO_ROOT / "skills/plan-batch/SKILL.md").read_text(
-            encoding="utf-8"
-        )
-        work_batch = (REPO_ROOT / "skills/work-batch/SKILL.md").read_text(
-            encoding="utf-8"
-        )
-        batch_runway = (REPO_ROOT / "skills/batch-runway/SKILL.md").read_text(
-            encoding="utf-8"
-        )
-        create_spec = (
-            REPO_ROOT / "skills/batch-runway/references/create-spec.md"
-        ).read_text(encoding="utf-8")
-        consumer_contract = (
+        surfaces = {
+            name: (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+            for name, relative_path in {
+                "plan-batch": "skills/plan-batch/SKILL.md",
+                "work-batch": "skills/work-batch/SKILL.md",
+                "create-spec": "skills/batch-runway/references/create-spec.md",
+                "execute-spec": "skills/batch-runway/references/execute-spec.md",
+                "execute-core": (
+                    "skills/batch-runway/references/execute-slice-core-v1.md"
+                ),
+                "execute-recovery": (
+                    "skills/batch-runway/references/execute-recovery-v1.md"
+                ),
+            }.items()
+        }
+        bridge = (
             REPO_ROOT / "skills/batch-runway/references/cross-checkout-context-v1.md"
         ).read_text(encoding="utf-8")
-        precreation_contract = (
-            REPO_ROOT
-            / "skills/batch-runway/references/cross-checkout-precreation-v1.md"
-        ).read_text(encoding="utf-8")
-        execute_core = (
-            REPO_ROOT / "skills/batch-runway/references/execute-slice-core-v1.md"
-        ).read_text(encoding="utf-8")
-        execute_spec = (
-            REPO_ROOT / "skills/batch-runway/references/execute-spec.md"
-        ).read_text(encoding="utf-8")
-        execute_recovery = (
-            REPO_ROOT / "skills/batch-runway/references/execute-recovery-v1.md"
-        ).read_text(encoding="utf-8")
-        execution_contract = (
-            REPO_ROOT / "skills/batch-runway/references/execution-contract-v2.md"
-        ).read_text(encoding="utf-8")
-        agent_result_contract = (
-            REPO_ROOT / "skills/batch-runway/references/agent-result-contract-v2.md"
-        ).read_text(encoding="utf-8")
-        project_values = (
-            REPO_ROOT / "skills/batch-runway/references/project-values.md"
-        ).read_text(encoding="utf-8")
-        subagent_briefs = (
-            REPO_ROOT / "skills/batch-runway/references/subagent-briefs.md"
-        ).read_text(encoding="utf-8")
-
-        plan_precreation = self.markdown_section(
-            plan_batch, "Explicit Cross-Checkout Pre-Creation Planning"
-        )
-        work_precreation = self.markdown_section(
-            work_batch, "Explicit Cross-Checkout Pre-Creation Execution"
-        )
-        plan_strict = self.markdown_section(
-            plan_batch, "Explicit Strict Cross-Checkout Planning"
-        )
-        work_strict = self.markdown_section(
-            work_batch, "Explicit Strict Cross-Checkout Execution"
-        )
-        work_startup = self.markdown_section(
-            work_batch, "Cross-Checkout Startup Reconciliation"
-        )
-        lifecycle_vocabulary = self.markdown_section(
-            consumer_contract, "Lifecycle Vocabulary"
-        )
-        startup_contract = self.markdown_section(
-            consumer_contract, "Startup Classifications And Controlled Paths"
-        )
-        receipt_contract = self.markdown_section(
-            consumer_contract, "Lease Renewal And Execution Receipts"
-        )
-        execute_startup = self.markdown_section(
-            execute_spec, "Cross-Checkout Startup Routing"
-        )
-        recovery_boundary = self.markdown_section(
-            execute_recovery, "Cross-Checkout Movement Boundary"
-        )
-        helper_owner_boundary = self.bounded_text(
-            consumer_contract,
-            "The mechanism is a temporary bridge",
-            "## Lifecycle Vocabulary",
-        )
-        coordinator_owner_boundary = self.markdown_section(
-            consumer_contract, "Planning And Propagation"
-        )
-        batch_precreation = " ".join(
+        precreation = " ".join(
             (
-                self.markdown_section(batch_runway, "Required First Steps"),
-                self.markdown_section(batch_runway, "Core Contract"),
+                REPO_ROOT
+                / "skills/batch-runway/references/cross-checkout-precreation-v1.md"
             )
+            .read_text(encoding="utf-8")
+            .split()
         )
-        create_precreation = self.bounded_text(
-            create_spec,
-            "When the selected dispatch explicitly names\n"
-            "`cross-checkout-precreation/v1`",
-            "When the selected dispatch explicitly names `cross-checkout-context/v1`",
+
+        for owner, text in surfaces.items():
+            with self.subTest(canonical_bridge_consumer=owner):
+                self.assertIn("cross-checkout-context-v1.md", text)
+
+        self.assertIn("temporary bridge", bridge)
+        self.assertIn("project-owned deletion condition", bridge)
+        self.assertIn("scripts/cross_checkout_context.py", bridge)
+        self.assertIn("preflight_cross_checkout_live_lease(...)", bridge)
+        self.assertIn("The preflight result contains only `status`", bridge)
+        self.assertIn("diagnostic `reason`, and", bridge)
+        self.assertIn("`live_context`", bridge)
+        self.assertIn("Proceed only on `status: ready`", bridge)
+        self.assertIn("`status: blocked` has a null context", bridge)
+        self.assertIn("consumers must not reinterpret its reason", bridge)
+        self.assertIn("Validate intended write scope separately", bridge)
+        self.assertIn("Before every later delegation", bridge)
+        self.assertIn("prepare_cross_checkout_context_refresh(...)", bridge)
+        self.assertIn("verified_cross_checkout_context", bridge)
+        self.assertIn("execution receipt", bridge)
+        self.assertIn("Never use planning-snapshot revisions", bridge)
+        self.assertIn("The coordinator remains the owner", bridge)
+
+        plan_strict = self.markdown_section(
+            surfaces["plan-batch"], "Explicit Strict Cross-Checkout Planning"
         )
         create_strict = self.bounded_text(
-            create_spec,
+            surfaces["create-spec"],
             "When the selected dispatch explicitly names `cross-checkout-context/v1`",
             "The spec must include:",
         )
-        execute_precreation = " ".join(
-            (
-                self.markdown_section(execute_core, "Source Map"),
-                self.markdown_section(execute_core, "Coordinator Invariants"),
-                self.markdown_section(execute_core, "Normal Slice Loop"),
-            )
-        )
-
-        bounded_requirements: dict[str, tuple[str, tuple[str, ...]]] = {
-            "plan-batch": (
-                plan_precreation,
-                (
-                    "cross-checkout-precreation-v1.md",
-                    "installed helper from the active Codex home",
-                    "validate the complete payload and exact intended creation "
-                    "targets while they are absent",
-                    "must not create either candidate root",
-                    "no step for ordinary single-root or strict cross-checkout batches",
-                ),
-            ),
-            "work-batch": (
-                work_precreation,
-                (
-                    "cross-checkout-precreation-v1.md",
-                    "complete payload and exact intended creation targets with the "
-                    "installed helper",
-                    "missing, null, or mismatched "
-                    "`verified_cross_checkout_precreation`",
-                    "`verified_cross_checkout_context` remains `null`",
-                    "helper-produced versioned transition receipt",
-                    "green strict `cross-checkout-context/v1` payload",
-                    "`verified_cross_checkout_precreation` remains `null` for those "
-                    "strict results",
-                    "no step for ordinary single-root or strict cross-checkout batches",
-                ),
-            ),
-            "batch-runway": (
-                batch_precreation,
-                (
-                    "cross-checkout-precreation-v1.md",
-                    "complete `cross-checkout-precreation/v1` payload and exact "
-                    "intended creation targets with the installed helper",
-                    "missing, null, or mismatched "
-                    "`verified_cross_checkout_precreation`",
-                    "helper-produced transition receipt and validated strict context",
-                    "strict field remains `null` for a pre-creation handoff",
-                    "pre-creation field remains `null` for strict handoffs",
-                    "Both remain `null`",
-                    "adds no step for ordinary single-root work",
-                ),
-            ),
-            "create-spec": (
-                create_precreation,
-                (
-                    "cross-checkout-precreation-v1.md",
-                    "installed helper from the active Codex home",
-                    "complete payload and exact intended creation targets while they "
-                    "are absent",
-                    "Planning must not create either target",
-                    "must not appear in ordinary single-root or strict cross-checkout "
-                    "runways",
-                ),
-            ),
-            "execute-core": (
-                execute_precreation,
-                (
-                    "cross-checkout-precreation-v1.md",
-                    "absent targets, and exact creation scope",
-                    "missing, null, or mismatched "
-                    "`verified_cross_checkout_precreation`",
-                    "retained validated pre-creation context",
-                    "serialize the versioned transition receipt",
-                    "newly validated strict context",
-                    "Require `verified_cross_checkout_context`",
-                    "require `verified_cross_checkout_precreation` to remain `null`",
-                    "adds no step for ordinary single-root or strict cross-checkout "
-                    "handoffs",
-                ),
-            ),
-        }
-        for consumer, (bounded_contract, requirements) in bounded_requirements.items():
-            for requirement in requirements:
-                with self.subTest(consumer=consumer, requirement=requirement):
-                    self.assertIn(requirement, bounded_contract)
-
-        strict_requirements: dict[str, tuple[str, tuple[str, ...]]] = {
-            "plan-batch": (
-                plan_strict,
-                (
-                    "../batch-runway/references/cross-checkout-context-v1.md",
-                    "Require the complete context payload and canonical planning "
-                    "root, validate them with the installed helper",
-                    "preserve both verbatim in that runway",
-                    "absent-target payload cannot satisfy this strict "
-                    "post-creation contract",
-                    "adds no step for ordinary single-root batches",
-                ),
-            ),
-            "work-batch": (
-                work_strict,
-                (
-                    "../batch-runway/references/cross-checkout-context-v1.md",
-                    "Complete startup reconciliation before the first strict handoff",
-                    "Immediately before every worker and reviewer delegation",
-                    "`prepare_cross_checkout_context_refresh(...)` again",
-                    "newly prepared exact live execution lease",
-                    "Never pass the planning snapshot as the handoff lease",
-                    "pre-creation result field cannot satisfy this strict "
-                    "post-creation contract",
-                    "adds no step for ordinary single-root batches",
-                ),
-            ),
-            "batch-runway": (
-                batch_precreation,
-                (
-                    "references/cross-checkout-context-v1.md",
-                    "validate the complete strict payload and canonical planning "
-                    "root with the installed helper before delegation",
-                    "propagate them in worker and reviewer handoffs",
-                    "pre-creation verification cannot satisfy the strict result field",
-                    "Ordinary single-root work uses neither bridge",
-                ),
-            ),
-            "execute-core": (
-                execute_precreation,
-                (
-                    "`cross-checkout-context-v1.md` for explicit strict "
-                    "post-creation work",
-                    "require `work-batch` startup reconciliation before the first "
-                    "strict handoff",
-                    "new exact live execution lease immediately before every worker "
-                    "and reviewer delegation",
-                    "validating write scope separately",
-                    "Pre-creation verification cannot satisfy this strict invariant",
-                    "invariant adds no step for ordinary single-root handoffs",
-                ),
-            ),
-        }
-        for consumer, (bounded_contract, requirements) in strict_requirements.items():
-            for requirement in requirements:
-                with self.subTest(
-                    consumer=consumer,
-                    strict_requirement=requirement,
-                ):
-                    self.assertIn(requirement, bounded_contract)
-
-        execution_strict = self.bounded_text(
-            execution_contract,
-            "- A runway that explicitly names `cross-checkout-context/v1`",
-            "- These delegation rules bind the coordinator",
-        )
-        result_strict = self.markdown_section(
-            agent_result_contract,
-            "Canonical Owners",
-        )
-        project_value_strict = self.bounded_text(
-            project_values,
-            "- `cross_checkout_context`:",
-            "- `canonical_planning_root`:",
-        )
-        coding_handoff_strict = self.markdown_section(
-            subagent_briefs,
-            "Lean Coding Brief",
-        )
-        review_handoff_strict = self.markdown_section(
-            subagent_briefs,
-            "Lean Review Brief",
-        )
-        support_strict_requirements: dict[str, tuple[str, tuple[str, ...]]] = {
-            "execution-contract": (
-                execution_strict,
-                (
-                    "explicitly names `cross-checkout-context/v1` or explicitly "
-                    "declares separate existing toolchain, canonical-planning, and "
-                    "implementation repository roots",
-                    "complete validated strict payload and canonical planning root",
-                    "`cross-checkout-precreation/v1` runway remains outside this "
-                    "strict branch",
-                    "`verified_cross_checkout_context` null",
-                    "validated helper-produced transition receipt plus green strict "
-                    "context",
-                ),
-            ),
-            "agent-result-contract": (
-                result_strict,
-                (
-                    "explicitly names `cross-checkout-context/v1` or explicitly "
-                    "declares separate existing toolchain, canonical-planning, and "
-                    "implementation repository roots",
-                    "`cross-checkout-precreation/v1` handoff stays outside that "
-                    "strict branch",
-                    "strict field `null` until a validated helper-produced "
-                    "transition receipt plus green strict context exists",
-                ),
-            ),
-            "create-spec": (
-                create_strict,
-                (
-                    "explicitly names `cross-checkout-context/v1` or explicitly "
-                    "declares separate existing toolchain, canonical-planning, and "
-                    "implementation repository roots",
-                    "complete payload and canonical planning root with the installed "
-                    "helper",
-                    "`cross-checkout-precreation/v1` does not use this strict branch",
-                    "validated helper-produced transition receipt plus green strict "
-                    "context",
-                    "pre-transition strict verification remains `null`",
-                ),
-            ),
-            "project-values": (
-                project_value_strict,
-                (
-                    "explicitly names that interface or explicitly declares separate "
-                    "existing toolchain, canonical-planning, and implementation "
-                    "repository roots",
-                    "`cross-checkout-precreation/v1` remains outside this strict value",
-                    "strict verification `null` until a validated helper-produced "
-                    "transition receipt plus green strict context exists",
-                ),
-            ),
-            "coding-handoff": (
-                coding_handoff_strict,
-                (
-                    "explicitly names `cross-checkout-context/v1` or explicitly "
-                    "declares separate existing toolchain, canonical-planning, and "
-                    "implementation repository roots",
-                    "`cross-checkout-precreation/v1` does not use this strict branch",
-                    "validated helper-produced transition receipt plus green strict "
-                    "context",
-                    "before then its strict field remains null",
-                ),
-            ),
-            "review-handoff": (
-                review_handoff_strict,
-                (
-                    "explicitly names `cross-checkout-context/v1` or explicitly "
-                    "declares separate existing toolchain, canonical-planning, and "
-                    "implementation repository roots",
-                    "`cross-checkout-precreation/v1` does not use this strict branch",
-                    "validated helper-produced transition receipt plus green strict "
-                    "context",
-                    "before then its strict field remains null",
-                ),
-            ),
-        }
-        for surface, (
-            bounded_contract,
-            requirements,
-        ) in support_strict_requirements.items():
-            for requirement in requirements:
-                with self.subTest(
-                    strict_surface=surface,
-                    routing_requirement=requirement,
-                ):
-                    self.assertIn(requirement, bounded_contract)
-
-        strict_routing_surfaces = {
-            **{
-                consumer: bounded_contract
-                for consumer, (bounded_contract, _) in strict_requirements.items()
-            },
-            **{
-                surface: bounded_contract
-                for surface, (bounded_contract, _) in (
-                    support_strict_requirements.items()
-                )
-            },
-        }
-        overbroad_strict_triggers = (
-            "an explicitly cross-checkout handoff",
-            "an explicitly cross-checkout runway",
-            "explicitly cross-checkout work",
-            "runway is explicitly cross-checkout",
-        )
-        for surface, bounded_contract in strict_routing_surfaces.items():
-            normalized_contract = bounded_contract.lower()
-            for overbroad_trigger in overbroad_strict_triggers:
-                with self.subTest(
-                    strict_surface=surface,
-                    rejected_trigger=overbroad_trigger,
-                ):
-                    self.assertNotIn(overbroad_trigger, normalized_contract)
-
-        self.assertIn("installed helper", consumer_contract)
-        self.assertIn("scripts/cross_checkout_context.py", consumer_contract)
-        self.assertIn("temporary bridge", consumer_contract)
-        self.assertIn("project-owned deletion condition", consumer_contract)
-        self.assertIn(
-            "`prepare_cross_checkout_context_refresh(...)` operation",
-            startup_contract,
-        )
-        for mechanical_fact in (
-            "helper owns parsing",
-            "root and revision validation",
-            "generation binding",
-            "write-scope validation",
-            "receipt data",
-        ):
-            with self.subTest(mechanical_fact=mechanical_fact):
-                self.assertIn(mechanical_fact, helper_owner_boundary)
-        self.assertIn("workflow lifecycle authority", helper_owner_boundary)
-
-        for semantic_owner, contract in (
-            ("work-batch", work_startup),
-            ("shared-contract", startup_contract),
-        ):
-            normalized_contract = contract.lower()
-            sentences = normalized_contract.split(". ")
-            with self.subTest(semantic_owner=semantic_owner):
-                self.assertIn("`work-batch` owns", contract)
-                self.assertIn("planned and live", normalized_contract)
-                self.assertIn("strictly parsed refreshed payload", normalized_contract)
-                self.assertTrue(
-                    any(
-                        "helper" in sentence
-                        and "does not" in sentence
-                        and "classif" in sentence
-                        and "accept" in sentence
-                        for sentence in sentences
-                    ),
-                    f"{semantic_owner} must deny classification and acceptance "
-                    "authority to helper output",
-                )
-
-        normalized_coordinator_ownership = coordinator_owner_boundary.lower()
-        for authority in (
-            "selection",
-            "execution acceptance",
-            "closeout",
-        ):
-            with self.subTest(coordinator_authority=authority):
-                self.assertIn(authority, normalized_coordinator_ownership)
-        self.assertIn("coordinator remains the owner", normalized_coordinator_ownership)
-
-        lifecycle_terms = (
-            "planning snapshot",
-            "startup reconciliation",
-            "live execution lease",
-            "execution receipt",
-        )
-        normalized_lifecycle = lifecycle_vocabulary.lower()
-        for term in lifecycle_terms:
-            with self.subTest(lifecycle_term=term):
-                self.assertIn(term, normalized_lifecycle)
-
-        for producer, contract in (
+        for producer, text in (
             ("plan-batch", plan_strict),
             ("create-spec", create_strict),
         ):
-            normalized_contract = contract.lower()
-            with self.subTest(producer=producer):
-                self.assertIn("planning snapshot", normalized_contract)
-                self.assertIn(
-                    "immutable historical planning evidence",
-                    normalized_contract,
-                )
-                self.assertIn("not a live execution lease", normalized_contract)
-                self.assertIn("same selected scope", normalized_contract)
-                self.assertIn("fresh live lease", normalized_contract)
-                self.assertIn("commit that contains", normalized_contract)
+            with self.subTest(snapshot_producer=producer):
+                self.assertIn("planning snapshot", text.lower())
+                self.assertIn("immutable historical planning evidence", text.lower())
+                self.assertIn("not a live execution lease", text.lower())
+                self.assertIn("same selected scope", text.lower())
+                self.assertIn("ready/blocked preflight", text.lower())
 
-        expected_classifications = {
-            "expected-queue-establishment",
-            "compatible-between-flight-change",
-            "conflicting-between-flight-change",
-        }
-        for owner, contract in (
-            ("work-batch", work_startup),
-            ("shared-contract", startup_contract),
-        ):
-            found = {
-                classification
-                for classification in expected_classifications
-                if classification in contract
-            }
-            with self.subTest(startup_owner=owner):
-                self.assertEqual(expected_classifications, found)
-                self.assertIn("runway", contract)
-                self.assertIn("changed path", contract)
-                self.assertIn("prepare_cross_checkout_context_refresh(...)", contract)
+        work_preflight = self.markdown_section(
+            surfaces["work-batch"], "Cross-Checkout Ready/Blocked Preflight"
+        )
+        self.assertIn("same runway is still the only queued or active batch", work_preflight)
+        self.assertIn("exact queue-establishment transaction", work_preflight)
+        self.assertIn("preflight_cross_checkout_live_lease(...)", work_preflight)
+        self.assertIn("Proceed only when it returns `status: ready`", work_preflight)
+        self.assertIn("Treat `status: blocked`", work_preflight)
+        self.assertIn("without reclassifying it", work_preflight)
+        self.assertIn("validate_write_scope(...)", work_preflight)
+        self.assertIn("retains every proceed, stop, recovery", work_preflight)
+        self.assertIn("does not mutate planning state", work_preflight)
 
-        self.assertIn(
-            "`work-batch` owns the normal queued-to-executing transition",
-            work_startup,
+        execute_preflight = self.markdown_section(
+            surfaces["execute-spec"], "Cross-Checkout Preflight Routing"
         )
-        self.assertIn("before generic unexpected-movement recovery", work_startup)
-        self.assertIn("immutable planning snapshot", work_startup)
-        self.assertIn("strictly parsed refreshed payload", work_startup)
-        self.assertIn("validate_write_scope(...)` separately", work_startup)
-        self.assertIn(
-            "do not rewrite the planning snapshot or record accepted startup "
-            "movement as an orchestration anomaly",
-            work_startup,
-        )
+        self.assertIn("same runway as the only queued or active batch", execute_preflight)
+        self.assertIn("exact current queue transaction paths", execute_preflight)
+        self.assertIn("Proceed only on `status: ready`", execute_preflight)
+        self.assertIn("`status: blocked`", execute_preflight)
+        self.assertIn("without reinterpreting the diagnostic reason", execute_preflight)
 
-        for consumer, contract in (
-            ("work-batch", work_strict),
-            ("batch-runway", execute_precreation),
-        ):
-            normalized_contract = contract.lower()
-            with self.subTest(lease_consumer=consumer):
-                self.assertIn(
-                    "immediately before every worker and reviewer delegation",
-                    normalized_contract,
-                )
-                self.assertIn("exact live execution lease", normalized_contract)
-                self.assertIn("planning snapshot", normalized_contract)
+        core = " ".join(surfaces["execute-core"].split())
+        self.assertIn("ready/blocked preflight before the", core)
+        self.assertIn("live context for that immediate first handoff", core)
+        self.assertIn("preparing a new exact live", core)
+        self.assertIn("execution lease before every later", core)
+        self.assertIn("validating write scope separately", core)
+        self.assertIn("rejecting missing, null, or mismatched verified identity", core)
+        self.assertIn("prepare_cross_checkout_context_refresh(...)", core)
 
-        for receipt_owner, contract in (
-            ("work-batch", work_strict),
-            ("shared-contract", receipt_contract),
-        ):
-            normalized_contract = contract.lower().replace("-", " ")
-            sentences = normalized_contract.split(". ")
-            with self.subTest(receipt_owner=receipt_owner):
-                self.assertTrue(
-                    any(
-                        all(
-                            term in sentence
-                            for term in (
-                                "execution receipt",
-                                "accepted action",
-                                "exact live lease",
-                                "validated scope",
-                            )
-                        )
-                        for sentence in sentences
-                    ),
-                    f"{receipt_owner} must tie each accepted-action receipt to "
-                    "its exact live lease and validated scope",
-                )
-                self.assertTrue(
-                    any(
-                        ("must not" in sentence or "never use" in sentence)
-                        and "planning snapshot revisions" in sentence
-                        and (
-                            "later action" in sentence
-                            or "live action evidence" in sentence
-                        )
-                        for sentence in sentences
-                    ),
-                    f"{receipt_owner} must reject planning-snapshot revisions "
-                    "as later action provenance",
-                )
+        recovery = self.markdown_section(
+            surfaces["execute-recovery"], "Cross-Checkout Movement Boundary"
+        )
+        self.assertIn("A ready result supplies the first strictly parsed live context", recovery)
+        self.assertIn("A blocked result, null context, helper failure", recovery)
+        self.assertIn("without reinterpreting the helper's reason", recovery)
+        self.assertIn("No post-lease movement may reach delegation on the old lease", recovery)
 
-        self.assertIn("before unexpected-movement recovery", execute_startup)
-        self.assertIn("is not, by itself, a recovery trigger", recovery_boundary)
-        self.assertIn("conflicting-between-flight-change", recovery_boundary)
-        self.assertIn(
-            "No post-lease movement may reach delegation on the old lease",
-            recovery_boundary,
-        )
-
-        normalized_precreation = " ".join(precreation_contract.split())
-        self.assertIn(
-            "installed `scripts/cross_checkout_context.py` helper", precreation_contract
-        )
-        self.assertIn("parse_cross_checkout_precreation", precreation_contract)
-        self.assertIn("validate_precreation_creation_targets", precreation_contract)
-        self.assertIn("build_cross_checkout_transition_receipt", precreation_contract)
-        self.assertIn("cross_checkout_transition_receipt_to_dict", precreation_contract)
-        self.assertIn("Planning must not create either root", normalized_precreation)
-        self.assertIn(
-            "For ordinary single-root and strict cross-checkout handoffs, "
-            "`verified_cross_checkout_precreation` remains `null`",
-            normalized_precreation,
-        )
-        self.assertIn(
-            "pre-creation result satisfy a strict handoff",
-            normalized_precreation,
-        )
-        self.assertIn(
-            "not a strict handoff merely because it is cross-checkout",
-            normalized_precreation,
-        )
-        self.assertIn(
-            "`verified_cross_checkout_context` `null`, until the validated "
-            "helper-produced transition receipt plus green strict context",
-            normalized_precreation,
-        )
+        for owner in ("plan-batch", "work-batch", "create-spec", "execute-core"):
+            with self.subTest(precreation_consumer=owner):
+                self.assertIn("cross-checkout-precreation/v1", surfaces[owner])
+        self.assertIn("parse_cross_checkout_precreation", precreation)
+        self.assertIn("validate_precreation_creation_targets", precreation)
+        self.assertIn("build_cross_checkout_transition_receipt", precreation)
+        self.assertIn("cross_checkout_transition_receipt_to_dict", precreation)
+        self.assertIn("Planning must not create either root", precreation)
+        self.assertIn("pre-creation result satisfy a strict handoff", precreation)
 
     def test_cross_checkout_generic_surfaces_remain_project_neutral(self) -> None:
         generic_surfaces = (

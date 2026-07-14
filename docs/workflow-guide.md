@@ -102,13 +102,14 @@ flight boundary: the persisted cross-checkout context is an immutable planning
 snapshot, not an execution lease that must continue to match a later live
 `HEAD`.
 
-At the start of the later `work-batch` flight, startup reconciliation confirms
-that the same runway remains selected and classifies reviewed repository
-movement as expected queue establishment, compatible between-flight change, or
-conflicting between-flight change. Only accepted movement proceeds. Immediately
-before each worker or reviewer delegation, the coordinator obtains a fresh,
-strictly validated live execution lease and validates its scope; the durable
-execution receipt records that exact lease rather than the planning snapshot.
+At the start of the later `work-batch` flight, Planning State confirms that the
+same runway remains selected. `work-batch` supplies the exact current queue
+transaction paths to the canonical ready/blocked preflight and proceeds only on
+a ready result with a fresh, strictly validated live context. A blocked result
+stops before delegation without a second movement taxonomy. Before later worker
+or reviewer delegations, the coordinator renews the exact live execution lease
+and validates its scope; each durable execution receipt records the actual
+lease rather than the planning snapshot.
 
 ## Rules
 

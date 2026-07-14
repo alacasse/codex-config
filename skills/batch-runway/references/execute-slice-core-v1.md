@@ -89,11 +89,12 @@ appropriate.
   handoffs.
 - For a runway that explicitly names `cross-checkout-context/v1` or explicitly
   declares separate existing toolchain, canonical-planning, and implementation
-  repository roots, require `work-batch` startup reconciliation before the
-  first strict handoff. Apply `cross-checkout-context-v1.md` by preparing a new
-  exact live execution lease immediately before every worker and reviewer
-  delegation, validating write scope separately, and rejecting missing, null,
-  or mismatched verified identity in their v2 results. A
+  repository roots, require the `work-batch` ready/blocked preflight before the
+  first strict handoff. Apply `cross-checkout-context-v1.md` by using the ready
+  live context for that immediate first handoff, preparing a new exact live
+  execution lease before every later worker and reviewer delegation, validating
+  write scope separately, and rejecting missing, null, or mismatched verified
+  identity in their v2 results. A
   `cross-checkout-precreation/v1` runway stays outside this strict branch with
   `verified_cross_checkout_context` null until a validated helper-produced
   transition receipt plus green strict context exists. Pre-creation
@@ -123,12 +124,11 @@ appropriate.
    Stop before delegation on any missing or mismatched fact.
 5. For work that explicitly names `cross-checkout-context/v1` or explicitly
    declares separate existing toolchain, canonical-planning, and implementation
-   repository roots, require `work-batch` startup reconciliation before the
-   first strict handoff. The startup evidence must preserve the same runway and
-   contain one of the three classifications from
-   `cross-checkout-context-v1.md`; only accepted queue establishment or
-   compatible between-flight change may continue. Immediately before the worker
-   handoff, verify any repository movement since the prior accepted action
+   repository roots, require the `work-batch` ready/blocked preflight before the
+   first strict handoff. The preflight evidence must preserve the same runway,
+   exact current queue transaction paths, and a ready non-null live context;
+   blocked or ambiguous evidence stops before delegation. Before later worker
+   handoffs, verify any repository movement since the prior accepted action
    against the exact accepted coordinator commit and intended changed paths,
    then call `prepare_cross_checkout_context_refresh(...)` against the immutable
    planning snapshot. Use its strictly parsed refreshed payload as a new live
@@ -307,8 +307,8 @@ For strict cross-checkout work, pair each accepted worker or reviewer action
 with an execution receipt that identifies the newly prepared live execution
 lease and separately validated scope used by that handoff. Keep the receipt
 compact while preserving the exact helper-owned revision and identity facts;
-never fill it from the planning snapshot. Record startup reconciliation facts
-once for the runway rather than duplicating them in every slice receipt.
+never fill it from the planning snapshot. Keep the one preflight result compact
+rather than duplicating it in every slice receipt.
 
 ## Ledger Update
 

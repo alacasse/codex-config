@@ -28,7 +28,7 @@
       ]
     },
     "plan-batch": {
-      "version": "1.0.6",
+      "version": "1.0.7",
       "description": "User-facing command-owner skill for selecting bounded ledger work or reporting selected batch state before writing at most one concrete batch spec.",
       "requires": [
         "planning-artifacts",
@@ -44,7 +44,7 @@
       ]
     },
     "work-batch": {
-      "version": "1.0.7",
+      "version": "1.0.8",
       "description": "User-facing command-owner skill for executing the current queued or active batch runway.",
       "requires": [
         "planning-artifacts",
@@ -60,7 +60,7 @@
       ]
     },
     "batch-runway": {
-      "version": "1.5.3",
+      "version": "1.5.4",
       "description": "Agent-facing runtime support used by plan-batch and work-batch for runway spec mechanics and execution contracts.",
       "requires": [
         "planning-artifacts",

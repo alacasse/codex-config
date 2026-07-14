@@ -138,9 +138,9 @@ runway's **planning snapshot**. The snapshot is immutable historical planning
 evidence, not a live execution lease or a promise about future live `HEAD`.
 Preserve it after the containing plan commit or later between-flight commits
 advance `HEAD`; do not hand-edit its revisions or rewrite the queued runway to
-embed the commit that contains it. Startup reconciliation must preserve the
-same selected scope and acquire a fresh live lease before any later delegated
-handoff.
+embed the commit that contains it. A later execution flight must preserve the
+same selected scope and pass the canonical ready/blocked preflight before its
+first fresh live lease reaches a delegated handoff.
 
 The spec must include:
 

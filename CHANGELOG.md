@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Narrow cross-checkout live-lease preflight
+
+Problem: the temporary cross-checkout bridge expanded queue startup into three
+movement classifications, compatible-range review, broad controlled-path
+derivation, and repeated lifecycle prose across every consumer.
+
+Decision: replace that protocol with the helper-owned mechanical
+`ready`/`blocked` preflight. `work-batch` confirms currentness and supplies the
+exact current queue transaction paths, proceeds only with the returned strict
+live context, and retains every semantic workflow decision. Keep immutable
+planning snapshots, fresh per-handoff leases, separate write-scope validation,
+verified result echo, actual-lease receipts, pre-creation behavior, and the
+temporary bridge's CCFG-29 deletion condition. Publish `plan-batch` 1.0.7,
+`work-batch` 1.0.8, and `batch-runway` 1.5.4 without installing or switching
+generations.
+
+Expected effect: normal queued work has one fail-closed mechanical boundary,
+while reusable consumers carry fewer classifications, lifecycle concepts,
+path taxonomies, duplicated obligations, and wording/topology locks.
+
 ### Semantic runway slice boundaries
 
 Problem: reusable planning workflows required or suggested three to five slices,

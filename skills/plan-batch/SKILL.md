@@ -93,8 +93,9 @@ validated plan-time payload and canonical planning root as the runway's
 not a live execution lease or a promise about future live `HEAD`. Do not
 hand-edit its revisions or rewrite the queued runway merely to embed the commit
 that contains the runway; the resulting commit would repeat the same
-self-reference. Startup reconciliation must preserve the snapshot and the same
-selected scope before a later execution flight can acquire a fresh live lease.
+self-reference. A later execution flight must confirm the same selected scope
+and pass the canonical ready/blocked preflight before acquiring its first fresh
+live lease.
 
 When the dispatch names `cross-checkout-precreation/v1`, use the separate
 pre-creation contract above; an absent-target payload cannot satisfy this
