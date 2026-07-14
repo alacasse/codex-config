@@ -143,3 +143,5 @@ prefix_rule(pattern=["gh", "label", "create", "ready-for-agent", "--repo", "alac
 prefix_rule(pattern=["gh", "label", "create", "needs-info", "--repo", "alacasse/graphify", "--description", "Waiting on reporter for more information", "--color", "d876e3"], decision="allow")
 prefix_rule(pattern=["gh", "label", "create", "needs-triage", "--repo", "alacasse/graphify", "--description", "Maintainer needs to evaluate this issue", "--color", "ffb347"], decision="allow")
 prefix_rule(pattern=["gh", "issue", "edit", "2", "--repo", "alacasse/graphify", "--add-label", "ready-for-agent"], decision="allow")
+prefix_rule(pattern=["git", "add"], decision="allow")
+prefix_rule(pattern=["git", "commit"], decision="allow")
