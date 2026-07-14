@@ -298,3 +298,98 @@ Exact helper-produced `cross_repository_receipt_to_dict` results:
   }
 }
 ```
+
+## Slice 4: Add Migration Guards And Integration Proof
+
+- Candidate commit: `3e54155964e92d3a4dced8268cc683baaab9be1c`.
+- Candidate files: `CHANGELOG.md`, `scripts/skill_contract.py`,
+  `tests/test_skill_contract_migration.py`, and six migration policy/catalog
+  fixtures.
+- Migration result: explicit before/after catalogs and policy inputs detect a
+  retained broad-owner dependency, expected ownership that did not move,
+  duplicated durable facts, and a rename without contract change. Ambiguous
+  catalog identity and same-key/different-policy comparisons fail closed.
+- CLI result: `compare` uses the same deep validation interface and preserves
+  deterministic success, finding, and usage exit classes.
+- Validation: all 42 skill-contract tests passed; Ruff passed; basedpyright
+  reported zero errors; both current required-green baselines passed; every
+  Slice 1 through 4 CLI harness passed; `git diff --check` passed.
+- Diagnostic baseline: the manifest suite remained exactly the documented
+  three failures and 18 passes; no new failure entered the set.
+- Review: independent strict-context review was clean over explicit
+  before/after evidence, policy, CLI behavior, and changelog scope.
+- Behavior changed: yes, the candidate validator now exposes deterministic
+  migration comparison guards. `codex-features.json`, current skills, and
+  installed state remain unchanged; CCFG-22 owns future runtime consumption.
+- Cleanup residue: none.
+
+### Slice 4 Cross-Repository Receipts
+
+Exact helper-produced `cross_repository_receipt_to_dict` results:
+
+```json
+{
+  "candidate_implementation_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-20 Slice 4 migration guards and integration proof",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [],
+      "implementation_paths": [
+        "/home/alacasse/projects/codex-config-command-owner-redesign/CHANGELOG.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/scripts/skill_contract.py",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/test_skill_contract_migration.py",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/migration/policy.json",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/migration/before/legacy-owner/SKILL.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/migration/after-valid/command-owner/SKILL.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/migration/after-valid/support-mechanism/SKILL.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/migration/after-retained-owner/command-owner/SKILL.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/skill-contracts/migration/after-retained-owner/support-mechanism/SKILL.md"
+      ]
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "5eb57d581d92681ec6757616511e4c5668a2e9bb",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "5eb57d581d92681ec6757616511e4c5668a2e9bb",
+      "canonical_planning_commit_before": "5eb57d581d92681ec6757616511e4c5668a2e9bb",
+      "implementation_commit_before": "3e54155964e92d3a4dced8268cc683baaab9be1c"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  },
+  "stable_planning_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-20 Slice 4 stable planning receipt",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [
+        "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/completed-slices.md"
+      ],
+      "implementation_paths": []
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "5eb57d581d92681ec6757616511e4c5668a2e9bb",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "5eb57d581d92681ec6757616511e4c5668a2e9bb",
+      "canonical_planning_commit_before": "5eb57d581d92681ec6757616511e4c5668a2e9bb",
+      "implementation_commit_before": "3e54155964e92d3a4dced8268cc683baaab9be1c"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  }
+}
+```
