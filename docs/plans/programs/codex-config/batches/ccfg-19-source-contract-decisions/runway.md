@@ -339,7 +339,6 @@ Decision gate state:
 
 | Slice | Risk | Status | Candidate commit | Stable receipt | Focused validation | Review | Notes |
 |---|---|---|---|---|---|---|---|
-| 2. Accept schema and ledger boundaries | decision-only | Pending | None | None | Pending | Pending | No schema or store implementation. |
 | 3. Accept runner boundary and verify topology | decision-only | Pending | None | None | Pending | Pending | No runner or installer implementation. |
 | 4. Resolve OPEN-003 and audit exit gate | decision-only | Pending | None | None | Pending | Pending | Close or explicitly block CCFG-19; no successor. |
 
@@ -351,6 +350,7 @@ receipt. Keep only active rows and compact evidence here.
 | Slice | Risk | Candidate commit | Stable planning receipt | Outcome | Audit references |
 |---|---|---|---|---|---|
 | 1. Join contract evidence | evidence-only | `db0f37d` | `0448652` | success; 31 contracts joined to source, one target owner, scenarios, classification, and test dispositions; 16 scenario gaps resolved; all 465 methods across 28 modules classified; repeat independent review clean; accepted decisions unchanged | `completed-slices.md`; `git show --stat db0f37d`; `git show --stat 0448652` |
+| 2. Accept schema and ledger boundaries | decision-only | `07c5d41` | `fa7ff73` | success; DEC-036 and DEC-037 exactly record the approved closed-world v1 evolution rule and apply-only ledger-store boundary; docs-only validation green; independent strict-context review clean; no implementation | `completed-slices.md`; `git show --stat 07c5d41`; `git show --stat fa7ff73` |
 
 ## Slice 1: Join Contract, Owner, Scenario, And Test Evidence
 
