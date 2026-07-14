@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -33,11 +32,11 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-21 through CCFG-29.
-- Pending ledger row: CCFG-30.
-- Closed ledger rows: CCFG-18 through CCFG-20. CCFG-20 implements the accepted
-  `skill-contract/v1` schema, deterministic validators, explicit fixture
-  catalogs, and migration guards without installing or migrating current
-  skills.
+- Pending ledger row: `None`.
+- Closed ledger rows: CCFG-18 through CCFG-20 and CCFG-30. CCFG-30 separates
+  durable planning snapshots from reviewed startup reconciliation, exact live
+  execution leases, and action receipts without changing the candidate or
+  default generation.
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -51,27 +50,23 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/runway.md`
-- Queued dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/dispatch.md`
+- Queued batch: `None`
+- Queued dispatch: `None`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-20-skill-contract-schema`
+- Latest completed batch: `ccfg-30-cross-flight-execution-leases`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/closeout.md`
 
 ## Next Safe Action
 
-Execute only
-`docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/runway.md`
-through `work-batch`. Keep CCFG-21 through CCFG-29 and all older open rows
-unselected, preserve exact strict handoff validation, and stop after CCFG-30
-same-batch closeout without preparing a successor.
+No batch is selected, queued, or active. CCFG-30 is closed. Stop before
+successor selection; a future explicit `plan-batch` request owns selection of
+one bounded batch from the canonical ledger.
 
 ## Stop Conditions
 

@@ -262,15 +262,18 @@ Reviewer brief for every slice:
 
 | Slice | Risk | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|---|
-| 1. Helper refresh preparation | migration | Pending | None | Pending | Pending | Helper and temporary-repository proof | Preserve exact strict parser |
-| 2. Planning snapshot contract | migration | Pending | None | Pending | Pending | Snapshot lifecycle guards | No self-referential rewrite |
-| 3. Startup reconciliation and live leases | migration | Pending | None | Pending | Pending | Three classifications and receipt proof | `work-batch` owns acceptance |
-| 4. Integrated routing and linked metadata | migration | Pending | None | Pending | Pending | Manifest, docs, installer checks, final validation | No candidate changes |
+| None | - | Complete | See `completed-slices.md` | Passed: 39 helper/lifecycle tests, joined manifest, Ruff, basedpyright, linked checks; known-red diagnostic unchanged | Final range accepted after scoped repair | Produce closeout evidence | No implementation or recovery work remains |
+
+## Orchestration Anomalies
+
+```yaml
+orchestration_anomalies: []
+```
 
 ## Completed Slice Archive
 
-None. Create `completed-slices.md` during execution and move each accepted slice
-there after its commit receipt is complete.
+See `completed-slices.md` for exact commit receipts, startup reconciliation
+evidence, validation, and review results.
 
 ## Slice 1: Add Helper-Owned Refresh Preparation
 
