@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -33,11 +32,10 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-21 through CCFG-29.
-- Pending ledger row: CCFG-31.
-- Closed ledger rows: CCFG-18 through CCFG-20 and CCFG-30. CCFG-30 separates
-  durable planning snapshots from reviewed startup reconciliation, exact live
-  execution leases, and action receipts without changing the candidate or
-  default generation.
+- Pending ledger row: `None`.
+- Closed ledger rows: CCFG-18 through CCFG-20, CCFG-30, and CCFG-31. CCFG-31
+  replaces broad startup reconciliation with one narrow mechanical
+  `ready`/`blocked` preflight while preserving strict per-handoff leases.
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -51,25 +49,22 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/runway.md`
-- Queued dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/dispatch.md`
+- Queued batch: `None`
+- Queued dispatch: `None`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-30-cross-flight-execution-leases`
+- Latest completed batch: `ccfg-31-narrow-live-lease-preflight`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/closeout.md`
 
 ## Next Safe Action
 
-Execute only
-`docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/runway.md`
-through `work-batch`. Stop before successor selection after same-batch closeout.
+No batch is selected, queued, or active. Wait for an explicit `plan-batch`
+request before selecting successor work; do not infer it during closeout.
 
 ## Stop Conditions
 
@@ -97,6 +92,4 @@ through `work-batch`. Stop before successor selection after same-batch closeout.
 - Stop if CCFG-30 execution targets the redesign candidate, weakens exact strict
   handoff validation, or lets helper refresh preparation decide compatibility.
 - Stop if CCFG-30 closeout selects or prepares any successor dispatch or runway.
-- Stop if CCFG-31 execution exceeds its two producer/consumer slices, weakens
-  strict per-handoff leases, modifies historical CCFG-30 artifacts or the
-  redesign candidate, or absorbs CCFG-29 bridge removal.
+- Stop if work treats closed CCFG-31 or its completed runway as active work.

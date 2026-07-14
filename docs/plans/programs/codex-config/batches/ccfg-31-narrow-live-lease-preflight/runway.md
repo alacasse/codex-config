@@ -286,12 +286,18 @@ Reviewer brief:
 
 | Slice | Risk | Status | Commit | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|---|
-| 1. Add the mechanical ready/blocked preflight | migration | pending | | | | Helper behavior proof, delta-only test-quality review, independent runway review | Producer boundary; keep strict refresh for later handoffs |
-| 2. Collapse consumers and delete the broad protocol | contract-narrowing | pending | | | | Approval recheck, consumer migration, dead-surface evidence, focused test-quality review, independent runway review | Consumes Slice 1; no third slice |
+| _No pending slices._ | | | | | | Final validation and closeout | Both declared slices are archived in `completed-slices.md`. |
 
 ## Orchestration Anomalies
 
-orchestration_anomalies: []
+orchestration_anomalies:
+  - slice: 1
+    severity: low
+    category: approval_rule_side_effect
+    observed: "Git write approval appended git add and git commit allowances to rules/default.rules."
+    impact: "The unrelated tracked rule file became dirty after Slice 1 review and before commit finalization."
+    action_taken: "Preserved the file, excluded it from both implementation commits, and carried it as unrelated dirty state."
+    follow_up: "Review or commit the approval-rule change separately from CCFG-31."
 
 ## Completed Slice Archive
 
