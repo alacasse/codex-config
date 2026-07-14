@@ -91,3 +91,90 @@ Exact helper-produced `cross_repository_receipt_to_dict` results:
   }
 }
 ```
+
+## Slice 2: Accept Schema-Evolution And Ledger-Store Boundaries
+
+- Candidate commit: `07c5d41882b6df83bc8298854a83d59a3006b555`.
+- Accepted decisions: DEC-036 fixes the closed-world v1 schema-evolution rule;
+  DEC-037 fixes the apply-only `ledger-store/v1` boundary.
+- Approval evidence: exact user approval `Approve all four`, recorded in stable
+  commit `19e0746cdc7f681ebe4e6b0ab0be62640097ea6f` before the Slice 2 worker
+  handoff.
+- Schema result: unknown versions block; unknown v1 fields reject unless a
+  named bounded allowlist applies; optional additions require an accepted
+  compatibility decision and reader-before-writer rollout; required-field and
+  semantic ownership changes require a new version.
+- Store result: whole-ledger CAS, touched-finding revisions, exact idempotent
+  replay, key/payload mismatch rejection, deterministic rendering, atomic
+  replacement, and ledger-written/receipt-missing recovery are mechanical;
+  command owners retain all workflow semantics.
+- Current strict validators and permissive compatibility examples remain
+  contrasting evidence rather than a silently standardized current policy.
+- Validation: `git diff --check` passed; DEC-036 and DEC-037 fenced YAML parsed;
+  Markdown fences balanced; independent strict-context review was clean.
+- Implementation: none. CCFG-20, CCFG-21, and CCFG-24 remain deferred.
+
+### Cross-Repository Receipts
+
+Exact helper-produced `cross_repository_receipt_to_dict` results:
+
+```json
+{
+  "candidate_implementation_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-19 Slice 2 schema and ledger boundary decisions",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [],
+      "implementation_paths": [
+        "/home/alacasse/projects/codex-config-command-owner-redesign/docs/design/command-owner-redesign/10-ccfg-19-contract-verification-and-decisions.md",
+        "/home/alacasse/projects/codex-config-command-owner-redesign/docs/design/command-owner-redesign/decisions.md"
+      ]
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "19e0746cdc7f681ebe4e6b0ab0be62640097ea6f",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "19e0746cdc7f681ebe4e6b0ab0be62640097ea6f",
+      "canonical_planning_commit_before": "19e0746cdc7f681ebe4e6b0ab0be62640097ea6f",
+      "implementation_commit_before": "07c5d41882b6df83bc8298854a83d59a3006b555"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  },
+  "stable_planning_receipt": {
+    "interface": "cross-checkout-receipt/v1",
+    "caller": "work-batch",
+    "reason": "CCFG-19 Slice 2 stable planning receipt",
+    "allowed_scope": {
+      "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+      "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+      "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+      "planning_paths": [
+        "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/completed-slices.md",
+        "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md"
+      ],
+      "implementation_paths": []
+    },
+    "generation_identity": {
+      "generation_role": "stable",
+      "toolchain_source_root": "/home/alacasse/projects/codex-config",
+      "toolchain_commit": "19e0746cdc7f681ebe4e6b0ab0be62640097ea6f",
+      "codex_home": "/home/alacasse/.codex",
+      "canonical_state_mutation_allowed": true
+    },
+    "repository_revisions": {
+      "toolchain_commit": "19e0746cdc7f681ebe4e6b0ab0be62640097ea6f",
+      "canonical_planning_commit_before": "19e0746cdc7f681ebe4e6b0ab0be62640097ea6f",
+      "implementation_commit_before": "07c5d41882b6df83bc8298854a83d59a3006b555"
+    },
+    "deletion_condition": "CCFG-29 final integration"
+  }
+}
+```
