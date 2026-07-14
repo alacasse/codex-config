@@ -339,7 +339,7 @@ Decision gate state:
 
 | Slice | Risk | Status | Candidate commit | Stable receipt | Focused validation | Review | Notes |
 |---|---|---|---|---|---|---|---|
-| 4. Resolve OPEN-003 and audit exit gate | decision-only | Pending | None | None | Pending | Pending | Close or explicitly block CCFG-19; no successor. |
+| None | None | Complete | None | None | Complete | Clean | All four slices are archived below; proceed only through same-batch closeout. |
 
 Completed slice details move to `completed-slices.md` after each accepted stable
 receipt. Keep only active rows and compact evidence here.
@@ -351,6 +351,7 @@ receipt. Keep only active rows and compact evidence here.
 | 1. Join contract evidence | evidence-only | `db0f37d` | `0448652` | success; 31 contracts joined to source, one target owner, scenarios, classification, and test dispositions; 16 scenario gaps resolved; all 465 methods across 28 modules classified; repeat independent review clean; accepted decisions unchanged | `completed-slices.md`; `git show --stat db0f37d`; `git show --stat 0448652` |
 | 2. Accept schema and ledger boundaries | decision-only | `07c5d41` | `fa7ff73` | success; DEC-036 and DEC-037 exactly record the approved closed-world v1 evolution rule and apply-only ledger-store boundary; docs-only validation green; independent strict-context review clean; no implementation | `completed-slices.md`; `git show --stat 07c5d41`; `git show --stat fa7ff73` |
 | 3. Accept runner boundary and verify topology | decision-only | `baeef7a` | `6f29967` | success; DEC-017 preserves all accepted runner mechanism responsibilities while adding public command sequencing and removing successor-readiness semantics; corrected CCFG-18 topology evidence linked; repeat review clean; one resolved low-severity worker-check anomaly archived | `completed-slices.md`; `git show --stat baeef7a`; `git show --stat 6f29967` |
+| 4. Resolve OPEN-003 and audit exit gate | decision-only | `13d7f63` | `137e37e` | success; DEC-038 resolves OPEN-003 with a realizable append-only transaction binding and 12-checkpoint fault model; all seven exit keys are evidenced; final validation held the exact known-red baseline; repeat review clean | `completed-slices.md`; `git show --stat 13d7f63`; `git show --stat 137e37e` |
 
 ## Slice 1: Join Contract, Owner, Scenario, And Test Evidence
 
@@ -666,7 +667,17 @@ Stop conditions:
 ## Orchestration Anomalies
 
 ```yaml
-orchestration_anomalies: []
+orchestration_anomalies:
+  - id: worker_project_check_outside_handoff
+    slice: 3
+    severity: low
+    status: resolved
+    evidence: >-
+      The Slice 3 worker ran read-only install.sh --status once in each
+      checkout although the docs-only handoff did not assign those checks.
+      Both commands exited zero and changed no files; the checks were excluded
+      from acceptance evidence and disclosed to the repeat reviewer, whose
+      strict-context review was clean.
 ```
 
 Record only suspicious coordinator or subagent-lifecycle behavior here. Routine
@@ -675,10 +686,11 @@ approval prompts do not belong in this log.
 
 ## Convergence Assessment
 
-- Phase: planning complete; execution not started.
+- Phase: all four slices complete; same-batch closeout in progress.
 - Scope trend: bounded to one design-only CCFG-19 amendment.
-- Closed in this planning pass: none.
-- Remaining slices: four.
-- Blockers: none at planning time.
-- Completion forecastable: yes, subject to the explicit OPEN-003 evidence gate.
+- Closed in execution: four slices; DEC-036, DEC-037, DEC-017, and DEC-038
+  accepted with all seven CCFG-19 exit keys evidenced.
+- Remaining slices: none.
+- Blockers: none.
+- Completion forecastable: yes; final reconciliation and review remain.
 - Successor selected: no.
