@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/closeout.md`
 - Run artifact location: `None selected`
@@ -31,8 +32,8 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-22 through CCFG-29.
-- Pending ledger rows: none.
+  CCFG-23 through CCFG-29.
+- Pending ledger row: CCFG-22.
 - Closed ledger rows: CCFG-18 through CCFG-21 and CCFG-30 through CCFG-32.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -51,8 +52,10 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Queued dispatch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md`
+- Queued dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/dispatch.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-21-planning-artifact-contracts`
@@ -65,9 +68,9 @@
 
 ## Next Safe Action
 
-Stop after CCFG-21 same-batch closeout. No batch is selected or queued. A later
-explicit `plan-batch` request may select exactly one successor from the canonical
-ledger; do not infer it from closeout history.
+Execute only the queued CCFG-22 runway through an explicit `work-batch` request.
+Do not select another batch, replace the runway, or infer successor work from
+the latest closeout.
 
 ## Stop Conditions
 
@@ -102,3 +105,6 @@ ledger; do not infer it from closeout history.
   material live-handoff safety, touches the redesign candidate, or expands into
   CCFG-21, CCFG-25, or CCFG-29 ownership.
 - Stop if CCFG-32 closeout selects or prepares any successor dispatch or runway.
+- Stop if CCFG-22 execution changes the stable Codex home, migrates live command
+  owners, weakens supported-schema blocking, or expands into CCFG-23+ ownership.
+- Stop if CCFG-22 closeout selects or prepares any successor dispatch or runway.
