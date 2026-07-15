@@ -35,20 +35,25 @@ verified identity. Stop rather than reinterpret a v1 result schema.
   it neither rewrites nor substitutes for the planning snapshot.
 
 Before the first strict handoff, `work-batch` must confirm through Planning
-State that the same runway and selected scope remain current. It supplies the
-exact current batch's queue-transaction paths and calls the installed helper's
-`preflight_cross_checkout_live_lease(...)` with the immutable planning snapshot
-and explicit canonical planning root. The transaction paths come only from the
-current planning transaction or current state and name the exact active-state,
-dispatch, and runway paths written to establish this batch.
+State that the same runway and selected scope remain current. Planning State
+alone decides semantic currentness, including amendment, replacement,
+supersession, abandonment, and whether execution may consume the plan. As the
+named startup caller, `work-batch` calls the installed helper's
+`preflight_cross_checkout_live_lease(...)` with only the immutable planning
+snapshot.
 
 The preflight result contains only `status`, diagnostic `reason`, and
 `live_context`. Proceed only on `status: ready`, whose `live_context` is a fresh
 strictly parsed context. `status: blocked` has a null context and stops before
 delegation; consumers must not reinterpret its reason. The helper validates
-mechanical identity and exact movement only. `work-batch` retains currentness,
+exact roots, generation binding, the expected implementation baseline, current
+revisions, and movement during preparation. `work-batch` retains currentness,
 scope, proceed, stop, recovery, delegation, commit, receipt, closeout, and
 successor authority. Validate intended write scope separately.
+
+`prepare_cross_checkout_context_refresh(...)` remains the later-handoff API
+after accepted coordinator actions. The helper's project-owned
+`DELETION_CONDITION` is the removal condition for both temporary APIs.
 
 ## Lease Renewal And Receipts
 
@@ -78,8 +83,8 @@ For an explicitly cross-checkout operation:
    active session's Codex home. Stop on either mismatch.
 4. At plan time, load that helper and call `parse_cross_checkout_context` with
    the complete payload. At `work-batch` startup, pass the historical planning
-   snapshot through `preflight_cross_checkout_live_lease(...)`; do not treat the
-   snapshot itself as a live lease. Before later handoffs, call
+   snapshot alone through `preflight_cross_checkout_live_lease(...)`; do not
+   treat the snapshot itself as a live lease. Before later handoffs, call
    `prepare_cross_checkout_context_refresh(...)`. Every returned live context
    must pass the unchanged strict parser. Treat every validation error or
    blocked preflight as a blocker before writes or agent delegation.

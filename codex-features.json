@@ -44,7 +44,7 @@
       ]
     },
     "work-batch": {
-      "version": "1.0.8",
+      "version": "1.0.9",
       "description": "User-facing command-owner skill for executing the current queued or active batch runway.",
       "requires": [
         "planning-artifacts",
@@ -60,7 +60,7 @@
       ]
     },
     "batch-runway": {
-      "version": "1.5.4",
+      "version": "1.5.5",
       "description": "Agent-facing runtime support used by plan-batch and work-batch for runway spec mechanics and execution contracts.",
       "requires": [
         "planning-artifacts",

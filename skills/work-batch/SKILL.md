@@ -45,23 +45,27 @@ recovery. This lane does not apply to ordinary single-root work or to
 
 1. Use the Planning State Diagnostic to confirm that `current` and `validate`
    are safe to consume and that the same runway is still the only queued or
-   active batch. Stop if selection or scope changed.
-2. Resolve the exact queue-establishment transaction from current state: the
-   canonical active-state paths plus this same batch's dispatch and runway that
-   the current transaction wrote. Supply only those exact paths; do not infer a
-   project-wide path taxonomy or accept a general compatible range.
-3. Apply `../batch-runway/references/cross-checkout-context-v1.md` to resolve the
-   installed helper, active Codex home, explicit canonical planning root, and
-   immutable planning snapshot. Preserve unrelated dirty files.
-4. Call `preflight_cross_checkout_live_lease(...)` with the immutable snapshot,
-   explicit planning root, and exact queue-transaction paths. Proceed only when
-   it returns `status: ready` and a non-null, strictly parsed `live_context`.
+   active batch. Planning State alone owns semantic currentness, including
+   selection, scope, amendment, replacement, supersession, abandonment, and
+   permission to consume the plan. Stop if it does not prove the handoff safe.
+2. Apply `../batch-runway/references/cross-checkout-context-v1.md` to resolve the
+   installed helper, active Codex home, immutable planning snapshot, and the
+   explicit canonical planning root needed for separate scope validation.
+   Preserve unrelated dirty files.
+3. As the named startup caller, call
+   `preflight_cross_checkout_live_lease(...)` with only the immutable snapshot.
+   Proceed only when it returns `status: ready` and a non-null, strictly parsed
+   `live_context`.
    Treat `status: blocked`, a null context, or helper failure as a stop before
    delegation; report the diagnostic reason without reclassifying it.
-5. Validate the intended handoff paths with `validate_write_scope(...)`
+4. Validate the intended handoff paths with `validate_write_scope(...)`
    separately. `work-batch` retains every proceed, stop, recovery, delegation,
    commit, receipt, closeout, and successor decision; the helper remains
    mechanical and does not mutate planning state.
+
+`work-batch` is the current caller of the startup preflight. Later handoffs use
+`prepare_cross_checkout_context_refresh(...)`. The helper's project-owned
+`DELETION_CONDITION` is the removal condition for both temporary APIs.
 
 Record only compact preflight evidence: the runway path, `ready` or `blocked`
 status, diagnostic reason, and the exact live context used when ready. Do not

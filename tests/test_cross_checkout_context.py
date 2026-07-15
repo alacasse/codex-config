@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import inspect
 import subprocess
 import tempfile
 import unittest
@@ -57,22 +58,12 @@ class CrossCheckoutContextTests(unittest.TestCase):
         self._git(root, "add", changed_path.name)
         self._git(root, "commit", "--quiet", "-m", f"Move {label} HEAD")
 
-    def _write_planning_path(self, relative_path: str, content: str) -> Path:
-        path = self.planning_root / relative_path
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
-        return path.resolve()
-
     def _preflight(
         self,
         payload: dict[str, object] | None = None,
-        *,
-        queue_transaction_paths: tuple[Path, ...] = (),
     ) -> context_owner.CrossCheckoutLiveLeasePreflight:
         return context_owner.preflight_cross_checkout_live_lease(
             self._payload() if payload is None else payload,
-            canonical_planning_root=self.planning_root,
-            queue_transaction_paths=queue_transaction_paths,
         )
 
     def _payload(self) -> dict[str, object]:
@@ -287,177 +278,49 @@ class CrossCheckoutContextTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             refreshed_execution["implementation_commit_before"] = "0" * 40
 
-    def test_live_lease_preflight_readies_exact_queue_establishment_shapes(
-        self,
-    ) -> None:
-        for index, shape in enumerate(
-            ("unchanged", "committed", "uncommitted", "combined")
-        ):
-            with self.subTest(shape=shape):
-                if index:
-                    self.tearDown()
-                    self.setUp()
-                with self.subTest(stage="setup"):
-                    payload = self._payload()
-                    queue_paths: list[Path] = []
-                    if shape in ("committed", "combined"):
-                        dispatch = self._write_planning_path(
-                            "programs/example/batches/current/dispatch.md",
-                            "dispatch\n",
-                        )
-                        queue_paths.append(dispatch)
-                        self._git(self.stable_root, "add", str(dispatch))
-                        self._git(
-                            self.stable_root,
-                            "commit",
-                            "--quiet",
-                            "-m",
-                            "Queue current batch",
-                        )
-                    if shape in ("uncommitted", "combined"):
-                        runway = self._write_planning_path(
-                            "programs/example/batches/current/runway.md",
-                            "runway\n",
-                        )
-                        queue_paths.append(runway)
-
-                result = self._preflight(
-                    payload,
-                    queue_transaction_paths=tuple(queue_paths),
-                )
-
-                self.assertEqual(result.status, "ready")
-                self.assertIsInstance(
-                    result.live_context,
-                    context_owner.CrossCheckoutContext,
-                )
-                assert result.live_context is not None
-                self.assertEqual(
-                    context_owner.parse_cross_checkout_context(
-                        context_owner.prepare_cross_checkout_context_refresh(
-                            payload
-                        ).refreshed_payload
-                    ),
-                    result.live_context,
-                )
-
-
-    def test_live_lease_preflight_readies_tracked_and_untracked_queue_state(
-        self,
-    ) -> None:
-        current = self._write_planning_path("CURRENT.md", "queued: null\n")
-        ledger = self._write_planning_path("programs/example/LEDGER.md", "Pending\n")
-        self._git(self.stable_root, "add", str(current), str(ledger))
-        self._git(self.stable_root, "commit", "--quiet", "-m", "Seed planning state")
-        self.stable_commit = self._git(self.stable_root, "rev-parse", "HEAD")
+    def test_live_lease_preflight_returns_only_ready_reason_and_context(self) -> None:
         payload = self._payload()
 
-        current.write_text("queued: current\n", encoding="utf-8")
-        ledger.write_text("Queued\n", encoding="utf-8")
-        dispatch = self._write_planning_path(
-            "programs/example/batches/current/dispatch.md",
-            "dispatch\n",
-        )
-        self._git(self.stable_root, "add", str(current), str(dispatch))
+        result = self._preflight(payload)
 
-        result = self._preflight(
-            payload,
-            queue_transaction_paths=(current, ledger, dispatch),
+        self.assertEqual(
+            tuple(
+                inspect.signature(
+                    context_owner.preflight_cross_checkout_live_lease
+                ).parameters
+            ),
+            ("planning_snapshot",),
         )
+        self.assertEqual(
+            tuple(field.name for field in dataclasses.fields(result)),
+            ("status", "reason", "live_context"),
+        )
+        self.assertEqual(result.status, "ready")
+        self.assertEqual(
+            result.reason,
+            "current repository facts satisfy first-handoff integrity",
+        )
+        self.assertEqual(
+            result.live_context,
+            context_owner.parse_cross_checkout_context(payload),
+        )
+
+    def test_live_lease_preflight_refreshes_advanced_planning_revision(self) -> None:
+        payload = self._payload()
+        self._move_head(self.stable_root, "planning-before-preflight")
+        live_stable_commit = self._git(self.stable_root, "rev-parse", "HEAD")
+
+        result = self._preflight(payload)
 
         self.assertEqual(result.status, "ready")
-        self.assertIsNotNone(result.live_context)
-
-    def test_live_lease_preflight_blocks_non_transaction_movement(self) -> None:
-        current_runway = self._write_planning_path(
-            "programs/example/batches/current/runway.md",
-            "current\n",
+        assert result.live_context is not None
+        self.assertEqual(
+            result.live_context.execution_context.toolchain_commit,
+            live_stable_commit,
         )
-        unrelated = self._write_planning_path(
-            "programs/example/batches/other/runway.md",
-            "other\n",
-        )
-
-        for label, declared_paths in (
-            ("another batch", (current_runway,)),
-            ("incomplete evidence", (unrelated,)),
-            (
-                "arbitrary compatible claim",
-                (current_runway, unrelated, self.planning_root / "CURRENT.md"),
-            ),
-        ):
-            with self.subTest(label=label):
-                result = self._preflight(
-                    queue_transaction_paths=declared_paths,
-                )
-                self.assertEqual(result.status, "blocked")
-                self.assertIsNone(result.live_context)
-                self.assertIn("do not exactly match", result.reason)
-
-    def test_live_lease_preflight_blocks_empty_and_transient_commit_movement(
-        self,
-    ) -> None:
-        payload = self._payload()
-        self._git(
-            self.stable_root,
-            "commit",
-            "--quiet",
-            "--allow-empty",
-            "-m",
-            "Ambiguous empty movement",
-        )
-        empty_result = self._preflight(payload)
-        self.assertEqual(empty_result.status, "blocked")
-        self.assertIn("moved without an exact queue transaction", empty_result.reason)
-
-        self.tearDown()
-        self.setUp()
-        payload = self._payload()
-        runway = self._write_planning_path(
-            "programs/example/batches/current/runway.md",
-            "runway\n",
-        )
-        self._git(self.stable_root, "add", str(runway))
-        self._git(self.stable_root, "commit", "--quiet", "-m", "Queue batch")
-        source_path = self.stable_root / "temporary-source.py"
-        source_path.write_text("temporary = True\n", encoding="utf-8")
-        self._git(self.stable_root, "add", str(source_path))
-        self._git(self.stable_root, "commit", "--quiet", "-m", "Unrelated change")
-        source_path.unlink()
-        self._git(self.stable_root, "add", str(source_path))
-        self._git(self.stable_root, "commit", "--quiet", "-m", "Revert unrelated")
-
-        transient_result = self._preflight(
-            payload,
-            queue_transaction_paths=(runway,),
-        )
-
-        self.assertEqual(transient_result.status, "blocked")
-        self.assertIn("outside canonical_planning_root", transient_result.reason)
-
-    def test_live_lease_preflight_blocks_implementation_and_source_movement(
-        self,
-    ) -> None:
-        source_path = self.stable_root / "scripts" / "changed.py"
-        source_path.parent.mkdir()
-        source_path.write_text("changed = True\n", encoding="utf-8")
-
-        source_result = self._preflight()
-
-        self.assertEqual(source_result.status, "blocked")
-        self.assertIsNone(source_result.live_context)
-        self.assertIn("outside canonical_planning_root", source_result.reason)
-
-        source_path.unlink()
-        implementation_path = self.implementation_root / "changed.py"
-        implementation_path.write_text("changed = True\n", encoding="utf-8")
-
-        implementation_result = self._preflight()
-
-        self.assertEqual(implementation_result.status, "blocked")
-        self.assertIn(
-            "implementation repository has uncommitted movement",
-            implementation_result.reason,
+        self.assertEqual(
+            result.live_context.execution_context.canonical_planning_commit_before,
+            live_stable_commit,
         )
 
     def test_live_lease_preflight_blocks_revision_and_identity_mismatches(
@@ -502,151 +365,65 @@ class CrossCheckoutContextTests(unittest.TestCase):
             )
 
     def test_live_lease_preflight_blocks_movement_during_preflight(self) -> None:
-        original_prepare = context_owner.prepare_cross_checkout_context_refresh
-
-        def prepare_then_move(
-            payload: Mapping[str, object],
-        ) -> context_owner.CrossCheckoutRefreshPreparation:
-            preparation = original_prepare(payload)
-            self._move_head(self.implementation_root, "during-preflight")
-            return preparation
-
-        with mock.patch.object(
-            context_owner,
-            "prepare_cross_checkout_context_refresh",
-            side_effect=prepare_then_move,
-        ):
-            result = self._preflight()
-
-        self.assertEqual(result.status, "blocked")
-        self.assertIsNone(result.live_context)
-        self.assertIn("moved during live-lease preflight", result.reason)
-
-    def test_live_lease_preflight_blocks_planning_path_movement_during_preflight(
-        self,
-    ) -> None:
-        original_capture = context_owner._capture_queue_transaction_paths
-        capture_count = 0
-
-        def capture_then_move(
-            *args: object,
-            **kwargs: object,
-        ) -> tuple[frozenset[Path], str]:
-            nonlocal capture_count
-            observed = original_capture(*args, **kwargs)
-            capture_count += 1
-            if capture_count == 1:
-                self._write_planning_path("CURRENT.md", "late movement\n")
-            return observed
-
-        with mock.patch.object(
-            context_owner,
-            "_capture_queue_transaction_paths",
-            side_effect=capture_then_move,
-        ):
-            result = self._preflight()
-
-        self.assertEqual(result.status, "blocked")
-        self.assertIsNone(result.live_context)
-        self.assertIn(
-            "canonical planning changes moved during live-lease preflight",
-            result.reason,
+        cases = (
+            ("stable", "implementation"),
+            ("stable", "toolchain-and-planning"),
+            ("candidate", "planning"),
+            ("candidate", "toolchain-and-implementation"),
         )
+        for index, (generation_role, moving_repository) in enumerate(cases):
+            with self.subTest(
+                generation_role=generation_role,
+                moving_repository=moving_repository,
+            ):
+                if index:
+                    self.tearDown()
+                    self.setUp()
+                payload = self._payload()
+                if generation_role == "candidate":
+                    execution = self._execution_payload(payload)
+                    execution["toolchain_source_root"] = str(
+                        self.implementation_root
+                    )
+                    execution["toolchain_commit"] = self.implementation_commit
+                    execution["generation_role"] = "candidate"
+                    execution["canonical_state_mutation_allowed"] = False
+                moving_root = (
+                    self.stable_root
+                    if moving_repository in ("toolchain-and-planning", "planning")
+                    else self.implementation_root
+                )
+                original_prepare = (
+                    context_owner.prepare_cross_checkout_context_refresh
+                )
 
-    def test_live_lease_preflight_blocks_same_path_rewrite_during_preflight(
-        self,
-    ) -> None:
-        current = self._write_planning_path("CURRENT.md", "initial queue\n")
-        original_capture = context_owner._capture_queue_transaction_paths
-        capture_count = 0
+                def prepare_then_move(
+                    snapshot: Mapping[str, object],
+                ) -> context_owner.CrossCheckoutRefreshPreparation:
+                    preparation = original_prepare(snapshot)
+                    self._move_head(
+                        moving_root,
+                        f"during-{generation_role}-{moving_repository}",
+                    )
+                    return preparation
 
-        def capture_then_rewrite(
-            *args: object,
-            **kwargs: object,
-        ) -> tuple[frozenset[Path], str]:
-            nonlocal capture_count
-            observed = original_capture(*args, **kwargs)
-            capture_count += 1
-            if capture_count == 1:
-                current.write_text("rewritten queue\n", encoding="utf-8")
-            return observed
+                with mock.patch.object(
+                    context_owner,
+                    "prepare_cross_checkout_context_refresh",
+                    side_effect=prepare_then_move,
+                ):
+                    result = self._preflight(payload)
 
-        with mock.patch.object(
-            context_owner,
-            "_capture_queue_transaction_paths",
-            side_effect=capture_then_rewrite,
-        ):
-            result = self._preflight(
-                queue_transaction_paths=(current,),
-            )
-
-        self.assertEqual(result.status, "blocked")
-        self.assertIsNone(result.live_context)
-        self.assertIn(
-            "canonical planning changes moved during live-lease preflight",
-            result.reason,
-        )
-
-    def test_live_lease_preflight_blocks_ambiguous_or_out_of_scope_evidence(
-        self,
-    ) -> None:
-        path = self._write_planning_path("CURRENT.md", "current\n")
-
-        for label, paths, error in (
-            ("duplicate", (path, path), "must not contain duplicate"),
-            (
-                "outside planning root",
-                (self.stable_root / "config.json",),
-                "must stay within canonical_planning_root",
-            ),
-        ):
-            with self.subTest(label=label):
-                result = self._preflight(queue_transaction_paths=paths)
                 self.assertEqual(result.status, "blocked")
                 self.assertIsNone(result.live_context)
-                self.assertIn(error, result.reason)
+                self.assertIn("moved during live-lease preflight", result.reason)
 
-    def test_live_lease_preflight_blocks_unmerged_planning_state(self) -> None:
-        current = self._write_planning_path("CURRENT.md", "base\n")
-        self._git(self.stable_root, "add", str(current))
-        self._git(self.stable_root, "commit", "--quiet", "-m", "Seed current state")
-        self.stable_commit = self._git(self.stable_root, "rev-parse", "HEAD")
-        payload = self._payload()
-        main_branch = self._git(self.stable_root, "branch", "--show-current")
-
-        self._git(self.stable_root, "checkout", "--quiet", "-b", "other-queue")
-        current.write_text("other queue\n", encoding="utf-8")
-        self._git(self.stable_root, "add", str(current))
-        self._git(self.stable_root, "commit", "--quiet", "-m", "Queue other batch")
-        self._git(self.stable_root, "checkout", "--quiet", main_branch)
-        current.write_text("current queue\n", encoding="utf-8")
-        self._git(self.stable_root, "add", str(current))
-        self._git(self.stable_root, "commit", "--quiet", "-m", "Queue current batch")
-        merge = subprocess.run(
-            ["git", "merge", "--no-edit", "other-queue"],
-            cwd=self.stable_root,
-            check=False,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        self.assertNotEqual(merge.returncode, 0)
-
-        result = self._preflight(
-            payload,
-            queue_transaction_paths=(current,),
-        )
-
-        self.assertEqual(result.status, "blocked")
-        self.assertIsNone(result.live_context)
-        self.assertIn("ambiguous unmerged paths", result.reason)
-
-    def test_prepares_live_revisions_after_queue_establishment_advances_head(
+    def test_prepares_live_revisions_after_planning_snapshot_advances_head(
         self,
     ) -> None:
         payload = self._payload()
         original_payload = copy.deepcopy(payload)
-        self._move_head(self.stable_root, "queue-establishment")
+        self._move_head(self.stable_root, "planning-snapshot")
         live_stable_commit = self._git(self.stable_root, "rev-parse", "HEAD")
 
         with self.assertRaisesRegex(

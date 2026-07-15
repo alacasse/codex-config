@@ -178,8 +178,8 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             },
             {
                 "plan-batch": "1.0.7",
-                "work-batch": "1.0.8",
-                "batch-runway": "1.5.4",
+                "work-batch": "1.0.9",
+                "batch-runway": "1.5.5",
                 "custom-agents": "1.4.1",
             },
         )
@@ -263,8 +263,9 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             surfaces["work-batch"], "Cross-Checkout Ready/Blocked Preflight"
         )
         self.assertIn("same runway is still the only queued or active batch", work_preflight)
-        self.assertIn("exact queue-establishment transaction", work_preflight)
+        self.assertIn("Planning State alone owns semantic currentness", work_preflight)
         self.assertIn("preflight_cross_checkout_live_lease(...)", work_preflight)
+        self.assertIn("with only the immutable snapshot", work_preflight)
         self.assertIn("Proceed only when it returns `status: ready`", work_preflight)
         self.assertIn("Treat `status: blocked`", work_preflight)
         self.assertIn("without reclassifying it", work_preflight)
@@ -276,7 +277,8 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             surfaces["execute-spec"], "Cross-Checkout Preflight Routing"
         )
         self.assertIn("same runway as the only queued or active batch", execute_preflight)
-        self.assertIn("exact current queue transaction paths", execute_preflight)
+        self.assertIn("Planning State is the sole semantic currentness owner", execute_preflight)
+        self.assertIn("with only the immutable planning snapshot", execute_preflight)
         self.assertIn("Proceed only on `status: ready`", execute_preflight)
         self.assertIn("`status: blocked`", execute_preflight)
         self.assertIn("without reinterpreting the diagnostic reason", execute_preflight)
@@ -294,7 +296,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             surfaces["execute-recovery"], "Cross-Checkout Movement Boundary"
         )
         self.assertIn("A ready result supplies the first strictly parsed live context", recovery)
-        self.assertIn("A blocked result, null context, helper failure", recovery)
+        self.assertIn("A blocked result, null context, or helper failure", recovery)
         self.assertIn("without reinterpreting the helper's reason", recovery)
         self.assertIn("No post-lease movement may reach delegation on the old lease", recovery)
 

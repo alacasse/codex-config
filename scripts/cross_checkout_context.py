@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import hashlib
 import re
-import stat
 import subprocess
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
@@ -339,35 +337,11 @@ def prepare_cross_checkout_context_refresh(
 
 def preflight_cross_checkout_live_lease(
     planning_snapshot: Mapping[str, object],
-    *,
-    canonical_planning_root: str | Path,
-    queue_transaction_paths: Iterable[str | Path],
 ) -> CrossCheckoutLiveLeasePreflight:
-    """Return a fresh strict context only for exact queue-establishment movement."""
+    """Return a fresh strict context when first-handoff integrity is intact."""
 
     try:
         _, execution_context = _parse_cross_checkout_context_fields(planning_snapshot)
-        planning_root = _normalize_scope_root(
-            canonical_planning_root,
-            field="canonical_planning_root",
-            repository_root=execution_context.canonical_planning_repository_root,
-        )
-        raw_declared_paths = _materialize_write_paths(
-            queue_transaction_paths,
-            field="queue_transaction_paths",
-        )
-        normalized_declared_paths = _normalize_write_paths(
-            raw_declared_paths,
-            field="queue_transaction_paths",
-            root_field="canonical_planning_root",
-            root=planning_root,
-        )
-        declared_paths = frozenset(normalized_declared_paths)
-        if len(declared_paths) != len(normalized_declared_paths):
-            raise CrossCheckoutContextError(
-                "queue_transaction_paths must not contain duplicate paths"
-            )
-
         preparation = prepare_cross_checkout_context_refresh(planning_snapshot)
         live_revisions = preparation.live_revisions
         if (
@@ -377,42 +351,9 @@ def preflight_cross_checkout_live_lease(
             raise CrossCheckoutContextError(
                 "implementation repository HEAD moved since the planning snapshot"
             )
-        observed_paths, observed_fingerprint = _capture_queue_transaction_paths(
-            execution_context,
-            live_revisions=live_revisions,
-            planning_root=planning_root,
-        )
-        if observed_paths != declared_paths:
-            raise CrossCheckoutContextError(
-                "current canonical planning changes do not exactly match the "
-                "caller-supplied queue transaction paths; "
-                f"observed={sorted(map(str, observed_paths))}, "
-                f"declared={sorted(map(str, declared_paths))}"
-            )
-        if (
-            live_revisions.canonical_planning_commit_before
-            != execution_context.canonical_planning_commit_before
-            and not observed_paths
-        ):
-            raise CrossCheckoutContextError(
-                "canonical planning HEAD moved without an exact queue transaction path"
-            )
-
         if _capture_live_repository_revisions(execution_context) != live_revisions:
             raise CrossCheckoutContextError(
                 "repository revisions moved during live-lease preflight"
-            )
-        final_observed_paths, final_fingerprint = _capture_queue_transaction_paths(
-            execution_context,
-            live_revisions=live_revisions,
-            planning_root=planning_root,
-        )
-        if (
-            final_observed_paths != observed_paths
-            or final_fingerprint != observed_fingerprint
-        ):
-            raise CrossCheckoutContextError(
-                "canonical planning changes moved during live-lease preflight"
             )
     except CrossCheckoutContextError as error:
         return CrossCheckoutLiveLeasePreflight(
@@ -423,7 +364,7 @@ def preflight_cross_checkout_live_lease(
 
     return CrossCheckoutLiveLeasePreflight(
         status="ready",
-        reason="current repository facts exactly match the supplied queue transaction",
+        reason="current repository facts satisfy first-handoff integrity",
         live_context=preparation.refreshed_context,
     )
 
@@ -1704,191 +1645,6 @@ def _capture_live_repository_revisions(
     )
 
 
-def _capture_queue_transaction_paths(
-    execution_context: ExecutionContext,
-    *,
-    live_revisions: RepositoryRevisions,
-    planning_root: Path,
-) -> tuple[frozenset[Path], str]:
-    canonical_root = execution_context.canonical_planning_repository_root
-    implementation_dirty = _capture_worktree_paths(
-        execution_context.implementation_target_root,
-        root_field="implementation_target_root",
-    )
-    if implementation_dirty:
-        raise CrossCheckoutContextError(
-            "implementation repository has uncommitted movement: "
-            f"{sorted(implementation_dirty)}"
-        )
-
-    planned_commit = execution_context.canonical_planning_commit_before
-    live_commit = live_revisions.canonical_planning_commit_before
-    committed_paths: tuple[str, ...] = ()
-    if live_commit != planned_commit:
-        _require_ancestor(
-            canonical_root,
-            planned_commit,
-            live_commit,
-            field="canonical planning snapshot commit",
-            descendant_label="live canonical planning HEAD",
-        )
-        committed_paths = _run_git_paths(
-            canonical_root,
-            "canonical_planning_repository_root",
-            "log",
-            "--format=",
-            "--name-only",
-            "--no-renames",
-            "-z",
-            f"{planned_commit}..{live_commit}",
-        )
-    dirty_paths = _capture_worktree_paths(
-        canonical_root,
-        root_field="canonical_planning_repository_root",
-    )
-    unmerged_paths = _run_git_paths(
-        canonical_root,
-        "canonical_planning_repository_root",
-        "diff",
-        "--name-only",
-        "--diff-filter=U",
-        "-z",
-    )
-    if unmerged_paths:
-        raise CrossCheckoutContextError(
-            "canonical planning repository has ambiguous unmerged paths: "
-            f"{sorted(unmerged_paths)}"
-        )
-
-    observed: dict[Path, str] = {}
-    for relative_path in (*committed_paths, *dirty_paths):
-        path = (canonical_root / relative_path).resolve(strict=False)
-        if path != planning_root and planning_root not in path.parents:
-            raise CrossCheckoutContextError(
-                "canonical repository movement is outside canonical_planning_root: "
-                f"{relative_path!r}"
-            )
-        observed[path] = relative_path
-    observed_paths = frozenset(observed)
-    return observed_paths, _fingerprint_queue_transaction_state(
-        canonical_root,
-        relative_paths=tuple(observed[path] for path in sorted(observed)),
-    )
-
-
-def _capture_worktree_paths(root: Path, *, root_field: str) -> tuple[str, ...]:
-    unstaged = _run_git_paths(
-        root,
-        root_field,
-        "diff",
-        "--name-only",
-        "--no-renames",
-        "-z",
-    )
-    staged = _run_git_paths(
-        root,
-        root_field,
-        "diff",
-        "--cached",
-        "--name-only",
-        "--no-renames",
-        "-z",
-    )
-    untracked = _run_git_paths(
-        root,
-        root_field,
-        "ls-files",
-        "--others",
-        "--exclude-standard",
-        "-z",
-    )
-    return tuple(sorted({*unstaged, *staged, *untracked}))
-
-
-def _fingerprint_queue_transaction_state(
-    root: Path,
-    *,
-    relative_paths: tuple[str, ...],
-) -> str:
-    fingerprint = hashlib.sha256()
-    fingerprint.update(
-        _run_git_bytes(
-            root,
-            "canonical_planning_repository_root",
-            "status",
-            "--porcelain=v1",
-            "-z",
-            "--untracked-files=all",
-        )
-    )
-    if relative_paths:
-        fingerprint.update(
-            _run_git_bytes(
-                root,
-                "canonical_planning_repository_root",
-                "ls-files",
-                "--stage",
-                "-z",
-                "--",
-                *relative_paths,
-            )
-        )
-    for relative_path in relative_paths:
-        fingerprint.update(relative_path.encode(errors="surrogateescape"))
-        fingerprint.update(b"\0")
-        path = root / relative_path
-        try:
-            path_stat = path.lstat()
-            fingerprint.update(path_stat.st_mode.to_bytes(8, "big"))
-            if path.is_symlink():
-                fingerprint.update(
-                    str(path.readlink()).encode(errors="surrogateescape")
-                )
-            elif stat.S_ISREG(path_stat.st_mode):
-                with path.open("rb") as file:
-                    for chunk in iter(lambda: file.read(65536), b""):
-                        fingerprint.update(chunk)
-        except FileNotFoundError:
-            fingerprint.update(b"missing")
-        except OSError as error:
-            raise CrossCheckoutContextError(
-                f"could not fingerprint canonical planning path {relative_path!r}: "
-                f"{error}"
-            ) from error
-        fingerprint.update(b"\0")
-    return fingerprint.hexdigest()
-
-
-def _run_git_paths(root: Path, root_field: str, *git_args: str) -> tuple[str, ...]:
-    stdout = _run_git_bytes(root, root_field, *git_args)
-    return tuple(
-        path.decode(errors="surrogateescape")
-        for path in stdout.split(b"\0")
-        if path
-    )
-
-
-def _run_git_bytes(root: Path, root_field: str, *git_args: str) -> bytes:
-    try:
-        completed = subprocess.run(
-            ["git", *git_args],
-            cwd=root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=False,
-        )
-    except OSError as error:
-        raise CrossCheckoutContextError(
-            f"could not inspect context.execution_context.{root_field} with Git: "
-            f"{error}"
-        ) from error
-    if completed.returncode != 0:
-        detail = completed.stderr.decode(errors="replace").strip()
-        raise CrossCheckoutContextError(
-            f"context.execution_context.{root_field} is not a readable Git "
-            f"repository root: {detail or 'Git command failed'}"
-        )
-    return completed.stdout
 def _validate_write_scope_paths(
     context: CrossCheckoutContext,
     *,

@@ -76,9 +76,10 @@ Do not parse a stale planning snapshot as though it were the first live
 execution lease.
 
 Require compact evidence that Planning State Diagnostic still identifies the
-same runway as the only queued or active batch. Require `work-batch` to supply
-the exact current queue transaction paths and call the canonical bridge's
-`preflight_cross_checkout_live_lease(...)`. Proceed only on `status: ready`
+same runway as the only queued or active batch and is safe to consume. Planning
+State is the sole semantic currentness owner. Require `work-batch` to call the
+canonical bridge's `preflight_cross_checkout_live_lease(...)` with only the
+immutable planning snapshot. Proceed only on `status: ready`
 with a non-null strictly parsed `live_context`; `status: blocked`, a null
 context, or helper failure stops before delegation without reinterpreting the
 diagnostic reason.

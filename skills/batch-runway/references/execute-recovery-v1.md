@@ -23,10 +23,11 @@ live repository revisions is not, by itself, a recovery trigger. First route
 through the normal `work-batch` ready/blocked preflight defined by the canonical
 `cross-checkout-context-v1.md` bridge. A ready result supplies the first
 strictly parsed live context without an orchestration anomaly. A
-blocked result, null context, helper failure, or ambiguous queue-transaction
-evidence freezes delegation. Preserve the diagnostic evidence and report any
-amendment or replanning blocker without reinterpreting the helper's reason.
-Recovery cannot accept the movement or replace the queued runway.
+blocked result, null context, or helper failure freezes delegation. Planning
+State alone determines semantic currentness before the helper runs; preserve
+both diagnostics and report any amendment or replanning blocker without
+reinterpreting the helper's reason. Recovery cannot accept the movement or
+replace the queued runway.
 
 After startup, a live execution lease remains exact for one handoff. An exact
 coordinator commit following an accepted action may advance a repository; verify

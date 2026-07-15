@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Planning-State queue currentness
+
+Problem: the temporary cross-checkout startup helper still reconstructed queue
+currentness from Git commit ranges, worktree paths, and planning-file
+fingerprints after Planning State had already validated the selected runway.
+
+Decision: make Planning State the sole semantic currentness owner and narrow
+`preflight_cross_checkout_live_lease(...)` to mechanical first-handoff
+integrity: strict identity and generation binding, the expected implementation
+baseline, current repository revisions, and movement during preparation. Keep
+`work-batch` as its named caller, retain refresh for later handoffs, preserve
+separate scope validation and receipts, and keep CCFG-29 as both APIs' removal
+condition. Publish `work-batch` 1.0.9 and `batch-runway` 1.5.5 without changing
+`plan-batch` 1.0.7 or installing runtime state.
+
+Expected effect: valid queued plans no longer depend on Git archaeology or
+caller-supplied queue paths, while unexpected implementation movement and
+short-lived lease invalidation remain fail closed.
+
 ### Narrow cross-checkout live-lease preflight
 
 Problem: the temporary cross-checkout bridge expanded queue startup into three

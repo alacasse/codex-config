@@ -152,6 +152,17 @@ class BatchLifecycleGuardTests(unittest.TestCase):
         self.assertIn("Proceed only on `status: ready`", text)
         self.assertIn("`status: blocked` has a null context", text)
         self.assertIn("consumers must not reinterpret its reason", text)
+        self.assertIn("Planning State alone decides semantic currentness", text)
+        self.assertIn(
+            "`preflight_cross_checkout_live_lease(...)` with only the immutable "
+            "planning snapshot",
+            text,
+        )
+        self.assertIn(
+            "The helper's project-owned `DELETION_CONDITION` is the removal "
+            "condition for both temporary APIs.",
+            text,
+        )
 
     def test_cross_checkout_planning_producers_persist_immutable_snapshots(
         self,
@@ -192,13 +203,14 @@ class BatchLifecycleGuardTests(unittest.TestCase):
 
         self.assertIn("`work-batch` owns the normal queued-to-executing transition", work_batch)
         self.assertIn("the same runway is still the only queued or active batch", work_batch)
-        self.assertIn("exact queue-establishment transaction", work_batch)
+        self.assertIn("Planning State alone owns semantic currentness", work_batch)
         self.assertIn("`preflight_cross_checkout_live_lease(...)`", work_batch)
+        self.assertIn("with only the immutable snapshot", work_batch)
         self.assertIn("Proceed only when it returns `status: ready`", work_batch)
         self.assertIn("Treat `status: blocked`", work_batch)
         self.assertIn("without reclassifying it", work_batch)
 
-    def test_work_batch_supplies_only_the_exact_current_queue_transaction(
+    def test_planning_state_is_the_only_queue_currentness_owner(
         self,
     ) -> None:
         preflight = self.normalized_section(
@@ -208,11 +220,18 @@ class BatchLifecycleGuardTests(unittest.TestCase):
 
         self.assertIn("Planning State Diagnostic", preflight)
         self.assertIn("same runway is still the only queued or active batch", preflight)
-        self.assertIn("canonical active-state paths", preflight)
-        self.assertIn("same batch's dispatch and runway", preflight)
-        self.assertIn("Supply only those exact paths", preflight)
-        self.assertIn("do not infer a project-wide path taxonomy", preflight)
+        self.assertIn("Planning State alone owns semantic currentness", preflight)
+        self.assertIn("amendment, replacement, supersession, abandonment", preflight)
+        self.assertIn("with only the immutable snapshot", preflight)
         self.assertIn("does not mutate planning state", preflight)
+        for removed_contract in (
+            "queue_transaction_paths",
+            "queue-transaction paths",
+            "queue transaction paths",
+            "queue-establishment transaction",
+        ):
+            with self.subTest(removed_contract=removed_contract):
+                self.assertNotIn(removed_contract, preflight)
 
     def test_cross_checkout_preflight_consumers_remain_project_neutral(
         self,
@@ -301,7 +320,7 @@ class BatchLifecycleGuardTests(unittest.TestCase):
         )
         self.assertIn("is not, by itself, a recovery trigger", recovery)
         self.assertIn("A ready result supplies the first strictly parsed live context", recovery)
-        self.assertIn("A blocked result, null context, helper failure", recovery)
+        self.assertIn("A blocked result, null context, or helper failure", recovery)
         self.assertIn("without reinterpreting the helper's reason", recovery)
         self.assertIn("Recovery cannot accept the movement or replace the queued runway", recovery)
         self.assertIn("moves between lease preparation and handoff", recovery)

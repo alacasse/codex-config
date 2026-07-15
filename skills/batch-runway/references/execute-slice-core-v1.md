@@ -125,9 +125,10 @@ appropriate.
 5. For work that explicitly names `cross-checkout-context/v1` or explicitly
    declares separate existing toolchain, canonical-planning, and implementation
    repository roots, require the `work-batch` ready/blocked preflight before the
-   first strict handoff. The preflight evidence must preserve the same runway,
-   exact current queue transaction paths, and a ready non-null live context;
-   blocked or ambiguous evidence stops before delegation. Before later worker
+   first strict handoff. Planning State must prove the same runway is current
+   and safe to consume before the helper receives only the immutable planning
+   snapshot. Require a ready non-null live context; blocked or ambiguous
+   evidence stops before delegation. Before later worker
    handoffs, verify any repository movement since the prior accepted action
    against the exact accepted coordinator commit and intended changed paths,
    then call `prepare_cross_checkout_context_refresh(...)` against the immutable
