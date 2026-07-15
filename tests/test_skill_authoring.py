@@ -16,7 +16,16 @@ REFERENCE_PATH = (
     REPO_ROOT
     / "skills/skill-authoring/references/planning-artifact-authoring.md"
 )
+NARROW_TRIAL_PATH = (
+    REPO_ROOT / "tests/fixtures/skill-authoring/narrow-evidence/SKILL.md"
+)
+BRANCHING_TRIAL_ROOT = (
+    REPO_ROOT / "tests/fixtures/skill-authoring/branching-command"
+)
+BRANCHING_COMMAND_PATH = BRANCHING_TRIAL_ROOT / "command/SKILL.md"
+BRANCHING_SUPPORT_PATH = BRANCHING_TRIAL_ROOT / "support/SKILL.md"
 PRE_SLICE_COMMIT = "7ff339c76430347fff57edc5ffbdda44a0bb43e5"
+TRIAL_PRODUCER_COMMIT = "23db635dba08d7d1641fccfa0652ff5d3df0d2f6"
 SUPPORTED_PLANNING_SCHEMAS = [
     "planning-current/v1",
     "planning-finding/v1",
@@ -60,6 +69,14 @@ def _frontmatter() -> dict[str, Any]:
 
 def _contract() -> dict[str, Any]:
     contract_section = _skill_text().split("## Contract\n", 1)[1]
+    loaded = yaml.safe_load(contract_section.split("```yaml\n", 1)[1].split("```", 1)[0])
+    assert isinstance(loaded, dict)
+    return loaded
+
+
+def _fixture_contract(path: Path) -> dict[str, Any]:
+    source = path.read_text(encoding="utf-8")
+    contract_section = source.split("## Contract\n", 1)[1]
     loaded = yaml.safe_load(contract_section.split("```yaml\n", 1)[1].split("```", 1)[0])
     assert isinstance(loaded, dict)
     return loaded
@@ -297,3 +314,140 @@ def test_generic_boundary_is_project_neutral_and_authoring_only() -> None:
     assert "codex-config" not in lower
     assert ".venv" not in text
     assert "pytest" not in lower
+
+
+def test_narrow_trial_is_standalone_evidence_catalog() -> None:
+    result = validate_skill_contracts(
+        [NARROW_TRIAL_PATH],
+        toolchain_root=REPO_ROOT,
+        expected_producer_identity=ProducerIdentity(
+            toolchain_generation="candidate",
+            toolchain_commit=TRIAL_PRODUCER_COMMIT,
+        ),
+        complete_catalog=True,
+    )
+    contract = _fixture_contract(NARROW_TRIAL_PATH)
+
+    assert result.is_valid, tuple(str(item) for item in result.diagnostics)
+    assert contract["schema"] == "skill-contract/v1"
+    assert contract["identity"] == {
+        "name": "fixture-evidence-classifier",
+        "audience": "evidence-skill",
+    }
+    assert contract["owns"] == {
+        "decisions": ["evidence_classification"],
+        "durable_facts": ["evidence_output"],
+    }
+    assert contract["writes"] == ["evidence_output"]
+    assert contract["requires"] == {"mechanisms": [], "evidence_skills": []}
+    assert contract["delegates"] == []
+    assert contract["forbids"] == [
+        "planning_state_mutation",
+        "workflow_decisions",
+        "workflow_execution",
+    ]
+    assert contract["outputs"]["one_of"] == [
+        "classified_evidence",
+        "insufficient_evidence",
+    ]
+
+
+def test_branching_trial_catalog_has_one_command_owner_and_mechanical_support() -> None:
+    result = validate_skill_contracts(
+        [BRANCHING_COMMAND_PATH, BRANCHING_SUPPORT_PATH],
+        toolchain_root=REPO_ROOT,
+        expected_producer_identity=ProducerIdentity(
+            toolchain_generation="candidate",
+            toolchain_commit=TRIAL_PRODUCER_COMMIT,
+        ),
+        complete_catalog=True,
+    )
+    command = _fixture_contract(BRANCHING_COMMAND_PATH)
+    support = _fixture_contract(BRANCHING_SUPPORT_PATH)
+
+    assert result.is_valid, tuple(str(item) for item in result.diagnostics)
+    assert command["identity"]["audience"] == "human-command-owner"
+    assert command["owns"] == {
+        "decisions": ["bounded_route_selection"],
+        "durable_facts": [],
+    }
+    assert command["writes"] == []
+    assert command["delegates"] == [
+        {
+            "responsibility": "route_inspection",
+            "target": "fixture-route-inspector",
+        }
+    ]
+    assert command["requires"] == {
+        "mechanisms": ["fixture-route-inspector"],
+        "evidence_skills": [],
+    }
+    assert support["identity"] == {
+        "name": "fixture-route-inspector",
+        "audience": "support-mechanism",
+    }
+    assert support["owns"]["decisions"] == []
+    assert support["writes"] == []
+    assert "bounded_route_selection" in support["forbids"]
+
+
+def test_branching_trial_exposes_normal_alternate_blocked_outcomes_and_stops() -> None:
+    contract = _fixture_contract(BRANCHING_COMMAND_PATH)
+    text = " ".join(
+        BRANCHING_COMMAND_PATH.read_text(encoding="utf-8").split()
+    )
+
+    assert contract["outputs"]["one_of"] == [
+        "normal_route_selected",
+        "alternate_route_selected",
+        "blocked_route_result",
+    ]
+    assert contract["stops_when"] == [
+        "missing_explicit_request",
+        "blocking_constraint",
+    ]
+    assert "## Normal Procedure" in text
+    assert (
+        "- Normal: when the request is complete and no alternate or blocker "
+        "applies, return `normal_route_selected`."
+    ) in text
+    assert (
+        "- Alternate: when the request explicitly selects the allowed alternate "
+        "and no blocker applies, return `alternate_route_selected`."
+    ) in text
+    assert (
+        "- Blocked: when the request is missing or inspection reports a blocking "
+        "constraint, return `blocked_route_result` without selecting a route."
+    ) in text
+    assert "## Stop Conditions" in text
+    assert (
+        "Return one route-selection result without executing that route."
+    ) in text
+
+
+def test_trial_catalogs_share_one_version_and_fixture_local_dependencies() -> None:
+    paths = [NARROW_TRIAL_PATH, BRANCHING_COMMAND_PATH, BRANCHING_SUPPORT_PATH]
+    result = validate_skill_contracts(
+        paths,
+        toolchain_root=REPO_ROOT,
+        expected_producer_identity=ProducerIdentity(
+            toolchain_generation="candidate",
+            toolchain_commit=TRIAL_PRODUCER_COMMIT,
+        ),
+        complete_catalog=True,
+    )
+    contracts = [_fixture_contract(path) for path in paths]
+
+    assert result.is_valid, tuple(str(item) for item in result.diagnostics)
+    assert {contract["schema"] for contract in contracts} == {"skill-contract/v1"}
+    assert {
+        contract["producer"]["toolchain_commit"] for contract in contracts
+    } == {TRIAL_PRODUCER_COMMIT}
+    assert {
+        contract["producer"]["schema_version"] for contract in contracts
+    } == {"skill-contract/v1"}
+    assert {
+        dependency
+        for contract in contracts
+        for dependency in contract["requires"]["mechanisms"]
+    } <= {"fixture-route-inspector"}
