@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +12,19 @@ from scripts.skill_contract import ProducerIdentity, validate_skill_contracts
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL_PATH = REPO_ROOT / "skills/skill-authoring/SKILL.md"
 UI_PATH = REPO_ROOT / "skills/skill-authoring/agents/openai.yaml"
-PRE_SLICE_COMMIT = "596fc7e5e153bb1a89a94010d272efa4ce4ce0ce"
+REFERENCE_PATH = (
+    REPO_ROOT
+    / "skills/skill-authoring/references/planning-artifact-authoring.md"
+)
+PRE_SLICE_COMMIT = "7ff339c76430347fff57edc5ffbdda44a0bb43e5"
+SUPPORTED_PLANNING_SCHEMAS = [
+    "planning-current/v1",
+    "planning-finding/v1",
+    "planning-dispatch/v1",
+    "planning-runway/v1",
+    "planning-closeout/v1",
+    "planning-selection-transaction/v1",
+]
 
 
 def _skill_text() -> str:
@@ -20,6 +33,23 @@ def _skill_text() -> str:
 
 def _normalized_skill_text() -> str:
     return " ".join(_skill_text().split())
+
+
+def _reference_text() -> str:
+    return REFERENCE_PATH.read_text(encoding="utf-8")
+
+
+def _normalized_reference_text() -> str:
+    return " ".join(_reference_text().split())
+
+
+def _support_policies() -> list[dict[str, Any]]:
+    policies = []
+    for source in re.findall(r"```yaml\n(.*?)```", _reference_text(), re.DOTALL):
+        loaded = yaml.safe_load(source)
+        if isinstance(loaded, dict) and "supported_schemas" in loaded:
+            policies.append(loaded)
+    return policies
 
 
 def _frontmatter() -> dict[str, Any]:
@@ -113,7 +143,12 @@ def test_contract_is_one_valid_closed_world_authoring_contract() -> None:
             "target": "skill_contract_validator",
         },
     ]
-    assert contract["references"] == []
+    assert contract["references"] == [
+        {
+            "path": "references/planning-artifact-authoring.md",
+            "load_when": ["create_or_modify_supported_planning_artifact"],
+        }
+    ]
 
 
 def test_contract_prohibitions_and_outputs_define_observable_boundaries() -> None:
@@ -164,7 +199,67 @@ def test_structure_separates_contract_procedure_branches_rationale_and_reference
     )
     assert "`references[*].load_when` entries are the only canonical" in normalized
     assert "Examples are explanatory only" in normalized
-    assert "references` list is therefore empty" in normalized
+    assert "one conditional planning-artifact reference" in normalized
+
+
+def test_planning_reference_declares_exact_supported_schema_list() -> None:
+    policies = _support_policies()
+
+    assert len(policies) == 1
+    assert policies[0] == {"supported_schemas": SUPPORTED_PLANNING_SCHEMAS}
+    for schema_name in SUPPORTED_PLANNING_SCHEMAS:
+        schema_path = REPO_ROOT / "schemas" / f"{schema_name.replace('/', '-')}.schema.json"
+        loaded = yaml.safe_load(schema_path.read_text(encoding="utf-8"))
+        assert loaded["properties"]["schema"]["const"] == schema_name
+
+
+def test_planning_reference_loads_only_for_supported_artifact_changes() -> None:
+    contract = _contract()
+    text = _reference_text()
+
+    assert contract["references"] == [
+        {
+            "path": "references/planning-artifact-authoring.md",
+            "load_when": ["create_or_modify_supported_planning_artifact"],
+        }
+    ]
+    assert (
+        "| Create or modify an artifact with one exact supported schema | "
+        "Load this reference, then continue authoring. |"
+    ) in text
+    assert (
+        "| Ordinary hybrid-skill authoring | Do not load this reference. |"
+    ) in text
+
+
+def test_unsupported_schema_and_missing_identity_block_before_authoring() -> None:
+    text = _reference_text()
+
+    for unsupported_case in (
+        "missing schema identity",
+        "an unknown schema name",
+        "an unsupported schema version",
+    ):
+        assert (
+            f"| Create or modify an artifact with {unsupported_case} | "
+            "Block before authoring or mutation. |"
+        ) in text
+    assert "Never guess a schema identity" in text
+    assert "upgrade or downgrade a version" in _normalized_reference_text()
+
+
+def test_planning_reference_consumes_layout_without_redefining_core() -> None:
+    text = _reference_text()
+    lower = text.lower()
+
+    assert "Planning Artifact Layout v1" in text
+    assert "existing schema and planning validator/store owner" in text
+    assert "It owns no planning root, schema, workflow decision" in text
+    assert "introduces no second skill contract block" in text
+    assert "## Contract" not in text
+    assert "skill-contract/v" not in text
+    assert "/home/" not in text
+    assert "codex-config" not in lower
 
 
 def test_ambiguity_and_missing_decisions_block_without_silent_resolution() -> None:

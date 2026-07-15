@@ -19,7 +19,7 @@ identity:
   audience: authoring-support
 producer:
   toolchain_generation: candidate
-  toolchain_commit: 596fc7e5e153bb1a89a94010d272efa4ce4ce0ce
+  toolchain_commit: 7ff339c76430347fff57edc5ffbdda44a0bb43e5
   schema_version: skill-contract/v1
 purpose: >-
   Create, migrate, and audit contract-first hybrid skills using accepted
@@ -73,7 +73,10 @@ stops_when:
   - ownership_conflict
   - contract_validation_failure
   - migration_guard_failure
-references: []
+references:
+  - path: references/planning-artifact-authoring.md
+    load_when:
+      - create_or_modify_supported_planning_artifact
 ```
 
 ## Procedure
@@ -157,6 +160,7 @@ trigger list or redefine core ownership, canonicality, procedure, or stopping
 rules. Examples are explanatory only and can never become a second canonical
 contract.
 
-This core has no conditional references. Its canonical `references` list is
-therefore empty, and no reference may be inferred or loaded until that list is
-changed under the same accepted contract version.
+This core has one conditional planning-artifact reference. Load it only when a
+task creates or modifies a planning artifact whose explicit schema identity is
+listed as supported by that reference. Do not load it for ordinary hybrid-skill
+authoring, and do not infer another reference or trigger from prose.
