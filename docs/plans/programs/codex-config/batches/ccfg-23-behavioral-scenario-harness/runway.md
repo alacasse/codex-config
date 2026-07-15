@@ -506,7 +506,7 @@ Reviewer brief for every slice:
 
 | Slice | Risk | Status | Candidate commit | Stable receipt | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|---|---|
-| 2. Workflow and planning quality | evidence-only | pending | | | | | Observable workflow families green | |
+| 2. Workflow and planning quality | evidence-only | pending | | | partial: 8 behavioral tests green; catalog module blocked on transitional assertion | | Progression-aware catalog honesty and observable workflow families green | Same-slice amendment permits the catalog test change below. |
 | 3. Currentness and protected handoffs | evidence-only | pending | | | | | Planning State/Git/lease/fault evidence green | |
 | 4. Disposable cutover and aggregate gate | evidence-only | pending | | | | | Six COR-006 keys and aliases green | |
 
@@ -638,6 +638,22 @@ Allowed files:
 
 - `tests/fixtures/command-owner-scenarios/`
 - `tests/test_command_owner_behavioral_scenarios.py`
+- `tests/test_command_owner_scenario_catalog.py`, only for the execution
+  amendment below.
+
+Execution amendment after the first focused validation:
+
+- Slice 1 correctly proved that an entirely unbound intermediate catalog was
+  honest, but its focused test encoded `0` green scenarios and all `17`
+  families unavailable as a permanent live-catalog invariant.
+- Slice 2 necessarily binds that same catalog, so its required-green catalog
+  module cannot retain the transitional count assertion.
+- This amendment authorizes only replacing that assertion with
+  progression-aware checks: all required contracts remain declared, only bound
+  green observations count, unavailable families remain honestly unavailable,
+  and the report cannot infer green from declarations.
+- The worker must not change the schema, harness owner, accepted 31-contract
+  identity, unavailable-status semantics, or any other Slice 1 test contract.
 
 Read-only behavior sources:
 
