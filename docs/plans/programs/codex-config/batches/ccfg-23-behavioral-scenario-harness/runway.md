@@ -506,7 +506,6 @@ Reviewer brief for every slice:
 
 | Slice | Risk | Status | Candidate commit | Stable receipt | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|---|---|
-| 2. Workflow and planning quality | evidence-only | pending | | | partial: 8 behavioral tests green; catalog module blocked on transitional assertion | | Progression-aware catalog honesty and observable workflow families green | Same-slice amendment permits the catalog test change below. |
 | 3. Currentness and protected handoffs | evidence-only | pending | | | | | Planning State/Git/lease/fault evidence green | |
 | 4. Disposable cutover and aggregate gate | evidence-only | pending | | | | | Six COR-006 keys and aliases green | |
 

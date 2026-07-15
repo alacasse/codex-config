@@ -69,11 +69,9 @@
 
 ## Next Safe Action
 
-Continue only the active CCFG-23 runway at amended Slice 2. The amendment may
-replace the Slice 1 catalog test's transitional all-unbound assertion with
-progression-aware honesty checks; it does not authorize harness/schema changes.
-Renew the strict live lease before the next handoff and stop before CCFG-24
-selection.
+Continue only the active CCFG-23 runway at Slice 3. Verify candidate commit
+`58cdf2d75d15db88136d33c9f6da29ab085030b4`, renew the strict live lease before
+the next handoff, and stop before CCFG-24 selection.
 
 ## Stop Conditions
 

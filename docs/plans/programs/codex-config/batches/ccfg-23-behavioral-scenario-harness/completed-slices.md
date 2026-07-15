@@ -110,3 +110,99 @@ orchestration_anomalies:
     action_taken: "Registered the module before execution and reran the exact helper validation."
     follow_up: "Keep strict-helper loading examples explicit about sys.modules registration for dynamic imports."
 ```
+
+## Slice 2: Bind Workflow And Planning-Quality Scenarios
+
+- Candidate commit: `58cdf2d75d15db88136d33c9f6da29ab085030b4`.
+- Outcome: 32 workflow and planning-quality scenarios now derive green or
+  blocked results from input artifacts, separately injected fixture
+  `batch_planner` and `batch_plan_reviewer` collaborators, independent review
+  evidence, and an artifact-driven execution state machine. Eight currentness
+  and cutover families remain honestly unavailable.
+- Validation: 24 focused catalog/behavioral tests and 98 planning-contract
+  regressions passed; the catalog validates 40 scenarios and reports 27 green
+  contracts with the four State contracts deferred; CLI, Ruff, import-topology,
+  and whitespace gates passed.
+- Review: the runway was explicitly amended to replace Slice 1's transitional
+  all-unbound live-catalog count with progression-aware honesty checks. Test
+  quality then found and closed self-certified planning/execution evidence;
+  final review found and closed generic role labels. Repeat test-quality,
+  import-topology, and runway reviews were clean.
+- Compatibility and cleanup residue: none. The fixture bootstrap is
+  `__file__`-anchored and canonical-name only; no production role invocation or
+  CCFG-24/25/26 ownership transfer is claimed.
+
+### Slice 2 Execution Receipt
+
+```yaml
+runway: docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/runway.md
+live_lease:
+  interface: cross-checkout-context/v1
+  toolchain_source_root: /home/alacasse/projects/codex-config
+  toolchain_commit: a32457ff46b6de5d4400192b1487ed93b4e02bac
+  canonical_planning_repository_root: /home/alacasse/projects/codex-config
+  canonical_planning_commit_before: a32457ff46b6de5d4400192b1487ed93b4e02bac
+  implementation_target_root: /home/alacasse/projects/codex-config-command-owner-redesign
+  implementation_commit_before: a5971caf0a34eaba005e0ad636d2235fb0260f31
+  codex_home: /home/alacasse/.codex
+  generation_role: stable
+  canonical_state_mutation_allowed: true
+validated_scope:
+  planning_paths: []
+  implementation_paths:
+    - tests/fixtures/command-owner-scenarios/
+    - tests/test_command_owner_behavioral_scenarios.py
+    - tests/test_command_owner_scenario_catalog.py
+worker_verification: matched_after_same_slice_amendment
+reviewer_verification: matched_after_bounded_fixes
+test_quality_review: clean_after_bounded_fix
+import_topology_review: clean
+```
+
+### Stable Planning Receipt
+
+```json
+{
+  "interface": "cross-checkout-receipt/v1",
+  "caller": "work-batch",
+  "reason": "CCFG-23 Slice 2 stable planning receipt",
+  "allowed_scope": {
+    "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+    "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+    "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+    "planning_paths": [
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/completed-slices.md",
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/runway.md",
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/CURRENT.md",
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/LEDGER.md"
+    ],
+    "implementation_paths": []
+  },
+  "generation_identity": {
+    "generation_role": "stable",
+    "toolchain_source_root": "/home/alacasse/projects/codex-config",
+    "toolchain_commit": "a32457ff46b6de5d4400192b1487ed93b4e02bac",
+    "codex_home": "/home/alacasse/.codex",
+    "canonical_state_mutation_allowed": true
+  },
+  "repository_revisions": {
+    "toolchain_commit": "a32457ff46b6de5d4400192b1487ed93b4e02bac",
+    "canonical_planning_commit_before": "a32457ff46b6de5d4400192b1487ed93b4e02bac",
+    "implementation_commit_before": "58cdf2d75d15db88136d33c9f6da29ab085030b4"
+  },
+  "deletion_condition": "CCFG-29 final integration"
+}
+```
+
+### Slice 2 Orchestration Anomaly
+
+```yaml
+orchestration_anomalies:
+  - slice: 2
+    severity: low
+    category: malformed_support_result
+    observed: "The first delta-only test-quality result nested strict identity under execution_context instead of returning the requested flat identity fields."
+    impact: "The coordinator rejected the result shape; no review acceptance, write, or commit used it."
+    action_taken: "Renewed the lease and required a corrected flat identity result before accepting the findings."
+    follow_up: "Keep support-review strict identity output examples aligned with the handoff schema."
+```
