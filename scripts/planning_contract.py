@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
 import sys
+import tempfile
 from collections.abc import Hashable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Final, TypeAlias, cast
+from types import MappingProxyType
+from typing import Any, Final, Literal, TypeAlias, cast
 
 import yaml
 from jsonschema import Draft7Validator
@@ -54,11 +58,21 @@ _LEGACY_LABELS: Final = {
     "Queued batch path or ID": "queued_runway",
     "Latest closeout path": "latest_closeout",
 }
+_CURRENT_STORE_INTERFACE: Final = "current-store/v1"
+_LEDGER_STORE_INTERFACE: Final = "ledger-store/v1"
+_STORE_RECEIPT_INTERFACE: Final = "planning-store-receipt/v1"
+_DERIVED_INDEX_INTERFACE: Final = "planning-derived-index/v1"
+_GLOBAL_LEDGER_INTERFACE: Final = "planning-ledger-global-comparison/v1"
+_STORE_ACTIONS: Final = frozenset({"create", "update", "merge", "no-op", "reconcile"})
 
 JsonValue: TypeAlias = (
     str | int | float | bool | None | dict[str, "JsonValue"] | list["JsonValue"]
 )
 JsonObject: TypeAlias = dict[str, JsonValue]
+FaultPoint: TypeAlias = Literal[
+    "before_replace",
+    "after_replace_before_return",
+]
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
@@ -153,6 +167,95 @@ class ValidationResult:
         return not self.diagnostics
 
 
+class PlanningStoreError(ValueError):
+    """Raised when a planning store rejects a request without semantic choice."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(f"{code}: {message}")
+        self.code = code
+
+
+class InjectedStoreFailure(RuntimeError):
+    """Deterministic fault injected around the atomic replacement boundary."""
+
+
+@dataclass(frozen=True)
+class StoreReceipt:
+    """Immutable before/after evidence persisted through replay metadata."""
+
+    interface: str
+    store_interface: str
+    idempotency_key: str
+    request_hash: str
+    before_revision: int
+    after_revision: int
+    touched_finding_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class StoreApplyResult:
+    """One applied or exact-replay store outcome."""
+
+    outcome: Literal["applied", "exact_replay"]
+    receipt: StoreReceipt
+
+
+@dataclass(frozen=True)
+class CurrentSnapshot:
+    """Immutable parsed current document with its full-file CAS hash."""
+
+    path: Path
+    contract: Mapping[str, object]
+    logical_revision: int
+    file_hash: str
+
+
+@dataclass(frozen=True)
+class LedgerSnapshot:
+    """Immutable whole-ledger projection and its full-file CAS facts."""
+
+    path: Path
+    findings: Mapping[str, Mapping[str, object]]
+    logical_revision: int
+    file_hash: str
+
+
+@dataclass(frozen=True)
+class LedgerLayoutComparison:
+    """Mechanical per-finding/global representation comparison."""
+
+    equivalent: bool
+    semantic_equal: bool
+    projection_equal: bool
+    duplicate_detection_green: bool
+    diff_locality_green: bool
+    error_locality_green: bool
+    revision_behavior_green: bool
+    source_identity_green: bool
+    per_finding_changed_sections: tuple[str, ...]
+    global_changed_sections: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class _ReplayRecord:
+    idempotency_key: str
+    request_hash: str
+    receipt: StoreReceipt
+
+
+@dataclass(frozen=True)
+class _StoreMetadata:
+    interface: str
+    store_revision: int
+    replay_records: tuple[_ReplayRecord, ...]
+
+
+@dataclass(frozen=True)
+class _MutableLedger:
+    findings: Mapping[str, JsonObject]
+    metadata: _StoreMetadata
+
+
 @dataclass(frozen=True)
 class _ExtractedBlock:
     source: str
@@ -179,6 +282,395 @@ class _SecondaryYamlInspection:
     schema_value: str | None
 
 
+def read_current_document(
+    path: str | Path,
+    *,
+    toolchain_root: str | Path,
+) -> CurrentSnapshot:
+    """Read one canonical CURRENT document with immutable CAS facts."""
+
+    current_path = Path(path)
+    result = validate_planning_contracts([current_path], toolchain_root=toolchain_root)
+    if not result.is_valid:
+        raise PlanningStoreError("current.invalid", str(result.diagnostics[0]))
+    if len(result.contracts) != 1:
+        raise PlanningStoreError("current.contract_count", "expected one current contract")
+    contract = result.contracts[0].contract
+    if contract.get("schema") != "planning-current/v1":
+        raise PlanningStoreError("current.schema", "expected planning-current/v1")
+    revision = contract.get("revision")
+    if not isinstance(revision, int):
+        raise PlanningStoreError("current.revision", "revision must be an integer")
+    text = current_path.read_text(encoding="utf-8")
+    metadata = _parse_store_metadata(
+        current_path,
+        text,
+        interface=_CURRENT_STORE_INTERFACE,
+        default_revision=revision,
+    )
+    if metadata.store_revision != revision:
+        raise PlanningStoreError(
+            "current.store_revision_mismatch",
+            "canonical current revision does not match embedded store_revision",
+        )
+    return CurrentSnapshot(
+        path=current_path,
+        contract=cast(Mapping[str, object], _freeze_json(contract)),
+        logical_revision=revision,
+        file_hash=_file_hash(current_path),
+    )
+
+
+def apply_current_document(
+    path: str | Path,
+    *,
+    toolchain_root: str | Path,
+    expected_revision: int,
+    expected_file_hash: str,
+    replacement_contract: Mapping[str, object],
+    idempotency_key: str,
+    fault: FaultPoint | None = None,
+) -> StoreApplyResult:
+    """Apply one caller-supplied current contract under revision and file CAS."""
+
+    current_path = Path(path)
+    key = _require_idempotency_key(idempotency_key)
+    original_text = current_path.read_text(encoding="utf-8")
+    metadata = _parse_store_metadata(
+        current_path,
+        original_text,
+        interface=_CURRENT_STORE_INTERFACE,
+        default_revision=expected_revision,
+    )
+    replacement = _json_object_copy(replacement_contract, "replacement_contract")
+    request_hash = _canonical_request_hash(
+        {
+            "operation": "apply_current_document",
+            "expected_revision": expected_revision,
+            "expected_file_hash": expected_file_hash,
+            "replacement_contract": replacement,
+            "idempotency_key": key,
+        }
+    )
+    snapshot = read_current_document(current_path, toolchain_root=toolchain_root)
+    replay = _evaluate_replay(
+        metadata,
+        key=key,
+        request_hash=request_hash,
+        store_interface=_CURRENT_STORE_INTERFACE,
+        before_revision=expected_revision,
+        after_revision=expected_revision + 1,
+        touched_finding_ids=(),
+    )
+    if replay is not None:
+        return StoreApplyResult(outcome="exact_replay", receipt=replay)
+
+    _validate_cas(
+        actual_revision=snapshot.logical_revision,
+        actual_file_hash=snapshot.file_hash,
+        expected_revision=expected_revision,
+        expected_file_hash=expected_file_hash,
+    )
+    replacement_revision = replacement.get("revision")
+    if replacement.get("schema") != "planning-current/v1":
+        raise PlanningStoreError("current.schema", "replacement must use planning-current/v1")
+    if replacement_revision != expected_revision + 1:
+        raise PlanningStoreError(
+            "current.revision_step",
+            "replacement revision must equal expected revision plus one",
+        )
+    rendered_section = render_planning_contract(
+        replacement,
+        toolchain_root=toolchain_root,
+    )
+    receipt = StoreReceipt(
+        interface=_STORE_RECEIPT_INTERFACE,
+        store_interface=_CURRENT_STORE_INTERFACE,
+        idempotency_key=key,
+        request_hash=request_hash,
+        before_revision=expected_revision,
+        after_revision=cast(int, replacement_revision),
+        touched_finding_ids=(),
+    )
+    updated_metadata = _with_replay_record(
+        metadata,
+        store_revision=cast(int, replacement_revision),
+        receipt=receipt,
+    )
+    rendered = _replace_canonical_section(original_text, rendered_section)
+    rendered = _replace_or_append_store_metadata(rendered, updated_metadata)
+    _atomic_replace_and_validate(
+        current_path,
+        rendered,
+        fault=fault,
+        validate=lambda: read_current_document(
+            current_path,
+            toolchain_root=toolchain_root,
+        ),
+    )
+    return StoreApplyResult(outcome="applied", receipt=receipt)
+
+
+def read_ledger_document(
+    path: str | Path,
+    *,
+    toolchain_root: str | Path,
+) -> LedgerSnapshot:
+    """Read and validate a whole per-finding ledger plus its derived index."""
+
+    ledger_path = Path(path)
+    text = ledger_path.read_text(encoding="utf-8")
+    findings, metadata = _parse_per_finding_ledger(
+        ledger_path,
+        text,
+        toolchain_root=Path(toolchain_root).resolve(),
+    )
+    frozen_findings = {
+        finding_id: cast(Mapping[str, object], _freeze_json(contract))
+        for finding_id, contract in findings.items()
+    }
+    return LedgerSnapshot(
+        path=ledger_path,
+        findings=MappingProxyType(frozen_findings),
+        logical_revision=metadata.store_revision,
+        file_hash=_file_hash(ledger_path),
+    )
+
+
+def apply_ledger_decision(
+    path: str | Path,
+    *,
+    toolchain_root: str | Path,
+    expected_revision: int,
+    expected_file_hash: str,
+    action: str,
+    finding_mutations: Sequence[Mapping[str, object]],
+    touched_finding_revisions: Mapping[str, int | None],
+    idempotency_key: str,
+    fault: FaultPoint | None = None,
+) -> StoreApplyResult:
+    """Apply one explicit caller decision through ledger-store/v1 mechanics."""
+
+    if action not in _STORE_ACTIONS:
+        raise PlanningStoreError("ledger.action", f"unsupported caller action {action!r}")
+    ledger_path = Path(path)
+    key = _require_idempotency_key(idempotency_key)
+    original_text = ledger_path.read_text(encoding="utf-8")
+    findings, metadata = _parse_per_finding_ledger(
+        ledger_path,
+        original_text,
+        toolchain_root=Path(toolchain_root).resolve(),
+    )
+    mutations = tuple(
+        _json_object_copy(value, f"finding_mutations[{index}]")
+        for index, value in enumerate(finding_mutations)
+    )
+    touched_revisions = dict(touched_finding_revisions)
+    request_hash = _canonical_request_hash(
+        {
+            "operation": "apply_ledger_decision",
+            "expected_revision": expected_revision,
+            "expected_file_hash": expected_file_hash,
+            "action": action,
+            "finding_mutations": list(mutations),
+            "touched_finding_revisions": touched_revisions,
+            "idempotency_key": key,
+        }
+    )
+    requested_touched_ids = _requested_touched_finding_ids(
+        mutations,
+        touched_finding_revisions=touched_revisions,
+    )
+    replay = _evaluate_replay(
+        metadata,
+        key=key,
+        request_hash=request_hash,
+        store_interface=_LEDGER_STORE_INTERFACE,
+        before_revision=expected_revision,
+        after_revision=expected_revision + 1,
+        touched_finding_ids=requested_touched_ids,
+    )
+    if replay is not None:
+        return StoreApplyResult(outcome="exact_replay", receipt=replay)
+    _validate_cas(
+        actual_revision=metadata.store_revision,
+        actual_file_hash=_file_hash(ledger_path),
+        expected_revision=expected_revision,
+        expected_file_hash=expected_file_hash,
+    )
+    resulting, touched_ids = _apply_finding_mutations(
+        findings,
+        mutations=mutations,
+        touched_finding_revisions=touched_revisions,
+        toolchain_root=Path(toolchain_root).resolve(),
+    )
+    after_revision = expected_revision + 1
+    receipt = StoreReceipt(
+        interface=_STORE_RECEIPT_INTERFACE,
+        store_interface=_LEDGER_STORE_INTERFACE,
+        idempotency_key=key,
+        request_hash=request_hash,
+        before_revision=expected_revision,
+        after_revision=after_revision,
+        touched_finding_ids=touched_ids,
+    )
+    updated_metadata = _with_replay_record(
+        metadata,
+        store_revision=after_revision,
+        receipt=receipt,
+    )
+    rendered = _render_per_finding_ledger(
+        ledger_path,
+        resulting,
+        updated_metadata,
+        toolchain_root=Path(toolchain_root).resolve(),
+    )
+    _atomic_replace_and_validate(
+        ledger_path,
+        rendered,
+        fault=fault,
+        validate=lambda: read_ledger_document(
+            ledger_path,
+            toolchain_root=toolchain_root,
+        ),
+    )
+    return StoreApplyResult(outcome="applied", receipt=receipt)
+
+
+def compare_ledger_layouts(
+    per_finding_path: str | Path,
+    global_path: str | Path,
+    *,
+    toolchain_root: str | Path,
+) -> LedgerLayoutComparison:
+    """Compare the accepted per-finding default with one global prototype."""
+
+    per_path = _single_markdown_path(Path(per_finding_path))
+    global_document = _single_markdown_path(Path(global_path))
+    per_snapshot = read_ledger_document(per_path, toolchain_root=toolchain_root)
+    global_findings, global_revision = _parse_global_ledger(
+        global_document,
+        toolchain_root=Path(toolchain_root).resolve(),
+        expected_source_artifact=per_path.name,
+    )
+    per_semantic = _semantic_findings(per_snapshot.findings)
+    global_semantic = _semantic_findings(global_findings)
+    semantic_equal = per_semantic == global_semantic
+    projection_equal = (
+        _derived_entries(per_snapshot.findings)
+        == _derived_entries(global_findings)
+        and per_snapshot.logical_revision == global_revision
+    )
+    per_changed_path = _required_variant(per_path, "one-finding-change.md")
+    global_changed_path = _required_variant(global_document, "one-finding-change.md")
+    per_changed = read_ledger_document(per_changed_path, toolchain_root=toolchain_root)
+    global_changed, global_changed_revision = _parse_global_ledger(
+        global_changed_path,
+        toolchain_root=Path(toolchain_root).resolve(),
+        expected_source_artifact=per_path.name,
+    )
+    changed_semantic_equal = (
+        _semantic_findings(per_changed.findings)
+        == _semantic_findings(global_changed)
+    )
+    changed_projection_equal = (
+        _derived_entries(per_changed.findings) == _derived_entries(global_changed)
+    )
+    per_changed_sections = _changed_top_level_sections(per_path, per_changed_path)
+    global_changed_sections = _changed_top_level_sections(
+        global_document,
+        global_changed_path,
+    )
+    diff_locality_green = (
+        per_changed_sections
+        == ("Derived Index", "Finding CCFG-1", "Store Metadata")
+        and global_changed_sections == ("Global Comparison",)
+    )
+    per_duplicate = _capture_store_error(
+        lambda: read_ledger_document(
+            _required_variant(per_path, "duplicate.md"),
+            toolchain_root=toolchain_root,
+        )
+    )
+    global_duplicate = _capture_store_error(
+        lambda: _parse_global_ledger(
+            _required_variant(global_document, "duplicate.md"),
+            toolchain_root=Path(toolchain_root).resolve(),
+            expected_source_artifact=per_path.name,
+        )
+    )
+    duplicate_detection_green = (
+        per_duplicate is not None
+        and per_duplicate.code == "ledger.duplicate_id"
+        and global_duplicate is not None
+        and global_duplicate.code == "ledger.duplicate_id"
+    )
+    per_error = _capture_store_error(
+        lambda: read_ledger_document(
+            _required_variant(per_path, "invalid-locality.md"),
+            toolchain_root=toolchain_root,
+        )
+    )
+    global_error = _capture_store_error(
+        lambda: _parse_global_ledger(
+            _required_variant(global_document, "invalid-locality.md"),
+            toolchain_root=Path(toolchain_root).resolve(),
+            expected_source_artifact=per_path.name,
+        )
+    )
+    error_locality_green = (
+        per_error is not None
+        and "CCFG-2" in str(per_error)
+        and "line" in str(per_error)
+        and global_error is not None
+        and "CCFG-2" in str(global_error)
+        and "index 1" in str(global_error)
+    )
+    divergent_findings, divergent_revision = _parse_global_ledger(
+        _required_variant(global_document, "revision-divergence.md"),
+        toolchain_root=Path(toolchain_root).resolve(),
+        expected_source_artifact=per_path.name,
+    )
+    revision_behavior_green = (
+        per_changed.logical_revision == global_changed_revision
+        and divergent_revision != per_snapshot.logical_revision
+        and _semantic_findings(divergent_findings) == global_semantic
+    )
+    wrong_source = _capture_store_error(
+        lambda: _parse_global_ledger(
+            _required_variant(global_document, "wrong-source.md"),
+            toolchain_root=Path(toolchain_root).resolve(),
+            expected_source_artifact=per_path.name,
+        )
+    )
+    source_identity_green = (
+        wrong_source is not None and wrong_source.code == "ledger.global_source"
+    )
+    all_measures_green = all(
+        (
+            duplicate_detection_green,
+            diff_locality_green,
+            error_locality_green,
+            revision_behavior_green,
+            source_identity_green,
+            changed_semantic_equal,
+            changed_projection_equal,
+        )
+    )
+    return LedgerLayoutComparison(
+        equivalent=semantic_equal and projection_equal and all_measures_green,
+        semantic_equal=semantic_equal,
+        projection_equal=projection_equal,
+        duplicate_detection_green=duplicate_detection_green,
+        diff_locality_green=diff_locality_green,
+        error_locality_green=error_locality_green,
+        revision_behavior_green=revision_behavior_green,
+        source_identity_green=source_identity_green,
+        per_finding_changed_sections=per_changed_sections,
+        global_changed_sections=global_changed_sections,
+    )
+
+
 def validate_planning_contracts(
     contract_paths: Iterable[str | Path],
     *,
@@ -203,6 +695,23 @@ def validate_planning_contracts(
     for path in paths:
         text = _read_text(path, diagnostics)
         if text is None:
+            continue
+        if _document_has_interface(text, _LEDGER_STORE_INTERFACE):
+            try:
+                ledger_findings, _ = _parse_per_finding_ledger(
+                    path,
+                    text,
+                    toolchain_root=root,
+                )
+            except PlanningStoreError as error:
+                diagnostics.append(
+                    Diagnostic(str(path), "$", error.code, str(error))
+                )
+            else:
+                contracts.extend(
+                    ParsedPlanningContract(path=path, contract=contract)
+                    for contract in ledger_findings.values()
+                )
             continue
         block = _extract_operational_block(
             path,
@@ -839,26 +1348,843 @@ def _order_by_schema(
     return cast(object, value)
 
 
+def _file_hash(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _canonical_request_hash(value: Mapping[str, object]) -> str:
+    encoded = json.dumps(
+        _thaw_json(value),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _freeze_json(value: object) -> object:
+    if isinstance(value, Mapping):
+        typed = cast(Mapping[object, object], value)
+        return MappingProxyType(
+            {
+                str(key): _freeze_json(child)
+                for key, child in typed.items()
+                if isinstance(key, str)
+            }
+        )
+    if isinstance(value, list | tuple):
+        return tuple(_freeze_json(child) for child in cast(Sequence[object], value))
+    return value
+
+
+def _thaw_json(value: object) -> JsonValue:
+    if isinstance(value, Mapping):
+        typed = cast(Mapping[object, object], value)
+        return {
+            str(key): _thaw_json(child)
+            for key, child in typed.items()
+            if isinstance(key, str)
+        }
+    if isinstance(value, list | tuple):
+        return [_thaw_json(child) for child in cast(Sequence[object], value)]
+    if value is None or isinstance(value, str | int | float | bool):
+        return value
+    raise PlanningStoreError("store.json_type", f"unsupported value {type(value).__name__}")
+
+
+def _json_object_copy(value: Mapping[str, object], field: str) -> JsonObject:
+    thawed = _thaw_json(value)
+    if not isinstance(thawed, dict):
+        raise PlanningStoreError("store.request", f"{field} must be an object")
+    return thawed
+
+
+def _require_idempotency_key(value: str) -> str:
+    if not value.strip():
+        raise PlanningStoreError("store.idempotency_key", "idempotency key cannot be empty")
+    return value
+
+
+def _validate_cas(
+    *,
+    actual_revision: int,
+    actual_file_hash: str,
+    expected_revision: int,
+    expected_file_hash: str,
+) -> None:
+    if actual_revision != expected_revision:
+        raise PlanningStoreError(
+            "store.revision_mismatch",
+            f"expected revision {expected_revision}; got {actual_revision}",
+        )
+    if actual_file_hash != expected_file_hash:
+        raise PlanningStoreError(
+            "store.file_hash_mismatch",
+            f"expected full-file hash {expected_file_hash}; got {actual_file_hash}",
+        )
+
+
+def _evaluate_replay(
+    metadata: _StoreMetadata,
+    *,
+    key: str,
+    request_hash: str,
+    store_interface: str,
+    before_revision: int,
+    after_revision: int,
+    touched_finding_ids: tuple[str, ...],
+) -> StoreReceipt | None:
+    matches = [record for record in metadata.replay_records if record.idempotency_key == key]
+    if len(matches) > 1:
+        raise PlanningStoreError(
+            "store.ambiguous_replay",
+            f"idempotency key {key!r} has ambiguous durable evidence",
+        )
+    if not matches:
+        return None
+    record = matches[0]
+    if record.request_hash != request_hash:
+        raise PlanningStoreError(
+            "store.idempotency_mismatch",
+            f"idempotency key {key!r} is bound to a different request",
+        )
+    receipt = record.receipt
+    if (
+        receipt.interface != _STORE_RECEIPT_INTERFACE
+        or receipt.store_interface != store_interface
+        or receipt.idempotency_key != key
+        or receipt.request_hash != request_hash
+        or receipt.before_revision != before_revision
+        or receipt.after_revision != after_revision
+        or receipt.touched_finding_ids != touched_finding_ids
+    ):
+        raise PlanningStoreError(
+            "store.replay_result_mismatch",
+            f"idempotency key {key!r} has a receipt result inconsistent with its request",
+        )
+    return receipt
+
+
+def _with_replay_record(
+    metadata: _StoreMetadata,
+    *,
+    store_revision: int,
+    receipt: StoreReceipt,
+) -> _StoreMetadata:
+    record = _ReplayRecord(
+        idempotency_key=receipt.idempotency_key,
+        request_hash=receipt.request_hash,
+        receipt=receipt,
+    )
+    return _StoreMetadata(
+        interface=metadata.interface,
+        store_revision=store_revision,
+        replay_records=tuple(
+            sorted(
+                (*metadata.replay_records, record),
+                key=lambda item: item.idempotency_key,
+            )
+        ),
+    )
+
+
+def _document_has_interface(text: str, interface: str) -> bool:
+    for block in _top_level_yaml_blocks(text.splitlines()):
+        parsed = _parse_secondary_yaml(block.source)
+        if parsed.mapping is not None and parsed.mapping.get("interface") == interface:
+            return True
+    return False
+
+
+def _parse_store_metadata(
+    path: Path,
+    text: str,
+    *,
+    interface: str,
+    default_revision: int,
+) -> _StoreMetadata:
+    candidates: list[JsonObject] = []
+    for block in _top_level_yaml_blocks(text.splitlines()):
+        parsed = _parse_secondary_yaml(block.source)
+        if parsed.mapping is not None and parsed.mapping.get("interface") == interface:
+            candidates.append(parsed.mapping)
+    if not candidates:
+        return _StoreMetadata(interface=interface, store_revision=default_revision, replay_records=())
+    if len(candidates) != 1:
+        raise PlanningStoreError(
+            "store.metadata_count",
+            f"{path} must contain at most one {interface} metadata block",
+        )
+    value = candidates[0]
+    _require_exact_fields(
+        value,
+        {"interface", "store_revision", "replay_records"},
+        "store metadata",
+    )
+    revision = value.get("store_revision")
+    records = value.get("replay_records")
+    if not isinstance(revision, int) or revision < 0:
+        raise PlanningStoreError("store.metadata", "store_revision must be non-negative")
+    if not isinstance(records, list):
+        raise PlanningStoreError("store.metadata", "replay_records must be a list")
+    parsed_records = tuple(_parse_replay_record(item) for item in records)
+    keys = [record.idempotency_key for record in parsed_records]
+    if len(keys) != len(set(keys)):
+        raise PlanningStoreError("store.ambiguous_replay", "duplicate idempotency records")
+    if any(
+        record.receipt.interface != _STORE_RECEIPT_INTERFACE
+        or record.receipt.store_interface != interface
+        for record in parsed_records
+    ):
+        raise PlanningStoreError(
+            "store.metadata",
+            "replay receipt interface does not match its containing store",
+        )
+    _validate_receipt_chain(parsed_records, store_revision=revision)
+    return _StoreMetadata(
+        interface=interface,
+        store_revision=revision,
+        replay_records=parsed_records,
+    )
+
+
+def _validate_receipt_chain(
+    records: Sequence[_ReplayRecord],
+    *,
+    store_revision: int,
+) -> None:
+    if not records:
+        return
+    ordered = sorted(records, key=lambda record: record.receipt.after_revision)
+    after_revisions = [record.receipt.after_revision for record in ordered]
+    if len(after_revisions) != len(set(after_revisions)):
+        raise PlanningStoreError(
+            "store.ambiguous_replay",
+            "multiple receipts claim the same after revision",
+        )
+    for record in ordered:
+        receipt = record.receipt
+        if receipt.after_revision != receipt.before_revision + 1:
+            raise PlanningStoreError(
+                "store.receipt_chain",
+                "receipt before/after revisions must advance exactly once",
+            )
+    for previous, current in zip(ordered, ordered[1:], strict=False):
+        if previous.receipt.after_revision != current.receipt.before_revision:
+            raise PlanningStoreError(
+                "store.receipt_chain",
+                "persisted receipt revisions are not contiguous",
+            )
+    if ordered[-1].receipt.after_revision != store_revision:
+        raise PlanningStoreError(
+            "store.receipt_chain",
+            "latest persisted receipt does not end at store_revision",
+        )
+
+
+def _parse_replay_record(value: object) -> _ReplayRecord:
+    if not isinstance(value, dict):
+        raise PlanningStoreError("store.metadata", "replay record must be an object")
+    record = cast(JsonObject, value)
+    _require_exact_fields(
+        record,
+        {"idempotency_key", "request_hash", "receipt"},
+        "replay record",
+    )
+    key = record.get("idempotency_key")
+    request_hash = record.get("request_hash")
+    receipt_value = record.get("receipt")
+    if not isinstance(key, str) or not key:
+        raise PlanningStoreError("store.metadata", "replay key must be non-empty")
+    if not isinstance(request_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", request_hash):
+        raise PlanningStoreError("store.metadata", "request_hash must be sha256")
+    receipt = _parse_store_receipt(receipt_value)
+    if receipt.idempotency_key != key or receipt.request_hash != request_hash:
+        raise PlanningStoreError("store.metadata", "replay record and receipt disagree")
+    return _ReplayRecord(key, request_hash, receipt)
+
+
+def _parse_store_receipt(value: object) -> StoreReceipt:
+    if not isinstance(value, dict):
+        raise PlanningStoreError("store.metadata", "receipt must be an object")
+    receipt = cast(JsonObject, value)
+    _require_exact_fields(
+        receipt,
+        {
+            "interface",
+            "store_interface",
+            "idempotency_key",
+            "request_hash",
+            "before_revision",
+            "after_revision",
+            "touched_finding_ids",
+        },
+        "receipt",
+    )
+    touched = receipt.get("touched_finding_ids")
+    if not isinstance(touched, list) or not all(isinstance(item, str) for item in touched):
+        raise PlanningStoreError("store.metadata", "touched_finding_ids must be strings")
+    touched_ids = cast(list[str], touched)
+    if touched_ids != sorted(set(touched_ids)):
+        raise PlanningStoreError(
+            "store.metadata",
+            "touched_finding_ids must be sorted and unique",
+        )
+    before = receipt.get("before_revision")
+    after = receipt.get("after_revision")
+    values = (
+        receipt.get("interface"),
+        receipt.get("store_interface"),
+        receipt.get("idempotency_key"),
+        receipt.get("request_hash"),
+    )
+    if not all(isinstance(item, str) for item in values):
+        raise PlanningStoreError("store.metadata", "receipt identity fields must be strings")
+    if not isinstance(before, int) or not isinstance(after, int):
+        raise PlanningStoreError("store.metadata", "receipt revisions must be integers")
+    return StoreReceipt(
+        interface=cast(str, values[0]),
+        store_interface=cast(str, values[1]),
+        idempotency_key=cast(str, values[2]),
+        request_hash=cast(str, values[3]),
+        before_revision=before,
+        after_revision=after,
+        touched_finding_ids=tuple(touched_ids),
+    )
+
+
+def _require_exact_fields(value: Mapping[str, object], expected: set[str], label: str) -> None:
+    actual = set(value)
+    if actual != expected:
+        raise PlanningStoreError(
+            "store.metadata",
+            f"{label} fields must be {sorted(expected)!r}; got {sorted(actual)!r}",
+        )
+
+
+def _metadata_object(metadata: _StoreMetadata) -> JsonObject:
+    return {
+        "interface": metadata.interface,
+        "store_revision": metadata.store_revision,
+        "replay_records": [
+            {
+                "idempotency_key": record.idempotency_key,
+                "request_hash": record.request_hash,
+                "receipt": {
+                    "interface": record.receipt.interface,
+                    "store_interface": record.receipt.store_interface,
+                    "idempotency_key": record.receipt.idempotency_key,
+                    "request_hash": record.receipt.request_hash,
+                    "before_revision": record.receipt.before_revision,
+                    "after_revision": record.receipt.after_revision,
+                    "touched_finding_ids": list(record.receipt.touched_finding_ids),
+                },
+            }
+            for record in metadata.replay_records
+        ],
+    }
+
+
+def _replace_canonical_section(text: str, rendered_section: str) -> str:
+    lines = text.splitlines()
+    headings = _top_level_h2_indices(lines)
+    matches = [index for index in headings if lines[index].strip() == _OPERATIONAL_HEADING]
+    if len(matches) != 1:
+        raise PlanningStoreError("current.contract_count", "expected one operational section")
+    start = matches[0]
+    end = next((index for index in headings if index > start), len(lines))
+    replacement = rendered_section.rstrip("\n").splitlines()
+    updated = [*lines[:start], *replacement, *lines[end:]]
+    return "\n".join(updated).rstrip() + "\n"
+
+
+def _replace_or_append_store_metadata(text: str, metadata: _StoreMetadata) -> str:
+    lines = text.splitlines()
+    blocks = _top_level_yaml_blocks(lines)
+    matching: list[_YamlBlock] = []
+    for block in blocks:
+        parsed = _parse_secondary_yaml(block.source)
+        if parsed.mapping is not None and parsed.mapping.get("interface") == metadata.interface:
+            matching.append(block)
+    body = yaml.safe_dump(_metadata_object(metadata), sort_keys=False, allow_unicode=True).rstrip()
+    if not matching:
+        return text.rstrip() + f"\n\n## Store Metadata\n\n```yaml\n{body}\n```\n"
+    if len(matching) != 1:
+        raise PlanningStoreError("store.metadata_count", "multiple store metadata blocks")
+    block = matching[0]
+    updated = [*lines[: block.fence_start + 1], *body.splitlines(), *lines[block.fence_end :]]
+    return "\n".join(updated).rstrip() + "\n"
+
+
+def _atomic_replace_and_validate(
+    path: Path,
+    rendered: str,
+    *,
+    fault: FaultPoint | None,
+    validate: Any,
+) -> None:
+    original = path.read_bytes()
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(rendered.encode("utf-8"))
+            handle.flush()
+            os.fsync(handle.fileno())
+        if fault == "before_replace":
+            raise InjectedStoreFailure("before_replace")
+        os.replace(temporary, path)
+        try:
+            validate()
+        except Exception:
+            _replace_bytes(path, original)
+            raise
+        if fault == "after_replace_before_return":
+            raise InjectedStoreFailure("after_replace_before_return")
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _replace_bytes(path: Path, content: bytes) -> None:
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.rollback.", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _parse_per_finding_ledger(
+    path: Path,
+    text: str,
+    *,
+    toolchain_root: Path,
+) -> tuple[dict[str, JsonObject], _StoreMetadata]:
+    metadata = _parse_store_metadata(
+        path,
+        text,
+        interface=_LEDGER_STORE_INTERFACE,
+        default_revision=0,
+    )
+    findings: dict[str, JsonObject] = {}
+    derived_candidates: list[JsonObject] = []
+    for block in _top_level_yaml_blocks(text.splitlines()):
+        inspection = _inspect_secondary_yaml(block.source)
+        parsed = _parse_secondary_yaml(block.source)
+        if parsed.error is not None:
+            if inspection.schema_value == "planning-finding/v1":
+                raise PlanningStoreError(
+                    "ledger.invalid_finding_yaml",
+                    f"line {block.fence_start + 1}: {parsed.error}",
+                )
+            continue
+        value = parsed.mapping
+        if value is None:
+            continue
+        if value.get("interface") == _DERIVED_INDEX_INTERFACE:
+            derived_candidates.append(value)
+            continue
+        if value.get("schema") != "planning-finding/v1":
+            continue
+        finding_id = value.get("id")
+        if not isinstance(finding_id, str):
+            raise PlanningStoreError("ledger.finding_id", "finding id must be a string")
+        try:
+            _validate_contract_object(value, "planning-finding/v1", toolchain_root)
+        except PlanningStoreError as error:
+            raise PlanningStoreError(
+                error.code,
+                f"finding {finding_id} at line {block.fence_start + 1}: {error}",
+            ) from error
+        if finding_id in findings:
+            raise PlanningStoreError("ledger.duplicate_id", f"duplicate finding {finding_id!r}")
+        findings[finding_id] = value
+    if len(derived_candidates) != 1:
+        raise PlanningStoreError(
+            "ledger.derived_index_count",
+            f"expected one derived index; found {len(derived_candidates)}",
+        )
+    _validate_dependency_references(findings)
+    _validate_derived_index(path, derived_candidates[0], findings, metadata.store_revision)
+    return dict(sorted(findings.items())), metadata
+
+
+def _validate_contract_object(
+    value: JsonObject,
+    schema_name: str,
+    toolchain_root: Path,
+) -> None:
+    diagnostics: list[Diagnostic] = []
+    validators, _ = _load_validators(toolchain_root, diagnostics)
+    if diagnostics:
+        raise PlanningStoreError("schema.not_available", str(diagnostics[0]))
+    errors = sorted(
+        validators[schema_name].iter_errors(cast(Any, value)),  # pyright: ignore[reportUnknownMemberType]
+        key=lambda error: error.json_path,
+    )
+    if errors:
+        raise PlanningStoreError(
+            f"schema.{errors[0].validator}",
+            f"{errors[0].json_path}: {errors[0].message}",
+        )
+
+
+def _validate_dependency_references(findings: Mapping[str, JsonObject]) -> None:
+    known = set(findings)
+    for finding_id, finding in findings.items():
+        dependencies = finding.get("dependencies")
+        if not isinstance(dependencies, list):
+            raise PlanningStoreError("ledger.dependencies", f"{finding_id} dependencies invalid")
+        missing = sorted(
+            dependency
+            for dependency in dependencies
+            if isinstance(dependency, str) and dependency not in known
+        )
+        if missing:
+            raise PlanningStoreError(
+                "ledger.dependency_reference",
+                f"{finding_id} references missing dependencies {missing!r}",
+            )
+
+
+def _derived_entries(findings: Mapping[str, Mapping[str, object]]) -> list[JsonValue]:
+    entries: list[JsonValue] = []
+    for finding_id in sorted(findings):
+        finding = findings[finding_id]
+        lifecycle = finding.get("lifecycle")
+        status = (
+            cast(Mapping[str, object], lifecycle).get("status")
+            if isinstance(lifecycle, Mapping)
+            else None
+        )
+        entries.append(
+            {
+                "id": finding_id,
+                "revision": cast(JsonValue, finding.get("revision")),
+                "title": cast(JsonValue, finding.get("title")),
+                "status": cast(JsonValue, status),
+            }
+        )
+    return entries
+
+
+def _validate_derived_index(
+    path: Path,
+    value: JsonObject,
+    findings: Mapping[str, JsonObject],
+    source_revision: int,
+) -> None:
+    _require_exact_fields(
+        value,
+        {"interface", "source_artifact", "source_revision", "findings"},
+        "derived index",
+    )
+    if value.get("source_artifact") != path.name:
+        raise PlanningStoreError(
+            "ledger.derived_source",
+            f"derived index source_artifact must be {path.name!r}",
+        )
+    if value.get("source_revision") != source_revision:
+        raise PlanningStoreError(
+            "ledger.derived_revision",
+            "derived index source_revision does not match ledger revision",
+        )
+    if value.get("findings") != _derived_entries(findings):
+        raise PlanningStoreError(
+            "ledger.derived_index_mismatch",
+            "derived index does not equal structured finding blocks",
+        )
+
+
+def _apply_finding_mutations(
+    findings: Mapping[str, JsonObject],
+    *,
+    mutations: Sequence[JsonObject],
+    touched_finding_revisions: Mapping[str, int | None],
+    toolchain_root: Path,
+) -> tuple[dict[str, JsonObject], tuple[str, ...]]:
+    requested_touched_ids = _requested_touched_finding_ids(
+        mutations,
+        touched_finding_revisions=touched_finding_revisions,
+    )
+    mutation_by_id: dict[str, JsonObject] = {}
+    for mutation in mutations:
+        _validate_contract_object(mutation, "planning-finding/v1", toolchain_root)
+        finding_id = cast(str, mutation.get("id"))
+        mutation_by_id[finding_id] = mutation
+    resulting = {key: _json_object_copy(value, key) for key, value in findings.items()}
+    for finding_id, mutation in mutation_by_id.items():
+        expected = touched_finding_revisions[finding_id]
+        existing = findings.get(finding_id)
+        new_revision = mutation.get("revision")
+        if existing is None:
+            if expected is not None or new_revision != 1:
+                raise PlanningStoreError(
+                    "ledger.finding_revision_mismatch",
+                    f"new finding {finding_id!r} requires expected null and revision 1",
+                )
+        else:
+            actual = existing.get("revision")
+            if actual != expected:
+                raise PlanningStoreError(
+                    "ledger.finding_revision_mismatch",
+                    f"{finding_id!r} expected revision {expected}; got {actual}",
+                )
+            if not isinstance(expected, int) or new_revision != expected + 1:
+                raise PlanningStoreError(
+                    "ledger.finding_revision_step",
+                    f"{finding_id!r} replacement must increment revision once",
+                )
+        resulting[finding_id] = mutation
+    _validate_dependency_references(resulting)
+    return dict(sorted(resulting.items())), requested_touched_ids
+
+
+def _requested_touched_finding_ids(
+    mutations: Sequence[JsonObject],
+    *,
+    touched_finding_revisions: Mapping[str, int | None],
+) -> tuple[str, ...]:
+    finding_ids: list[str] = []
+    for mutation in mutations:
+        finding_id = mutation.get("id")
+        if not isinstance(finding_id, str):
+            raise PlanningStoreError("ledger.finding_id", "mutation id must be a string")
+        if finding_id in finding_ids:
+            raise PlanningStoreError(
+                "ledger.duplicate_mutation",
+                f"duplicate mutation {finding_id!r}",
+            )
+        finding_ids.append(finding_id)
+    if set(finding_ids) != set(touched_finding_revisions):
+        raise PlanningStoreError(
+            "ledger.touched_set",
+            "touched_finding_revisions must exactly name mutation ids",
+        )
+    return tuple(sorted(finding_ids))
+
+
+def _render_contract_yaml(
+    contract: Mapping[str, object],
+    *,
+    toolchain_root: Path,
+) -> str:
+    schema_name = contract.get("schema")
+    if not isinstance(schema_name, str):
+        raise PlanningStoreError("schema.missing", "contract schema missing")
+    diagnostics: list[Diagnostic] = []
+    _, schemas = _load_validators(toolchain_root, diagnostics)
+    if diagnostics:
+        raise PlanningStoreError("schema.not_available", str(diagnostics[0]))
+    schema = schemas[schema_name]
+    ordered = _order_by_schema(contract, schema, schema)
+    return yaml.safe_dump(ordered, sort_keys=False, allow_unicode=True).rstrip()
+
+
+def _render_per_finding_ledger(
+    path: Path,
+    findings: Mapping[str, JsonObject],
+    metadata: _StoreMetadata,
+    *,
+    toolchain_root: Path,
+) -> str:
+    derived: JsonObject = {
+        "interface": _DERIVED_INDEX_INTERFACE,
+        "source_artifact": path.name,
+        "source_revision": metadata.store_revision,
+        "findings": _derived_entries(findings),
+    }
+    sections = [
+        "# Planning Ledger",
+        "",
+        "## Store Metadata",
+        "",
+        "```yaml",
+        yaml.safe_dump(_metadata_object(metadata), sort_keys=False).rstrip(),
+        "```",
+        "",
+        "## Derived Index",
+        "",
+        "```yaml",
+        yaml.safe_dump(derived, sort_keys=False).rstrip(),
+        "```",
+    ]
+    for finding_id, finding in sorted(findings.items()):
+        sections.extend(
+            [
+                "",
+                f"## Finding {finding_id}",
+                "",
+                "```yaml",
+                _render_contract_yaml(finding, toolchain_root=toolchain_root),
+                "```",
+            ]
+        )
+    return "\n".join(sections).rstrip() + "\n"
+
+
+def _single_markdown_path(path: Path) -> Path:
+    if path.is_file():
+        return path
+    canonical = path / "LEDGER.md"
+    if canonical.is_file():
+        return canonical
+    matches = sorted(path.rglob("*.md"))
+    if len(matches) != 1:
+        raise PlanningStoreError(
+            "ledger.catalog",
+            f"expected one Markdown ledger below {path}; found {len(matches)}",
+        )
+    return matches[0]
+
+
+def _parse_global_ledger(
+    path: Path,
+    *,
+    toolchain_root: Path,
+    expected_source_artifact: str,
+) -> tuple[dict[str, JsonObject], int]:
+    candidates: list[JsonObject] = []
+    for block in _top_level_yaml_blocks(path.read_text(encoding="utf-8").splitlines()):
+        parsed = _parse_secondary_yaml(block.source)
+        if parsed.mapping is not None and parsed.mapping.get("interface") == _GLOBAL_LEDGER_INTERFACE:
+            candidates.append(parsed.mapping)
+    if len(candidates) != 1:
+        raise PlanningStoreError("ledger.global_count", "expected one global comparison block")
+    value = candidates[0]
+    _require_exact_fields(
+        value,
+        {"interface", "source_artifact", "source_revision", "findings"},
+        "global ledger",
+    )
+    revision = value.get("source_revision")
+    raw_findings = value.get("findings")
+    if value.get("source_artifact") != expected_source_artifact:
+        raise PlanningStoreError(
+            "ledger.global_source",
+            f"global source_artifact must be {expected_source_artifact!r}",
+        )
+    if not isinstance(revision, int) or not isinstance(raw_findings, list):
+        raise PlanningStoreError("ledger.global", "global revision/findings invalid")
+    findings: dict[str, JsonObject] = {}
+    for index, raw in enumerate(raw_findings):
+        if not isinstance(raw, dict):
+            raise PlanningStoreError("ledger.global", "global finding must be an object")
+        finding = cast(JsonObject, raw)
+        finding_id = finding.get("id")
+        if not isinstance(finding_id, str):
+            raise PlanningStoreError(
+                "ledger.finding_id",
+                f"global finding index {index} has no string id",
+            )
+        try:
+            _validate_contract_object(finding, "planning-finding/v1", toolchain_root)
+        except PlanningStoreError as error:
+            raise PlanningStoreError(
+                error.code,
+                f"global finding index {index} id {finding_id}: {error}",
+            ) from error
+        if finding_id in findings:
+            raise PlanningStoreError("ledger.duplicate_id", f"duplicate global id {finding_id!r}")
+        findings[finding_id] = finding
+    _validate_dependency_references(findings)
+    return dict(sorted(findings.items())), revision
+
+
+def _semantic_findings(
+    findings: Mapping[str, Mapping[str, object]],
+) -> JsonObject:
+    return {
+        finding_id: cast(JsonValue, _thaw_json(finding))
+        for finding_id, finding in sorted(findings.items())
+    }
+
+
+def _required_variant(base: Path, name: str) -> Path:
+    path = base.parent / name
+    if not path.is_file():
+        raise PlanningStoreError(
+            "ledger.comparison_fixture",
+            f"missing controlled comparison fixture {path}",
+        )
+    return path
+
+
+def _capture_store_error(action: Any) -> PlanningStoreError | None:
+    try:
+        action()
+    except PlanningStoreError as error:
+        return error
+    return None
+
+
+def _changed_top_level_sections(before: Path, after: Path) -> tuple[str, ...]:
+    before_sections = _top_level_sections(before.read_text(encoding="utf-8"))
+    after_sections = _top_level_sections(after.read_text(encoding="utf-8"))
+    names = set(before_sections) | set(after_sections)
+    return tuple(
+        sorted(
+            name
+            for name in names
+            if before_sections.get(name) != after_sections.get(name)
+        )
+    )
+
+
+def _top_level_sections(text: str) -> dict[str, str]:
+    lines = text.splitlines()
+    headings = _top_level_h2_indices(lines)
+    sections: dict[str, str] = {}
+    for offset, start in enumerate(headings):
+        end = headings[offset + 1] if offset + 1 < len(headings) else len(lines)
+        name = lines[start].removeprefix("##").strip()
+        sections[name] = "\n".join(lines[start:end]).strip()
+    return sections
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
     validate_parser = subparsers.add_parser("validate", help="validate planning contracts")
     validate_parser.add_argument("--toolchain-root", required=True, type=Path)
     validate_parser.add_argument("paths", nargs="+", type=Path)
+    compare_parser = subparsers.add_parser(
+        "compare-ledger-layouts",
+        help="compare per-finding and global ledger fixtures",
+    )
+    compare_parser.add_argument("--toolchain-root", required=True, type=Path)
+    compare_parser.add_argument("--per-finding", required=True, type=Path)
+    compare_parser.add_argument("--global", dest="global_path", required=True, type=Path)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
-    if args.command != "validate":
-        return 2
-    result = validate_planning_contracts(args.paths, toolchain_root=args.toolchain_root)
-    for diagnostic in result.diagnostics:
-        print(diagnostic, file=sys.stderr)
-    if result.is_valid:
-        print(f"validated {len(result.contracts)} planning contract(s)")
-        return 0
-    return 1
+    if args.command == "validate":
+        result = validate_planning_contracts(args.paths, toolchain_root=args.toolchain_root)
+        for diagnostic in result.diagnostics:
+            print(diagnostic, file=sys.stderr)
+        if result.is_valid:
+            print(f"validated {len(result.contracts)} planning contract(s)")
+            return 0
+        return 1
+    if args.command == "compare-ledger-layouts":
+        try:
+            comparison = compare_ledger_layouts(
+                args.per_finding,
+                args.global_path,
+                toolchain_root=args.toolchain_root,
+            )
+        except PlanningStoreError as error:
+            print(error, file=sys.stderr)
+            return 1
+        print(json.dumps(comparison.__dict__, sort_keys=True))
+        return 0 if comparison.equivalent else 1
+    return 2
 
 
 if __name__ == "__main__":
