@@ -9,7 +9,7 @@ import os
 import re
 import sys
 import tempfile
-from collections.abc import Hashable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
@@ -60,10 +60,19 @@ _LEGACY_LABELS: Final = {
 }
 _CURRENT_STORE_INTERFACE: Final = "current-store/v1"
 _LEDGER_STORE_INTERFACE: Final = "ledger-store/v1"
+_ARTIFACT_STORE_INTERFACE: Final = "artifact-store/v1"
 _STORE_RECEIPT_INTERFACE: Final = "planning-store-receipt/v1"
 _DERIVED_INDEX_INTERFACE: Final = "planning-derived-index/v1"
 _GLOBAL_LEDGER_INTERFACE: Final = "planning-ledger-global-comparison/v1"
 _STORE_ACTIONS: Final = frozenset({"create", "update", "merge", "no-op", "reconcile"})
+_ARTIFACT_SCHEMAS: Final = frozenset(
+    {
+        "planning-dispatch/v1",
+        "planning-runway/v1",
+        "planning-closeout/v1",
+    }
+)
+_EMPTY_FILE_HASH: Final = hashlib.sha256(b"").hexdigest()
 
 JsonValue: TypeAlias = (
     str | int | float | bool | None | dict[str, "JsonValue"] | list["JsonValue"]
@@ -234,6 +243,41 @@ class LedgerLayoutComparison:
     source_identity_green: bool
     per_finding_changed_sections: tuple[str, ...]
     global_changed_sections: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class ArtifactLineage:
+    """Explicit immutable facts shared by one dispatch/runway/closeout lineage."""
+
+    planning_root: Path
+    program: str
+    batch_id: str
+    included_finding_ids: tuple[str, ...]
+    deferred_finding_ids: tuple[str, ...]
+    batch_kind: str
+    ledger_path: Path
+    ledger_revision: str
+    dispatch_path: Path
+    dispatch_revision: str
+    runway_path: Path
+    closeout_path: Path
+    toolchain_source_root: Path
+    canonical_planning_repository_root: Path
+    implementation_target_root: Path
+    dispatch_producer: ProducerIdentity
+    runway_producer: ProducerIdentity
+    closeout_producer: ProducerIdentity
+
+
+@dataclass(frozen=True)
+class ArtifactSnapshot:
+    """Immutable parsed artifact plus its revision and full-file CAS facts."""
+
+    path: Path
+    schema_name: str
+    contract: Mapping[str, object]
+    logical_revision: int
+    file_hash: str
 
 
 @dataclass(frozen=True)
@@ -537,6 +581,178 @@ def apply_ledger_decision(
     return StoreApplyResult(outcome="applied", receipt=receipt)
 
 
+def read_artifact_document(
+    path: str | Path,
+    *,
+    toolchain_root: str | Path,
+    expected_schema: str,
+    expected_producer_identity: ProducerIdentity,
+) -> ArtifactSnapshot:
+    """Read one validated dispatch, runway, or closeout with store CAS facts."""
+
+    if expected_schema not in _ARTIFACT_SCHEMAS:
+        raise PlanningStoreError(
+            "artifact.schema",
+            f"unsupported artifact schema {expected_schema!r}",
+        )
+    artifact_path = Path(path)
+    result = validate_planning_contracts(
+        [artifact_path],
+        toolchain_root=toolchain_root,
+        expected_producer_identity=expected_producer_identity,
+    )
+    if not result.is_valid:
+        raise PlanningStoreError("artifact.invalid", str(result.diagnostics[0]))
+    if len(result.contracts) != 1:
+        raise PlanningStoreError("artifact.contract_count", "expected one artifact contract")
+    contract = result.contracts[0].contract
+    if contract.get("schema") != expected_schema:
+        raise PlanningStoreError(
+            "artifact.schema",
+            f"expected {expected_schema!r}; got {contract.get('schema')!r}",
+        )
+    text = artifact_path.read_text(encoding="utf-8")
+    metadata = _parse_store_metadata(
+        artifact_path,
+        text,
+        interface=_ARTIFACT_STORE_INTERFACE,
+        default_revision=0,
+    )
+    return ArtifactSnapshot(
+        path=artifact_path,
+        schema_name=expected_schema,
+        contract=cast(Mapping[str, object], _freeze_json(contract)),
+        logical_revision=metadata.store_revision,
+        file_hash=_file_hash(artifact_path),
+    )
+
+
+def write_dispatch_artifact(
+    path: str | Path,
+    *,
+    toolchain_root: str | Path,
+    expected_revision: int,
+    expected_file_hash: str,
+    contract: Mapping[str, object],
+    lineage: ArtifactLineage,
+    idempotency_key: str,
+    fault: FaultPoint | None = None,
+) -> StoreApplyResult:
+    """Write one immutable dispatch through the shared revisioned store."""
+
+    _validate_lineage_paths(lineage)
+    artifact_path = _require_lineage_target(path, lineage.dispatch_path)
+    binding = _dispatch_lineage_binding(lineage)
+    return _apply_artifact_document(
+        artifact_path,
+        toolchain_root=toolchain_root,
+        expected_revision=expected_revision,
+        expected_file_hash=expected_file_hash,
+        contract=contract,
+        expected_schema="planning-dispatch/v1",
+        expected_producer_identity=lineage.dispatch_producer,
+        lineage_binding=binding,
+        validate_payload=lambda value: _validate_dispatch_lineage(value, lineage),
+        idempotency_key=idempotency_key,
+        fault=fault,
+    )
+
+
+def write_runway_artifact(
+    path: str | Path,
+    *,
+    toolchain_root: str | Path,
+    expected_revision: int,
+    expected_file_hash: str,
+    expected_dispatch_file_hash: str,
+    contract: Mapping[str, object],
+    lineage: ArtifactLineage,
+    idempotency_key: str,
+    fault: FaultPoint | None = None,
+) -> StoreApplyResult:
+    """Write one immutable runway bound to an exact validated dispatch."""
+
+    _validate_lineage_paths(lineage)
+    artifact_path = _require_lineage_target(path, lineage.runway_path)
+
+    def validate_payload(value: Mapping[str, object]) -> None:
+        _validate_dispatch_predecessor(
+            lineage,
+            toolchain_root=toolchain_root,
+            expected_file_hash=expected_dispatch_file_hash,
+        )
+        _validate_runway_lineage(value, lineage)
+
+    binding: JsonObject = {
+        **_runway_lineage_binding(lineage),
+        "expected_dispatch_file_hash": expected_dispatch_file_hash,
+    }
+    return _apply_artifact_document(
+        artifact_path,
+        toolchain_root=toolchain_root,
+        expected_revision=expected_revision,
+        expected_file_hash=expected_file_hash,
+        contract=contract,
+        expected_schema="planning-runway/v1",
+        expected_producer_identity=lineage.runway_producer,
+        lineage_binding=binding,
+        validate_payload=validate_payload,
+        idempotency_key=idempotency_key,
+        fault=fault,
+    )
+
+
+def write_closeout_artifact(
+    path: str | Path,
+    *,
+    toolchain_root: str | Path,
+    expected_revision: int,
+    expected_file_hash: str,
+    expected_dispatch_file_hash: str,
+    expected_runway_file_hash: str,
+    contract: Mapping[str, object],
+    lineage: ArtifactLineage,
+    idempotency_key: str,
+    fault: FaultPoint | None = None,
+) -> StoreApplyResult:
+    """Write one immutable same-batch closeout bound to exact predecessors."""
+
+    _validate_lineage_paths(lineage)
+    artifact_path = _require_lineage_target(path, lineage.closeout_path)
+
+    def validate_payload(value: Mapping[str, object]) -> None:
+        _validate_dispatch_predecessor(
+            lineage,
+            toolchain_root=toolchain_root,
+            expected_file_hash=expected_dispatch_file_hash,
+        )
+        _validate_runway_predecessor(
+            lineage,
+            toolchain_root=toolchain_root,
+            expected_file_hash=expected_runway_file_hash,
+        )
+        _validate_closeout_lineage(value, lineage)
+
+    binding: JsonObject = {
+        **_closeout_lineage_binding(lineage),
+        "expected_dispatch_file_hash": expected_dispatch_file_hash,
+        "expected_runway_file_hash": expected_runway_file_hash,
+    }
+    return _apply_artifact_document(
+        artifact_path,
+        toolchain_root=toolchain_root,
+        expected_revision=expected_revision,
+        expected_file_hash=expected_file_hash,
+        contract=contract,
+        expected_schema="planning-closeout/v1",
+        expected_producer_identity=lineage.closeout_producer,
+        lineage_binding=binding,
+        validate_payload=validate_payload,
+        idempotency_key=idempotency_key,
+        fault=fault,
+    )
+
+
 def compare_ledger_layouts(
     per_finding_path: str | Path,
     global_path: str | Path,
@@ -784,11 +1000,137 @@ def validate_planning_contracts(
             ordered = _order_by_schema(loaded, schema, schema)
             contracts.append(ParsedPlanningContract(path=path, contract=ordered))
 
+    _validate_artifact_catalog_lineage(contracts, diagnostics)
+
     return ValidationResult(
         contracts=tuple(contracts),
         compatibility_reads=tuple(compatibility_reads),
         diagnostics=tuple(sorted(diagnostics)),
     )
+
+
+def _validate_artifact_catalog_lineage(
+    contracts: Sequence[ParsedPlanningContract],
+    diagnostics: list[Diagnostic],
+) -> None:
+    by_schema: dict[str, list[ParsedPlanningContract]] = {}
+    for parsed in contracts:
+        schema_name = parsed.contract.get("schema")
+        if isinstance(schema_name, str) and schema_name in _ARTIFACT_SCHEMAS:
+            by_schema.setdefault(schema_name, []).append(parsed)
+    if any(len(by_schema.get(schema, ())) != 1 for schema in _ARTIFACT_SCHEMAS):
+        return
+    dispatch = by_schema["planning-dispatch/v1"][0]
+    runway = by_schema["planning-runway/v1"][0]
+    closeout = by_schema["planning-closeout/v1"][0]
+    try:
+        dispatch_artifact = _nested_mapping(dispatch.contract, "artifact")
+        dispatch_source = _nested_mapping(dispatch.contract, "source")
+        dispatch_scope = _nested_mapping(dispatch.contract, "scope")
+        dispatch_runway = _nested_mapping(dispatch.contract, "runway")
+        dispatch_execution = _nested_mapping(dispatch.contract, "execution_context")
+        dispatch_producer = _nested_mapping(dispatch.contract, "producer")
+        runway_artifact = _nested_mapping(runway.contract, "artifact")
+        runway_batch = _nested_mapping(runway.contract, "batch")
+        runway_execution = _nested_mapping(runway.contract, "execution")
+        runway_producer = _nested_mapping(runway.contract, "producer")
+        closeout_artifact = _nested_mapping(closeout.contract, "artifact")
+        closeout_reconciliation = _nested_mapping(closeout.contract, "reconciliation")
+        closeout_execution = _nested_mapping(closeout.contract, "execution_context")
+        closeout_producer = _nested_mapping(closeout.contract, "producer")
+        batch_id = dispatch_artifact.get("id")
+        _expect_artifact_fact("catalog runway batch", runway_artifact.get("id"), batch_id)
+        _expect_artifact_fact(
+            "catalog closeout batch",
+            closeout_artifact.get("batch_id"),
+            batch_id,
+        )
+        _expect_artifact_fact(
+            "catalog dispatch revision",
+            runway_artifact.get("source_dispatch_revision"),
+            dispatch_artifact.get("revision"),
+        )
+        _expect_artifact_fact(
+            "catalog dispatch reference",
+            Path(cast(str, runway_artifact.get("source_dispatch"))).name,
+            dispatch.path.name,
+        )
+        _expect_artifact_fact(
+            "catalog runway reference",
+            Path(cast(str, dispatch_runway.get("expected_path"))).name,
+            runway.path.name,
+        )
+        _expect_artifact_fact(
+            "catalog batch kind",
+            runway_batch.get("kind"),
+            dispatch_scope.get("batch_kind"),
+        )
+        source_findings = tuple(
+            sorted(cast(Sequence[str], dispatch_source.get("finding_ids")))
+        )
+        scoped_findings = tuple(
+            sorted(
+                (
+                    *cast(Sequence[str], dispatch_scope.get("included_finding_ids")),
+                    *cast(Sequence[str], dispatch_scope.get("deferred_finding_ids")),
+                )
+            )
+        )
+        _expect_artifact_fact("catalog finding scope", source_findings, scoped_findings)
+        _expect_artifact_fact(
+            "catalog implementation root",
+            runway_execution.get("implementation_target_root"),
+            dispatch_execution.get("implementation_target_root"),
+        )
+        _expect_artifact_fact(
+            "catalog closeout implementation root",
+            closeout_execution.get("implementation_target_root"),
+            dispatch_execution.get("implementation_target_root"),
+        )
+        _expect_artifact_fact(
+            "catalog canonical planning repository root",
+            closeout_execution.get("canonical_planning_repository_root"),
+            dispatch_execution.get("canonical_planning_repository_root"),
+        )
+        _expect_artifact_fact(
+            "catalog dispatch/runway producer generation",
+            runway_producer.get("toolchain_generation"),
+            dispatch_producer.get("toolchain_generation"),
+        )
+        _expect_artifact_fact(
+            "catalog dispatch/runway producer commit",
+            runway_producer.get("toolchain_commit"),
+            dispatch_producer.get("toolchain_commit"),
+        )
+        _expect_artifact_fact(
+            "catalog closeout producer generation",
+            closeout_producer.get("toolchain_generation"),
+            dispatch_producer.get("toolchain_generation"),
+        )
+        _expect_artifact_fact(
+            "catalog closeout producer commit",
+            closeout_producer.get("toolchain_commit"),
+            dispatch_producer.get("toolchain_commit"),
+        )
+        for field in (
+            "selected_dispatch_after",
+            "queued_runway_after",
+            "active_runway_after",
+        ):
+            _expect_artifact_fact(
+                f"catalog closeout {field}",
+                closeout_reconciliation.get(field),
+                None,
+            )
+    except PlanningStoreError as error:
+        diagnostics.append(
+            Diagnostic(
+                str(runway.path),
+                "$",
+                error.code,
+                str(error),
+            )
+        )
 
 
 def render_planning_contract(
@@ -1723,7 +2065,7 @@ def _atomic_replace_and_validate(
     fault: FaultPoint | None,
     validate: Any,
 ) -> None:
-    original = path.read_bytes()
+    original = path.read_bytes() if path.exists() else None
     descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
     temporary = Path(temporary_name)
     try:
@@ -1737,7 +2079,10 @@ def _atomic_replace_and_validate(
         try:
             validate()
         except Exception:
-            _replace_bytes(path, original)
+            if original is None:
+                path.unlink(missing_ok=True)
+            else:
+                _replace_bytes(path, original)
             raise
         if fault == "after_replace_before_return":
             raise InjectedStoreFailure("after_replace_before_return")
@@ -1756,6 +2101,469 @@ def _replace_bytes(path: Path, content: bytes) -> None:
         os.replace(temporary, path)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def _apply_artifact_document(
+    path: Path,
+    *,
+    toolchain_root: str | Path,
+    expected_revision: int,
+    expected_file_hash: str,
+    contract: Mapping[str, object],
+    expected_schema: str,
+    expected_producer_identity: ProducerIdentity,
+    lineage_binding: Mapping[str, object],
+    validate_payload: Callable[[Mapping[str, object]], None],
+    idempotency_key: str,
+    fault: FaultPoint | None,
+) -> StoreApplyResult:
+    key = _require_idempotency_key(idempotency_key)
+    artifact = _json_object_copy(contract, "contract")
+    if artifact.get("schema") != expected_schema:
+        raise PlanningStoreError(
+            "artifact.schema",
+            f"expected {expected_schema!r}; got {artifact.get('schema')!r}",
+        )
+    try:
+        rendered_section = render_planning_contract(
+            artifact,
+            toolchain_root=toolchain_root,
+            expected_producer_identity=expected_producer_identity,
+        )
+    except ValueError as error:
+        raise PlanningStoreError("artifact.invalid", str(error)) from error
+    validate_payload(artifact)
+    original_text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    metadata = _parse_store_metadata(
+        path,
+        original_text,
+        interface=_ARTIFACT_STORE_INTERFACE,
+        default_revision=0,
+    )
+    request_hash = _canonical_request_hash(
+        {
+            "operation": "write_planning_artifact",
+            "expected_schema": expected_schema,
+            "expected_revision": expected_revision,
+            "expected_file_hash": expected_file_hash,
+            "contract": artifact,
+            "lineage": dict(lineage_binding),
+            "idempotency_key": key,
+        }
+    )
+    replay = _evaluate_replay(
+        metadata,
+        key=key,
+        request_hash=request_hash,
+        store_interface=_ARTIFACT_STORE_INTERFACE,
+        before_revision=expected_revision,
+        after_revision=expected_revision + 1,
+        touched_finding_ids=(),
+    )
+    if replay is not None:
+        persisted = read_artifact_document(
+            path,
+            toolchain_root=toolchain_root,
+            expected_schema=expected_schema,
+            expected_producer_identity=expected_producer_identity,
+        )
+        if persisted.logical_revision != replay.after_revision:
+            raise PlanningStoreError(
+                "artifact.replay_artifact_mismatch",
+                "persisted artifact revision does not match exact replay evidence",
+            )
+        if _thaw_json(persisted.contract) != artifact:
+            raise PlanningStoreError(
+                "artifact.replay_artifact_mismatch",
+                "persisted artifact payload does not match exact caller replay",
+            )
+        expected_persisted_text = _replace_or_append_store_metadata(
+            rendered_section,
+            metadata,
+        )
+        if path.read_bytes() != expected_persisted_text.encode("utf-8"):
+            raise PlanningStoreError(
+                "artifact.replay_artifact_mismatch",
+                "persisted artifact bytes do not match the canonical write result",
+            )
+        validate_payload(persisted.contract)
+        return StoreApplyResult(outcome="exact_replay", receipt=replay)
+    _validate_cas(
+        actual_revision=metadata.store_revision,
+        actual_file_hash=_file_hash(path) if path.is_file() else _EMPTY_FILE_HASH,
+        expected_revision=expected_revision,
+        expected_file_hash=expected_file_hash,
+    )
+    if metadata.store_revision != 0:
+        raise PlanningStoreError(
+            "artifact.immutable",
+            "accepted artifact lineage cannot be replaced",
+        )
+    after_revision = expected_revision + 1
+    receipt = StoreReceipt(
+        interface=_STORE_RECEIPT_INTERFACE,
+        store_interface=_ARTIFACT_STORE_INTERFACE,
+        idempotency_key=key,
+        request_hash=request_hash,
+        before_revision=expected_revision,
+        after_revision=after_revision,
+        touched_finding_ids=(),
+    )
+    updated_metadata = _with_replay_record(
+        metadata,
+        store_revision=after_revision,
+        receipt=receipt,
+    )
+    rendered = _replace_or_append_store_metadata(rendered_section, updated_metadata)
+
+    def validate_written() -> None:
+        snapshot = read_artifact_document(
+            path,
+            toolchain_root=toolchain_root,
+            expected_schema=expected_schema,
+            expected_producer_identity=expected_producer_identity,
+        )
+        if snapshot.logical_revision != after_revision:
+            raise PlanningStoreError(
+                "artifact.revision",
+                "reread artifact revision does not match persisted result",
+            )
+        validate_payload(snapshot.contract)
+
+    _atomic_replace_and_validate(
+        path,
+        rendered,
+        fault=fault,
+        validate=validate_written,
+    )
+    return StoreApplyResult(outcome="applied", receipt=receipt)
+
+
+def _validate_lineage_paths(lineage: ArtifactLineage) -> None:
+    planning_root = lineage.planning_root.resolve()
+    canonical_root = lineage.canonical_planning_repository_root.resolve()
+    if not planning_root.is_relative_to(canonical_root):
+        raise PlanningStoreError(
+            "artifact.planning_root",
+            "planning root must be contained by the canonical planning repository",
+        )
+    for label, raw_path in (
+        ("ledger", lineage.ledger_path),
+        ("dispatch", lineage.dispatch_path),
+        ("runway", lineage.runway_path),
+        ("closeout", lineage.closeout_path),
+    ):
+        if not raw_path.resolve().is_relative_to(planning_root):
+            raise PlanningStoreError(
+                "artifact.path_escape",
+                f"{label} path escapes the explicit planning root",
+            )
+    identities = (
+        (lineage.dispatch_producer, "planning-dispatch/v1"),
+        (lineage.runway_producer, "planning-runway/v1"),
+        (lineage.closeout_producer, "planning-closeout/v1"),
+    )
+    for identity, expected_schema in identities:
+        if identity.schema_version != expected_schema:
+            raise PlanningStoreError(
+                "artifact.producer",
+                f"producer schema must be {expected_schema!r}",
+            )
+    producer_lineage = (
+        lineage.dispatch_producer,
+        lineage.runway_producer,
+        lineage.closeout_producer,
+    )
+    for field in ("toolchain_generation", "toolchain_commit"):
+        values = {getattr(identity, field) for identity in producer_lineage}
+        if len(values) != 1:
+            raise PlanningStoreError(
+                "artifact.producer_lineage",
+                f"dispatch, runway, and closeout producer {field} must match",
+            )
+    for label, value in (
+        ("ledger_revision", lineage.ledger_revision),
+        ("dispatch_revision", lineage.dispatch_revision),
+    ):
+        if not re.fullmatch(r"[0-9a-f]{64}", value):
+            raise PlanningStoreError("artifact.revision", f"{label} must be sha256")
+    finding_ids = (*lineage.included_finding_ids, *lineage.deferred_finding_ids)
+    if len(finding_ids) != len(set(finding_ids)):
+        raise PlanningStoreError(
+            "artifact.finding_ids",
+            "included and deferred finding IDs must be disjoint and unique",
+        )
+
+
+def _require_lineage_target(path: str | Path, expected: Path) -> Path:
+    actual = Path(path)
+    if actual.resolve() != expected.resolve():
+        raise PlanningStoreError(
+            "artifact.path",
+            f"artifact path {actual} does not match expected lineage path {expected}",
+        )
+    return actual
+
+
+def _resolve_artifact_reference(value: object, planning_root: Path) -> Path:
+    if not isinstance(value, str):
+        raise PlanningStoreError("artifact.path", "artifact reference must be a string")
+    path = Path(value)
+    return path.resolve() if path.is_absolute() else (planning_root / path).resolve()
+
+
+def _expect_artifact_fact(label: str, actual: object, expected: object) -> None:
+    if actual != expected:
+        raise PlanningStoreError(
+            "artifact.lineage",
+            f"{label} expected {expected!r}; got {actual!r}",
+        )
+
+
+def _nested_mapping(value: Mapping[str, object], key: str) -> Mapping[str, object]:
+    child = value.get(key)
+    if not isinstance(child, Mapping):
+        raise PlanningStoreError("artifact.invalid", f"{key} must be an object")
+    return cast(Mapping[str, object], child)
+
+
+def _validate_dispatch_lineage(
+    contract: Mapping[str, object],
+    lineage: ArtifactLineage,
+) -> None:
+    artifact = _nested_mapping(contract, "artifact")
+    source = _nested_mapping(contract, "source")
+    scope = _nested_mapping(contract, "scope")
+    runway = _nested_mapping(contract, "runway")
+    execution = _nested_mapping(contract, "execution_context")
+    expected_finding_ids = tuple(
+        sorted((*lineage.included_finding_ids, *lineage.deferred_finding_ids))
+    )
+    _expect_artifact_fact("dispatch batch", artifact.get("id"), lineage.batch_id)
+    _expect_artifact_fact("dispatch program", artifact.get("program"), lineage.program)
+    _expect_artifact_fact(
+        "dispatch revision",
+        artifact.get("revision"),
+        lineage.dispatch_revision,
+    )
+    _expect_artifact_fact(
+        "dispatch ledger path",
+        _resolve_artifact_reference(source.get("ledger_path"), lineage.planning_root),
+        lineage.ledger_path.resolve(),
+    )
+    _expect_artifact_fact(
+        "dispatch ledger revision",
+        source.get("ledger_revision"),
+        lineage.ledger_revision,
+    )
+    _expect_artifact_fact(
+        "dispatch finding IDs",
+        tuple(sorted(cast(Sequence[str], source.get("finding_ids")))),
+        expected_finding_ids,
+    )
+    _expect_artifact_fact(
+        "dispatch included findings",
+        tuple(cast(Sequence[str], scope.get("included_finding_ids"))),
+        lineage.included_finding_ids,
+    )
+    _expect_artifact_fact(
+        "dispatch deferred findings",
+        tuple(cast(Sequence[str], scope.get("deferred_finding_ids"))),
+        lineage.deferred_finding_ids,
+    )
+    _expect_artifact_fact("dispatch batch kind", scope.get("batch_kind"), lineage.batch_kind)
+    _expect_artifact_fact(
+        "dispatch runway path",
+        _resolve_artifact_reference(runway.get("expected_path"), lineage.planning_root),
+        lineage.runway_path.resolve(),
+    )
+    _expect_artifact_fact(
+        "dispatch toolchain root",
+        execution.get("toolchain_source_root"),
+        str(lineage.toolchain_source_root),
+    )
+    _expect_artifact_fact(
+        "dispatch canonical planning repository root",
+        execution.get("canonical_planning_repository_root"),
+        str(lineage.canonical_planning_repository_root),
+    )
+    _expect_artifact_fact(
+        "dispatch implementation root",
+        execution.get("implementation_target_root"),
+        str(lineage.implementation_target_root),
+    )
+
+
+def _validate_runway_lineage(
+    contract: Mapping[str, object],
+    lineage: ArtifactLineage,
+) -> None:
+    artifact = _nested_mapping(contract, "artifact")
+    batch = _nested_mapping(contract, "batch")
+    execution = _nested_mapping(contract, "execution")
+    _expect_artifact_fact("runway batch", artifact.get("id"), lineage.batch_id)
+    _expect_artifact_fact(
+        "runway dispatch path",
+        _resolve_artifact_reference(artifact.get("source_dispatch"), lineage.planning_root),
+        lineage.dispatch_path.resolve(),
+    )
+    _expect_artifact_fact(
+        "runway dispatch revision",
+        artifact.get("source_dispatch_revision"),
+        lineage.dispatch_revision,
+    )
+    _expect_artifact_fact("runway batch kind", batch.get("kind"), lineage.batch_kind)
+    _expect_artifact_fact("runway state", batch.get("status"), "queued")
+    _expect_artifact_fact(
+        "runway implementation root",
+        execution.get("implementation_target_root"),
+        str(lineage.implementation_target_root),
+    )
+
+
+def _validate_closeout_lineage(
+    contract: Mapping[str, object],
+    lineage: ArtifactLineage,
+) -> None:
+    artifact = _nested_mapping(contract, "artifact")
+    reconciliation = _nested_mapping(contract, "reconciliation")
+    execution = _nested_mapping(contract, "execution_context")
+    _expect_artifact_fact("closeout batch", artifact.get("batch_id"), lineage.batch_id)
+    for field in (
+        "selected_dispatch_after",
+        "queued_runway_after",
+        "active_runway_after",
+    ):
+        _expect_artifact_fact(f"closeout {field}", reconciliation.get(field), None)
+    _expect_artifact_fact(
+        "closeout successor selection",
+        reconciliation.get("successor_selected"),
+        False,
+    )
+    _expect_artifact_fact(
+        "closeout canonical planning repository root",
+        execution.get("canonical_planning_repository_root"),
+        str(lineage.canonical_planning_repository_root),
+    )
+    _expect_artifact_fact(
+        "closeout implementation root",
+        execution.get("implementation_target_root"),
+        str(lineage.implementation_target_root),
+    )
+
+
+def _validate_dispatch_predecessor(
+    lineage: ArtifactLineage,
+    *,
+    toolchain_root: str | Path,
+    expected_file_hash: str,
+) -> ArtifactSnapshot:
+    snapshot = read_artifact_document(
+        lineage.dispatch_path,
+        toolchain_root=toolchain_root,
+        expected_schema="planning-dispatch/v1",
+        expected_producer_identity=lineage.dispatch_producer,
+    )
+    if snapshot.logical_revision != 1:
+        raise PlanningStoreError(
+            "artifact.predecessor_revision",
+            "dispatch predecessor must be accepted revision 1",
+        )
+    if snapshot.file_hash != expected_file_hash:
+        raise PlanningStoreError(
+            "artifact.predecessor_hash",
+            "dispatch predecessor hash does not match caller expectation",
+        )
+    _validate_dispatch_lineage(snapshot.contract, lineage)
+    return snapshot
+
+
+def _validate_runway_predecessor(
+    lineage: ArtifactLineage,
+    *,
+    toolchain_root: str | Path,
+    expected_file_hash: str,
+) -> ArtifactSnapshot:
+    snapshot = read_artifact_document(
+        lineage.runway_path,
+        toolchain_root=toolchain_root,
+        expected_schema="planning-runway/v1",
+        expected_producer_identity=lineage.runway_producer,
+    )
+    if snapshot.logical_revision != 1:
+        raise PlanningStoreError(
+            "artifact.predecessor_revision",
+            "runway predecessor must be accepted revision 1",
+        )
+    if snapshot.file_hash != expected_file_hash:
+        raise PlanningStoreError(
+            "artifact.predecessor_hash",
+            "runway predecessor hash does not match caller expectation",
+        )
+    _validate_runway_lineage(snapshot.contract, lineage)
+    return snapshot
+
+
+def _producer_binding(identity: ProducerIdentity) -> JsonObject:
+    return {
+        "toolchain_generation": identity.toolchain_generation,
+        "toolchain_commit": identity.toolchain_commit,
+        "schema_version": identity.schema_version,
+    }
+
+
+def _dispatch_lineage_binding(lineage: ArtifactLineage) -> JsonObject:
+    return {
+        "planning_root": str(lineage.planning_root),
+        "program": lineage.program,
+        "batch_id": lineage.batch_id,
+        "included_finding_ids": list(lineage.included_finding_ids),
+        "deferred_finding_ids": list(lineage.deferred_finding_ids),
+        "batch_kind": lineage.batch_kind,
+        "ledger_path": str(lineage.ledger_path),
+        "ledger_revision": lineage.ledger_revision,
+        "dispatch_path": str(lineage.dispatch_path),
+        "dispatch_revision": lineage.dispatch_revision,
+        "runway_path": str(lineage.runway_path),
+        "toolchain_source_root": str(lineage.toolchain_source_root),
+        "canonical_planning_repository_root": str(
+            lineage.canonical_planning_repository_root
+        ),
+        "implementation_target_root": str(lineage.implementation_target_root),
+        "producer": _producer_binding(lineage.dispatch_producer),
+    }
+
+
+def _runway_lineage_binding(lineage: ArtifactLineage) -> JsonObject:
+    return {
+        "planning_root": str(lineage.planning_root),
+        "batch_id": lineage.batch_id,
+        "batch_kind": lineage.batch_kind,
+        "dispatch_path": str(lineage.dispatch_path),
+        "dispatch_revision": lineage.dispatch_revision,
+        "runway_path": str(lineage.runway_path),
+        "implementation_target_root": str(lineage.implementation_target_root),
+        "dispatch_producer": _producer_binding(lineage.dispatch_producer),
+        "producer": _producer_binding(lineage.runway_producer),
+    }
+
+
+def _closeout_lineage_binding(lineage: ArtifactLineage) -> JsonObject:
+    return {
+        "planning_root": str(lineage.planning_root),
+        "batch_id": lineage.batch_id,
+        "dispatch_path": str(lineage.dispatch_path),
+        "dispatch_revision": lineage.dispatch_revision,
+        "runway_path": str(lineage.runway_path),
+        "closeout_path": str(lineage.closeout_path),
+        "canonical_planning_repository_root": str(
+            lineage.canonical_planning_repository_root
+        ),
+        "implementation_target_root": str(lineage.implementation_target_root),
+        "dispatch_producer": _producer_binding(lineage.dispatch_producer),
+        "runway_producer": _producer_binding(lineage.runway_producer),
+        "producer": _producer_binding(lineage.closeout_producer),
+    }
 
 
 def _parse_per_finding_ledger(
