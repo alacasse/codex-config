@@ -1,0 +1,84 @@
+planning-selected-current:
+  operation: planning-currentness
+  state: selected
+  expected: ready
+planning-queued-current:
+  operation: planning-currentness
+  state: queued
+  expected: ready
+planning-active-current:
+  operation: planning-currentness
+  state: active
+  expected: ready
+planning-invalid-blocked:
+  operation: planning-currentness
+  state: invalid
+  expected: blocked
+planning-stale-state-blocked:
+  operation: planning-currentness
+  state: stale
+  expected: blocked
+planning-head-advanced-ready:
+  operation: lease
+  fault: planning-head-advanced
+  expected: ready
+implementation-moved-blocked:
+  operation: lease
+  fault: implementation-moved
+  expected: blocked
+preparation-movement-blocked:
+  operation: lease
+  fault: preparation-movement
+  expected: blocked
+protected-handoff-ready:
+  operation: handoff
+  fault: null
+  expected: ready
+wrong-root-write-blocked:
+  operation: handoff
+  fault: wrong-root
+  expected: blocked
+wrong-generation-blocked:
+  operation: handoff
+  fault: wrong-generation
+  expected: blocked
+mixed-generation-result-blocked:
+  operation: handoff
+  fault: mixed-generation
+  expected: blocked
+stale-review-basis-blocked:
+  operation: handoff
+  fault: stale-review-basis
+  expected: blocked
+reused-worker-reviewer-lease-blocked:
+  operation: handoff
+  fault: reused-worker-reviewer-lease
+  expected: blocked
+missing-receipt-blocked:
+  operation: handoff
+  fault: missing-receipt
+  expected: blocked
+stale-receipt-revision-blocked:
+  operation: handoff
+  fault: stale-receipt-revision
+  expected: blocked
+unrelated-commit-content-blocked:
+  operation: handoff
+  fault: unrelated-commit-content
+  expected: blocked
+partial-reconciliation-blocked:
+  operation: handoff
+  fault: partial-reconciliation
+  expected: blocked
+unexpected-workspace-write-blocked:
+  operation: handoff
+  fault: unexpected-workspace-write
+  expected: blocked
+untracked-implementation-write-blocked:
+  operation: handoff
+  fault: untracked-implementation-write
+  expected: blocked
+undeclared-planning-write-blocked:
+  operation: handoff
+  fault: undeclared-planning-write
+  expected: blocked

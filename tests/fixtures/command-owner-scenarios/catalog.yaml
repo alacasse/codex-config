@@ -602,39 +602,482 @@ scenarios:
       adapter: workflow_adapters.py:observe_contract_format
       reason: null
 
-  - id: planning-state-ledger-family-skeleton
+  - id: planning-selected-current
     family: planning-state-ledger
     evidence_kind: target_interface
     contracts:
       - STATE-DIAG-001
       - STATE-TRANSITION-002
       - STATE-CANONICAL-003
-      - STATE-HISTORY-004
-    initial_artifacts: []
-    command: planning-state.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
+    initial_artifacts: &currentness_inputs [currentness-cases.yaml]
+    command: planning-state.observe-selected
+    expected_transition: currentness:ready
+    expected_writes: &planning_state_writes
+      - workspace/current.json
+      - workspace/outcome.json
+      - workspace/validate.json
+    forbidden_writes: *forbidden_writes
     expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: &currentness_unavailable
-      status: unavailable
-      adapter: null
-      reason: Future currentness slice owns this fixture adapter.
-  - id: execution-currentness-family-skeleton
+    generation_and_roots: &currentness_roots
+      generation: fixture-stable
+      roots:
+        - {role: planning-toolchain, path: workspace/planning-repo}
+        - {role: implementation, path: workspace/implementation-repo}
+    validation: &planning_state_validation
+      - planning-state.current.green
+      - planning-state.validate.green
+      - currentness.semantic-owner.green
+    binding: &currentness_binding
+      status: bound
+      adapter: currentness_adapters.py:observe_currentness
+      reason: null
+  - id: planning-queued-current
+    family: planning-state-ledger
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: planning-state.observe-queued
+    expected_transition: currentness:ready
+    expected_writes: *planning_state_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: null
+    generation_and_roots: *currentness_roots
+    validation: *planning_state_validation
+    binding: *currentness_binding
+  - id: planning-active-current
+    family: planning-state-ledger
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: planning-state.observe-active
+    expected_transition: currentness:ready
+    expected_writes: *planning_state_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: null
+    generation_and_roots: *currentness_roots
+    validation: *planning_state_validation
+    binding: *currentness_binding
+  - id: planning-invalid-blocked
+    family: planning-state-ledger
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: planning-state.reject-invalid
+    expected_transition: currentness:blocked
+    expected_writes: *planning_state_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: Planning State validation blocked before lease preparation
+    generation_and_roots: *currentness_roots
+    validation:
+      - planning-state.current.green
+      - planning-state.validate.blocked
+      - currentness.helper-not-invoked.green
+    binding: *currentness_binding
+  - id: planning-stale-state-blocked
+    family: planning-state-ledger
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: planning-state.reject-stale-state
+    expected_transition: currentness:blocked
+    expected_writes:
+      - workspace/current.json
+      - workspace/outcome.json
+      - workspace/stale-state.json
+      - workspace/validate.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: Planning State reports stale state before lease preparation
+    generation_and_roots: *currentness_roots
+    validation:
+      - planning-state.current.blocked
+      - planning-state.validate.blocked
+      - currentness.helper-not-invoked.green
+    binding: *currentness_binding
+
+  - id: planning-head-advanced-ready
     family: execution-currentness
     evidence_kind: target_interface
     contracts: []
-    initial_artifacts: []
-    command: execution-currentness.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.refresh-after-planning-movement
+    expected_transition: currentness:ready
+    expected_writes:
+      - workspace/lease-preparation.json
+      - workspace/outcome.json
+      - workspace/planning-repo/planning-movement.txt
+      - workspace/validate.json
+    forbidden_writes: *forbidden_writes
     expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *currentness_unavailable
+    generation_and_roots: *currentness_roots
+    validation: &lease_validation
+      - currentness.material-integrity.green
+      - currentness.fresh-lease.green
+    binding: *currentness_binding
+  - id: implementation-moved-blocked
+    family: execution-currentness
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-implementation-movement
+    expected_transition: currentness:blocked
+    expected_writes: &movement_writes
+      - workspace/implementation-repo/unexpected.txt
+      - workspace/lease-preparation.json
+      - workspace/outcome.json
+      - workspace/validate.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: unexpected implementation movement
+    generation_and_roots: *currentness_roots
+    validation: *lease_validation
+    binding: *currentness_binding
+  - id: preparation-movement-blocked
+    family: execution-currentness
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-preparation-race
+    expected_transition: currentness:blocked
+    expected_writes: *movement_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: repository moved during lease preparation
+    generation_and_roots: *currentness_roots
+    validation: *lease_validation
+    binding: *currentness_binding
+  - id: protected-handoff-ready
+    family: execution-currentness
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.protect-handoff
+    expected_transition: currentness:ready
+    expected_writes:
+      - workspace/commit-evidence.json
+      - workspace/implementation-repo/allowed.txt
+      - workspace/lease-preparation.json
+      - workspace/lease-receipt.json
+      - workspace/outcome.json
+      - workspace/reconciliation-result.json
+      - workspace/review-result.json
+      - workspace/reviewer-lease-preparation.json
+      - workspace/reviewer-lease-receipt.json
+      - workspace/validate.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: null
+    generation_and_roots: *currentness_roots
+    validation: &workspace_validation
+      - currentness.material-integrity.green
+      - currentness.fresh-lease.green
+      - currentness.write-scope.green
+      - currentness.lease-echo.green
+      - currentness.receipt.green
+      - currentness.commit-range.green
+      - currentness.reviewer-fresh-lease.green
+      - currentness.reviewer-receipt.green
+      - currentness.reviewer-lease-echo.green
+      - currentness.review-basis.green
+      - currentness.reconciliation.green
+      - currentness.workspace-writes.green
+    binding: *currentness_binding
+  - id: wrong-root-write-blocked
+    family: execution-currentness
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-wrong-root
+    expected_transition: currentness:blocked
+    expected_writes: &outcome_only
+      - workspace/lease-preparation.json
+      - workspace/outcome.json
+      - workspace/validate.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: write scope escapes the implementation root
+    generation_and_roots: *currentness_roots
+    validation:
+      - currentness.material-integrity.green
+      - currentness.fresh-lease.green
+      - currentness.write-scope.green
+    binding: *currentness_binding
+  - id: wrong-generation-blocked
+    family: execution-currentness
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-wrong-generation
+    expected_transition: currentness:blocked
+    expected_writes: *outcome_only
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: generation identity mismatch
+    generation_and_roots: *currentness_roots
+    validation:
+      - currentness.material-integrity.green
+      - currentness.fresh-lease.green
+      - currentness.generation-identity.green
+    binding: *currentness_binding
+  - id: mixed-generation-result-blocked
+    family: execution-currentness
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-mixed-result
+    expected_transition: currentness:blocked
+    expected_writes:
+      - workspace/lease-preparation.json
+      - workspace/outcome.json
+      - workspace/validate.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: result generation does not match the lease
+    generation_and_roots: *currentness_roots
+    validation:
+      - currentness.material-integrity.green
+      - currentness.fresh-lease.green
+      - currentness.write-scope.green
+      - currentness.lease-echo.green
+    binding: *currentness_binding
+  - id: stale-review-basis-blocked
+    family: execution-currentness
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-stale-review
+    expected_transition: currentness:blocked
+    expected_writes:
+      - workspace/commit-evidence.json
+      - workspace/implementation-repo/allowed.txt
+      - workspace/lease-preparation.json
+      - workspace/lease-receipt.json
+      - workspace/outcome.json
+      - workspace/review-result.json
+      - workspace/reviewer-lease-preparation.json
+      - workspace/reviewer-lease-receipt.json
+      - workspace/validate.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: review basis is stale
+    generation_and_roots: *currentness_roots
+    validation:
+      - currentness.material-integrity.green
+      - currentness.fresh-lease.green
+      - currentness.write-scope.green
+      - currentness.lease-echo.green
+      - currentness.receipt.green
+      - currentness.commit-range.green
+      - currentness.reviewer-fresh-lease.green
+      - currentness.reviewer-receipt.green
+      - currentness.reviewer-lease-echo.green
+      - currentness.review-basis.green
+    binding: *currentness_binding
+  - id: reused-worker-reviewer-lease-blocked
+    family: execution-currentness
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-reused-worker-reviewer-lease
+    expected_transition: currentness:blocked
+    expected_writes:
+      - workspace/commit-evidence.json
+      - workspace/implementation-repo/allowed.txt
+      - workspace/lease-preparation.json
+      - workspace/lease-receipt.json
+      - workspace/outcome.json
+      - workspace/review-result.json
+      - workspace/reviewer-lease-preparation.json
+      - workspace/reviewer-lease-receipt.json
+      - workspace/validate.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: reviewer result reuses the stale worker lease
+    generation_and_roots: *currentness_roots
+    validation:
+      - currentness.material-integrity.green
+      - currentness.fresh-lease.green
+      - currentness.write-scope.green
+      - currentness.lease-echo.green
+      - currentness.receipt.green
+      - currentness.commit-range.green
+      - currentness.reviewer-fresh-lease.green
+      - currentness.reviewer-receipt.green
+      - currentness.reviewer-lease-echo.green
+    binding: *currentness_binding
+  - id: missing-receipt-blocked
+    family: commit-receipt-fault-injection
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-missing-receipt
+    expected_transition: currentness:blocked
+    expected_writes:
+      - workspace/lease-preparation.json
+      - workspace/outcome.json
+      - workspace/validate.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: durable handoff receipt is missing
+    generation_and_roots: *currentness_roots
+    validation: &receipt_validation
+      - currentness.material-integrity.green
+      - currentness.fresh-lease.green
+      - currentness.write-scope.green
+      - currentness.lease-echo.green
+      - currentness.receipt.green
+    binding: *currentness_binding
+  - id: stale-receipt-revision-blocked
+    family: commit-receipt-fault-injection
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-stale-receipt
+    expected_transition: currentness:blocked
+    expected_writes:
+      - workspace/lease-preparation.json
+      - workspace/lease-receipt.json
+      - workspace/outcome.json
+      - workspace/validate.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: receipt revisions do not match independently observed repositories
+    generation_and_roots: *currentness_roots
+    validation: *receipt_validation
+    binding: *currentness_binding
+  - id: unrelated-commit-content-blocked
+    family: commit-receipt-fault-injection
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-unrelated-commit
+    expected_transition: currentness:blocked
+    expected_writes:
+      - workspace/commit-evidence.json
+      - workspace/implementation-repo/allowed.txt
+      - workspace/implementation-repo/unrelated.txt
+      - workspace/lease-preparation.json
+      - workspace/lease-receipt.json
+      - workspace/outcome.json
+      - workspace/validate.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: accepted commit range contains unrelated or mismatched content
+    generation_and_roots: *currentness_roots
+    validation:
+      - currentness.material-integrity.green
+      - currentness.fresh-lease.green
+      - currentness.write-scope.green
+      - currentness.lease-echo.green
+      - currentness.receipt.green
+      - currentness.commit-range.green
+    binding: *currentness_binding
+  - id: partial-reconciliation-blocked
+    family: closeout-fault-injection
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-partial-reconciliation
+    expected_transition: currentness:blocked
+    expected_writes:
+      - workspace/commit-evidence.json
+      - workspace/implementation-repo/allowed.txt
+      - workspace/lease-preparation.json
+      - workspace/lease-receipt.json
+      - workspace/outcome.json
+      - workspace/planning-repo/docs/plans/programs/fixture/CURRENT.md
+      - workspace/reconciliation-result.json
+      - workspace/review-result.json
+      - workspace/reviewer-lease-preparation.json
+      - workspace/reviewer-lease-receipt.json
+      - workspace/validate.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: same-batch reconciliation is partial
+    generation_and_roots: *currentness_roots
+    validation:
+      - currentness.material-integrity.green
+      - currentness.fresh-lease.green
+      - currentness.write-scope.green
+      - currentness.lease-echo.green
+      - currentness.receipt.green
+      - currentness.commit-range.green
+      - currentness.reviewer-fresh-lease.green
+      - currentness.reviewer-receipt.green
+      - currentness.reviewer-lease-echo.green
+      - currentness.review-basis.green
+      - currentness.reconciliation.green
+    binding: *currentness_binding
+  - id: unexpected-workspace-write-blocked
+    family: execution-currentness
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-unexpected-workspace-write
+    expected_transition: currentness:blocked
+    expected_writes:
+      - workspace/commit-evidence.json
+      - workspace/implementation-repo/allowed.txt
+      - workspace/lease-preparation.json
+      - workspace/lease-receipt.json
+      - workspace/outcome.json
+      - workspace/reconciliation-result.json
+      - workspace/review-result.json
+      - workspace/reviewer-lease-preparation.json
+      - workspace/reviewer-lease-receipt.json
+      - workspace/unexpected-workspace.txt
+      - workspace/validate.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: workspace contains an unexpected write
+    generation_and_roots: *currentness_roots
+    validation: *workspace_validation
+    binding: *currentness_binding
+  - id: untracked-implementation-write-blocked
+    family: execution-currentness
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-untracked-implementation-write
+    expected_transition: currentness:blocked
+    expected_writes:
+      - workspace/commit-evidence.json
+      - workspace/implementation-repo/allowed.txt
+      - workspace/implementation-repo/untracked.txt
+      - workspace/lease-preparation.json
+      - workspace/lease-receipt.json
+      - workspace/outcome.json
+      - workspace/reconciliation-result.json
+      - workspace/review-result.json
+      - workspace/reviewer-lease-preparation.json
+      - workspace/reviewer-lease-receipt.json
+      - workspace/validate.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: workspace contains an unexpected write
+    generation_and_roots: *currentness_roots
+    validation: *workspace_validation
+    binding: *currentness_binding
+  - id: undeclared-planning-write-blocked
+    family: execution-currentness
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *currentness_inputs
+    command: execution-currentness.reject-undeclared-planning-write
+    expected_transition: currentness:blocked
+    expected_writes:
+      - workspace/commit-evidence.json
+      - workspace/implementation-repo/allowed.txt
+      - workspace/lease-preparation.json
+      - workspace/lease-receipt.json
+      - workspace/outcome.json
+      - workspace/planning-repo/undeclared.txt
+      - workspace/reconciliation-result.json
+      - workspace/review-result.json
+      - workspace/reviewer-lease-preparation.json
+      - workspace/reviewer-lease-receipt.json
+      - workspace/validate.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: workspace contains an unexpected write
+    generation_and_roots: *currentness_roots
+    validation: *workspace_validation
+    binding: *currentness_binding
 
   - id: root-generation-family-skeleton
     family: root-generation-isolation
@@ -707,7 +1150,8 @@ scenarios:
   - id: cutover-lifecycle-family-skeleton
     family: cutover-lifecycle
     evidence_kind: bootstrap_cutover
-    contracts: []
+    contracts:
+      - STATE-HISTORY-004
     initial_artifacts: []
     command: cutover-lifecycle.observe
     expected_transition: null
