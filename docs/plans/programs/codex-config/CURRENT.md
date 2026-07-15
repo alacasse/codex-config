@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -33,10 +32,10 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-22 through CCFG-29.
-- Pending ledger row: CCFG-21.
-- Closed ledger rows: CCFG-18 through CCFG-20 and CCFG-30 through CCFG-32.
-  CCFG-32 makes Planning State the sole semantic queue-currentness authority
-  while retaining only material mechanical live-handoff checks.
+- Pending ledger rows: none.
+- Closed ledger rows: CCFG-18 through CCFG-21 and CCFG-30 through CCFG-32.
+  CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
+  planning migration or command integration.
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -50,25 +49,23 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/runway.md`
-- Queued dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/dispatch.md`
+- Queued batch: `None`
+- Queued dispatch: `None`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-32-planning-state-queue-currentness`
+- Latest completed batch: `ccfg-21-planning-artifact-contracts`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/closeout.md`
 
 ## Next Safe Action
 
-Execute only the queued CCFG-21 runway through an explicit `work-batch` request.
-Do not select another batch, replace the runway, or infer successor work from
-the latest closeout.
+Stop after CCFG-21 same-batch closeout. No batch is selected or queued. A later
+explicit `plan-batch` request may select exactly one successor from the canonical
+ledger; do not infer it from closeout history.
 
 ## Stop Conditions
 
@@ -98,6 +95,7 @@ the latest closeout.
 - Stop if CCFG-30 closeout selects or prepares any successor dispatch or runway.
 - Stop if work treats closed CCFG-31 or its completed runway as active work.
 - Stop if work treats closed CCFG-32 or its completed runway as active work.
+- Stop if work treats closed CCFG-21 or its completed runway as active work.
 - Stop if CCFG-32 execution restores Git-derived queue currentness, weakens
   material live-handoff safety, touches the redesign candidate, or expands into
   CCFG-21, CCFG-25, or CCFG-29 ownership.
