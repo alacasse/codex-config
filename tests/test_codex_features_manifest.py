@@ -36,6 +36,8 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         manifest = self.load_manifest()
 
         for feature_name, feature in manifest["features"].items():
+            if feature_name == "skill-authoring":
+                continue
             with self.subTest(feature=feature_name):
                 links = feature["links"]
                 self.assertGreater(len(links), 0)
@@ -51,17 +53,63 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                         f"missing manifest source: {source}",
                     )
 
+        manifest_text = MANIFEST.read_text(encoding="utf-8")
+        self.assertEqual(manifest_text.count('\n    "skill-authoring": {'), 1)
+        self.assertEqual(
+            manifest["features"]["skill-authoring"],
+            {
+                "version": "1.0.0",
+                "description": (
+                    "Agent-facing authoring support for creating, migrating, "
+                    "and auditing contract-first hybrid skills."
+                ),
+                "links": [
+                    {
+                        "source": "skills/skill-authoring",
+                        "target": "skills/skill-authoring",
+                    },
+                    {
+                        "source": "scripts/skill_contract.py",
+                        "target": "scripts/skill_contract.py",
+                    },
+                    {
+                        "source": "schemas/skill-contract-v1.schema.json",
+                        "target": "schemas/skill-contract-v1.schema.json",
+                    },
+                ],
+            },
+        )
+        for link in manifest["features"]["skill-authoring"]["links"]:
+            source = Path(link["source"])
+            target = Path(link["target"])
+            self.assertFalse(source.is_absolute())
+            self.assertFalse(target.is_absolute())
+            self.assertNotIn("..", source.parts)
+            self.assertNotIn("..", target.parts)
+            self.assertTrue(REPO_ROOT.joinpath(source).exists())
+
     def test_manifest_feature_requirements_are_valid(self) -> None:
         manifest = self.load_manifest()
         features = manifest["features"]
 
         for feature_name, feature in features.items():
+            if feature_name == "skill-authoring":
+                continue
             with self.subTest(feature=feature_name):
                 requirements = feature.get("requires", [])
                 self.assertIsInstance(requirements, list)
                 for requirement in requirements:
                     self.assertIsInstance(requirement, str)
                     self.assertIn(requirement, features)
+
+        self.assertEqual(
+            {
+                feature_name: feature.get("requires", [])
+                for feature_name, feature in features.items()
+                if "skill-authoring" in feature.get("requires", [])
+            },
+            {},
+        )
 
     def test_planning_artifact_consumers_install_shared_skill(self) -> None:
         manifest = self.load_manifest()
@@ -835,6 +883,11 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 self.assertIn("Agent-facing", features[skill_name]["description"])
 
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        agent_facing_readme = self.bounded_text(
+            readme,
+            "### Agent-Facing Support And Runtime Surfaces",
+            "## Future Runner Extraction",
+        )
         workflow_guide = (REPO_ROOT / "docs/workflow-guide.md").read_text(
             encoding="utf-8"
         )
@@ -842,7 +895,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("docs/workflow-guide.md", readme)
         self.assertIn("### User-Facing Workflow Commands", readme)
         self.assertIn("### Agent-Facing Support And Runtime Surfaces", readme)
-        self.assertIn("not the preferred direct commands", readme)
+        self.assertIn("not the preferred direct commands", agent_facing_readme)
         self.assertIn("## Canonical Pipeline", workflow_guide)
         self.assertIn("-> add-to-ledger", workflow_guide)
         self.assertIn("-> program ledger", workflow_guide)
@@ -913,6 +966,30 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             primary_command_owners | directly_requestable_support,
         )
         self.assertIn("Agent-facing", features["test-quality-review"]["description"])
+
+        readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        user_facing = self.bounded_text(
+            readme,
+            "### User-Facing Workflow Commands",
+            "### Agent-Facing Support And Runtime Surfaces",
+        )
+        agent_facing = self.bounded_text(
+            readme,
+            "### Agent-Facing Support And Runtime Surfaces",
+            "## Future Runner Extraction",
+        )
+        skill_text = (
+            REPO_ROOT / "skills/skill-authoring/SKILL.md"
+        ).read_text(encoding="utf-8")
+        ui_text = (
+            REPO_ROOT / "skills/skill-authoring/agents/openai.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertNotIn("`skill-authoring`", user_facing)
+        self.assertIn("`skill-authoring`", agent_facing)
+        self.assertIn("not a primary human command", agent_facing)
+        self.assertIn("Agent-facing", skill_text.split("---", 2)[1])
+        self.assertNotIn("Use $skill-authoring", ui_text)
 
     def test_agent_facing_support_skills_are_not_ui_commands(self) -> None:
         support_skills = (

@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Candidate skill-authoring feature
+
+Problem: the accepted `skill-authoring` core, planning reference, and trial
+catalogs were repo-local source only, so the candidate generation had no single
+installable authoring surface that also carried the canonical validator and
+schema.
+
+Decision: register one agent-facing `skill-authoring` feature at `1.0.0` with
+exact links to `skills/skill-authoring`, `scripts/skill_contract.py`, and
+`schemas/skill-contract-v1.schema.json`. Keep it outside every command-owner and
+support/runtime feature's requirements.
+
+Expected effect: the candidate generation can install and validate the complete
+contract-first authoring surface as one feature without turning it into a
+primary human command, adding a runtime dependency, or changing the stable
+generation.
+
 ### Recoverable planning-selection transaction prototype
 
 Problem: the planning stores could persist individual current-state and

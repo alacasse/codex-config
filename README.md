@@ -119,15 +119,17 @@ planning and execution workflow.
 
 ### Agent-Facing Support And Runtime Surfaces
 
-These skills remain installed because command-owner workflows use them as
-agent-facing support. They are not the preferred direct commands for the main
-ledger and batch workflow.
+These skills are installed as agent-facing support or runtime surfaces. Some
+run behind command-owner workflows; authoring and review support stays outside
+those commands' runtime requirements. They are not the preferred direct
+commands for the main ledger and batch workflow.
 
 | Skill | Purpose | How it is used |
 | --- | --- | --- |
 | `batch-runway` | Provides bounded multi-slice runway spec mechanics, per-slice validation, commits, ledger updates, and implementation/review delegation. | Invoked behind `plan-batch` or `work-batch` when a command-owned batch needs concrete spec creation or execution contracts. |
 | `architecture-program-runway` | Provides program-ledger grouping, sequencing, selected dispatch, queue state, and closeout reconciliation. | Invoked behind `add-to-ledger`, `plan-batch`, or `work-batch` when broad findings need durable grouping, selected-batch state, or completed-batch reconciliation. |
 | `test-quality-review` | Reviews tests for behavioral confidence, regression protection, assertion strength, fixture friction, and design signals. | Invoked by review routes or directly for focused test audits where coverage percentage is not the main question. |
+| `skill-authoring` | Creates, migrates, and audits contract-first hybrid skills through one authoritative authoring contract and its conditional references. | Used by agents at authoring time; it is not a primary human command or a runtime requirement of command-owner and support skills. |
 | `dead-surface-audit` | Finds code surfaces kept alive by tests that assert imports, aliases, topology, or compatibility shape rather than behavior. | Invoked as evidence support when legacy, review, or planning work needs proof about test-retained dead surfaces. |
 | `legacy-removal` | Scopes evidence-backed legacy cleanup before implementation planning. | Invoked only for exceptional obsolete paths, fallback behavior, stale names, compatibility shims, or cleanup residues that need classification and a removal handoff. |
 | `planning-artifacts` | Defines project-agnostic placement and naming conventions for durable planning docs, ledgers, dispatch packets, run artifacts, outputs, and archives. | Used when creating, migrating, or interpreting planning roots and workflow artifacts across projects. |

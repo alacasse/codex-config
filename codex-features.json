@@ -115,6 +115,24 @@
         }
       ]
     },
+    "skill-authoring": {
+      "version": "1.0.0",
+      "description": "Agent-facing authoring support for creating, migrating, and auditing contract-first hybrid skills.",
+      "links": [
+        {
+          "source": "skills/skill-authoring",
+          "target": "skills/skill-authoring"
+        },
+        {
+          "source": "scripts/skill_contract.py",
+          "target": "scripts/skill_contract.py"
+        },
+        {
+          "source": "schemas/skill-contract-v1.schema.json",
+          "target": "schemas/skill-contract-v1.schema.json"
+        }
+      ]
+    },
     "custom-agents": {
       "version": "1.4.1",
       "description": "Reusable custom Codex agents.",
