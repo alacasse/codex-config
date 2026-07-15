@@ -818,6 +818,23 @@ Allowed files:
 - `tests/fixtures/command-owner-scenarios/`
 - `tests/test_command_owner_scenario_cutover.py`
 - `CHANGELOG.md`
+- `schemas/command-owner-scenario-v1.schema.json`
+- `scripts/command_owner_scenarios.py`
+
+Same-slice amendment after the clean Slice 4 pre-edit stop:
+
+- The Slice 1 harness report exposes only generic contract/family booleans and
+  the closed-world schema has no catalog-owned aggregate evidence map. It
+  therefore cannot emit the six exact COR-006 keys, six migration aliases, or
+  their concrete scenario/test evidence as Slice 4 requires.
+- Add one generic closed-world catalog capability that maps caller-owned
+  acceptance keys and aliases to concrete scenario IDs and test evidence.
+  `build_report()` must compute each result from the referenced evaluated
+  scenarios; it must reject missing, duplicate, unknown, or non-green evidence
+  and must not hard-code CCFG, COR, project paths, or key names.
+- The schema and harness change is part of Slice 4, not a new slice. Tests for
+  the generic capability belong in the Slice 4 focused module. Existing report
+  fields and Slice 1-3 behavior remain unchanged.
 
 Read-only behavior sources:
 
@@ -828,8 +845,9 @@ Read-only behavior sources:
 
 Non-goals:
 
-- No edit to harness/schema or prior test modules unless a proven same-batch
-  defect requires the normal fix/re-review loop.
+- No edit to prior test modules. Harness/schema edits are limited to the
+  generic aggregate-evidence capability authorized by the same-slice amendment
+  above; any wider change requires another stop and normal fix/re-review loop.
 - No real install, candidate-home/stable-home mutation, default switch,
   canonical candidate write, route deletion, bridge removal, or archive move.
 - No claim that synthetic absence closes CCFG-28 or CCFG-29.
@@ -852,6 +870,9 @@ Acceptance criteria:
 - The final deterministic report emits all six COR-006 keys and all six aliases
   as true, maps each to concrete scenario/test evidence, covers exactly the 31
   immutable contract IDs, and lists no unavailable required family.
+- Aggregate evidence is catalog-owned and mechanically derived from evaluated
+  scenario results; changing a declared key, alias, scenario reference, or test
+  evidence cannot self-certify a green result.
 - The changelog states the harness is non-installed and preserves CCFG-24+
   ownership boundaries.
 - Focused tests, final catalog validate/report, ruff, basedpyright, diff check,
