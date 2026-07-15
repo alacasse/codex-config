@@ -239,3 +239,86 @@ reviewer_verification: matched
   "deletion_condition": "CCFG-29 final integration"
 }
 ```
+
+## Slice 4: Implement The DEC-038 Selection Saga And Fault Matrix
+
+- Candidate commit: `596fc7e5e153bb1a89a94010d272efa4ce4ce0ce`.
+- Outcome: the closed-world transaction schema and append-only four-stage
+  selection prototype now compose the revisioned current store and artifact
+  lineage store, resume at the first incomplete stage, preserve durable partial
+  evidence, and block reused identities, unexplained movement, and ambiguous
+  replay evidence without integrating live command ownership.
+- Validation: the combined Slice 1-4 suite passed 98 tests; Ruff passed;
+  basedpyright reported zero errors and six import-source warnings; complete and
+  recover-after-selected-CAS simulations exited 0; reused-ID mismatch exited 1
+  under the successful expected-failure wrapper; staged
+  `git diff --cached --check` passed.
+- Review: the first pass found two high-severity test-confidence gaps in
+  checkpoint evidence and mismatch coverage. The recovery added exact
+  transaction/current/artifact/receipt snapshots for all 13 fault boundaries,
+  no-duplicate-effect assertions, two state drifts, five coherent lineage
+  drifts, and ambiguous selected-replay evidence. No production defect was
+  exposed; independent re-review and delta-only test-quality review were clean.
+- Compatibility: the prototype remains intentionally unintegrated with
+  `plan-batch` and live canonical planning mutation.
+- Cleanup residue: none.
+
+### Slice 4 Execution Receipt
+
+```yaml
+runway: docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/runway.md
+live_lease:
+  interface: cross-checkout-context/v1
+  toolchain_source_root: /home/alacasse/projects/codex-config
+  toolchain_commit: 1c5c33a25426d829c709d54e7c900331c405ecf2
+  canonical_planning_repository_root: /home/alacasse/projects/codex-config
+  canonical_planning_commit_before: 1c5c33a25426d829c709d54e7c900331c405ecf2
+  implementation_target_root: /home/alacasse/projects/codex-config-command-owner-redesign
+  implementation_commit_before: d9a3306a02b9e27c2ab3ae39e6c3b281ce1ae9ca
+  codex_home: /home/alacasse/.codex
+  generation_role: stable
+  canonical_state_mutation_allowed: true
+validated_scope:
+  planning_paths: []
+  implementation_paths:
+    - schemas/planning-selection-transaction-v1.schema.json
+    - scripts/planning_contract.py
+    - tests/test_planning_transaction.py
+    - tests/fixtures/planning-contracts/transactions/
+    - CHANGELOG.md
+worker_verification: matched
+reviewer_verification: matched
+```
+
+### Stable Planning Receipt
+
+```json
+{
+  "interface": "cross-checkout-receipt/v1",
+  "caller": "work-batch",
+  "reason": "CCFG-21 Slice 4 stable planning receipt",
+  "allowed_scope": {
+    "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+    "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+    "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+    "planning_paths": [
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/completed-slices.md",
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/runway.md"
+    ],
+    "implementation_paths": []
+  },
+  "generation_identity": {
+    "generation_role": "stable",
+    "toolchain_source_root": "/home/alacasse/projects/codex-config",
+    "toolchain_commit": "1c5c33a25426d829c709d54e7c900331c405ecf2",
+    "codex_home": "/home/alacasse/.codex",
+    "canonical_state_mutation_allowed": true
+  },
+  "repository_revisions": {
+    "toolchain_commit": "1c5c33a25426d829c709d54e7c900331c405ecf2",
+    "canonical_planning_commit_before": "1c5c33a25426d829c709d54e7c900331c405ecf2",
+    "implementation_commit_before": "596fc7e5e153bb1a89a94010d272efa4ce4ce0ce"
+  },
+  "deletion_condition": "CCFG-29 final integration"
+}
+```

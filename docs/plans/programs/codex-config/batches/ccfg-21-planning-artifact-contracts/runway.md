@@ -450,7 +450,6 @@ Reviewer brief for every slice:
 
 | Slice | Risk | Status | Candidate commit | Stable receipt | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|---|---|
-| 4. Selection saga and fault matrix | migration | pending | | | | | DEC-038 exact replay and recovery | |
 
 ## Orchestration Anomalies
 
@@ -458,7 +457,7 @@ Reviewer brief for every slice:
 orchestration_anomalies:
   - category: malformed_worker_result
     severity: low
-    observed: 2
+    observed: 3
     impact: no code or lifecycle impact
     action: rejected the malformed payloads and required schema-correct re-emission
   - category: validation_scope_gap
