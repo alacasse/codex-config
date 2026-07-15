@@ -129,27 +129,38 @@ def test_catalog_preserves_exact_immutable_contract_identity_and_families() -> N
     assert set(document["required_families"]) == EXPECTED_FAMILIES
 
 
-def test_unbound_catalog_is_honest_without_losing_declared_coverage() -> None:
+def test_live_catalog_reports_progression_without_inferred_green() -> None:
     result = validate_catalog(FIXTURES)
     assert result.catalog is not None
 
     report = build_report(result.catalog)
+    scenarios = report["scenarios"]
+    families = report["families"]
+    observed_green_contracts = {
+        contract
+        for scenario in scenarios
+        if scenario["status"] == "green"
+        for contract in scenario["contracts"]
+    }
+    unavailable_scenarios = [
+        scenario for scenario in scenarios if scenario["status"] == "unavailable"
+    ]
+    unavailable_families = {
+        family["id"] for family in families if family["status"] == "unavailable"
+    }
 
-    assert report["status_counts"] == {
-        "declared": 0,
-        "bound": 0,
-        "green": 0,
-        "blocked": 0,
-        "unavailable": len(EXPECTED_FAMILIES),
-    }
     assert report["contracts"]["declared"] == sorted(EXPECTED_CONTRACT_IDS)  # type: ignore[index]
-    assert report["contracts"]["green"] == []  # type: ignore[index]
-    assert report["acceptance"] == {
-        "all_required_contracts_declared": True,
-        "all_required_contracts_green": False,
-        "all_required_families_green": False,
-        "only_bound_green_observations_count": True,
+    assert report["contracts"]["green"] == sorted(observed_green_contracts)  # type: ignore[index]
+    assert unavailable_scenarios
+    assert unavailable_families == {
+        scenario["family"] for scenario in unavailable_scenarios
     }
+    assert all(scenario["adapter"] is None for scenario in unavailable_scenarios)
+    assert report["status_counts"]["unavailable"] == len(unavailable_scenarios)
+    assert report["acceptance"]["all_required_contracts_declared"] is True  # type: ignore[index]
+    assert report["acceptance"]["only_bound_green_observations_count"] is True  # type: ignore[index]
+    assert report["acceptance"]["all_required_contracts_green"] is False  # type: ignore[index]
+    assert report["acceptance"]["all_required_families_green"] is False  # type: ignore[index]
 
 
 def test_runtime_report_distinguishes_every_evidence_status() -> None:

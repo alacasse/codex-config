@@ -1,0 +1,163 @@
+intake-fresh-atomic:
+  operation: intake
+  mode: fresh
+  finding_ids: [CCFG-3]
+intake-multi-atomic:
+  operation: intake
+  mode: fresh
+  finding_ids: [CCFG-3, CCFG-4]
+intake-duplicate-idempotent:
+  operation: intake
+  mode: duplicate
+  finding_ids: [CCFG-3]
+intake-stale-blocked:
+  operation: intake
+  mode: stale
+  finding_ids: [CCFG-3]
+
+planning-single-slice-queued:
+  operation: planning
+  mode: select
+  slice_boundaries: [cohesive-workflow-seam]
+planning-semantic-multi-slice-queued:
+  operation: planning
+  mode: select
+  slice_boundaries: [store-mutation, independent-review]
+planning-existing-selected-blocked:
+  operation: planning
+  mode: guard
+  existing_state: selected
+planning-existing-queued-blocked:
+  operation: planning
+  mode: guard
+  existing_state: queued
+planning-existing-active-blocked:
+  operation: planning
+  mode: guard
+  existing_state: active
+planning-vague-scope-blocked:
+  operation: planning
+  mode: guard
+  scope_quality: vague
+planning-destructive-unapproved-blocked:
+  operation: planning
+  mode: guard
+  destructive: true
+  approval: null
+planning-partial-selection-resumes:
+  operation: planning
+  mode: recover
+  slice_boundaries: [selection-transaction]
+
+quality-cohesive-single-slice:
+  operation: planning
+  mode: select
+  slice_boundaries: [cohesive-owner-seam]
+quality-semantic-multi-slice:
+  operation: planning
+  mode: select
+  slice_boundaries: [artifact-lineage, independent-review]
+quality-minimum-viable-scope:
+  operation: planning
+  mode: select
+  slice_boundaries: [minimum-viable-change]
+quality-filler-split-blocked:
+  operation: planning
+  mode: guard
+  slice_boundaries: [part-one, part-two]
+  semantic_boundaries: false
+quality-expansion-blocked:
+  operation: planning
+  mode: guard
+  scope_expansion: unrelated-follow-up
+quality-residual-complexity-approved:
+  operation: planning
+  mode: select
+  slice_boundaries: [dependency-seam, validation-seam]
+  residual_complexity: true
+  approval:
+    scope: fixture-batch:dependency-and-validation-seams
+    decision: approved
+quality-residual-complexity-unapproved:
+  operation: planning
+  mode: guard
+  residual_complexity: true
+  approval: null
+quality-independent-planner-reviewer:
+  operation: planning
+  mode: roles
+  slice_boundaries: [independent-role-proof]
+  planner_fixture: independent
+quality-planner-reviewer-coupling-blocked:
+  operation: planning
+  mode: roles
+  slice_boundaries: [independent-role-proof]
+  planner_fixture: coupled-review-evidence
+quality-stale-draft-non-executable:
+  operation: planning
+  mode: guard
+  draft_state: stale
+quality-undecided-draft-non-executable:
+  operation: planning
+  mode: guard
+  draft_state: undecided
+
+execution-validated-reviewed-committed:
+  operation: execution
+  input:
+    initial_state: pending
+    allowed_paths: [allowed/workflow]
+    worker_paths: [allowed/workflow]
+    validation_status: passed
+    review_verdict: accept
+    commit_receipt: valid
+execution-recovery-resumes-same-slice:
+  operation: execution
+  input:
+    initial_state: validation-failed
+    allowed_paths: [allowed/workflow]
+    worker_paths: [allowed/workflow]
+    validation_status: passed
+    review_verdict: accept
+    commit_receipt: valid
+execution-review-blocks-commit:
+  operation: execution
+  input:
+    initial_state: pending
+    allowed_paths: [allowed/workflow]
+    worker_paths: [allowed/workflow]
+    validation_status: passed
+    review_verdict: fix
+    commit_receipt: valid
+commit-missing-receipt-blocked:
+  operation: execution
+  input:
+    initial_state: pending
+    allowed_paths: [allowed/workflow]
+    worker_paths: [allowed/workflow]
+    validation_status: passed
+    review_verdict: accept
+    commit_receipt: missing
+commit-unrelated-content-blocked:
+  operation: execution
+  input:
+    initial_state: pending
+    allowed_paths: [allowed/workflow]
+    worker_paths: [allowed/workflow]
+    validation_status: passed
+    review_verdict: accept
+    commit_receipt: unrelated-content
+
+closeout-same-batch-no-successor:
+  operation: closeout
+  mode: complete
+closeout-partial-write-resumes:
+  operation: closeout
+  mode: recover
+closeout-lost-batch-identity-blocked:
+  operation: closeout
+  mode: wrong-batch
+
+contract-format-topology-independent:
+  operation: contract-format
+  mode: verify

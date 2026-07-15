@@ -61,31 +61,99 @@ forbidden_target_terms:
   - preflight_cross_checkout_live_lease
   - prepare_cross_checkout_context_refresh
 scenarios:
-  - id: intake-family-skeleton
+  - id: planning-partial-selection-resumes
+    family: planning-fault-injection
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: &workflow_inputs [workflow-cases.yaml]
+    command: planning.resume-selection
+    expected_transition: planning:queued
+    expected_writes: &planning_writes
+      - workspace/CURRENT.md
+      - workspace/dispatch.md
+      - workspace/runway.md
+      - workspace/selection.md
+    forbidden_writes: &forbidden_writes
+      - outside/canonical-planning
+      - outside/installed-home
+    expected_stop_reason: planning stops before implementation
+    generation_and_roots: &fixture_roots
+      generation: fixture
+      roots:
+        - role: workspace
+          path: workspace
+    validation:
+      - planning.transaction.green
+      - planning.recovery.green
+      - planning.idempotence.green
+    binding: &planning_binding
+      status: bound
+      adapter: workflow_adapters.py:observe_planning
+      reason: null
+  - id: intake-fresh-atomic
     family: intake
     evidence_kind: source_characterization
-    contracts:
+    contracts: &intake_contracts
       - INTAKE-SOURCE-001
       - INTAKE-IDENTITY-002
       - INTAKE-NORMALIZE-003
       - INTAKE-MUTATE-004
       - INTAKE-STOP-005
-    initial_artifacts: []
-    command: intake.observe
-    expected_transition: null
+    initial_artifacts: *workflow_inputs
+    command: intake.record
+    expected_transition: intake:recorded
+    expected_writes: [workspace/LEDGER.md]
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: intake stops before planning
+    generation_and_roots: *fixture_roots
+    validation: [ledger.store.green, intake.atomicity.green, intake.stop.green]
+    binding: &intake_binding
+      status: bound
+      adapter: workflow_adapters.py:observe_intake
+      reason: null
+  - id: intake-stale-blocked
+    family: intake
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: intake.retry-stale
+    expected_transition: intake:blocked
     expected_writes: []
-    forbidden_writes: []
-    expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: &unavailable_binding
-      status: unavailable
-      adapter: null
-      reason: Future behavior slice owns the fixture adapter.
-  - id: planning-family-skeleton
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: stale intake revision
+    generation_and_roots: *fixture_roots
+    validation: [ledger.store.green, intake.atomicity.green, intake.stop.green]
+    binding: *intake_binding
+  - id: intake-multi-atomic
+    family: intake
+    evidence_kind: source_characterization
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: intake.record-multiple
+    expected_transition: intake:recorded
+    expected_writes: [workspace/LEDGER.md]
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: intake stops before planning
+    generation_and_roots: *fixture_roots
+    validation: [ledger.store.green, intake.atomicity.green, intake.stop.green]
+    binding: *intake_binding
+  - id: intake-duplicate-idempotent
+    family: intake
+    evidence_kind: source_characterization
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: intake.retry
+    expected_transition: intake:replayed
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: intake stops after the existing finding is confirmed
+    generation_and_roots: *fixture_roots
+    validation: [ledger.store.green, intake.idempotence.green, intake.stop.green]
+    binding: *intake_binding
+  - id: planning-single-slice-queued
     family: planning
     evidence_kind: source_characterization
-    contracts:
+    contracts: &planning_contracts
       - PLAN-SOURCE-001
       - PLAN-ACTIVE-002
       - PLAN-SELECT-003
@@ -94,32 +162,263 @@ scenarios:
       - PLAN-RUNWAY-006
       - PLAN-RISK-007
       - PLAN-STOP-008
-    initial_artifacts: []
-    command: planning.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
-    expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
-  - id: planning-fault-family-skeleton
-    family: planning-fault-injection
-    evidence_kind: fault_injection
+    initial_artifacts: *workflow_inputs
+    command: planning.select-one
+    expected_transition: planning:queued
+    expected_writes: *planning_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planning stops before implementation
+    generation_and_roots: *fixture_roots
+    validation: &planning_validation
+      - planning.transaction.green
+      - planning.quality.green
+    binding: *planning_binding
+  - id: planning-semantic-multi-slice-queued
+    family: planning
+    evidence_kind: source_characterization
     contracts: []
-    initial_artifacts: []
-    command: planning-fault.observe
-    expected_transition: null
+    initial_artifacts: *workflow_inputs
+    command: planning.select-semantic-slices
+    expected_transition: planning:queued
+    expected_writes: *planning_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planning stops before implementation
+    generation_and_roots: *fixture_roots
+    validation: *planning_validation
+    binding: *planning_binding
+  - id: planning-existing-selected-blocked
+    family: planning
+    evidence_kind: source_characterization
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning.observe-selected
+    expected_transition: planning:blocked
     expected_writes: []
-    forbidden_writes: []
-    expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
-  - id: execution-family-skeleton
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: an existing dispatch is already selected
+    generation_and_roots: *fixture_roots
+    validation: &planning_guard_validation
+      - planning.guard.green
+      - planning.no-queue-mutation.green
+    binding: *planning_binding
+  - id: planning-existing-queued-blocked
+    family: planning
+    evidence_kind: source_characterization
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning.observe-queued
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: an existing runway is already queued
+    generation_and_roots: *fixture_roots
+    validation: *planning_guard_validation
+    binding: *planning_binding
+  - id: planning-existing-active-blocked
+    family: planning
+    evidence_kind: source_characterization
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning.observe-active
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: an existing runway is already active
+    generation_and_roots: *fixture_roots
+    validation: *planning_guard_validation
+    binding: *planning_binding
+  - id: planning-vague-scope-blocked
+    family: planning
+    evidence_kind: source_characterization
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning.reject-vague
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planning scope is missing or vague
+    generation_and_roots: *fixture_roots
+    validation: *planning_guard_validation
+    binding: *planning_binding
+  - id: planning-destructive-unapproved-blocked
+    family: planning
+    evidence_kind: source_characterization
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning.reject-unapproved
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: destructive work lacks explicit user approval
+    generation_and_roots: *fixture_roots
+    validation: *planning_guard_validation
+    binding: *planning_binding
+  - id: quality-cohesive-single-slice
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.accept-cohesive
+    expected_transition: planning:queued
+    expected_writes: *planning_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planning stops before implementation
+    generation_and_roots: *fixture_roots
+    validation: *planning_validation
+    binding: *planning_binding
+  - id: quality-semantic-multi-slice
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.accept-semantic
+    expected_transition: planning:queued
+    expected_writes: *planning_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planning stops before implementation
+    generation_and_roots: *fixture_roots
+    validation: *planning_validation
+    binding: *planning_binding
+  - id: quality-minimum-viable-scope
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.accept-minimum
+    expected_transition: planning:queued
+    expected_writes: *planning_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planning stops before implementation
+    generation_and_roots: *fixture_roots
+    validation: *planning_validation
+    binding: *planning_binding
+  - id: quality-filler-split-blocked
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.reject-filler
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: multi-slice plan lacks semantic boundaries
+    generation_and_roots: *fixture_roots
+    validation: *planning_guard_validation
+    binding: *planning_binding
+  - id: quality-expansion-blocked
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.reject-expansion
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: plan expands beyond the minimum viable scope
+    generation_and_roots: *fixture_roots
+    validation: *planning_guard_validation
+    binding: *planning_binding
+  - id: quality-residual-complexity-approved
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.accept-scoped-approval
+    expected_transition: planning:queued
+    expected_writes:
+      - workspace/CURRENT.md
+      - workspace/approval-decision.json
+      - workspace/dispatch.md
+      - workspace/runway.md
+      - workspace/selection.md
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planning stops before implementation
+    generation_and_roots: *fixture_roots
+    validation:
+      - planning.transaction.green
+      - planning.quality.green
+      - planning.approval-scoped.green
+    binding: *planning_binding
+  - id: quality-residual-complexity-unapproved
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.reject-unapproved-complexity
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: residual material complexity lacks narrowly scoped approval
+    generation_and_roots: *fixture_roots
+    validation: *planning_guard_validation
+    binding: *planning_binding
+  - id: quality-independent-planner-reviewer
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.invoke-independent-roles
+    expected_transition: planning:queued
+    expected_writes:
+      - workspace/CURRENT.md
+      - workspace/dispatch.md
+      - workspace/planner-result.json
+      - workspace/reviewer-result.json
+      - workspace/role-invocations.json
+      - workspace/runway.md
+      - workspace/selection.md
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planning stops before implementation
+    generation_and_roots: *fixture_roots
+    validation:
+      - planning.transaction.green
+      - planning.quality.green
+      - planning.fixture-role-boundary.green
+    binding: *planning_binding
+  - id: quality-planner-reviewer-coupling-blocked
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.reject-coupled-roles
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planner and reviewer roles are not independent
+    generation_and_roots: *fixture_roots
+    validation: *planning_guard_validation
+    binding: *planning_binding
+  - id: quality-stale-draft-non-executable
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.reject-stale-draft
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: stale draft is non-executable
+    generation_and_roots: *fixture_roots
+    validation: *planning_guard_validation
+    binding: *planning_binding
+  - id: quality-undecided-draft-non-executable
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.reject-undecided-draft
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: draft with unresolved user decisions is non-executable
+    generation_and_roots: *fixture_roots
+    validation: *planning_guard_validation
+    binding: *planning_binding
+
+  - id: execution-validated-reviewed-committed
     family: execution
     evidence_kind: source_characterization
-    contracts:
+    contracts: &execution_contracts
       - EXEC-CURRENT-001
       - EXEC-RESUME-002
       - EXEC-WORKER-003
@@ -128,138 +427,181 @@ scenarios:
       - EXEC-COMMIT-006
       - EXEC-RECOVER-007
       - EXEC-STOP-008
-    initial_artifacts: []
-    command: execution.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
+    initial_artifacts: *workflow_inputs
+    command: execution.run-slice
+    expected_transition: execution:committed
+    expected_writes: &execution_writes
+      - workspace/commit-receipt.json
+      - workspace/execution-state.json
+      - workspace/review-result.json
+      - workspace/validation-result.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
     expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
-  - id: commit-receipt-fault-family-skeleton
+    generation_and_roots: *fixture_roots
+    validation:
+      - execution.worker.green
+      - execution.validation.green
+      - execution.review.green
+      - execution.commit.green
+    binding: &execution_binding
+      status: bound
+      adapter: workflow_adapters.py:observe_execution
+      reason: null
+  - id: execution-recovery-resumes-same-slice
+    family: execution
+    evidence_kind: source_characterization
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: execution.resume-slice
+    expected_transition: execution:committed
+    expected_writes:
+      - workspace/commit-receipt.json
+      - workspace/execution-state.json
+      - workspace/recovery-decision.json
+      - workspace/review-result.json
+      - workspace/validation-result.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: null
+    generation_and_roots: *fixture_roots
+    validation:
+      - execution.worker.green
+      - execution.validation.green
+      - execution.review.green
+      - execution.commit.green
+      - execution.recovery.green
+      - execution.resume.green
+    binding: *execution_binding
+  - id: execution-review-blocks-commit
+    family: execution
+    evidence_kind: source_characterization
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: execution.stop-for-review
+    expected_transition: execution:blocked
+    expected_writes:
+      - workspace/execution-state.json
+      - workspace/review-result.json
+      - workspace/validation-result.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: review requires an in-scope fix before commit
+    generation_and_roots: *fixture_roots
+    validation:
+      - execution.worker.green
+      - execution.validation.green
+      - execution.stop.green
+    binding: *execution_binding
+  - id: commit-missing-receipt-blocked
     family: commit-receipt-fault-injection
     evidence_kind: fault_injection
     contracts: []
-    initial_artifacts: []
-    command: commit-receipt-fault.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
-    expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
-  - id: closeout-family-skeleton
+    initial_artifacts: *workflow_inputs
+    command: commit.reject-missing-receipt
+    expected_transition: commit:blocked
+    expected_writes:
+      - workspace/execution-state.json
+      - workspace/review-result.json
+      - workspace/validation-result.json
+      - workspace/worker-result.json
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: commit receipt is missing
+    generation_and_roots: *fixture_roots
+    validation: [commit.receipt-required.green, execution.stop.green]
+    binding: *execution_binding
+  - id: commit-unrelated-content-blocked
+    family: commit-receipt-fault-injection
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: commit.reject-unrelated-content
+    expected_transition: commit:blocked
+    expected_writes: *execution_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: commit contains unrelated content
+    generation_and_roots: *fixture_roots
+    validation: [commit.scope-check.green, execution.stop.green]
+    binding: *execution_binding
+
+  - id: closeout-same-batch-no-successor
     family: closeout
     evidence_kind: source_characterization
     contracts:
       - CLOSE-FINAL-001
       - CLOSE-RECONCILE-002
       - CLOSE-NEXT-003
-    initial_artifacts: []
-    command: closeout.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
-    expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
-  - id: closeout-fault-family-skeleton
+    initial_artifacts: *workflow_inputs
+    command: closeout.reconcile-same-batch
+    expected_transition: closeout:reconciled
+    expected_writes: &closeout_writes
+      - workspace/CURRENT.md
+      - workspace/LEDGER.md
+      - workspace/closeout.md
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: same-batch closeout stops without successor selection
+    generation_and_roots: *fixture_roots
+    validation:
+      - closeout.store.green
+      - closeout.reconciliation.green
+      - closeout.no-successor.green
+    binding: &closeout_binding
+      status: bound
+      adapter: workflow_adapters.py:observe_closeout
+      reason: null
+  - id: closeout-partial-write-resumes
     family: closeout-fault-injection
     evidence_kind: fault_injection
     contracts: []
-    initial_artifacts: []
-    command: closeout-fault.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
-    expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
-  - id: root-generation-family-skeleton
-    family: root-generation-isolation
-    evidence_kind: bootstrap_cutover
+    initial_artifacts: *workflow_inputs
+    command: closeout.resume-write
+    expected_transition: closeout:reconciled
+    expected_writes: *closeout_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: same-batch closeout stops without successor selection
+    generation_and_roots: *fixture_roots
+    validation:
+      - closeout.store.green
+      - closeout.recovery.green
+      - closeout.reconciliation.green
+      - closeout.no-successor.green
+    binding: *closeout_binding
+  - id: closeout-lost-batch-identity-blocked
+    family: closeout-fault-injection
+    evidence_kind: fault_injection
     contracts: []
-    initial_artifacts: []
-    command: root-generation.observe
-    expected_transition: null
+    initial_artifacts: *workflow_inputs
+    command: closeout.reject-foreign-batch
+    expected_transition: closeout:blocked
     expected_writes: []
-    forbidden_writes: []
-    expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
-  - id: branch-lineage-family-skeleton
-    family: branch-design-lineage
-    evidence_kind: bootstrap_cutover
-    contracts: []
-    initial_artifacts: []
-    command: branch-lineage.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
-    expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
-  - id: candidate-validation-family-skeleton
-    family: candidate-validation
-    evidence_kind: target_interface
-    contracts: []
-    initial_artifacts: []
-    command: candidate-validation.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
-    expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
-  - id: installer-cutover-family-skeleton
-    family: installer-cutover
-    evidence_kind: bootstrap_cutover
-    contracts: []
-    initial_artifacts: []
-    command: installer-cutover.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
-    expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
-  - id: physical-deletion-family-skeleton
-    family: physical-deletion
-    evidence_kind: bootstrap_cutover
-    contracts: []
-    initial_artifacts: []
-    command: physical-deletion.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
-    expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
-  - id: contract-first-format-family-skeleton
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: closeout batch identity does not match the queued batch
+    generation_and_roots: *fixture_roots
+    validation: [closeout.lineage.green, closeout.stop.green]
+    binding: *closeout_binding
+
+  - id: contract-format-topology-independent
     family: contract-first-format
     evidence_kind: coverage
     contracts:
       - EVIDENCE-LEGACY-001
       - EVIDENCE-DEAD-002
       - EVIDENCE-TEST-003
-    initial_artifacts: []
-    command: contract-format.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
+    initial_artifacts: *workflow_inputs
+    command: evidence.verify-contract-format
+    expected_transition: evidence:topology-independent
+    expected_writes: [workspace/contract-format-evidence.json]
+    forbidden_writes: *forbidden_writes
     expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
+    generation_and_roots: *fixture_roots
+    validation:
+      - evidence.contract-format.green
+      - evidence.topology-independent.green
+    binding:
+      status: bound
+      adapter: workflow_adapters.py:observe_contract_format
+      reason: null
+
   - id: planning-state-ledger-family-skeleton
     family: planning-state-ledger
     evidence_kind: target_interface
@@ -276,20 +618,10 @@ scenarios:
     expected_stop_reason: null
     generation_and_roots: {generation: null, roots: []}
     validation: []
-    binding: *unavailable_binding
-  - id: planning-quality-family-skeleton
-    family: planning-quality
-    evidence_kind: target_interface
-    contracts: []
-    initial_artifacts: []
-    command: planning-quality.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
-    expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *unavailable_binding
+    binding: &currentness_unavailable
+      status: unavailable
+      adapter: null
+      reason: Future currentness slice owns this fixture adapter.
   - id: execution-currentness-family-skeleton
     family: execution-currentness
     evidence_kind: target_interface
@@ -302,7 +634,76 @@ scenarios:
     expected_stop_reason: null
     generation_and_roots: {generation: null, roots: []}
     validation: []
-    binding: *unavailable_binding
+    binding: *currentness_unavailable
+
+  - id: root-generation-family-skeleton
+    family: root-generation-isolation
+    evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: []
+    command: root-generation.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: &cutover_unavailable
+      status: unavailable
+      adapter: null
+      reason: Future cutover slice owns this fixture adapter.
+  - id: branch-lineage-family-skeleton
+    family: branch-design-lineage
+    evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: []
+    command: branch-lineage.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *cutover_unavailable
+  - id: candidate-validation-family-skeleton
+    family: candidate-validation
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: []
+    command: candidate-validation.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *cutover_unavailable
+  - id: installer-cutover-family-skeleton
+    family: installer-cutover
+    evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: []
+    command: installer-cutover.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *cutover_unavailable
+  - id: physical-deletion-family-skeleton
+    family: physical-deletion
+    evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: []
+    command: physical-deletion.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *cutover_unavailable
   - id: cutover-lifecycle-family-skeleton
     family: cutover-lifecycle
     evidence_kind: bootstrap_cutover
@@ -315,4 +716,4 @@ scenarios:
     expected_stop_reason: null
     generation_and_roots: {generation: null, roots: []}
     validation: []
-    binding: *unavailable_binding
+    binding: *cutover_unavailable
