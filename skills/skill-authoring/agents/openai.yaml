@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Authoring"
+  short_description: "Author contract-first hybrid skills"
+  default_prompt: "For agents: apply $skill-authoring to create, migrate, or audit a hybrid skill from accepted ownership and canonicality facts."
