@@ -450,7 +450,6 @@ Reviewer brief for every slice:
 
 | Slice | Risk | Status | Candidate commit | Stable receipt | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|---|---|
-| 1. Schemas and read-only validation | migration | pending | | | | | Five closed-world schemas and compatibility boundary | |
 | 2. Current and ledger stores | migration | pending | | | | | CAS, receipts, derived index, and per-finding default | |
 | 3. Artifact lineage writes | migration | pending | | | | | Dispatch/runway/closeout persistence and lineage | |
 | 4. Selection saga and fault matrix | migration | pending | | | | | DEC-038 exact replay and recovery | |
