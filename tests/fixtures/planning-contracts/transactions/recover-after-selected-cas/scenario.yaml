@@ -1,0 +1,6 @@
+interface: selection-simulation/v1
+mode: recover-after-selected-cas
+transaction_id: selection-recover
+command_owner_version: ccfg-21-slice-4
+current_fixture: ../../current/valid/CURRENT.md
+artifact_fixture: ../../artifacts/valid-lineage

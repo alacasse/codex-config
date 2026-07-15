@@ -7,10 +7,11 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import sys
 import tempfile
 from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Final, Literal, TypeAlias, cast
@@ -36,6 +37,7 @@ SUPPORTED_SCHEMAS: Final = (
     "planning-dispatch/v1",
     "planning-runway/v1",
     "planning-closeout/v1",
+    "planning-selection-transaction/v1",
 )
 _SCHEMA_PATHS: Final = {
     name: Path("schemas") / f"{name.replace('/', '-')}.schema.json"
@@ -73,6 +75,22 @@ _ARTIFACT_SCHEMAS: Final = frozenset(
     }
 )
 _EMPTY_FILE_HASH: Final = hashlib.sha256(b"").hexdigest()
+_TRANSACTION_SCHEMA: Final = "planning-selection-transaction/v1"
+_SELECTION_STAGE_PLAN: Final = (
+    "write_and_validate_dispatch",
+    "cas_idle_to_selected_and_persist_transition_receipt",
+    "write_and_validate_runway",
+    "cas_selected_to_queued_and_persist_transition_receipt",
+)
+_TRANSACTION_EXTENSION_ORDER: Final = (
+    "dispatch_observed",
+    "selected_input",
+    "selected_observed",
+    "runway_input",
+    "runway_observed",
+    "queued_input",
+    "queued_observed",
+)
 
 JsonValue: TypeAlias = (
     str | int | float | bool | None | dict[str, "JsonValue"] | list["JsonValue"]
@@ -80,7 +98,23 @@ JsonValue: TypeAlias = (
 JsonObject: TypeAlias = dict[str, JsonValue]
 FaultPoint: TypeAlias = Literal[
     "before_replace",
+    "after_replace_before_validation",
     "after_replace_before_return",
+]
+SelectionFaultPoint: TypeAlias = Literal[
+    "after_transaction_record_append",
+    "before_dispatch_write",
+    "after_dispatch_write_before_validation",
+    "after_dispatch_validation",
+    "before_idle_to_selected_cas",
+    "after_idle_to_selected_cas_before_receipt",
+    "after_selected_transition_receipt",
+    "before_runway_write",
+    "after_runway_write_before_validation",
+    "after_runway_validation",
+    "before_selected_to_queued_cas",
+    "after_selected_to_queued_cas_before_receipt",
+    "after_queued_transition_receipt",
 ]
 
 
@@ -188,6 +222,10 @@ class InjectedStoreFailure(RuntimeError):
     """Deterministic fault injected around the atomic replacement boundary."""
 
 
+class InjectedSelectionFailure(RuntimeError):
+    """Deterministic fault injected between durable selection-saga steps."""
+
+
 @dataclass(frozen=True)
 class StoreReceipt:
     """Immutable before/after evidence persisted through replay metadata."""
@@ -278,6 +316,37 @@ class ArtifactSnapshot:
     contract: Mapping[str, object]
     logical_revision: int
     file_hash: str
+
+
+@dataclass(frozen=True)
+class SelectionTransactionRequest:
+    """Caller-owned exact inputs for one DEC-038 selection transaction."""
+
+    transaction_id: str
+    transaction_path: Path
+    current_path: Path
+    expected_initial_state_revision: int
+    expected_initial_state_file_hash: str
+    initial_current_contract: Mapping[str, object]
+    lineage: ArtifactLineage
+    dispatch_contract: Mapping[str, object]
+    runway_contract: Mapping[str, object]
+    command_owner_version: str
+    producer: ProducerIdentity
+
+
+@dataclass(frozen=True)
+class SelectionTransactionResult:
+    """Completed exact selection saga evidence."""
+
+    outcome: Literal["completed", "exact_replay"]
+    transaction_path: Path
+    transaction_file_hash: str
+    current_revision: int
+    dispatch_revision: int
+    runway_revision: int
+    selected_receipt: StoreReceipt
+    queued_receipt: StoreReceipt
 
 
 @dataclass(frozen=True)
@@ -750,6 +819,72 @@ def write_closeout_artifact(
         validate_payload=validate_payload,
         idempotency_key=idempotency_key,
         fault=fault,
+    )
+
+
+def simulate_selection_transaction(
+    request: SelectionTransactionRequest,
+    *,
+    toolchain_root: str | Path,
+    fault: SelectionFaultPoint | None = None,
+) -> SelectionTransactionResult:
+    """Run or resume the exact four-stage DEC-038 selection transaction."""
+
+    _validate_selection_request(request, toolchain_root=toolchain_root)
+    transaction_path = request.transaction_path
+    if transaction_path.is_file() and transaction_path.stat().st_size > 0:
+        record = _read_transaction_record(
+            transaction_path,
+            toolchain_root=toolchain_root,
+            expected_producer=request.producer,
+        )
+        _validate_transaction_binding(record, request)
+        started_complete = len(_transaction_extensions(record)) == len(
+            _TRANSACTION_EXTENSION_ORDER
+        )
+    else:
+        current = read_current_document(request.current_path, toolchain_root=toolchain_root)
+        _validate_initial_current(request, current)
+        record = _initial_transaction_record(request)
+        _persist_transaction_record(
+            transaction_path,
+            record,
+            toolchain_root=toolchain_root,
+            expected_file_hash=_EMPTY_FILE_HASH,
+            expected_producer=request.producer,
+        )
+        started_complete = False
+        _raise_selection_fault(fault, "after_transaction_record_append")
+
+    record = _run_dispatch_stage(
+        record,
+        request,
+        toolchain_root=toolchain_root,
+        fault=fault,
+    )
+    record = _run_selected_stage(
+        record,
+        request,
+        toolchain_root=toolchain_root,
+        fault=fault,
+    )
+    record = _run_runway_stage(
+        record,
+        request,
+        toolchain_root=toolchain_root,
+        fault=fault,
+    )
+    record = _run_queued_stage(
+        record,
+        request,
+        toolchain_root=toolchain_root,
+        fault=fault,
+    )
+    return _selection_result(
+        record,
+        request,
+        toolchain_root=toolchain_root,
+        outcome="exact_replay" if started_complete else "completed",
     )
 
 
@@ -2076,6 +2211,8 @@ def _atomic_replace_and_validate(
         if fault == "before_replace":
             raise InjectedStoreFailure("before_replace")
         os.replace(temporary, path)
+        if fault == "after_replace_before_validation":
+            raise InjectedStoreFailure("after_replace_before_validation")
         try:
             validate()
         except Exception:
@@ -2954,6 +3091,1170 @@ def _top_level_sections(text: str) -> dict[str, str]:
     return sections
 
 
+def _validate_selection_request(
+    request: SelectionTransactionRequest,
+    *,
+    toolchain_root: str | Path,
+) -> None:
+    if not request.transaction_id.strip():
+        raise PlanningStoreError(
+            "transaction.id",
+            "transaction_id cannot be empty",
+        )
+    if not request.command_owner_version.strip():
+        raise PlanningStoreError(
+            "transaction.command_version",
+            "command_owner_version cannot be empty",
+        )
+    if not re.fullmatch(r"[0-9a-f]{64}", request.expected_initial_state_file_hash):
+        raise PlanningStoreError(
+            "transaction.state_hash",
+            "expected initial state file hash must be sha256",
+        )
+    _validate_lineage_paths(request.lineage)
+    planning_root = request.lineage.planning_root.resolve()
+    for label, path in (
+        ("transaction", request.transaction_path),
+        ("current", request.current_path),
+    ):
+        if not path.resolve().is_relative_to(planning_root):
+            raise PlanningStoreError(
+                "transaction.path_escape",
+                f"{label} path escapes the explicit planning root",
+            )
+    if (
+        request.producer.schema_version != _TRANSACTION_SCHEMA
+        or request.producer.toolchain_generation
+        != request.lineage.dispatch_producer.toolchain_generation
+        or request.producer.toolchain_commit
+        != request.lineage.dispatch_producer.toolchain_commit
+    ):
+        raise PlanningStoreError(
+            "transaction.producer",
+            "transaction producer must match the accepted artifact lineage",
+        )
+    initial_current = _json_object_copy(
+        request.initial_current_contract,
+        "initial_current_contract",
+    )
+    if initial_current.get("schema") != "planning-current/v1":
+        raise PlanningStoreError(
+            "transaction.current_schema",
+            "initial current contract must use planning-current/v1",
+        )
+    try:
+        render_planning_contract(initial_current, toolchain_root=toolchain_root)
+        render_planning_contract(
+            request.dispatch_contract,
+            toolchain_root=toolchain_root,
+            expected_producer_identity=request.lineage.dispatch_producer,
+        )
+        render_planning_contract(
+            request.runway_contract,
+            toolchain_root=toolchain_root,
+            expected_producer_identity=request.lineage.runway_producer,
+        )
+    except ValueError as error:
+        raise PlanningStoreError("transaction.invalid_input", str(error)) from error
+    _validate_dispatch_lineage(request.dispatch_contract, request.lineage)
+    _validate_runway_lineage(request.runway_contract, request.lineage)
+    _expect_artifact_fact(
+        "transaction current program",
+        initial_current.get("program"),
+        request.lineage.program,
+    )
+    _expect_artifact_fact(
+        "transaction initial state revision",
+        initial_current.get("revision"),
+        request.expected_initial_state_revision,
+    )
+    _expect_artifact_fact(
+        "transaction current ledger",
+        _resolve_artifact_reference(
+            initial_current.get("ledger"),
+            request.lineage.planning_root,
+        ),
+        request.lineage.ledger_path.resolve(),
+    )
+
+
+def _validate_initial_current(
+    request: SelectionTransactionRequest,
+    snapshot: CurrentSnapshot,
+) -> None:
+    if snapshot.logical_revision != request.expected_initial_state_revision:
+        raise PlanningStoreError(
+            "transaction.initial_state_revision",
+            "current revision does not match exact initial intent",
+        )
+    if snapshot.file_hash != request.expected_initial_state_file_hash:
+        raise PlanningStoreError(
+            "transaction.initial_state_hash",
+            "current file hash does not match exact initial intent",
+        )
+    if _thaw_json(snapshot.contract) != _json_object_copy(
+        request.initial_current_contract,
+        "initial_current_contract",
+    ):
+        raise PlanningStoreError(
+            "transaction.initial_state_payload",
+            "current payload does not match exact initial intent",
+        )
+    _require_current_state(snapshot.contract, expected="idle", request=request)
+
+
+def _initial_transaction_record(request: SelectionTransactionRequest) -> JsonObject:
+    state_payload_json = _canonical_json_text(request.initial_current_contract)
+    dispatch_payload_json = _canonical_json_text(request.dispatch_contract)
+    finding_ids = sorted(
+        (
+            *request.lineage.included_finding_ids,
+            *request.lineage.deferred_finding_ids,
+        )
+    )
+    return cast(JsonObject, {
+        "schema": _TRANSACTION_SCHEMA,
+        "transaction_id": request.transaction_id,
+        "program": request.lineage.program,
+        "finding_ids": finding_ids,
+        "batch_id": request.lineage.batch_id,
+        "initial_intent": {
+            "ledger_path": str(request.lineage.ledger_path),
+            "ledger_revision": request.lineage.ledger_revision,
+            "state_path": str(request.current_path),
+            "state_revision": request.expected_initial_state_revision,
+            "state_file_hash": request.expected_initial_state_file_hash,
+            "state_payload_json": state_payload_json,
+            "state_payload_hash": _hash_text(state_payload_json),
+            "expected_state": "idle",
+            "dispatch_path": str(request.lineage.dispatch_path),
+            "dispatch_payload_json": dispatch_payload_json,
+            "dispatch_payload_hash": _hash_text(dispatch_payload_json),
+            "runway_path": str(request.lineage.runway_path),
+            "command_owner_version": request.command_owner_version,
+            "schema_versions": {
+                "current": "planning-current/v1",
+                "dispatch": "planning-dispatch/v1",
+                "runway": "planning-runway/v1",
+                "transaction": _TRANSACTION_SCHEMA,
+            },
+            "stage_plan": list(_SELECTION_STAGE_PLAN),
+        },
+        "extensions": [],
+        "producer": _producer_binding(request.producer),
+    })
+
+
+def _validate_transaction_binding(
+    record: Mapping[str, object],
+    request: SelectionTransactionRequest,
+) -> None:
+    expected = _initial_transaction_record(request)
+    for field in (
+        "schema",
+        "transaction_id",
+        "program",
+        "finding_ids",
+        "batch_id",
+        "initial_intent",
+        "producer",
+    ):
+        if _thaw_json(record.get(field)) != expected[field]:
+            raise PlanningStoreError(
+                "transaction.reused_id_mismatch",
+                f"transaction {request.transaction_id!r} changed immutable field {field}",
+            )
+    _validate_transaction_extension_order(record)
+    runway_input = _transaction_extension(record, "runway_input")
+    if runway_input is not None:
+        runway_payload_json = _canonical_json_text(request.runway_contract)
+        if (
+            runway_input.get("runway_payload_json") != runway_payload_json
+            or runway_input.get("runway_payload_hash")
+            != _hash_text(runway_payload_json)
+        ):
+            raise PlanningStoreError(
+                "transaction.reused_id_mismatch",
+                "transaction runway payload changed after it was bound",
+            )
+
+
+def _read_transaction_record(
+    path: Path,
+    *,
+    toolchain_root: str | Path,
+    expected_producer: ProducerIdentity,
+) -> JsonObject:
+    result = validate_planning_contracts(
+        [path],
+        toolchain_root=toolchain_root,
+        expected_producer_identity=expected_producer,
+    )
+    if not result.is_valid:
+        raise PlanningStoreError("transaction.invalid", str(result.diagnostics[0]))
+    if len(result.contracts) != 1:
+        raise PlanningStoreError(
+            "transaction.contract_count",
+            "expected one transaction contract",
+        )
+    contract = result.contracts[0].contract
+    if contract.get("schema") != _TRANSACTION_SCHEMA:
+        raise PlanningStoreError(
+            "transaction.schema",
+            f"expected {_TRANSACTION_SCHEMA!r}",
+        )
+    record = _json_object_copy(contract, "transaction record")
+    _validate_transaction_extension_order(record)
+    return record
+
+
+def _persist_transaction_record(
+    path: Path,
+    record: JsonObject,
+    *,
+    toolchain_root: str | Path,
+    expected_file_hash: str,
+    expected_producer: ProducerIdentity,
+) -> None:
+    actual_file_hash = _file_hash(path) if path.is_file() else _EMPTY_FILE_HASH
+    if actual_file_hash != expected_file_hash:
+        raise PlanningStoreError(
+            "transaction.file_hash_mismatch",
+            "transaction record moved before append",
+        )
+    extensions = _transaction_extensions(record)
+    if path.is_file() and path.stat().st_size > 0:
+        existing = _read_transaction_record(
+            path,
+            toolchain_root=toolchain_root,
+            expected_producer=expected_producer,
+        )
+        expected_prior = _json_object_copy(record, "transaction record")
+        expected_prior["extensions"] = [
+            _json_object_copy(item, "transaction extension")
+            for item in extensions[:-1]
+        ]
+        if existing != expected_prior:
+            raise PlanningStoreError(
+                "transaction.concurrent_movement",
+                "transaction record is not the immutable prefix being extended",
+            )
+    elif extensions:
+        raise PlanningStoreError(
+            "transaction.missing_prefix",
+            "cannot append an extension without the durable initial record",
+        )
+    try:
+        rendered = render_planning_contract(
+            record,
+            toolchain_root=toolchain_root,
+            expected_producer_identity=expected_producer,
+        )
+    except ValueError as error:
+        raise PlanningStoreError("transaction.invalid", str(error)) from error
+
+    def validate_written() -> None:
+        written = _read_transaction_record(
+            path,
+            toolchain_root=toolchain_root,
+            expected_producer=expected_producer,
+        )
+        if written != record:
+            raise PlanningStoreError(
+                "transaction.reread_mismatch",
+                "reread transaction does not equal appended record",
+            )
+
+    _atomic_replace_and_validate(
+        path,
+        rendered,
+        fault=None,
+        validate=validate_written,
+    )
+
+
+def _append_transaction_extension(
+    record: JsonObject,
+    extension: JsonObject,
+    request: SelectionTransactionRequest,
+    *,
+    toolchain_root: str | Path,
+) -> JsonObject:
+    extensions = _transaction_extensions(record)
+    if len(extensions) >= len(_TRANSACTION_EXTENSION_ORDER):
+        raise PlanningStoreError(
+            "transaction.sequence",
+            "selection transaction already contains every legal extension",
+        )
+    expected_type = _TRANSACTION_EXTENSION_ORDER[len(extensions)]
+    if extension.get("type") != expected_type:
+        raise PlanningStoreError(
+            "transaction.sequence",
+            f"expected next extension {expected_type!r}",
+        )
+    updated = _json_object_copy(record, "transaction record")
+    updated["extensions"] = [
+        *[_json_object_copy(item, "transaction extension") for item in extensions],
+        extension,
+    ]
+    _persist_transaction_record(
+        request.transaction_path,
+        updated,
+        toolchain_root=toolchain_root,
+        expected_file_hash=_file_hash(request.transaction_path),
+        expected_producer=request.producer,
+    )
+    return updated
+
+
+def _transaction_extensions(record: Mapping[str, object]) -> list[JsonObject]:
+    raw = record.get("extensions")
+    if not isinstance(raw, list):
+        raise PlanningStoreError(
+            "transaction.extensions",
+            "extensions must be a list of objects",
+        )
+    extensions: list[JsonObject] = []
+    for item in cast(list[object], raw):
+        if not isinstance(item, dict):
+            raise PlanningStoreError(
+                "transaction.extensions",
+                "extensions must be a list of objects",
+            )
+        extensions.append(cast(JsonObject, item))
+    return extensions
+
+
+def _validate_transaction_extension_order(record: Mapping[str, object]) -> None:
+    extensions = _transaction_extensions(record)
+    actual = tuple(item.get("type") for item in extensions)
+    expected = _TRANSACTION_EXTENSION_ORDER[: len(actual)]
+    if actual != expected:
+        raise PlanningStoreError(
+            "transaction.sequence",
+            f"extensions must be the exact legal prefix {expected!r}; got {actual!r}",
+        )
+
+
+def _transaction_extension(
+    record: Mapping[str, object],
+    extension_type: str,
+) -> JsonObject | None:
+    matches = [
+        item
+        for item in _transaction_extensions(record)
+        if item.get("type") == extension_type
+    ]
+    if len(matches) > 1:
+        raise PlanningStoreError(
+            "transaction.sequence",
+            f"duplicate transaction extension {extension_type!r}",
+        )
+    return matches[0] if matches else None
+
+
+def _run_dispatch_stage(
+    record: JsonObject,
+    request: SelectionTransactionRequest,
+    *,
+    toolchain_root: str | Path,
+    fault: SelectionFaultPoint | None,
+) -> JsonObject:
+    observed = _transaction_extension(record, "dispatch_observed")
+    if observed is not None:
+        _verify_dispatch_observation(observed, request, toolchain_root=toolchain_root)
+        return record
+    _raise_selection_fault(fault, "before_dispatch_write")
+    write_fault: FaultPoint | None = (
+        "after_replace_before_validation"
+        if fault == "after_dispatch_write_before_validation"
+        else None
+    )
+    write_dispatch_artifact(
+        request.lineage.dispatch_path,
+        toolchain_root=toolchain_root,
+        expected_revision=0,
+        expected_file_hash=_EMPTY_FILE_HASH,
+        contract=request.dispatch_contract,
+        lineage=request.lineage,
+        idempotency_key=f"{request.transaction_id}:dispatch",
+        fault=write_fault,
+    )
+    snapshot = read_artifact_document(
+        request.lineage.dispatch_path,
+        toolchain_root=toolchain_root,
+        expected_schema="planning-dispatch/v1",
+        expected_producer_identity=request.lineage.dispatch_producer,
+    )
+    extension: JsonObject = {
+        "type": "dispatch_observed",
+        "dispatch_revision": snapshot.logical_revision,
+        "dispatch_file_hash": snapshot.file_hash,
+        "validation_result": "passed",
+    }
+    updated = _append_transaction_extension(
+        record,
+        extension,
+        request,
+        toolchain_root=toolchain_root,
+    )
+    _raise_selection_fault(fault, "after_dispatch_validation")
+    return updated
+
+
+def _run_selected_stage(
+    record: JsonObject,
+    request: SelectionTransactionRequest,
+    *,
+    toolchain_root: str | Path,
+    fault: SelectionFaultPoint | None,
+) -> JsonObject:
+    dispatch_observed = _required_transaction_extension(record, "dispatch_observed")
+    selected_contract = _selected_current_contract(request)
+    selected_key = f"{request.transaction_id}:selected"
+    selected_request_hash = _current_apply_request_hash(
+        expected_revision=request.expected_initial_state_revision,
+        expected_file_hash=request.expected_initial_state_file_hash,
+        replacement_contract=selected_contract,
+        idempotency_key=selected_key,
+    )
+    selected_input = _transaction_extension(record, "selected_input")
+    expected_input: JsonObject = {
+        "type": "selected_input",
+        "expected_state": "idle",
+        "expected_state_revision": request.expected_initial_state_revision,
+        "expected_state_file_hash": request.expected_initial_state_file_hash,
+        "dispatch_path": str(request.lineage.dispatch_path),
+        "dispatch_revision": cast(int, dispatch_observed["dispatch_revision"]),
+        "request_hash": selected_request_hash,
+    }
+    if selected_input is None:
+        current = read_current_document(request.current_path, toolchain_root=toolchain_root)
+        _validate_initial_current(request, current)
+        record = _append_transaction_extension(
+            record,
+            expected_input,
+            request,
+            toolchain_root=toolchain_root,
+        )
+        selected_input = expected_input
+    elif selected_input != expected_input:
+        raise PlanningStoreError(
+            "transaction.selected_input_mismatch",
+            "persisted selected CAS input does not match the exact request",
+        )
+    selected_observed = _transaction_extension(record, "selected_observed")
+    if selected_observed is not None:
+        _validate_transition_observation(
+            selected_observed,
+            expected_key=selected_key,
+            expected_request_hash=selected_request_hash,
+            before_revision=request.expected_initial_state_revision,
+            after_revision=request.expected_initial_state_revision + 1,
+        )
+        return record
+    _raise_selection_fault(fault, "before_idle_to_selected_cas")
+    apply_fault: FaultPoint | None = (
+        "after_replace_before_return"
+        if fault == "after_idle_to_selected_cas_before_receipt"
+        else None
+    )
+    result = apply_current_document(
+        request.current_path,
+        toolchain_root=toolchain_root,
+        expected_revision=request.expected_initial_state_revision,
+        expected_file_hash=request.expected_initial_state_file_hash,
+        replacement_contract=selected_contract,
+        idempotency_key=selected_key,
+        fault=apply_fault,
+    )
+    current = read_current_document(request.current_path, toolchain_root=toolchain_root)
+    _require_current_payload(current, selected_contract, expected="selected", request=request)
+    extension: JsonObject = {
+        "type": "selected_observed",
+        "state_revision": current.logical_revision,
+        "state_file_hash": current.file_hash,
+        "receipt": _store_receipt_object(result.receipt),
+        "validation_result": "passed",
+    }
+    updated = _append_transaction_extension(
+        record,
+        extension,
+        request,
+        toolchain_root=toolchain_root,
+    )
+    _raise_selection_fault(fault, "after_selected_transition_receipt")
+    return updated
+
+
+def _run_runway_stage(
+    record: JsonObject,
+    request: SelectionTransactionRequest,
+    *,
+    toolchain_root: str | Path,
+    fault: SelectionFaultPoint | None,
+) -> JsonObject:
+    dispatch_observed = _required_transaction_extension(record, "dispatch_observed")
+    selected_observed = _required_transaction_extension(record, "selected_observed")
+    runway_payload_json = _canonical_json_text(request.runway_contract)
+    selected_receipt = _parse_store_receipt(selected_observed.get("receipt"))
+    expected_input: JsonObject = {
+        "type": "runway_input",
+        "runway_payload_json": runway_payload_json,
+        "runway_payload_hash": _hash_text(runway_payload_json),
+        "dispatch_revision": cast(int, dispatch_observed["dispatch_revision"]),
+        "dispatch_file_hash": cast(str, dispatch_observed["dispatch_file_hash"]),
+        "selected_state_revision": cast(int, selected_observed["state_revision"]),
+        "selected_state_file_hash": cast(str, selected_observed["state_file_hash"]),
+        "selected_receipt_request_hash": selected_receipt.request_hash,
+    }
+    runway_input = _transaction_extension(record, "runway_input")
+    if runway_input is None:
+        current = read_current_document(request.current_path, toolchain_root=toolchain_root)
+        _require_current_payload(
+            current,
+            _selected_current_contract(request),
+            expected="selected",
+            request=request,
+        )
+        record = _append_transaction_extension(
+            record,
+            expected_input,
+            request,
+            toolchain_root=toolchain_root,
+        )
+        runway_input = expected_input
+    elif runway_input != expected_input:
+        raise PlanningStoreError(
+            "transaction.runway_input_mismatch",
+            "persisted runway input does not match the exact request",
+        )
+    runway_observed = _transaction_extension(record, "runway_observed")
+    if runway_observed is not None:
+        _verify_runway_observation(runway_observed, request, toolchain_root=toolchain_root)
+        return record
+    current = read_current_document(request.current_path, toolchain_root=toolchain_root)
+    _require_current_payload(
+        current,
+        _selected_current_contract(request),
+        expected="selected",
+        request=request,
+    )
+    _raise_selection_fault(fault, "before_runway_write")
+    write_fault: FaultPoint | None = (
+        "after_replace_before_validation"
+        if fault == "after_runway_write_before_validation"
+        else None
+    )
+    write_runway_artifact(
+        request.lineage.runway_path,
+        toolchain_root=toolchain_root,
+        expected_revision=0,
+        expected_file_hash=_EMPTY_FILE_HASH,
+        expected_dispatch_file_hash=cast(
+            str,
+            dispatch_observed["dispatch_file_hash"],
+        ),
+        contract=request.runway_contract,
+        lineage=request.lineage,
+        idempotency_key=f"{request.transaction_id}:runway",
+        fault=write_fault,
+    )
+    snapshot = read_artifact_document(
+        request.lineage.runway_path,
+        toolchain_root=toolchain_root,
+        expected_schema="planning-runway/v1",
+        expected_producer_identity=request.lineage.runway_producer,
+    )
+    extension: JsonObject = {
+        "type": "runway_observed",
+        "runway_revision": snapshot.logical_revision,
+        "runway_file_hash": snapshot.file_hash,
+        "validation_result": "passed",
+    }
+    updated = _append_transaction_extension(
+        record,
+        extension,
+        request,
+        toolchain_root=toolchain_root,
+    )
+    _raise_selection_fault(fault, "after_runway_validation")
+    return updated
+
+
+def _run_queued_stage(
+    record: JsonObject,
+    request: SelectionTransactionRequest,
+    *,
+    toolchain_root: str | Path,
+    fault: SelectionFaultPoint | None,
+) -> JsonObject:
+    dispatch_observed = _required_transaction_extension(record, "dispatch_observed")
+    selected_observed = _required_transaction_extension(record, "selected_observed")
+    runway_observed = _required_transaction_extension(record, "runway_observed")
+    selected_contract = _selected_current_contract(request)
+    queued_contract = _queued_current_contract(request)
+    queued_key = f"{request.transaction_id}:queued"
+    queued_request_hash = _current_apply_request_hash(
+        expected_revision=cast(int, selected_observed["state_revision"]),
+        expected_file_hash=cast(str, selected_observed["state_file_hash"]),
+        replacement_contract=queued_contract,
+        idempotency_key=queued_key,
+    )
+    expected_input: JsonObject = {
+        "type": "queued_input",
+        "expected_state": "selected",
+        "expected_state_revision": cast(int, selected_observed["state_revision"]),
+        "expected_state_file_hash": cast(str, selected_observed["state_file_hash"]),
+        "dispatch_path": str(request.lineage.dispatch_path),
+        "dispatch_revision": cast(int, dispatch_observed["dispatch_revision"]),
+        "dispatch_file_hash": cast(str, dispatch_observed["dispatch_file_hash"]),
+        "runway_path": str(request.lineage.runway_path),
+        "runway_revision": cast(int, runway_observed["runway_revision"]),
+        "runway_file_hash": cast(str, runway_observed["runway_file_hash"]),
+        "request_hash": queued_request_hash,
+    }
+    queued_input = _transaction_extension(record, "queued_input")
+    if queued_input is None:
+        current = read_current_document(request.current_path, toolchain_root=toolchain_root)
+        _require_current_payload(
+            current,
+            selected_contract,
+            expected="selected",
+            request=request,
+        )
+        record = _append_transaction_extension(
+            record,
+            expected_input,
+            request,
+            toolchain_root=toolchain_root,
+        )
+        queued_input = expected_input
+    elif queued_input != expected_input:
+        raise PlanningStoreError(
+            "transaction.queued_input_mismatch",
+            "persisted queued CAS input does not match the exact request",
+        )
+    queued_observed = _transaction_extension(record, "queued_observed")
+    if queued_observed is not None:
+        _validate_transition_observation(
+            queued_observed,
+            expected_key=queued_key,
+            expected_request_hash=queued_request_hash,
+            before_revision=cast(int, selected_observed["state_revision"]),
+            after_revision=cast(int, selected_observed["state_revision"]) + 1,
+        )
+        current = read_current_document(request.current_path, toolchain_root=toolchain_root)
+        _require_current_payload(current, queued_contract, expected="queued", request=request)
+        return record
+    _raise_selection_fault(fault, "before_selected_to_queued_cas")
+    apply_fault: FaultPoint | None = (
+        "after_replace_before_return"
+        if fault == "after_selected_to_queued_cas_before_receipt"
+        else None
+    )
+    result = apply_current_document(
+        request.current_path,
+        toolchain_root=toolchain_root,
+        expected_revision=cast(int, selected_observed["state_revision"]),
+        expected_file_hash=cast(str, selected_observed["state_file_hash"]),
+        replacement_contract=queued_contract,
+        idempotency_key=queued_key,
+        fault=apply_fault,
+    )
+    current = read_current_document(request.current_path, toolchain_root=toolchain_root)
+    _require_current_payload(current, queued_contract, expected="queued", request=request)
+    extension: JsonObject = {
+        "type": "queued_observed",
+        "state_revision": current.logical_revision,
+        "state_file_hash": current.file_hash,
+        "receipt": _store_receipt_object(result.receipt),
+        "validation_result": "passed",
+    }
+    updated = _append_transaction_extension(
+        record,
+        extension,
+        request,
+        toolchain_root=toolchain_root,
+    )
+    _raise_selection_fault(fault, "after_queued_transition_receipt")
+    return updated
+
+
+def _selection_result(
+    record: JsonObject,
+    request: SelectionTransactionRequest,
+    *,
+    toolchain_root: str | Path,
+    outcome: Literal["completed", "exact_replay"],
+) -> SelectionTransactionResult:
+    _validate_transaction_extension_order(record)
+    if len(_transaction_extensions(record)) != len(_TRANSACTION_EXTENSION_ORDER):
+        raise PlanningStoreError(
+            "transaction.incomplete",
+            "selection transaction did not reach queued observation",
+        )
+    dispatch = _required_transaction_extension(record, "dispatch_observed")
+    selected = _required_transaction_extension(record, "selected_observed")
+    runway = _required_transaction_extension(record, "runway_observed")
+    queued = _required_transaction_extension(record, "queued_observed")
+    _verify_dispatch_observation(dispatch, request, toolchain_root=toolchain_root)
+    _verify_runway_observation(runway, request, toolchain_root=toolchain_root)
+    current = read_current_document(request.current_path, toolchain_root=toolchain_root)
+    _require_current_payload(
+        current,
+        _queued_current_contract(request),
+        expected="queued",
+        request=request,
+    )
+    if (
+        current.logical_revision != queued.get("state_revision")
+        or current.file_hash != queued.get("state_file_hash")
+    ):
+        raise PlanningStoreError(
+            "transaction.queued_evidence_mismatch",
+            "queued state does not match durable transaction evidence",
+        )
+    return SelectionTransactionResult(
+        outcome=outcome,
+        transaction_path=request.transaction_path,
+        transaction_file_hash=_file_hash(request.transaction_path),
+        current_revision=current.logical_revision,
+        dispatch_revision=cast(int, dispatch["dispatch_revision"]),
+        runway_revision=cast(int, runway["runway_revision"]),
+        selected_receipt=_parse_store_receipt(selected.get("receipt")),
+        queued_receipt=_parse_store_receipt(queued.get("receipt")),
+    )
+
+
+def _required_transaction_extension(
+    record: Mapping[str, object],
+    extension_type: str,
+) -> JsonObject:
+    extension = _transaction_extension(record, extension_type)
+    if extension is None:
+        raise PlanningStoreError(
+            "transaction.sequence",
+            f"required extension {extension_type!r} is missing",
+        )
+    return extension
+
+
+def _verify_dispatch_observation(
+    observed: Mapping[str, object],
+    request: SelectionTransactionRequest,
+    *,
+    toolchain_root: str | Path,
+) -> None:
+    snapshot = read_artifact_document(
+        request.lineage.dispatch_path,
+        toolchain_root=toolchain_root,
+        expected_schema="planning-dispatch/v1",
+        expected_producer_identity=request.lineage.dispatch_producer,
+    )
+    if (
+        snapshot.logical_revision != observed.get("dispatch_revision")
+        or snapshot.file_hash != observed.get("dispatch_file_hash")
+        or _thaw_json(snapshot.contract)
+        != _json_object_copy(request.dispatch_contract, "dispatch_contract")
+    ):
+        raise PlanningStoreError(
+            "transaction.dispatch_evidence_mismatch",
+            "dispatch does not match durable transaction evidence",
+        )
+
+
+def _verify_runway_observation(
+    observed: Mapping[str, object],
+    request: SelectionTransactionRequest,
+    *,
+    toolchain_root: str | Path,
+) -> None:
+    snapshot = read_artifact_document(
+        request.lineage.runway_path,
+        toolchain_root=toolchain_root,
+        expected_schema="planning-runway/v1",
+        expected_producer_identity=request.lineage.runway_producer,
+    )
+    if (
+        snapshot.logical_revision != observed.get("runway_revision")
+        or snapshot.file_hash != observed.get("runway_file_hash")
+        or _thaw_json(snapshot.contract)
+        != _json_object_copy(request.runway_contract, "runway_contract")
+    ):
+        raise PlanningStoreError(
+            "transaction.runway_evidence_mismatch",
+            "runway does not match durable transaction evidence",
+        )
+
+
+def _validate_transition_observation(
+    observed: Mapping[str, object],
+    *,
+    expected_key: str,
+    expected_request_hash: str,
+    before_revision: int,
+    after_revision: int,
+) -> StoreReceipt:
+    receipt = _parse_store_receipt(observed.get("receipt"))
+    if (
+        receipt.store_interface != _CURRENT_STORE_INTERFACE
+        or receipt.idempotency_key != expected_key
+        or receipt.request_hash != expected_request_hash
+        or receipt.before_revision != before_revision
+        or receipt.after_revision != after_revision
+        or receipt.touched_finding_ids
+        or observed.get("state_revision") != after_revision
+    ):
+        raise PlanningStoreError(
+            "transaction.receipt_mismatch",
+            "transition observation does not match exact CAS input and result",
+        )
+    return receipt
+
+
+def _selected_current_contract(request: SelectionTransactionRequest) -> JsonObject:
+    selected = _json_object_copy(
+        request.initial_current_contract,
+        "initial_current_contract",
+    )
+    selected["revision"] = request.expected_initial_state_revision + 1
+    selected["selected_dispatch"] = _relative_planning_path(
+        request.lineage.dispatch_path,
+        request.lineage.planning_root,
+    )
+    selected["queued_runway"] = None
+    selected["active_runway"] = None
+    return selected
+
+
+def _queued_current_contract(request: SelectionTransactionRequest) -> JsonObject:
+    queued = _selected_current_contract(request)
+    queued["revision"] = request.expected_initial_state_revision + 2
+    queued["selected_dispatch"] = None
+    queued["queued_runway"] = _relative_planning_path(
+        request.lineage.runway_path,
+        request.lineage.planning_root,
+    )
+    queued["active_runway"] = None
+    return queued
+
+
+def _require_current_payload(
+    snapshot: CurrentSnapshot,
+    expected_contract: Mapping[str, object],
+    *,
+    expected: Literal["selected", "queued"],
+    request: SelectionTransactionRequest,
+) -> None:
+    if _thaw_json(snapshot.contract) != _json_object_copy(
+        expected_contract,
+        "expected current contract",
+    ):
+        raise PlanningStoreError(
+            "transaction.state_movement",
+            f"current state does not match exact {expected} transaction result",
+        )
+    _require_current_state(snapshot.contract, expected=expected, request=request)
+
+
+def _require_current_state(
+    contract: Mapping[str, object],
+    *,
+    expected: Literal["idle", "selected", "queued"],
+    request: SelectionTransactionRequest,
+) -> None:
+    dispatch = _relative_planning_path(
+        request.lineage.dispatch_path,
+        request.lineage.planning_root,
+    )
+    runway = _relative_planning_path(
+        request.lineage.runway_path,
+        request.lineage.planning_root,
+    )
+    states: dict[str, tuple[object, object, object]] = {
+        "idle": (None, None, None),
+        "selected": (dispatch, None, None),
+        "queued": (None, runway, None),
+    }
+    actual = (
+        contract.get("selected_dispatch"),
+        contract.get("queued_runway"),
+        contract.get("active_runway"),
+    )
+    if actual != states[expected]:
+        raise PlanningStoreError(
+            "transaction.state_movement",
+            f"expected {expected} state; got pointers {actual!r}",
+        )
+
+
+def _current_apply_request_hash(
+    *,
+    expected_revision: int,
+    expected_file_hash: str,
+    replacement_contract: Mapping[str, object],
+    idempotency_key: str,
+) -> str:
+    return _canonical_request_hash(
+        {
+            "operation": "apply_current_document",
+            "expected_revision": expected_revision,
+            "expected_file_hash": expected_file_hash,
+            "replacement_contract": dict(replacement_contract),
+            "idempotency_key": idempotency_key,
+        }
+    )
+
+
+def _store_receipt_object(receipt: StoreReceipt) -> JsonObject:
+    return {
+        "interface": receipt.interface,
+        "store_interface": receipt.store_interface,
+        "idempotency_key": receipt.idempotency_key,
+        "request_hash": receipt.request_hash,
+        "before_revision": receipt.before_revision,
+        "after_revision": receipt.after_revision,
+        "touched_finding_ids": list(receipt.touched_finding_ids),
+    }
+
+
+def _canonical_json_text(value: Mapping[str, object]) -> str:
+    return json.dumps(
+        _thaw_json(value),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+
+
+def _hash_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _relative_planning_path(path: Path, planning_root: Path) -> str:
+    try:
+        return path.resolve().relative_to(planning_root.resolve()).as_posix()
+    except ValueError as error:
+        raise PlanningStoreError(
+            "transaction.path_escape",
+            f"{path} escapes the explicit planning root",
+        ) from error
+
+
+def _raise_selection_fault(
+    fault: SelectionFaultPoint | None,
+    checkpoint: SelectionFaultPoint,
+) -> None:
+    if fault == checkpoint:
+        raise InjectedSelectionFailure(checkpoint)
+
+
+def _simulate_selection_fixture(
+    scenario_path: Path,
+    *,
+    toolchain_root: Path,
+) -> SelectionTransactionResult:
+    scenario_file = scenario_path / "scenario.yaml"
+    try:
+        loaded = yaml.load(scenario_file.read_text(encoding="utf-8"), Loader=_UniqueKeyLoader)
+    except (OSError, yaml.YAMLError) as error:
+        raise PlanningStoreError("simulation.fixture", str(error)) from error
+    if not isinstance(loaded, dict):
+        raise PlanningStoreError("simulation.fixture", "scenario.yaml must be an object")
+    scenario = cast(dict[object, object], loaded)
+    expected_fields = {
+        "interface",
+        "mode",
+        "transaction_id",
+        "command_owner_version",
+        "current_fixture",
+        "artifact_fixture",
+    }
+    if set(scenario) != expected_fields:
+        raise PlanningStoreError(
+            "simulation.fixture",
+            f"scenario fields must be exactly {sorted(expected_fields)!r}",
+        )
+    if scenario["interface"] != "selection-simulation/v1":
+        raise PlanningStoreError(
+            "simulation.fixture",
+            "scenario interface must be selection-simulation/v1",
+        )
+    mode = scenario["mode"]
+    if mode not in {"complete", "recover-after-selected-cas", "invalid-reused-id"}:
+        raise PlanningStoreError("simulation.fixture", f"unsupported mode {mode!r}")
+    transaction_id = scenario["transaction_id"]
+    command_owner_version = scenario["command_owner_version"]
+    current_fixture = scenario["current_fixture"]
+    artifact_fixture = scenario["artifact_fixture"]
+    if not all(
+        isinstance(value, str) and value.strip()
+        for value in (
+            transaction_id,
+            command_owner_version,
+            current_fixture,
+            artifact_fixture,
+        )
+    ):
+        raise PlanningStoreError(
+            "simulation.fixture",
+            "scenario identifiers and fixture paths must be non-empty strings",
+        )
+    current_source = (scenario_path / cast(str, current_fixture)).resolve()
+    artifact_source = (scenario_path / cast(str, artifact_fixture)).resolve()
+    artifact_result = validate_planning_contracts(
+        [artifact_source],
+        toolchain_root=toolchain_root,
+    )
+    if not artifact_result.is_valid:
+        raise PlanningStoreError("simulation.fixture", str(artifact_result.diagnostics[0]))
+    artifact_contracts = {
+        str(parsed.contract["schema"]): _json_object_copy(
+            parsed.contract,
+            "fixture contract",
+        )
+        for parsed in artifact_result.contracts
+    }
+    try:
+        dispatch = artifact_contracts["planning-dispatch/v1"]
+        runway = artifact_contracts["planning-runway/v1"]
+    except KeyError as error:
+        raise PlanningStoreError(
+            "simulation.fixture",
+            "artifact fixture must contain dispatch and runway contracts",
+        ) from error
+
+    with tempfile.TemporaryDirectory(prefix="planning-selection-simulation-") as directory:
+        workspace = Path(directory)
+        planning_root = workspace / "plans"
+        planning_root.mkdir()
+        current_path = planning_root / "CURRENT.md"
+        shutil.copy2(current_source, current_path)
+        ledger_path = planning_root / "LEDGER.md"
+        ledger_path.write_text("selection simulation fixture\n", encoding="utf-8")
+        initial = read_current_document(current_path, toolchain_root=toolchain_root)
+        dispatch["execution_context"] = {
+            "toolchain_source_root": str(workspace / "stable"),
+            "canonical_planning_repository_root": str(workspace),
+            "implementation_target_root": str(workspace / "candidate"),
+        }
+        runway_execution = runway.get("execution")
+        if not isinstance(runway_execution, dict):
+            raise PlanningStoreError(
+                "simulation.fixture",
+                "runway fixture execution must be an object",
+            )
+        cast(JsonObject, runway_execution)["implementation_target_root"] = str(
+            workspace / "candidate"
+        )
+        dispatch_producer = _producer_from_contract(dispatch)
+        runway_producer = _producer_from_contract(runway)
+        lineage = ArtifactLineage(
+            planning_root=planning_root,
+            program="codex-config",
+            batch_id="ccfg-21-artifacts",
+            included_finding_ids=("CCFG-21",),
+            deferred_finding_ids=(),
+            batch_kind="migration",
+            ledger_path=ledger_path,
+            ledger_revision="b" * 64,
+            dispatch_path=planning_root / "dispatch.md",
+            dispatch_revision="a" * 64,
+            runway_path=planning_root / "runway.md",
+            closeout_path=planning_root / "closeout.md",
+            toolchain_source_root=workspace / "stable",
+            canonical_planning_repository_root=workspace,
+            implementation_target_root=workspace / "candidate",
+            dispatch_producer=dispatch_producer,
+            runway_producer=runway_producer,
+            closeout_producer=ProducerIdentity(
+                dispatch_producer.toolchain_generation,
+                dispatch_producer.toolchain_commit,
+                "planning-closeout/v1",
+            ),
+        )
+        request = SelectionTransactionRequest(
+            transaction_id=cast(str, transaction_id),
+            transaction_path=planning_root / f"{transaction_id}.md",
+            current_path=current_path,
+            expected_initial_state_revision=initial.logical_revision,
+            expected_initial_state_file_hash=initial.file_hash,
+            initial_current_contract=initial.contract,
+            lineage=lineage,
+            dispatch_contract=dispatch,
+            runway_contract=runway,
+            command_owner_version=cast(str, command_owner_version),
+            producer=ProducerIdentity(
+                dispatch_producer.toolchain_generation,
+                dispatch_producer.toolchain_commit,
+                _TRANSACTION_SCHEMA,
+            ),
+        )
+        if mode == "recover-after-selected-cas":
+            try:
+                simulate_selection_transaction(
+                    request,
+                    toolchain_root=toolchain_root,
+                    fault="after_idle_to_selected_cas_before_receipt",
+                )
+            except InjectedStoreFailure:
+                pass
+            else:
+                raise PlanningStoreError(
+                    "simulation.fixture",
+                    "selected-CAS fault did not interrupt the transaction",
+                )
+            return simulate_selection_transaction(request, toolchain_root=toolchain_root)
+        if mode == "invalid-reused-id":
+            try:
+                simulate_selection_transaction(
+                    request,
+                    toolchain_root=toolchain_root,
+                    fault="after_dispatch_validation",
+                )
+            except InjectedSelectionFailure:
+                pass
+            else:
+                raise PlanningStoreError(
+                    "simulation.fixture",
+                    "dispatch-validation fault did not interrupt the transaction",
+                )
+            changed_dispatch = _json_object_copy(dispatch, "dispatch fixture")
+            scope = changed_dispatch.get("scope")
+            if not isinstance(scope, dict):
+                raise PlanningStoreError(
+                    "simulation.fixture",
+                    "dispatch fixture scope must be an object",
+                )
+            cast(JsonObject, scope)["goal"] = "Conflicting reused transaction intent."
+            return simulate_selection_transaction(
+                replace(request, dispatch_contract=changed_dispatch),
+                toolchain_root=toolchain_root,
+            )
+        return simulate_selection_transaction(request, toolchain_root=toolchain_root)
+
+
+def _producer_from_contract(contract: Mapping[str, object]) -> ProducerIdentity:
+    producer = contract.get("producer")
+    if not isinstance(producer, Mapping):
+        raise PlanningStoreError("simulation.fixture", "fixture producer must be an object")
+    producer_object = cast(Mapping[str, object], producer)
+    generation = producer_object.get("toolchain_generation")
+    commit = producer_object.get("toolchain_commit")
+    schema_version = producer_object.get("schema_version")
+    if not all(isinstance(value, str) for value in (generation, commit, schema_version)):
+        raise PlanningStoreError(
+            "simulation.fixture",
+            "fixture producer fields must be strings",
+        )
+    return ProducerIdentity(
+        cast(str, generation),
+        cast(str, commit),
+        cast(str, schema_version),
+    )
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -2967,6 +4268,12 @@ def _build_parser() -> argparse.ArgumentParser:
     compare_parser.add_argument("--toolchain-root", required=True, type=Path)
     compare_parser.add_argument("--per-finding", required=True, type=Path)
     compare_parser.add_argument("--global", dest="global_path", required=True, type=Path)
+    simulate_parser = subparsers.add_parser(
+        "simulate-selection",
+        help="run a bounded selection transaction fixture",
+    )
+    simulate_parser.add_argument("--toolchain-root", required=True, type=Path)
+    simulate_parser.add_argument("scenario", type=Path)
     return parser
 
 
@@ -2992,6 +4299,28 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 1
         print(json.dumps(comparison.__dict__, sort_keys=True))
         return 0 if comparison.equivalent else 1
+    if args.command == "simulate-selection":
+        try:
+            result = _simulate_selection_fixture(
+                args.scenario,
+                toolchain_root=args.toolchain_root,
+            )
+        except PlanningStoreError as error:
+            print(error, file=sys.stderr)
+            return 1
+        print(
+            json.dumps(
+                {
+                    "outcome": result.outcome,
+                    "transaction_file_hash": result.transaction_file_hash,
+                    "current_revision": result.current_revision,
+                    "dispatch_revision": result.dispatch_revision,
+                    "runway_revision": result.runway_revision,
+                },
+                sort_keys=True,
+            )
+        )
+        return 0
     return 2
 
 

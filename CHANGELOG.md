@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Recoverable planning-selection transaction prototype
+
+Problem: the planning stores could persist individual current-state and
+artifact writes, but there was no durable owner for resuming the four-step
+dispatch-to-queued selection sequence after a process interruption.
+
+Decision: add a closed-world `planning-selection-transaction/v1` record and a
+fixture-driven prototype that binds the initial intent, appends validated stage
+evidence, uses the existing current and artifact store primitives, and resumes
+from every durable boundary without deleting evidence.
+
+Expected effect: tests can now prove exact replay, reused-ID rejection,
+unexplained-state-movement rejection, and recovery after dispatch, selected
+state, runway, and queued-state interruptions. This slice does not integrate
+the prototype into `plan-batch` or mutate live planning state.
+
 ### Repo-local skill contract validation
 
 Problem: command-owner redesigns had no closed, machine-checkable contract for

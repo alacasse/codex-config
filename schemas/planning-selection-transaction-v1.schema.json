@@ -1,0 +1,199 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/alacasse/codex-config/schemas/planning-selection-transaction-v1.schema.json",
+  "title": "Planning Selection Transaction v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "transaction_id", "program", "finding_ids", "batch_id", "initial_intent", "extensions", "producer"],
+  "properties": {
+    "schema": {"const": "planning-selection-transaction/v1"},
+    "transaction_id": {"$ref": "#/definitions/nonEmptyString"},
+    "program": {"$ref": "#/definitions/nonEmptyString"},
+    "finding_ids": {"$ref": "#/definitions/stringList"},
+    "batch_id": {"$ref": "#/definitions/nonEmptyString"},
+    "initial_intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ledger_path", "ledger_revision", "state_path", "state_revision",
+        "state_file_hash", "state_payload_json", "state_payload_hash",
+        "expected_state", "dispatch_path",
+        "dispatch_payload_json", "dispatch_payload_hash", "runway_path",
+        "command_owner_version", "schema_versions", "stage_plan"
+      ],
+      "properties": {
+        "ledger_path": {"$ref": "#/definitions/nonEmptyString"},
+        "ledger_revision": {"$ref": "#/definitions/hash"},
+        "state_path": {"$ref": "#/definitions/nonEmptyString"},
+        "state_revision": {"type": "integer", "minimum": 0},
+        "state_file_hash": {"$ref": "#/definitions/hash"},
+        "state_payload_json": {"$ref": "#/definitions/nonEmptyString"},
+        "state_payload_hash": {"$ref": "#/definitions/hash"},
+        "expected_state": {"const": "idle"},
+        "dispatch_path": {"$ref": "#/definitions/nonEmptyString"},
+        "dispatch_payload_json": {"$ref": "#/definitions/nonEmptyString"},
+        "dispatch_payload_hash": {"$ref": "#/definitions/hash"},
+        "runway_path": {"$ref": "#/definitions/nonEmptyString"},
+        "command_owner_version": {"$ref": "#/definitions/nonEmptyString"},
+        "schema_versions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["current", "dispatch", "runway", "transaction"],
+          "properties": {
+            "current": {"const": "planning-current/v1"},
+            "dispatch": {"const": "planning-dispatch/v1"},
+            "runway": {"const": "planning-runway/v1"},
+            "transaction": {"const": "planning-selection-transaction/v1"}
+          }
+        },
+        "stage_plan": {
+          "const": [
+            "write_and_validate_dispatch",
+            "cas_idle_to_selected_and_persist_transition_receipt",
+            "write_and_validate_runway",
+            "cas_selected_to_queued_and_persist_transition_receipt"
+          ]
+        }
+      }
+    },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {"$ref": "#/definitions/dispatchObserved"},
+          {"$ref": "#/definitions/selectedInput"},
+          {"$ref": "#/definitions/selectedObserved"},
+          {"$ref": "#/definitions/runwayInput"},
+          {"$ref": "#/definitions/runwayObserved"},
+          {"$ref": "#/definitions/queuedInput"},
+          {"$ref": "#/definitions/queuedObserved"}
+        ]
+      },
+      "maxItems": 7
+    },
+    "producer": {"$ref": "#/definitions/producer"}
+  },
+  "definitions": {
+    "nonEmptyString": {"type": "string", "minLength": 1, "pattern": ".*\\S.*"},
+    "stringList": {"type": "array", "items": {"$ref": "#/definitions/nonEmptyString"}, "uniqueItems": true},
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "validationResult": {"const": "passed"},
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["interface", "store_interface", "idempotency_key", "request_hash", "before_revision", "after_revision", "touched_finding_ids"],
+      "properties": {
+        "interface": {"const": "planning-store-receipt/v1"},
+        "store_interface": {"const": "current-store/v1"},
+        "idempotency_key": {"$ref": "#/definitions/nonEmptyString"},
+        "request_hash": {"$ref": "#/definitions/hash"},
+        "before_revision": {"type": "integer", "minimum": 0},
+        "after_revision": {"type": "integer", "minimum": 1},
+        "touched_finding_ids": {"const": []}
+      }
+    },
+    "dispatchObserved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "dispatch_revision", "dispatch_file_hash", "validation_result"],
+      "properties": {
+        "type": {"const": "dispatch_observed"},
+        "dispatch_revision": {"type": "integer", "minimum": 1},
+        "dispatch_file_hash": {"$ref": "#/definitions/hash"},
+        "validation_result": {"$ref": "#/definitions/validationResult"}
+      }
+    },
+    "selectedInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "expected_state", "expected_state_revision", "expected_state_file_hash", "dispatch_path", "dispatch_revision", "request_hash"],
+      "properties": {
+        "type": {"const": "selected_input"},
+        "expected_state": {"const": "idle"},
+        "expected_state_revision": {"type": "integer", "minimum": 0},
+        "expected_state_file_hash": {"$ref": "#/definitions/hash"},
+        "dispatch_path": {"$ref": "#/definitions/nonEmptyString"},
+        "dispatch_revision": {"type": "integer", "minimum": 1},
+        "request_hash": {"$ref": "#/definitions/hash"}
+      }
+    },
+    "selectedObserved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "state_revision", "state_file_hash", "receipt", "validation_result"],
+      "properties": {
+        "type": {"const": "selected_observed"},
+        "state_revision": {"type": "integer", "minimum": 1},
+        "state_file_hash": {"$ref": "#/definitions/hash"},
+        "receipt": {"$ref": "#/definitions/receipt"},
+        "validation_result": {"$ref": "#/definitions/validationResult"}
+      }
+    },
+    "runwayInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "runway_payload_json", "runway_payload_hash", "dispatch_revision", "dispatch_file_hash", "selected_state_revision", "selected_state_file_hash", "selected_receipt_request_hash"],
+      "properties": {
+        "type": {"const": "runway_input"},
+        "runway_payload_json": {"$ref": "#/definitions/nonEmptyString"},
+        "runway_payload_hash": {"$ref": "#/definitions/hash"},
+        "dispatch_revision": {"type": "integer", "minimum": 1},
+        "dispatch_file_hash": {"$ref": "#/definitions/hash"},
+        "selected_state_revision": {"type": "integer", "minimum": 1},
+        "selected_state_file_hash": {"$ref": "#/definitions/hash"},
+        "selected_receipt_request_hash": {"$ref": "#/definitions/hash"}
+      }
+    },
+    "runwayObserved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "runway_revision", "runway_file_hash", "validation_result"],
+      "properties": {
+        "type": {"const": "runway_observed"},
+        "runway_revision": {"type": "integer", "minimum": 1},
+        "runway_file_hash": {"$ref": "#/definitions/hash"},
+        "validation_result": {"$ref": "#/definitions/validationResult"}
+      }
+    },
+    "queuedInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "expected_state", "expected_state_revision", "expected_state_file_hash", "dispatch_path", "dispatch_revision", "dispatch_file_hash", "runway_path", "runway_revision", "runway_file_hash", "request_hash"],
+      "properties": {
+        "type": {"const": "queued_input"},
+        "expected_state": {"const": "selected"},
+        "expected_state_revision": {"type": "integer", "minimum": 1},
+        "expected_state_file_hash": {"$ref": "#/definitions/hash"},
+        "dispatch_path": {"$ref": "#/definitions/nonEmptyString"},
+        "dispatch_revision": {"type": "integer", "minimum": 1},
+        "dispatch_file_hash": {"$ref": "#/definitions/hash"},
+        "runway_path": {"$ref": "#/definitions/nonEmptyString"},
+        "runway_revision": {"type": "integer", "minimum": 1},
+        "runway_file_hash": {"$ref": "#/definitions/hash"},
+        "request_hash": {"$ref": "#/definitions/hash"}
+      }
+    },
+    "queuedObserved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "state_revision", "state_file_hash", "receipt", "validation_result"],
+      "properties": {
+        "type": {"const": "queued_observed"},
+        "state_revision": {"type": "integer", "minimum": 2},
+        "state_file_hash": {"$ref": "#/definitions/hash"},
+        "receipt": {"$ref": "#/definitions/receipt"},
+        "validation_result": {"$ref": "#/definitions/validationResult"}
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["toolchain_generation", "toolchain_commit", "schema_version"],
+      "properties": {
+        "toolchain_generation": {"enum": ["stable", "candidate"]},
+        "toolchain_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "schema_version": {"const": "planning-selection-transaction/v1"}
+      }
+    }
+  }
+}
