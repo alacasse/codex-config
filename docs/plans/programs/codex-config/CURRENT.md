@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/closeout.md`
 - Run artifact location: `None selected`
@@ -31,8 +32,8 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-21 through CCFG-29.
-- Pending ledger row: `None`.
+  CCFG-22 through CCFG-29.
+- Pending ledger row: CCFG-21.
 - Closed ledger rows: CCFG-18 through CCFG-20 and CCFG-30 through CCFG-32.
   CCFG-32 makes Planning State the sole semantic queue-currentness authority
   while retaining only material mechanical live-handoff checks.
@@ -49,8 +50,10 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Queued dispatch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/runway.md`
+- Queued dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/dispatch.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-32-planning-state-queue-currentness`
@@ -63,9 +66,9 @@
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. A later explicit `plan-batch` request
-may select one bounded batch from the canonical ledger. Do not infer or prepare
-a successor from this closeout.
+Execute only the queued CCFG-21 runway through an explicit `work-batch` request.
+Do not select another batch, replace the runway, or infer successor work from
+the latest closeout.
 
 ## Stop Conditions
 
