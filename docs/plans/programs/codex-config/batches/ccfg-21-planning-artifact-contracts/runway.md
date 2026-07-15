@@ -450,14 +450,23 @@ Reviewer brief for every slice:
 
 | Slice | Risk | Status | Candidate commit | Stable receipt | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|---|---|
-| 2. Current and ledger stores | migration | pending | | | | | CAS, receipts, derived index, and per-finding default | |
 | 3. Artifact lineage writes | migration | pending | | | | | Dispatch/runway/closeout persistence and lineage | |
 | 4. Selection saga and fault matrix | migration | pending | | | | | DEC-038 exact replay and recovery | |
 
 ## Orchestration Anomalies
 
 ```yaml
-orchestration_anomalies: []
+orchestration_anomalies:
+  - category: malformed_worker_result
+    severity: low
+    observed: 2
+    impact: no code or lifecycle impact
+    action: rejected the malformed payloads and required schema-correct re-emission
+  - category: validation_scope_gap
+    severity: low
+    observed: 1
+    impact: no committed whitespace defect
+    action: staged diff checking caught and corrected untracked fixture EOF whitespace
 ```
 
 ## Slice Shape
