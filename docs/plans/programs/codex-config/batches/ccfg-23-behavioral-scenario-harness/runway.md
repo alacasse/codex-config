@@ -821,6 +821,8 @@ Allowed files:
 - `schemas/command-owner-scenario-v1.schema.json`
 - `scripts/command_owner_scenarios.py`
 - `tests/test_command_owner_scenario_catalog.py`
+- `tests/test_command_owner_behavioral_scenarios.py`
+- `tests/test_command_owner_scenario_currentness.py`
 
 Same-slice amendment after the clean Slice 4 pre-edit stop:
 
@@ -841,6 +843,11 @@ Same-slice amendment after the clean Slice 4 pre-edit stop:
   gate intentionally closes the last six bindings, so amend only that test's
   transitional assertions to accept the fully green final catalog while still
   proving there are no inferred, unbound, or blocked green results.
+- The Slice 2 and Slice 3 focused modules also contain transitional global
+  assertions that all State contracts remain deferred and cutover remains
+  unavailable. Amend only those assertions so each module proves its own
+  scenario subset and does not freeze the later catalog state. Their behavioral
+  observations and prior-slice acceptance contracts must remain unchanged.
 
 Read-only behavior sources:
 
@@ -851,8 +858,8 @@ Read-only behavior sources:
 
 Non-goals:
 
-- No edit to prior test modules except the single progression-aware catalog
-  test authorized above. Harness/schema edits are limited to the
+- No edit to prior test modules except the three progression-aware assertion
+  updates authorized above. Harness/schema edits are limited to the
   generic aggregate-evidence capability authorized by the same-slice amendment
   above; any wider change requires another stop and normal fix/re-review loop.
 - No real install, candidate-home/stable-home mutation, default switch,
