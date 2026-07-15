@@ -40,6 +40,8 @@
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
   `docs/plans/programs/codex-config/findings/command-owner-redesign-bootstrap-decisions.md`
+- Live planning and execution carry-forward amendment:
+  `docs/plans/programs/codex-config/findings/command-owner-redesign-planning-execution-carry-forward.md`
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:

@@ -11,6 +11,12 @@ This amendment carries the substantive requirements from GitHub issues #51,
 read this file from the ledger and must not depend on GitHub browsing to discover
 those requirements.
 
+CCFG-21 is complete. CCFG-25 must consume its resolved candidate planning
+artifact contracts and selection transaction rather than treating the planning
+transaction as unresolved. GitHub #54 is implemented on stable master; its
+semantic slice rules remain target acceptance for CCFG-25. GitHub #51 and #52
+remain open until CCFG-25 implements and validates their requirements.
+
 The accepted command-owner redesign snapshot remains immutable. This is a live
 implementation-intake amendment for CCFG-25 only.
 
@@ -147,6 +153,12 @@ Use the planning transaction and artifact contracts resolved by CCFG-21 and
 required by CCFG-25. Do not create a parallel planning store, second queue owner,
 parallel command, or duplicate executable draft format.
 
+CCFG-23 owns topology-independent behavioral proof for the planning-quality
+requirements in this amendment. The canonical carry-forward amendment at
+`command-owner-redesign-planning-execution-carry-forward.md` adds the related
+execution-currentness and cutover obligations without changing CCFG-25's
+planning ownership.
+
 ## Added CCFG-25 Acceptance
 
 ```yaml
@@ -188,6 +200,8 @@ Behavioral tests must cover:
 - GitHub issue #52: delegated planning and independent planning review
 - GitHub issue #54: semantic slice boundaries instead of a fixed 3–5 range
 - COR-008 / CCFG-25 in the accepted command-owner redesign snapshot
+- `command-owner-redesign-planning-execution-carry-forward.md`: canonical
+  behavioral, execution-currentness, and cutover carry-forward
 
 ## No Selection Performed
 
