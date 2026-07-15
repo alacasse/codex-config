@@ -77,7 +77,7 @@ row-by-row here.
 | CCFG-19. Verify Source Contracts and Resolve Blocking Decisions | Closed | [COR-002](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-002--ccfg-19--verify-source-contracts-and-resolve-blocking-decisions) | Command-owner redesign / contracts | None | Closed by `batches/ccfg-19-source-contract-decisions/closeout.md`: all 31 contracts are joined, all seven acceptance keys are evidenced, DEC-036/037/017/038 are accepted, and OPEN-003 is resolved. CCFG-20 closed separately; CCFG-21 through CCFG-29 remain unselected. |
 | CCFG-20. Implement `skill-contract/v1` Schema and Validators | Closed | [COR-003](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-003--ccfg-20--implement-skill-contractv1-schema-and-validators) | Command-owner redesign / skill contracts | None | Closed by `batches/ccfg-20-skill-contract-schema/closeout.md`: all five COR-003 keys are green in candidate range `13d7f63..3e54155`; current skills, manifest registration, installation, and CCFG-21+ remain excluded. |
 | CCFG-21. Implement Planning Artifact Schemas and Validators | Closed | [COR-004](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-004--ccfg-21--implement-planning-artifact-schemas-and-validators) | Command-owner redesign / planning contracts | None | Closed by `batches/ccfg-21-planning-artifact-contracts/closeout.md`: all six COR-004 keys, detailed migration gates, 13 fault checkpoints, and exact-range review are green in candidate range `3e54155..596fc7e`; live planning migration and CCFG-22+ remain excluded. |
-| CCFG-22. Finalize and Validate `skill-authoring` v1 | Pending | [COR-005](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-005--ccfg-22--finalize-and-validate-skill-authoring-v1) | Command-owner redesign / authoring | Execute only through `batches/ccfg-22-skill-authoring-v1/runway.md` via `work-batch` | Queued as one four-slice core/reference/trials/candidate-install batch. Live skill migration and CCFG-23+ remain excluded. |
+| CCFG-22. Finalize and Validate `skill-authoring` v1 | Closed | [COR-005](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-005--ccfg-22--finalize-and-validate-skill-authoring-v1) | Command-owner redesign / authoring | None | Closed by `batches/ccfg-22-skill-authoring-v1/closeout.md`: all nine COR-005 keys and aggregate migration gates are green in candidate range `596fc7e..2f39950`; candidate-only installation is proven, command owners remain dependency-free, and CCFG-23+ remain excluded. |
 | CCFG-23. Build the Topology-Independent Behavioral Scenario Harness | Open | [COR-006](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-006--ccfg-23--build-the-topology-independent-behavioral-harness) plus live harness scenarios in `findings/command-owner-redesign-planning-execution-carry-forward.md` | Command-owner redesign / behavioral harness | Wait for CCFG-22; consume completed CCFG-21 contracts | Prove planning quality, Planning State/Git currentness ownership, protected handoff integrity, temporary bridge operation, and final bridge absence through observable target behavior without legacy topology locks. Unselected. |
 | CCFG-24. Transfer Intake Ownership to `add-to-ledger` | Open | [COR-007](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-007--ccfg-24--transfer-intake-ownership-to-add-to-ledger) | Command-owner redesign / intake ownership | Wait for CCFG-22 and CCFG-23 | Transfer intake and ledger-mutation semantics; remove APR intake and legacy-removal escape hatch in the same work. Unselected. |
 | CCFG-25. Transfer Planning Ownership to `plan-batch` | Open | [COR-008](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-008--ccfg-25--transfer-planning-ownership-to-plan-batch), `findings/ccfg-25-planning-quality-amendment.md`, and `findings/command-owner-redesign-planning-execution-carry-forward.md` | Command-owner redesign / planning ownership | Wait for CCFG-24; consume completed CCFG-21 planning contracts and transaction owner | Implement #51, #52, and #54 semantics through the only queue mutator, direct independent planner/reviewer orchestration, proportionality evidence, semantic slice boundaries, and non-executable blocked drafts; remove APR planning and Batch Runway create-spec ownership. Unselected. |
@@ -91,8 +91,7 @@ row-by-row here.
 
 ## Batch Queue
 
-Queued batch:
-`docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md`.
+Queued batch: `None`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
@@ -112,7 +111,7 @@ Queued batch:
 | `ccfg-19-source-contract-decisions` | completed | `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-19-source-contract-decisions/runway.md` | CCFG-19 | Completed in candidate range `9027bd1..13d7f63`; all seven exit keys are evidenced and OPEN-003 is resolved. Same-batch closeout selected no successor. |
 | `ccfg-20-skill-contract-schema` | completed | `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/runway.md` | CCFG-20 | Completed in candidate range `13d7f63..3e54155`; all five COR-003 keys are green, final range review is clean, and same-batch closeout selected no successor. |
 | `ccfg-21-planning-artifact-contracts` | completed | `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/runway.md` | CCFG-21 | Completed in candidate range `3e54155..596fc7e`; all COR-004 keys, final validation, and exact-range review are green; same-batch closeout selected no successor. |
-| `ccfg-22-skill-authoring-v1` | pending | `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md` | CCFG-22 | Queued from an exact strict planning snapshot; four semantic slices add the authoritative core, conditional planning reference, fixture-only trials, and candidate-only feature installation. |
+| `ccfg-22-skill-authoring-v1` | completed | `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md` | CCFG-22 | Completed in candidate range `596fc7e..2f39950`; all nine COR-005 keys, candidate-only installation, final validation, exact-range test-quality review, and independent final review are green. Same-batch closeout selected no successor. |
 | `ccfg-30-cross-flight-execution-leases` | completed | `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/runway.md` | CCFG-30 | Completed in stable range `d8f3952^..7917ace`; all ten regression scenarios and final range review are green; same-batch closeout selected no successor. |
 | `ccfg-31-narrow-live-lease-preflight` | completed | `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/runway.md` | CCFG-31 | Completed in stable range `cdcb05e^..401a468`; the normal result is only ready/blocked, preserved safety is behaviorally proven, broad protocol topology is deleted, and same-batch closeout selected no successor. |
 | `ccfg-32-planning-state-queue-currentness` | completed | `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/runway.md` | CCFG-32 | Completed in stable range `6ede5b2..7ef07dc`; Planning State owns semantic currentness, material handoff safety remains green, and same-batch closeout selected no successor. |
@@ -120,11 +119,11 @@ Queued batch:
 ## Recommended Work Order
 
 1. Start pickup from root and program `CURRENT.md`.
-2. CCFG-18 through CCFG-21 and CCFG-30 through CCFG-32 are closed.
-3. CCFG-22 is the only queued batch. Execute it only through explicit
-   `work-batch`; do not replace it or select another batch.
-4. Keep CCFG-23 through CCFG-29 and all older open rows unselected until a later
-   explicit `plan-batch` request after CCFG-22 same-batch closeout.
+2. CCFG-18 through CCFG-22 and CCFG-30 through CCFG-32 are closed.
+3. No batch is selected, queued, or active. A later explicit `plan-batch`
+   request owns successor selection.
+4. Keep CCFG-23 through CCFG-29 and all older open rows unselected until that
+   later explicit request.
 5. Do not revive archived APR/PST ledgers as pickup sources.
 6. Keep CCFG-11 open but do not execute its displaced runway.
 
@@ -151,10 +150,10 @@ Queued batch:
   acceptance keys, detailed migration gates, fault injection, and clean exact-
   range review green. Its closeout cleared same-batch state and selected no
   successor.
-- CCFG-22 is pending through `batches/ccfg-22-skill-authoring-v1/runway.md`.
-  Close it only when all nine COR-005 keys, candidate-only installation, and
-  clean exact-range review are green; then clear same-batch state and select no
-  successor.
+- CCFG-22 closed through `batches/ccfg-22-skill-authoring-v1/closeout.md` with
+  all nine COR-005 keys, candidate-only installation, exact known-red baseline,
+  final validation, and clean exact-range reviews green. Its closeout cleared
+  same-batch state and selected no successor.
 - CCFG-31 closed through
   `batches/ccfg-31-narrow-live-lease-preflight/closeout.md` with ready/blocked
   behavior, preserved per-handoff safety, deletion evidence, final validation,

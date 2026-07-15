@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -33,10 +32,12 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-23 through CCFG-29.
-- Pending ledger row: CCFG-22.
-- Closed ledger rows: CCFG-18 through CCFG-21 and CCFG-30 through CCFG-32.
+- Pending ledger rows: None.
+- Closed ledger rows: CCFG-18 through CCFG-22 and CCFG-30 through CCFG-32.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
+  CCFG-22 closes all nine COR-005 authoring acceptance keys with candidate-only
+  installation and no command-owner runtime dependency.
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -52,25 +53,23 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md`
-- Queued dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/dispatch.md`
+- Queued batch: `None`
+- Queued dispatch: `None`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-21-planning-artifact-contracts`
+- Latest completed batch: `ccfg-22-skill-authoring-v1`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-21-planning-artifact-contracts/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/closeout.md`
 
 ## Next Safe Action
 
-Execute only the queued CCFG-22 runway through an explicit `work-batch` request.
-Do not select another batch, replace the runway, or infer successor work from
-the latest closeout.
+No batch is selected, queued, or active. A later explicit `plan-batch` request
+owns selection of one bounded ledger batch. Do not infer, dispatch, or prepare a
+successor from the CCFG-22 closeout.
 
 ## Stop Conditions
 
@@ -101,6 +100,7 @@ the latest closeout.
 - Stop if work treats closed CCFG-31 or its completed runway as active work.
 - Stop if work treats closed CCFG-32 or its completed runway as active work.
 - Stop if work treats closed CCFG-21 or its completed runway as active work.
+- Stop if work treats closed CCFG-22 or its completed runway as active work.
 - Stop if CCFG-32 execution restores Git-derived queue currentness, weakens
   material live-handoff safety, touches the redesign candidate, or expands into
   CCFG-21, CCFG-25, or CCFG-29 ownership.
