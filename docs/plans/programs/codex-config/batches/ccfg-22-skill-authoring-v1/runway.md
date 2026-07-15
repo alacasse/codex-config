@@ -513,7 +513,6 @@ Reviewer brief for every slice:
 
 | Slice | Risk | Status | Candidate commit | Stable receipt | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|---|---|
-| 4. Candidate registration and install | migration | Pending | — | — | Pending | Pending | Candidate-only links and no runtime dependency | — |
 
 ## Orchestration Anomalies
 

@@ -76,6 +76,89 @@ test_quality_review: clean_after_bounded_fix
 }
 ```
 
+## Slice 4: Register And Install The Candidate-Only Feature
+
+- Candidate commit: `2f3995060a309b27ba22d8d7e80f7d07d0b4a34f`.
+- Outcome: `skill-authoring` is registered once at `1.0.0` as agent-facing
+  authoring support with exactly the skill, validator, and schema links, and it
+  is installed only in the candidate Codex home.
+- Validation: the focused authoring/manifest gate passed 18 tests with 30
+  subtests; the catalog-classification check passed with 11 subtests; Ruff and
+  diff checks passed. The full manifest diagnostic reproduced exactly the
+  documented 3 unrelated failures, 18 passes, and 202 subtests.
+- Review: source review was clean. Delta-only test-quality review first found a
+  line-wrap-sensitive README assertion; bounded recovery normalized the section
+  and consolidated new assertions into existing focused tests so the exact
+  known-red topology remained unchanged. Repeat review was clean.
+- Installation: candidate status reports `skill-authoring 1.0.0`; the installed
+  skill, validator, and schema links resolve only to the candidate checkout.
+  Stable status/dry-run retained the known version drift, the three stable
+  authoring paths remain absent, and existing stable links remained unchanged.
+- Compatibility and cleanup residue: none. No command owner or support runtime
+  depends on `skill-authoring`, and no default-generation switch occurred.
+
+### Slice 4 Execution Receipt
+
+```yaml
+runway: docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md
+live_lease:
+  interface: cross-checkout-context/v1
+  toolchain_source_root: /home/alacasse/projects/codex-config
+  toolchain_commit: f043004edb0c11ebf3364c9df07dbb38c4625953
+  canonical_planning_repository_root: /home/alacasse/projects/codex-config
+  canonical_planning_commit_before: f043004edb0c11ebf3364c9df07dbb38c4625953
+  implementation_target_root: /home/alacasse/projects/codex-config-command-owner-redesign
+  implementation_commit_before: 6779b9ca1e9f43f486d24222c0120ea5e3c8a5e7
+  codex_home: /home/alacasse/.codex
+  generation_role: stable
+  canonical_state_mutation_allowed: true
+validated_scope:
+  planning_paths: []
+  implementation_paths:
+    - codex-features.json
+    - tests/test_codex_features_manifest.py
+    - README.md
+    - CHANGELOG.md
+worker_verification: matched
+reviewer_verification: matched
+test_quality_review: clean_after_bounded_fix
+candidate_installation: green
+stable_home_unchanged: true
+```
+
+### Stable Planning Receipt
+
+```json
+{
+  "interface": "cross-checkout-receipt/v1",
+  "caller": "work-batch",
+  "reason": "CCFG-22 Slice 4 stable planning receipt",
+  "allowed_scope": {
+    "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+    "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+    "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+    "planning_paths": [
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/completed-slices.md",
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md"
+    ],
+    "implementation_paths": []
+  },
+  "generation_identity": {
+    "generation_role": "stable",
+    "toolchain_source_root": "/home/alacasse/projects/codex-config",
+    "toolchain_commit": "f043004edb0c11ebf3364c9df07dbb38c4625953",
+    "codex_home": "/home/alacasse/.codex",
+    "canonical_state_mutation_allowed": true
+  },
+  "repository_revisions": {
+    "toolchain_commit": "f043004edb0c11ebf3364c9df07dbb38c4625953",
+    "canonical_planning_commit_before": "f043004edb0c11ebf3364c9df07dbb38c4625953",
+    "implementation_commit_before": "2f3995060a309b27ba22d8d7e80f7d07d0b4a34f"
+  },
+  "deletion_condition": "CCFG-29 final integration"
+}
+```
+
 ## Slice 3: Prove The Two Fixture-Only Authoring Trials
 
 - Candidate commit: `6779b9ca1e9f43f486d24222c0120ea5e3c8a5e7`.
