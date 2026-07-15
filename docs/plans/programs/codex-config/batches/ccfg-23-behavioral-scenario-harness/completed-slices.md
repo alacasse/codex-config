@@ -288,3 +288,67 @@ import_topology_review: clean
   "deletion_condition": "CCFG-29 final integration"
 }
 ```
+
+## Slice 4: Prove Disposable Cutover And Aggregate Evidence
+
+- Candidate implementation commit:
+  `0c1844c1c5171f1cb927caaf86528d5e4f582781`.
+- Candidate validation-fix commit:
+  `e8d07a785581e26ffb202b13ae43a0a83173205b`.
+- Outcome: 69 runtime-observed scenarios cover the 31 immutable contracts and
+  all 17 required families. The final report emits the six exact COR-006 keys
+  and six migration aliases as true from mapped scenario and test evidence.
+- Validation: 123 focused tests passed; both harness CLI paths passed; the
+  planning/state/strict-context/agent baseline passed with 309 tests and 187
+  subtests; pre-creation passed with 32 tests and 39 subtests; the focused
+  manifest subset passed with 4 tests and 34 subtests; Ruff, BasedPyright with
+  zero errors, and exact-range whitespace checks passed.
+- Known-red diagnostic: the full manifest reproduced exactly its three
+  unrelated expected failures, 18 passes, and 202 subtests.
+- Review: slice review, import-topology review, delta-only test-quality review,
+  final exact-range independent review, and final exact-range test-quality
+  review were clean. A final one-line local Ruff suppression for the deliberate
+  deferred fixture import received an additional clean independent review.
+- Isolation: all installation, switch, rollback, quiescence, canonical-write,
+  generation-lineage, and Planning State history cases execute under disposable
+  fixture roots. Stable and candidate installer status/dry-run remained
+  read-only and generation-owned; no real Codex home, default binding,
+  production owner, planning state, or temporary bridge changed.
+- Compatibility and cleanup residue: no unsupported compatibility was added.
+  The strict cross-checkout bridge remains intentionally temporary until
+  CCFG-29 final integration.
+
+### Slice 4 And Closeout Receipt
+
+```json
+{
+  "interface": "cross-checkout-receipt/v1",
+  "caller": "work-batch",
+  "reason": "CCFG-23 same-batch closeout reconciliation",
+  "allowed_scope": {
+    "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+    "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+    "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+    "planning_paths": [
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/completed-slices.md",
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/closeout.md",
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/CURRENT.md",
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/LEDGER.md"
+    ],
+    "implementation_paths": []
+  },
+  "generation_identity": {
+    "generation_role": "stable",
+    "toolchain_source_root": "/home/alacasse/projects/codex-config",
+    "toolchain_commit": "1fa0fbbbb75fc189b95b45635cf39527bd55f1e4",
+    "codex_home": "/home/alacasse/.codex",
+    "canonical_state_mutation_allowed": true
+  },
+  "repository_revisions": {
+    "toolchain_commit": "1fa0fbbbb75fc189b95b45635cf39527bd55f1e4",
+    "canonical_planning_commit_before": "1fa0fbbbb75fc189b95b45635cf39527bd55f1e4",
+    "implementation_commit_before": "e8d07a785581e26ffb202b13ae43a0a83173205b"
+  },
+  "deletion_condition": "CCFG-29 final integration"
+}
+```

@@ -7,11 +7,10 @@
   workflow, runner, planning-state, and skill-cleanup work.
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
-- Active Batch Runway spec path:
-  `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/runway.md`
+- Active Batch Runway spec path: `None`
 - Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -33,12 +32,15 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-24 through CCFG-29.
-- Pending ledger rows: CCFG-23.
-- Closed ledger rows: CCFG-18 through CCFG-22 and CCFG-30 through CCFG-32.
+- Pending ledger rows: none.
+- Closed ledger rows: CCFG-18 through CCFG-23 and CCFG-30 through CCFG-32.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
   CCFG-22 closes all nine COR-005 authoring acceptance keys with candidate-only
   installation and no command-owner runtime dependency.
+  CCFG-23 closes all six COR-006 behavioral-harness acceptance keys and six
+  aliases across all 31 immutable contracts without production ownership
+  transfer or real cutover.
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -53,25 +55,24 @@
 ## Batch State
 
 - Selected dispatch: `None`
-- Active runway:
-  `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/runway.md`
+- Active runway: `None`
 - Queued batch: `None`
 - Queued dispatch: `None`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-22-skill-authoring-v1`
+- Latest completed batch: `ccfg-23-behavioral-scenario-harness`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/closeout.md`
 
 ## Next Safe Action
 
-Continue only the active CCFG-23 runway at Slice 4. Verify candidate commit
-`a2f3aa211cea8835836ab66d4bcae14b2c99575c`, renew the strict live lease before
-the next handoff, and stop before CCFG-24 selection.
+No batch is selected, queued, or active. A later explicit `plan-batch` request
+may select bounded work from the canonical ledger. Do not infer CCFG-24 or any
+other successor from CCFG-23 closeout.
 
 ## Stop Conditions
 
@@ -103,6 +104,7 @@ the next handoff, and stop before CCFG-24 selection.
 - Stop if work treats closed CCFG-32 or its completed runway as active work.
 - Stop if work treats closed CCFG-21 or its completed runway as active work.
 - Stop if work treats closed CCFG-22 or its completed runway as active work.
+- Stop if work treats closed CCFG-23 or its completed runway as active work.
 - Stop if CCFG-32 execution restores Git-derived queue currentness, weakens
   material live-handoff safety, touches the redesign candidate, or expands into
   CCFG-21, CCFG-25, or CCFG-29 ownership.
