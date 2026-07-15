@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import shutil
 import subprocess
 import sys
 from collections.abc import Mapping
@@ -83,6 +84,14 @@ def _document(path: Path = FIXTURES / "catalog.yaml") -> dict[str, Any]:
 def _write_catalog(tmp_path: Path, document: Mapping[str, object]) -> Path:
     path = tmp_path / "catalog.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
+    test_root = tmp_path / "tests"
+    test_root.mkdir(exist_ok=True)
+    for name in (
+        "test_command_owner_behavioral_scenarios.py",
+        "test_command_owner_scenario_currentness.py",
+        "test_command_owner_scenario_cutover.py",
+    ):
+        shutil.copy2(REPO_ROOT / "tests" / name, test_root / name)
     path.write_text(yaml.safe_dump(dict(document), sort_keys=False), encoding="utf-8")
     return path
 
@@ -129,7 +138,7 @@ def test_catalog_preserves_exact_immutable_contract_identity_and_families() -> N
     assert set(document["required_families"]) == EXPECTED_FAMILIES
 
 
-def test_live_catalog_reports_progression_without_inferred_green() -> None:
+def test_live_catalog_reports_final_green_only_from_matching_observations() -> None:
     result = validate_catalog(FIXTURES)
     assert result.catalog is not None
 
@@ -142,25 +151,23 @@ def test_live_catalog_reports_progression_without_inferred_green() -> None:
         if scenario["status"] == "green"
         for contract in scenario["contracts"]
     }
-    unavailable_scenarios = [
-        scenario for scenario in scenarios if scenario["status"] == "unavailable"
-    ]
-    unavailable_families = {
-        family["id"] for family in families if family["status"] == "unavailable"
-    }
-
     assert report["contracts"]["declared"] == sorted(EXPECTED_CONTRACT_IDS)  # type: ignore[index]
     assert report["contracts"]["green"] == sorted(observed_green_contracts)  # type: ignore[index]
-    assert unavailable_scenarios
-    assert unavailable_families == {
-        scenario["family"] for scenario in unavailable_scenarios
+    assert observed_green_contracts == EXPECTED_CONTRACT_IDS
+    assert all(scenario["status"] == "green" for scenario in scenarios)
+    assert all(scenario["adapter"] is not None for scenario in scenarios)
+    assert all(family["status"] == "green" for family in families)
+    assert report["status_counts"] == {
+        "declared": 0,
+        "bound": 0,
+        "green": len(scenarios),
+        "blocked": 0,
+        "unavailable": 0,
     }
-    assert all(scenario["adapter"] is None for scenario in unavailable_scenarios)
-    assert report["status_counts"]["unavailable"] == len(unavailable_scenarios)
     assert report["acceptance"]["all_required_contracts_declared"] is True  # type: ignore[index]
     assert report["acceptance"]["only_bound_green_observations_count"] is True  # type: ignore[index]
-    assert report["acceptance"]["all_required_contracts_green"] is False  # type: ignore[index]
-    assert report["acceptance"]["all_required_families_green"] is False  # type: ignore[index]
+    assert report["acceptance"]["all_required_contracts_green"] is True  # type: ignore[index]
+    assert report["acceptance"]["all_required_families_green"] is True  # type: ignore[index]
 
 
 def test_runtime_report_distinguishes_every_evidence_status() -> None:

@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import copy
+import hashlib
 import importlib.util
 import json
+import os
 import re
+import subprocess
 import sys
+import tempfile
+import xml.etree.ElementTree as ElementTree
 from collections import Counter
 from collections.abc import Callable, Hashable, Mapping, Sequence
 from dataclasses import dataclass
@@ -215,6 +221,23 @@ def evaluate_catalog(catalog: Catalog) -> tuple[ScenarioEvaluation, ...]:
 
 
 def build_report(catalog: Catalog) -> Mapping[str, object]:
+    """Build an unobserved report whose aggregate gates remain false."""
+
+    return _build_report(catalog, observed_test_outcomes={})
+
+
+def build_observed_report(catalog: Catalog) -> Mapping[str, object]:
+    """Build a report from internally observed candidate pytest outcomes."""
+
+    outcomes = _observe_aggregate_test_outcomes(catalog)
+    return _build_report(catalog, observed_test_outcomes=outcomes)
+
+
+def _build_report(
+    catalog: Catalog,
+    *,
+    observed_test_outcomes: Mapping[str, str],
+) -> Mapping[str, object]:
     """Build deterministic coverage and runtime-status evidence."""
 
     evaluations = evaluate_catalog(catalog)
@@ -238,7 +261,7 @@ def build_report(catalog: Catalog) -> Mapping[str, object]:
         _family_report(family, evaluations) for family in required_families
     ]
     scenario_reports = [_scenario_report(evaluation) for evaluation in evaluations]
-    return {
+    report: dict[str, object] = {
         "schema": SCHEMA_VERSION,
         "provenance": dict(cast(Mapping[str, object], catalog.document["provenance"])),
         "catalog_valid": True,
@@ -266,6 +289,218 @@ def build_report(catalog: Catalog) -> Mapping[str, object]:
             ),
             "only_bound_green_observations_count": True,
         },
+    }
+    aggregate = catalog.document.get("aggregate_evidence")
+    if isinstance(aggregate, Mapping):
+        report["aggregate_evidence"] = _build_aggregate_evidence_report(
+            cast(Mapping[str, object], aggregate),
+            evaluations,
+            observed_test_outcomes,
+        )
+    return report
+
+
+def _observe_aggregate_test_outcomes(catalog: Catalog) -> Mapping[str, str]:
+    """Execute every aggregate evidence node under the exact harness root."""
+
+    aggregate = catalog.document.get("aggregate_evidence")
+    if not isinstance(aggregate, Mapping):
+        return MappingProxyType({})
+    nodes = sorted(
+        {
+            cast(str, test["node"])
+            for gate in cast(list[Mapping[str, object]], aggregate["gates"])
+            for test in cast(list[Mapping[str, object]], gate["tests"])
+        }
+    )
+    candidate_root = _candidate_repository_root()
+    interpreter = _candidate_interpreter(candidate_root)
+    outcomes: dict[str, str] = {}
+    with tempfile.TemporaryDirectory(prefix="command-owner-evidence-") as temporary:
+        junit_root = Path(temporary)
+        runtime_home = junit_root / "home"
+        runtime_home.mkdir()
+        environment = {
+            "HOME": str(runtime_home),
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "PATH": os.defpath,
+            "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
+        }
+        for index, node in enumerate(nodes):
+            junit_path = junit_root / f"outcome-{index}.xml"
+            process = subprocess.run(
+                [
+                    str(interpreter),
+                    "-P",
+                    "-m",
+                    "pytest",
+                    "-q",
+                    "-p",
+                    "no:cacheprovider",
+                    "-rxX",
+                    f"--junitxml={junit_path}",
+                    node,
+                ],
+                cwd=candidate_root,
+                env=environment,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            _require_exclusive_pytest_pass(node, process, junit_path)
+            outcomes[node] = "passed"
+    return MappingProxyType(outcomes)
+
+
+def _candidate_interpreter(candidate_root: Path) -> Path:
+    interpreter = candidate_root / ".venv/bin/python"
+    if not interpreter.is_file():
+        raise RuntimeError(
+            f"candidate pytest interpreter is missing: {interpreter}"
+        )
+    probe = subprocess.run(
+        [
+            str(interpreter),
+            "-P",
+            "-c",
+            "import json,sys; print(json.dumps({'executable': sys.executable, "
+            "'prefix': sys.prefix, 'safe_path': sys.flags.safe_path}))",
+        ],
+        cwd=candidate_root,
+        env={
+            "HOME": str(candidate_root),
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "PATH": os.defpath,
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    try:
+        loaded_identity = cast(object, json.loads(probe.stdout))
+    except json.JSONDecodeError as error:
+        raise RuntimeError(
+            f"candidate pytest interpreter identity is unreadable: {interpreter}"
+        ) from error
+    identity = (
+        cast(dict[str, object], loaded_identity)
+        if isinstance(loaded_identity, dict)
+        else {}
+    )
+    expected_prefix = candidate_root / ".venv"
+    if (
+        probe.returncode != 0
+        or not identity
+        or Path(str(identity.get("executable"))) != interpreter
+        or Path(str(identity.get("prefix"))).resolve() != expected_prefix.resolve()
+        or identity.get("safe_path") is not True
+    ):
+        raise RuntimeError(
+            f"candidate pytest interpreter has foreign provenance: {interpreter}"
+        )
+    return interpreter
+
+
+def _require_exclusive_pytest_pass(
+    node: str,
+    process: subprocess.CompletedProcess[str],
+    junit_path: Path,
+) -> None:
+    combined_output = f"{process.stdout}\n{process.stderr}"
+    explicit_non_pass = re.search(r"\b(?:XFAIL|XPASS)\b", combined_output)
+    try:
+        root = ElementTree.parse(junit_path).getroot()
+    except (OSError, ElementTree.ParseError) as error:
+        raise RuntimeError(
+            f"aggregate test evidence node {node!r} produced no readable JUnit "
+            f"result: {error}"
+        ) from error
+    suites = [root] if root.tag == "testsuite" else list(root.iter("testsuite"))
+    counts = {
+        field: sum(int(suite.attrib.get(field, "0")) for suite in suites)
+        for field in ("tests", "failures", "errors", "skipped")
+    }
+    exclusive_pass = (
+        process.returncode == 0
+        and counts["tests"] > 0
+        and counts["failures"] == 0
+        and counts["errors"] == 0
+        and counts["skipped"] == 0
+        and explicit_non_pass is None
+    )
+    if not exclusive_pass:
+        summary = " ".join(combined_output.split())[-600:]
+        raise RuntimeError(
+            f"aggregate test evidence node {node!r} did not pass exclusively "
+            f"(exit={process.returncode}, counts={counts}): {summary}"
+        )
+
+
+def _build_aggregate_evidence_report(
+    aggregate: Mapping[str, object],
+    evaluations: tuple[ScenarioEvaluation, ...],
+    observed_test_outcomes: Mapping[str, str],
+) -> Mapping[str, object]:
+    """Compute caller-owned aggregate gates from concrete green scenarios."""
+
+    by_id = {item.scenario_id: item for item in evaluations}
+    gates = cast(list[Mapping[str, object]], aggregate["gates"])
+    keys: dict[str, bool] = {}
+    aliases: dict[str, bool] = {}
+    alias_targets: dict[str, str] = {}
+    evidence: dict[str, Mapping[str, object]] = {}
+    for gate in gates:
+        key = cast(str, gate["key"])
+        scenario_ids = cast(list[str], gate["scenarios"])
+        non_green = [
+            scenario_id
+            for scenario_id in scenario_ids
+            if by_id[scenario_id].status != "green"
+        ]
+        if non_green:
+            raise ValueError(
+                f"aggregate evidence key {key!r} references non-green "
+                f"scenario(s): {', '.join(non_green)}"
+            )
+        test_nodes = [
+            cast(str, test["node"])
+            for test in cast(list[Mapping[str, object]], gate["tests"])
+        ]
+        tests_green = all(
+            observed_test_outcomes.get(node) == "passed" for node in test_nodes
+        )
+        keys[key] = tests_green
+        evidence[key] = {
+            "scenarios": list(scenario_ids),
+            "tests": [
+                {
+                    "node": cast(str, test["node"]),
+                    "source_sha256": cast(str, test["source_sha256"]),
+                    "scenarios": list(cast(list[str], test["scenarios"])),
+                }
+                for test in cast(list[Mapping[str, object]], gate["tests"])
+            ],
+        }
+        for alias in cast(list[str], gate["aliases"]):
+            aliases[alias] = tests_green
+            alias_targets[alias] = key
+    return {
+        "keys": keys,
+        "aliases": aliases,
+        "alias_targets": alias_targets,
+        "test_outcomes": {
+            node: observed_test_outcomes.get(node, "not-observed")
+            for node in sorted(
+                {
+                    cast(str, test["node"])
+                    for gate in gates
+                    for test in cast(list[Mapping[str, object]], gate["tests"])
+                }
+            )
+        },
+        "evidence": evidence,
     }
 
 
@@ -465,6 +700,333 @@ def _validate_catalog_semantics(
                 f"required family {family!r} has no scenario record",
             )
         )
+
+    if diagnostics:
+        return
+
+    aggregate = document.get("aggregate_evidence")
+    if not isinstance(aggregate, Mapping):
+        return
+    aggregate = cast(Mapping[str, object], aggregate)
+    gates = cast(list[Mapping[str, object]], aggregate["gates"])
+    seen_keys: dict[str, int] = {}
+    seen_aliases: dict[str, tuple[int, str]] = {}
+    for gate_index, gate in enumerate(gates):
+        gate_location = f"$.aggregate_evidence.gates[{gate_index}]"
+        key = cast(str, gate["key"])
+        if key in seen_keys:
+            diagnostics.append(
+                Diagnostic(
+                    str(path),
+                    f"{gate_location}.key",
+                    "catalog.duplicate_evidence_key",
+                    f"evidence key {key!r} also appears at index {seen_keys[key]}",
+                )
+            )
+        else:
+            seen_keys[key] = gate_index
+        for alias_index, alias in enumerate(cast(list[str], gate["aliases"])):
+            previous = seen_aliases.get(alias)
+            if previous is not None:
+                diagnostics.append(
+                    Diagnostic(
+                        str(path),
+                        f"{gate_location}.aliases[{alias_index}]",
+                        "catalog.duplicate_evidence_alias",
+                        f"evidence alias {alias!r} also appears at gate {previous[0]}",
+                    )
+                )
+            else:
+                seen_aliases[alias] = (gate_index, key)
+        for scenario_index, scenario_id in enumerate(
+            cast(list[str], gate["scenarios"])
+        ):
+            if scenario_id not in seen_ids:
+                diagnostics.append(
+                    Diagnostic(
+                        str(path),
+                        f"{gate_location}.scenarios[{scenario_index}]",
+                        "catalog.unknown_evidence_scenario",
+                        f"evidence scenario {scenario_id!r} is not declared",
+                    )
+                )
+        gate_scenarios = set(cast(list[str], gate["scenarios"]))
+        test_coverage: set[str] = set()
+        seen_test_nodes: dict[str, int] = {}
+        for test_index, test in enumerate(
+            cast(list[Mapping[str, object]], gate["tests"])
+        ):
+            test_location = f"{gate_location}.tests[{test_index}]"
+            node = cast(str, test["node"])
+            if node in seen_test_nodes:
+                diagnostics.append(
+                    Diagnostic(
+                        str(path),
+                        f"{test_location}.node",
+                        "catalog.duplicate_test_evidence",
+                        f"test evidence {node!r} also appears at index {seen_test_nodes[node]}",
+                    )
+                )
+            else:
+                seen_test_nodes[node] = test_index
+            _validate_test_evidence_node(
+                path,
+                node,
+                cast(str, test["source_sha256"]),
+                test_location,
+                diagnostics,
+            )
+            evidence_scenarios = set(cast(list[str], test["scenarios"]))
+            unknown = evidence_scenarios - set(seen_ids)
+            unrelated = evidence_scenarios - gate_scenarios
+            for scenario_id in sorted(unknown):
+                diagnostics.append(
+                    Diagnostic(
+                        str(path),
+                        f"{test_location}.scenarios",
+                        "catalog.unknown_test_evidence_scenario",
+                        f"test evidence scenario {scenario_id!r} is not declared",
+                    )
+                )
+            for scenario_id in sorted(unrelated - unknown):
+                diagnostics.append(
+                    Diagnostic(
+                        str(path),
+                        f"{test_location}.scenarios",
+                        "catalog.unrelated_test_evidence_scenario",
+                        f"test evidence scenario {scenario_id!r} is outside gate {key!r}",
+                    )
+                )
+            test_coverage.update(evidence_scenarios & gate_scenarios)
+        missing_test_coverage = gate_scenarios - test_coverage
+        if missing_test_coverage:
+            diagnostics.append(
+                Diagnostic(
+                    str(path),
+                    f"{gate_location}.tests",
+                    "catalog.missing_test_evidence_coverage",
+                    "gate scenarios lack test evidence: "
+                    + ", ".join(sorted(missing_test_coverage)),
+                )
+            )
+
+    all_keys = set(seen_keys)
+    for alias, (gate_index, target_key) in seen_aliases.items():
+        if alias in all_keys and alias != target_key:
+            diagnostics.append(
+                Diagnostic(
+                    str(path),
+                    f"$.aggregate_evidence.gates[{gate_index}].aliases",
+                    "catalog.evidence_alias_key_collision",
+                    f"evidence alias {alias!r} collides with another gate key",
+                )
+            )
+
+
+def _validate_test_evidence_node(
+    catalog_path: Path,
+    node: str,
+    expected_sha256: str,
+    location: str,
+    diagnostics: list[Diagnostic],
+) -> None:
+    relative_name, separator, function_name = node.partition("::")
+    if separator != "::" or not _is_safe_relative_path(relative_name):
+        diagnostics.append(
+            Diagnostic(
+                str(catalog_path),
+                f"{location}.node",
+                "catalog.invalid_test_evidence_node",
+                f"test evidence node {node!r} must be a safe path and test function",
+            )
+        )
+        return
+    candidate_root = _candidate_repository_root()
+    unresolved_test_path = candidate_root / relative_name
+    if not unresolved_test_path.is_file():
+        diagnostics.append(
+            Diagnostic(
+                str(catalog_path),
+                f"{location}.node",
+                "catalog.missing_test_evidence_node",
+                f"test evidence node {node!r} does not resolve to a file",
+            )
+        )
+        return
+    test_path = unresolved_test_path.resolve()
+    if not test_path.is_relative_to(candidate_root) or test_path != unresolved_test_path:
+        diagnostics.append(
+            Diagnostic(
+                str(catalog_path),
+                f"{location}.node",
+                "catalog.foreign_test_evidence_path",
+                f"test evidence node {node!r} escapes the candidate harness root",
+            )
+        )
+        return
+    try:
+        source = test_path.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(test_path))
+    except (OSError, SyntaxError) as error:
+        diagnostics.append(
+            Diagnostic(
+                str(catalog_path),
+                f"{location}.node",
+                "catalog.invalid_test_evidence_source",
+                f"could not inspect test evidence {node!r}: {error}",
+            )
+        )
+        return
+    declared_functions = {
+        item.name: item
+        for item in tree.body
+        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    if function_name not in declared_functions:
+        diagnostics.append(
+            Diagnostic(
+                str(catalog_path),
+                f"{location}.node",
+                "catalog.missing_test_evidence_function",
+                f"test evidence function {function_name!r} is not declared in {test_path}",
+            )
+        )
+        return
+    function = declared_functions[function_name]
+    disabled_decorators = sorted(
+        mark
+        for decorator in function.decorator_list
+        if (mark := _disabled_pytest_mark(decorator)) is not None
+    )
+    if disabled_decorators:
+        diagnostics.append(
+            Diagnostic(
+                str(catalog_path),
+                f"{location}.node",
+                "catalog.disabled_test_evidence_decorator",
+                "test evidence uses disabling decorator(s): "
+                + ", ".join(disabled_decorators),
+            )
+        )
+    collection_controls = _module_collection_controls(tree)
+    disabled_controls = sorted(
+        control
+        for control, node_value in collection_controls
+        if _collection_control_disables(node_value)
+    )
+    if disabled_controls:
+        diagnostics.append(
+            Diagnostic(
+                str(catalog_path),
+                f"{location}.node",
+                "catalog.disabled_test_evidence_module",
+                "test module uses disabling collection control(s): "
+                + ", ".join(disabled_controls),
+            )
+        )
+    function_start = min(
+        [function.lineno, *(decorator.lineno for decorator in function.decorator_list)]
+    )
+    source_lines = source.splitlines(keepends=True)
+    function_source = "".join(source_lines[function_start - 1 : function.end_lineno])
+    control_sources = [
+        ast.get_source_segment(source, node_value)
+        for _control, node_value in collection_controls
+    ]
+    if not function_source or any(item is None for item in control_sources):
+        diagnostics.append(
+            Diagnostic(
+                str(catalog_path),
+                f"{location}.node",
+                "catalog.unreadable_test_evidence_function",
+                f"could not extract source for test evidence function {function_name!r}",
+            )
+        )
+        return
+    grounded_source = json.dumps(
+        {
+            "collected_test_definition": function_source,
+            "module_collection_controls": control_sources,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    observed_sha256 = hashlib.sha256(grounded_source.encode()).hexdigest()
+    if observed_sha256 != expected_sha256:
+        diagnostics.append(
+            Diagnostic(
+                str(catalog_path),
+                f"{location}.source_sha256",
+                "catalog.test_evidence_source_mismatch",
+                f"test evidence source hash is {observed_sha256}, expected {expected_sha256}",
+            )
+        )
+
+
+def _candidate_repository_root() -> Path:
+    """Return the repository root that owns this exact harness source."""
+
+    return Path(__file__).resolve().parents[1]
+
+
+def _module_collection_controls(
+    tree: ast.Module,
+) -> list[tuple[str, ast.Assign | ast.AnnAssign]]:
+    controls: list[tuple[str, ast.Assign | ast.AnnAssign]] = []
+    names = {"__test__", "pytest_plugins", "pytestmark"}
+    for item in tree.body:
+        if isinstance(item, ast.Assign):
+            assigned = {
+                target.id for target in item.targets if isinstance(target, ast.Name)
+            }
+        elif isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+            assigned = {item.target.id}
+        else:
+            continue
+        for name in sorted(assigned & names):
+            controls.append((name, item))
+    return controls
+
+
+def _disabled_pytest_mark(node: ast.AST) -> str | None:
+    target = node.func if isinstance(node, ast.Call) else node
+    parts: list[str] = []
+    while isinstance(target, ast.Attribute):
+        parts.append(target.attr)
+        target = target.value
+    if isinstance(target, ast.Name):
+        parts.append(target.id)
+    dotted = ".".join(reversed(parts))
+    if dotted.endswith((".skip", ".skipif", ".xfail")):
+        return dotted
+    return None
+
+
+def _collection_control_disables(node: ast.Assign | ast.AnnAssign) -> bool:
+    if isinstance(node, ast.Assign):
+        values = [node.value]
+        if any(
+            isinstance(target, ast.Name)
+            and target.id == "__test__"
+            and isinstance(node.value, ast.Constant)
+            and node.value.value is False
+            for target in node.targets
+        ):
+            return True
+    else:
+        values = [node.value] if node.value is not None else []
+        if (
+            isinstance(node.target, ast.Name)
+            and node.target.id == "__test__"
+            and isinstance(node.value, ast.Constant)
+            and node.value.value is False
+        ):
+            return True
+    return any(
+        _disabled_pytest_mark(candidate) is not None
+        for value in values
+        for candidate in ast.walk(value)
+    )
 
 
 def _is_safe_relative_path(value: str) -> bool:
@@ -776,7 +1338,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         scenarios = cast(list[object], catalog.document["scenarios"])
         print(f"valid: {catalog.path} ({len(scenarios)} scenarios)")
         return 0
-    report = build_report(catalog)
+    try:
+        report = build_observed_report(catalog)
+    except RuntimeError as error:
+        print(f"aggregate evidence failed: {error}", file=sys.stderr)
+        return 1
     if arguments.format == "json":
         print(json.dumps(report, indent=2, sort_keys=True))
     else:

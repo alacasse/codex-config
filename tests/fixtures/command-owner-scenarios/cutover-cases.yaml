@@ -1,0 +1,48 @@
+root-three-way-ready:
+  operation: root-guard
+  fault: null
+root-canonical-write-blocked:
+  operation: root-guard
+  fault: canonical-write
+root-mixed-generation-blocked:
+  operation: root-guard
+  fault: mixed-generation
+branch-lineage-ready:
+  operation: branch-lineage
+  fault: null
+candidate-child-generation-ready:
+  operation: child-generation
+  fault: null
+installer-clean-ready:
+  operation: install
+  fault: null
+installer-partial-blocked:
+  operation: install
+  fault: partial
+installer-stale-link-blocked:
+  operation: install
+  fault: stale-link
+cutover-atomic-switch-ready:
+  operation: switch
+  fault: null
+cutover-switch-failure-preserves-stable:
+  operation: switch
+  fault: before-publish
+cutover-rollback-ready:
+  operation: rollback
+  fault: null
+cutover-quiescence-blocked:
+  operation: quiescence
+  fault: active-work
+cutover-quiescence-ready:
+  operation: quiescence
+  fault: null
+cutover-bridge-minimum-ready:
+  operation: bridge
+  fault: null
+physical-synthetic-absence-ready:
+  operation: physical-absence
+  fault: null
+history-readable-nonauthoritative:
+  operation: history
+  fault: null

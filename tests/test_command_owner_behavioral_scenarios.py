@@ -27,17 +27,7 @@ BOUND_FAMILIES = {
     "closeout-fault-injection",
     "contract-first-format",
 }
-UNAVAILABLE_FAMILIES = {
-    "planning-state-ledger",
-    "execution-currentness",
-    "root-generation-isolation",
-    "branch-design-lineage",
-    "candidate-validation",
-    "installer-cutover",
-    "physical-deletion",
-    "cutover-lifecycle",
-}
-DEFERRED_CONTRACTS = {
+CURRENTNESS_CONTRACTS = {
     "STATE-DIAG-001",
     "STATE-TRANSITION-002",
     "STATE-CANONICAL-003",
@@ -80,7 +70,7 @@ def _digest(value: object) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def test_workflow_catalog_binds_only_slice_two_families_to_green_observations() -> None:
+def test_workflow_catalog_keeps_slice_two_families_green() -> None:
     validation = validate_catalog(FIXTURES)
     assert validation.is_valid, validation.diagnostics
     assert validation.catalog is not None
@@ -88,29 +78,31 @@ def test_workflow_catalog_binds_only_slice_two_families_to_green_observations() 
     report = build_report(validation.catalog)
     families = {item["id"]: item["status"] for item in report["families"]}
 
-    assert {family for family, status in families.items() if status == "green"} == (
-        BOUND_FAMILIES
-    )
-    assert {
-        family for family, status in families.items() if status == "unavailable"
-    } == UNAVAILABLE_FAMILIES
+    assert all(families[family] == "green" for family in BOUND_FAMILIES)
     assert report["status_counts"]["blocked"] == 0
     assert report["status_counts"]["bound"] == 0
 
 
-def test_workflow_contracts_are_green_while_currentness_contracts_remain_deferred() -> None:
+def test_workflow_contracts_remain_green_after_later_scenario_bindings() -> None:
     validation = validate_catalog(FIXTURES)
     assert validation.catalog is not None
 
     report = build_report(validation.catalog)
     required = set(report["contracts"]["required"])
     green = set(report["contracts"]["green"])
+    workflow_scenarios = [
+        scenario
+        for scenario in report["scenarios"]
+        if scenario["family"] in BOUND_FAMILIES
+    ]
+    workflow_contracts = {
+        contract for scenario in workflow_scenarios for contract in scenario["contracts"]
+    }
 
-    assert green == required - DEFERRED_CONTRACTS
-    assert set(report["contracts"]["not_green"]) == DEFERRED_CONTRACTS
+    assert workflow_contracts == required - CURRENTNESS_CONTRACTS
+    assert all(scenario["status"] == "green" for scenario in workflow_scenarios)
+    assert workflow_contracts <= green
     assert report["acceptance"]["all_required_contracts_declared"] is True
-    assert report["acceptance"]["all_required_contracts_green"] is False
-    assert report["acceptance"]["all_required_families_green"] is False
 
 
 def test_fixture_adapters_leave_the_committed_fixture_tree_byte_stable() -> None:

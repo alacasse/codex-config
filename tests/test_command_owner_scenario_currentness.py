@@ -57,7 +57,6 @@ def test_command_owner_scenario_currentness_families_are_green() -> None:
 
     assert families["planning-state-ledger"] == "green"
     assert families["execution-currentness"] == "green"
-    assert families["cutover-lifecycle"] == "unavailable"
     assert {scenario_id: scenarios[scenario_id]["status"] for scenario_id in CURRENTNESS_IDS} == {
         scenario_id: "green" for scenario_id in CURRENTNESS_IDS
     }

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Non-installed command-owner scenario evidence
+
+Add the repo-local behavioral scenario catalog, disposable cutover fixtures,
+and deterministic aggregate evidence report. The harness is not installed and
+does not transfer workflow ownership, switch a generation, remove a live
+route, or implement work reserved for CCFG-24 and later.
+
 ### Candidate skill-authoring feature
 
 Problem: the accepted `skill-authoring` core, planning reference, and trial

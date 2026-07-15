@@ -59,6 +59,9 @@
       "items": {
         "$ref": "#/definitions/scenario"
       }
+    },
+    "aggregate_evidence": {
+      "$ref": "#/definitions/aggregateEvidence"
     }
   },
   "definitions": {
@@ -70,6 +73,10 @@
     "identifier": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "evidenceKey": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
     },
     "semanticLabel": {
       "type": "string",
@@ -172,6 +179,74 @@
           }
         }
       ]
+    },
+    "aggregateEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gates"],
+      "properties": {
+        "gates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "aliases", "scenarios", "tests"],
+            "properties": {
+              "key": {
+                "$ref": "#/definitions/evidenceKey"
+              },
+              "aliases": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/definitions/evidenceKey"
+                }
+              },
+              "scenarios": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/definitions/identifier"
+                }
+              },
+              "tests": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/definitions/testEvidence"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "testEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node", "source_sha256", "scenarios"],
+      "properties": {
+        "node": {
+          "type": "string",
+          "pattern": "^(?!/)(?!~)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9_./-]+\\.py::test_[A-Za-z0-9_]+$"
+        },
+        "source_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "scenarios": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/definitions/identifier"
+          }
+        }
+      }
     },
     "scenario": {
       "type": "object",

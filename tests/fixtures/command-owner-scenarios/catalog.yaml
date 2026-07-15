@@ -1079,85 +1079,388 @@ scenarios:
     validation: *workspace_validation
     binding: *currentness_binding
 
-  - id: root-generation-family-skeleton
+  - id: root-three-way-ready
     family: root-generation-isolation
     evidence_kind: bootstrap_cutover
     contracts: []
-    initial_artifacts: []
-    command: root-generation.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
+    initial_artifacts: &cutover_inputs [cutover-cases.yaml]
+    command: root-generation.verify-three-roots
+    expected_transition: root-guard:ready
+    expected_writes: [workspace/evidence/root-three-way-ready.json]
+    forbidden_writes: *forbidden_writes
     expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: &cutover_unavailable
-      status: unavailable
-      adapter: null
-      reason: Future cutover slice owns this fixture adapter.
-  - id: branch-lineage-family-skeleton
+    generation_and_roots: &cutover_roots
+      generation: fixture-stable-controller
+      roots:
+        - {role: toolchain-source, path: workspace/toolchain-source}
+        - {role: canonical-planning, path: workspace/canonical-planning}
+        - {role: implementation-target, path: workspace/implementation-target}
+    validation: &root_guard_validation
+      - root-guard.three-roots.green
+      - root-guard.single-generation.green
+      - root-guard.canonical-write-boundary.green
+    binding: &cutover_binding
+      status: bound
+      adapter: cutover_adapters.py:observe_cutover
+      reason: null
+  - id: root-canonical-write-blocked
+    family: root-generation-isolation
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *cutover_inputs
+    command: root-generation.reject-canonical-write
+    expected_transition: root-guard:blocked
+    expected_writes: [workspace/evidence/root-canonical-write-blocked.json]
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: candidate generation cannot write canonical planning
+    generation_and_roots: *cutover_roots
+    validation: *root_guard_validation
+    binding: *cutover_binding
+  - id: root-mixed-generation-blocked
+    family: root-generation-isolation
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *cutover_inputs
+    command: root-generation.reject-mixed-generation
+    expected_transition: root-guard:blocked
+    expected_writes: [workspace/evidence/root-mixed-generation-blocked.json]
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: controller and worker generations differ
+    generation_and_roots: *cutover_roots
+    validation: *root_guard_validation
+    binding: *cutover_binding
+  - id: branch-lineage-ready
     family: branch-design-lineage
     evidence_kind: bootstrap_cutover
     contracts: []
-    initial_artifacts: []
-    command: branch-lineage.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
+    initial_artifacts: *cutover_inputs
+    command: branch-lineage.verify-ancestry
+    expected_transition: branch-lineage:ready
+    expected_writes: [workspace/evidence/branch-lineage-ready.json]
+    forbidden_writes: *forbidden_writes
     expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *cutover_unavailable
-  - id: candidate-validation-family-skeleton
+    generation_and_roots: *cutover_roots
+    validation:
+      - branch-lineage.authoritative-base.green
+      - branch-lineage.accepted-design.green
+    binding: *cutover_binding
+  - id: candidate-child-generation-ready
     family: candidate-validation
     evidence_kind: target_interface
     contracts: []
-    initial_artifacts: []
-    command: candidate-validation.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
+    initial_artifacts: *cutover_inputs
+    command: candidate-validation.spawn-explicit-generation
+    expected_transition: candidate-child:ready
+    expected_writes: [workspace/evidence/candidate-child-generation-ready.json]
+    forbidden_writes: *forbidden_writes
     expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *cutover_unavailable
-  - id: installer-cutover-family-skeleton
+    generation_and_roots:
+      generation: fixture-candidate-child
+      roots:
+        - {role: toolchain-source, path: workspace/toolchain-source}
+        - {role: canonical-planning, path: workspace/canonical-planning}
+        - {role: implementation-target, path: workspace/implementation-target}
+    validation:
+      - candidate-child.explicit-home.green
+      - candidate-child.generation.green
+    binding: *cutover_binding
+  - id: installer-clean-ready
     family: installer-cutover
     evidence_kind: bootstrap_cutover
     contracts: []
-    initial_artifacts: []
-    command: installer-cutover.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
+    initial_artifacts: *cutover_inputs
+    command: installer-cutover.install-clean-generation
+    expected_transition: installer:ready
+    expected_writes: [workspace/evidence/installer-clean-ready.json]
+    forbidden_writes: *forbidden_writes
     expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *cutover_unavailable
-  - id: physical-deletion-family-skeleton
+    generation_and_roots: *cutover_roots
+    validation: &installer_validation
+      - installer.disposable-root.green
+      - installer.publish-atomic.green
+      - installer.failure-closed.green
+    binding: *cutover_binding
+  - id: installer-partial-blocked
+    family: installer-cutover
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *cutover_inputs
+    command: installer-cutover.reject-partial-generation
+    expected_transition: installer:blocked
+    expected_writes: [workspace/evidence/installer-partial-blocked.json]
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: partial install did not publish a generation
+    generation_and_roots: *cutover_roots
+    validation: *installer_validation
+    binding: *cutover_binding
+  - id: installer-stale-link-blocked
+    family: installer-cutover
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *cutover_inputs
+    command: installer-cutover.reject-stale-link
+    expected_transition: installer:blocked
+    expected_writes: [workspace/evidence/installer-stale-link-blocked.json]
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: stale link did not publish a generation
+    generation_and_roots: *cutover_roots
+    validation: *installer_validation
+    binding: *cutover_binding
+  - id: physical-synthetic-absence-ready
     family: physical-deletion
     evidence_kind: bootstrap_cutover
     contracts: []
-    initial_artifacts: []
-    command: physical-deletion.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
+    initial_artifacts: *cutover_inputs
+    command: physical-deletion.verify-synthetic-absence
+    expected_transition: physical-absence:synthetic-ready
+    expected_writes: [workspace/evidence/physical-synthetic-absence-ready.json]
+    forbidden_writes: *forbidden_writes
     expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *cutover_unavailable
-  - id: cutover-lifecycle-family-skeleton
+    generation_and_roots: *cutover_roots
+    validation:
+      - physical-absence.synthetic-only.green
+      - physical-absence.target-independent.green
+    binding: *cutover_binding
+  - id: cutover-atomic-switch-ready
     family: cutover-lifecycle
     evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: *cutover_inputs
+    command: cutover-lifecycle.switch-atomically
+    expected_transition: cutover:switched
+    expected_writes: [workspace/evidence/cutover-atomic-switch-ready.json]
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: null
+    generation_and_roots: *cutover_roots
+    validation:
+      - cutover.atomic-visible-generation.green
+      - cutover.stable-controller.green
+    binding: *cutover_binding
+  - id: cutover-rollback-ready
+    family: cutover-lifecycle
+    evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: *cutover_inputs
+    command: cutover-lifecycle.rollback-atomically
+    expected_transition: cutover:rolled-back
+    expected_writes: [workspace/evidence/cutover-rollback-ready.json]
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: null
+    generation_and_roots: *cutover_roots
+    validation:
+      - cutover.rollback-checkpoint.green
+      - cutover.atomic-visible-generation.green
+    binding: *cutover_binding
+  - id: cutover-switch-failure-preserves-stable
+    family: cutover-lifecycle
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *cutover_inputs
+    command: cutover-lifecycle.interrupt-before-publish
+    expected_transition: cutover:blocked
+    expected_writes: [workspace/evidence/cutover-switch-failure-preserves-stable.json]
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: switch interrupted before publish
+    generation_and_roots: *cutover_roots
+    validation:
+      - cutover.atomic-visible-generation.green
+      - cutover.stable-controller.green
+    binding: *cutover_binding
+  - id: cutover-quiescence-blocked
+    family: cutover-lifecycle
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: *cutover_inputs
+    command: cutover-lifecycle.reject-active-work
+    expected_transition: quiescence:blocked
+    expected_writes: [workspace/evidence/cutover-quiescence-blocked.json]
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: cutover requires quiescent planning state
+    generation_and_roots: *cutover_roots
+    validation: &quiescence_validation
+      - cutover.quiescence.green
+      - cutover.stable-controller.green
+    binding: *cutover_binding
+  - id: cutover-quiescence-ready
+    family: cutover-lifecycle
+    evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: *cutover_inputs
+    command: cutover-lifecycle.verify-quiescence
+    expected_transition: quiescence:ready
+    expected_writes: [workspace/evidence/cutover-quiescence-ready.json]
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: null
+    generation_and_roots: *cutover_roots
+    validation: *quiescence_validation
+    binding: *cutover_binding
+  - id: cutover-bridge-minimum-ready
+    family: cutover-lifecycle
+    evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: *cutover_inputs
+    command: cutover-lifecycle.verify-temporary-control
+    expected_transition: cutover:pre-cutover-ready
+    expected_writes: [workspace/evidence/cutover-bridge-minimum-ready.json]
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: null
+    generation_and_roots: *cutover_roots
+    validation:
+      - cutover.minimum-control.green
+      - cutover.master-planning.green
+    binding: *cutover_binding
+  - id: history-readable-nonauthoritative
+    family: cutover-lifecycle
+    evidence_kind: target_interface
     contracts:
       - STATE-HISTORY-004
-    initial_artifacts: []
-    command: cutover-lifecycle.observe
-    expected_transition: null
-    expected_writes: []
-    forbidden_writes: []
+    initial_artifacts: *cutover_inputs
+    command: history.read-without-pickup
+    expected_transition: history:readable-nonauthoritative
+    expected_writes: [workspace/evidence/history-readable-nonauthoritative.json]
+    forbidden_writes: *forbidden_writes
     expected_stop_reason: null
-    generation_and_roots: {generation: null, roots: []}
-    validation: []
-    binding: *cutover_unavailable
+    generation_and_roots: *cutover_roots
+    validation:
+      - history.readable.green
+      - history.current-only-pickup.green
+    binding: *cutover_binding
+
+aggregate_evidence:
+  gates:
+    - key: source_characterization_green
+      aliases: [source_characterization_green]
+      scenarios:
+        - intake-fresh-atomic
+        - planning-single-slice-queued
+        - execution-validated-reviewed-committed
+        - closeout-same-batch-no-successor
+      tests:
+        - node: tests/test_command_owner_behavioral_scenarios.py::test_workflow_catalog_keeps_slice_two_families_green
+          source_sha256: 8a72760a9b41110774c7cd007bc965bbdcdf97df25fb74b0e5627f5437a39df5
+          scenarios:
+            - intake-fresh-atomic
+            - planning-single-slice-queued
+            - execution-validated-reviewed-committed
+            - closeout-same-batch-no-successor
+    - key: target_interfaces_green
+      aliases: [target_interface_scenarios_green]
+      scenarios:
+        - quality-cohesive-single-slice
+        - planning-selected-current
+        - protected-handoff-ready
+        - candidate-child-generation-ready
+        - history-readable-nonauthoritative
+      tests:
+        - node: tests/test_command_owner_behavioral_scenarios.py::test_planning_quality_scenarios_cover_semantic_scope_approval_and_drafts
+          source_sha256: 6f64b5a8674c61ba6923035119d188bb9db2d3f9c4bacf6babd84c5576071825
+          scenarios: [quality-cohesive-single-slice]
+        - node: tests/test_command_owner_scenario_currentness.py::test_current_and_validate_are_the_semantic_state_authority
+          source_sha256: 4d98938f2bda3e3a43e313c3b287da37b1812599cad26b1ccf843f2353aff90a
+          scenarios: [planning-selected-current]
+        - node: tests/test_command_owner_scenario_currentness.py::test_protected_handoff_binds_lease_scope_receipt_and_reviewer_base
+          source_sha256: 095a27802c9b0e5ded43fc8380722361428acefdc919eefe7b3bf1a586e9fa21
+          scenarios: [protected-handoff-ready]
+        - node: tests/test_command_owner_scenario_cutover.py::test_lineage_and_child_generation_use_observed_repository_and_process_facts
+          source_sha256: d8521115f19610b6724b2ce247bd1c34edc3064fdf0cc1ce0f0c4b40852da673
+          scenarios: [candidate-child-generation-ready]
+        - node: tests/test_command_owner_scenario_cutover.py::test_bridge_absence_is_synthetic_and_history_never_becomes_pickup_authority
+          source_sha256: 55bd674d01b146f3dff464cd0ca932ce4b2a27c734c8dae2a6165d569763be91
+          scenarios: [history-readable-nonauthoritative]
+    - key: bootstrap_cutover_green
+      aliases: [bootstrap_and_cutover_scenarios_green]
+      scenarios:
+        - root-three-way-ready
+        - branch-lineage-ready
+        - installer-clean-ready
+        - cutover-atomic-switch-ready
+        - cutover-rollback-ready
+        - cutover-quiescence-ready
+        - cutover-bridge-minimum-ready
+        - physical-synthetic-absence-ready
+      tests:
+        - node: tests/test_command_owner_scenario_cutover.py::test_root_and_generation_faults_fail_closed_without_canonical_write
+          source_sha256: 3aa284915384093bad5963f659df79319f5940e541cd191551889490fb71b88e
+          scenarios: [root-three-way-ready]
+        - node: tests/test_command_owner_scenario_cutover.py::test_lineage_and_child_generation_use_observed_repository_and_process_facts
+          source_sha256: d8521115f19610b6724b2ce247bd1c34edc3064fdf0cc1ce0f0c4b40852da673
+          scenarios: [branch-lineage-ready]
+        - node: tests/test_command_owner_scenario_cutover.py::test_install_switch_rollback_and_quiescence_are_disposable_and_atomic
+          source_sha256: 89daa20824ff5fe38b4d128f7c933975d7b091473a55726227dad9f2aaa1d463
+          scenarios:
+            - installer-clean-ready
+            - cutover-atomic-switch-ready
+            - cutover-rollback-ready
+            - cutover-quiescence-ready
+        - node: tests/test_command_owner_scenario_cutover.py::test_bridge_absence_is_synthetic_and_history_never_becomes_pickup_authority
+          source_sha256: 55bd674d01b146f3dff464cd0ca932ce4b2a27c734c8dae2a6165d569763be91
+          scenarios:
+            - cutover-bridge-minimum-ready
+            - physical-synthetic-absence-ready
+    - key: fault_injection_green
+      aliases: [fault_injection_scenarios_green]
+      scenarios:
+        - planning-partial-selection-resumes
+        - implementation-moved-blocked
+        - missing-receipt-blocked
+        - root-canonical-write-blocked
+        - root-mixed-generation-blocked
+        - installer-partial-blocked
+        - installer-stale-link-blocked
+        - cutover-switch-failure-preserves-stable
+        - cutover-quiescence-blocked
+      tests:
+        - node: tests/test_command_owner_behavioral_scenarios.py::test_public_store_scenarios_expose_atomic_recovery_and_no_successor_effects
+          source_sha256: 684786f4aa3bf84306d597c245f22125226480a4a9db62230d0c10226e5a3c64
+          scenarios: [planning-partial-selection-resumes]
+        - node: tests/test_command_owner_scenario_currentness.py::test_movement_faults_cross_distinct_observation_boundaries
+          source_sha256: 8219cefcfa86088a6058ecb79454f5dee4fe53963b0514615d551fe9f6f2327f
+          scenarios: [implementation-moved-blocked]
+        - node: tests/test_command_owner_scenario_currentness.py::test_each_independent_handoff_consumer_fails_closed
+          source_sha256: 4173010dc3171231363d309d6addd4af25b893e302d20dee06d7da7526e8c25f
+          scenarios: [missing-receipt-blocked]
+        - node: tests/test_command_owner_scenario_cutover.py::test_root_and_generation_faults_fail_closed_without_canonical_write
+          source_sha256: 3aa284915384093bad5963f659df79319f5940e541cd191551889490fb71b88e
+          scenarios:
+            - root-canonical-write-blocked
+            - root-mixed-generation-blocked
+        - node: tests/test_command_owner_scenario_cutover.py::test_install_switch_rollback_and_quiescence_are_disposable_and_atomic
+          source_sha256: 89daa20824ff5fe38b4d128f7c933975d7b091473a55726227dad9f2aaa1d463
+          scenarios:
+            - installer-partial-blocked
+            - installer-stale-link-blocked
+            - cutover-switch-failure-preserves-stable
+            - cutover-quiescence-blocked
+    - key: contract_coverage_complete
+      aliases: [contract_id_coverage_report_complete]
+      scenarios:
+        - intake-fresh-atomic
+        - planning-single-slice-queued
+        - execution-validated-reviewed-committed
+        - closeout-same-batch-no-successor
+        - planning-selected-current
+        - history-readable-nonauthoritative
+        - contract-format-topology-independent
+      tests:
+        - node: tests/test_command_owner_scenario_cutover.py::test_contract_coverage_evidence_is_exact_and_green
+          source_sha256: 77faa3e7ce38096c165abd4850d8151c9cc6cff361bec8da949e1fe7fa2c00fd
+          scenarios:
+            - intake-fresh-atomic
+            - planning-single-slice-queued
+            - execution-validated-reviewed-committed
+            - closeout-same-batch-no-successor
+            - planning-selected-current
+            - history-readable-nonauthoritative
+            - contract-format-topology-independent
+    - key: legacy_topology_not_required
+      aliases: [legacy_skill_names_not_required_except_migration_fixtures]
+      scenarios:
+        - contract-format-topology-independent
+        - physical-synthetic-absence-ready
+      tests:
+        - node: tests/test_command_owner_behavioral_scenarios.py::test_scenario_command_is_a_semantic_label_not_an_executable_dispatch
+          source_sha256: 947f5237127ca1713e343b36fd34d677bf8708ca3379bbd32f1b6deb7671d85e
+          scenarios: [contract-format-topology-independent]
+        - node: tests/test_command_owner_scenario_cutover.py::test_bridge_absence_is_synthetic_and_history_never_becomes_pickup_authority
+          source_sha256: 55bd674d01b146f3dff464cd0ca932ce4b2a27c734c8dae2a6165d569763be91
+          scenarios: [physical-synthetic-absence-ready]
