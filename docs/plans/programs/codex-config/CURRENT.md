@@ -10,7 +10,7 @@
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -33,9 +33,9 @@
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-21 through CCFG-29.
 - Pending ledger row: `None`.
-- Closed ledger rows: CCFG-18 through CCFG-20, CCFG-30, and CCFG-31. CCFG-31
-  replaces broad startup reconciliation with one narrow mechanical
-  `ready`/`blocked` preflight while preserving strict per-handoff leases.
+- Closed ledger rows: CCFG-18 through CCFG-20 and CCFG-30 through CCFG-32.
+  CCFG-32 makes Planning State the sole semantic queue-currentness authority
+  while retaining only material mechanical live-handoff checks.
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -53,18 +53,19 @@
 - Queued dispatch: `None`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-31-narrow-live-lease-preflight`
+- Latest completed batch: `ccfg-32-planning-state-queue-currentness`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/closeout.md`
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. Wait for an explicit `plan-batch`
-request before selecting successor work; do not infer it during closeout.
+No batch is selected, queued, or active. A later explicit `plan-batch` request
+may select one bounded batch from the canonical ledger. Do not infer or prepare
+a successor from this closeout.
 
 ## Stop Conditions
 
@@ -93,3 +94,8 @@ request before selecting successor work; do not infer it during closeout.
   handoff validation, or lets helper refresh preparation decide compatibility.
 - Stop if CCFG-30 closeout selects or prepares any successor dispatch or runway.
 - Stop if work treats closed CCFG-31 or its completed runway as active work.
+- Stop if work treats closed CCFG-32 or its completed runway as active work.
+- Stop if CCFG-32 execution restores Git-derived queue currentness, weakens
+  material live-handoff safety, touches the redesign candidate, or expands into
+  CCFG-21, CCFG-25, or CCFG-29 ownership.
+- Stop if CCFG-32 closeout selects or prepares any successor dispatch or runway.

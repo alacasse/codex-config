@@ -85,6 +85,7 @@ row-by-row here.
 | CCFG-29. Contract-First Convergence and Final Integration | Open | [COR-012](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-012--ccfg-29--contract-first-convergence-and-final-integration) | Command-owner redesign / convergence and integration | Wait for CCFG-28 | Converge one dialect, merge candidate into latest master, rebind default toolchain to master, remove cross-checkout bridge, and retire temporary branches. Unselected. |
 | CCFG-30. Separate Planning Snapshots from Live Execution Leases | Closed | `notes/cross-flight-execution-baseline-plan.md`; `batches/ccfg-30-cross-flight-execution-leases/dispatch.md` | Batch Runway / cross-checkout execution lifecycle | None | Closed by `batches/ccfg-30-cross-flight-execution-leases/closeout.md`: all ten regression scenarios, exact live-lease validation, joined lifecycle proof, linked-state checks, and clean exact-range review are green. No successor was selected. |
 | CCFG-31. Narrow ready/blocked live-lease preflight | Closed | GitHub issue #53; `findings/github-issue-53-narrow-live-lease-preflight.md` | Batch Runway / cross-checkout execution lifecycle | None | Closed by `batches/ccfg-31-narrow-live-lease-preflight/closeout.md`: exact queue-transaction proof, ready/blocked behavior, preserved strict per-handoff safety, broad-protocol deletion, final validation, and clean exact-range review are complete. CCFG-29 remains the sole bridge-removal owner; no successor was selected. |
+| CCFG-32. Make Planning State authoritative for queue currentness | Closed | GitHub issue #55; `findings/github-issue-55-planning-state-queue-currentness.md`; `batches/ccfg-32-planning-state-queue-currentness/closeout.md` | Cross-checkout startup / planning-currentness ownership | None | Closed by `batches/ccfg-32-planning-state-queue-currentness/closeout.md`: Git-derived queue paths, history inference, planning fingerprints, and topology-preserving tests are removed; material first-handoff and later lease safety remain behaviorally protected. CCFG-21, CCFG-25, and CCFG-29 remain separate and unselected. |
 
 ## Batch Queue
 
@@ -109,14 +110,16 @@ Queued batch: `None`.
 | `ccfg-20-skill-contract-schema` | completed | `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-20-skill-contract-schema/runway.md` | CCFG-20 | Completed in candidate range `13d7f63..3e54155`; all five COR-003 keys are green, final range review is clean, and same-batch closeout selected no successor. |
 | `ccfg-30-cross-flight-execution-leases` | completed | `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/runway.md` | CCFG-30 | Completed in stable range `d8f3952^..7917ace`; all ten regression scenarios and final range review are green; same-batch closeout selected no successor. |
 | `ccfg-31-narrow-live-lease-preflight` | completed | `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/runway.md` | CCFG-31 | Completed in stable range `cdcb05e^..401a468`; the normal result is only ready/blocked, preserved safety is behaviorally proven, broad protocol topology is deleted, and same-batch closeout selected no successor. |
+| `ccfg-32-planning-state-queue-currentness` | completed | `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/runway.md` | CCFG-32 | Completed in stable range `6ede5b2..7ef07dc`; Planning State owns semantic currentness, material handoff safety remains green, and same-batch closeout selected no successor. |
 
 ## Recommended Work Order
 
 1. Start pickup from root and program `CURRENT.md`.
-2. CCFG-18 through CCFG-20, CCFG-30, and CCFG-31 are closed; no batch is
-   selected, queued, or active.
-3. Wait for an explicit `plan-batch` request before selecting any successor.
-4. Keep CCFG-21 through CCFG-29 and all older open rows unselected.
+2. CCFG-18 through CCFG-20 and CCFG-30 through CCFG-32 are closed.
+3. No batch is selected, queued, or active. A later explicit `plan-batch`
+   request owns bounded successor selection from this ledger.
+4. Keep CCFG-21 through CCFG-29 and all older open rows unselected until that
+   explicit request.
 5. Do not revive archived APR/PST ledgers as pickup sources.
 6. Keep CCFG-11 open but do not execute its displaced runway.
 
@@ -146,6 +149,11 @@ Queued batch: `None`.
   `batches/ccfg-30-cross-flight-execution-leases/closeout.md` with all ten
   cross-flight regression scenarios, linked-state checks, and exact-range
   review green. Its closeout cleared same-batch state and selected no successor.
+- CCFG-32 closed through
+  `batches/ccfg-32-planning-state-queue-currentness/closeout.md` with semantic
+  currentness owned by Planning State, material live-handoff safety preserved,
+  deletion evidence, final validation, and clean exact-range review. Its
+  closeout cleared same-batch state and selected no successor.
 - The `ccfg-18-stable-control-bootstrap` closeout marks CCFG-18 `Prepared`, not
   `Closed`, records the changed stable commit and fresh-session handoff, and
   preserves all candidate-generation remainder under the same finding identity.
