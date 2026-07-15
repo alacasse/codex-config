@@ -69,8 +69,8 @@
 
 ## Next Safe Action
 
-Continue only the active CCFG-23 runway at Slice 3. Verify candidate commit
-`58cdf2d75d15db88136d33c9f6da29ab085030b4`, renew the strict live lease before
+Continue only the active CCFG-23 runway at Slice 4. Verify candidate commit
+`a2f3aa211cea8835836ab66d4bcae14b2c99575c`, renew the strict live lease before
 the next handoff, and stop before CCFG-24 selection.
 
 ## Stop Conditions
