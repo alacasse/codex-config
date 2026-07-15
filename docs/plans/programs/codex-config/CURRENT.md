@@ -7,7 +7,8 @@
   workflow, runner, planning-state, and skill-cleanup work.
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
-- Active Batch Runway spec path: `None`
+- Active Batch Runway spec path:
+  `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/runway.md`
 - Queued batch path or ID: `None`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/closeout.md`
@@ -31,8 +32,8 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-23 through CCFG-29.
-- Pending ledger rows: None.
+  CCFG-24 through CCFG-29.
+- Pending ledger rows: CCFG-23.
 - Closed ledger rows: CCFG-18 through CCFG-22 and CCFG-30 through CCFG-32.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -52,7 +53,8 @@
 ## Batch State
 
 - Selected dispatch: `None`
-- Active runway: `None`
+- Active runway:
+  `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/runway.md`
 - Queued batch: `None`
 - Queued dispatch: `None`
 - Abandoned-state correction archived:
@@ -67,9 +69,9 @@
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. A later explicit `plan-batch` request
-owns selection of one bounded ledger batch. Do not infer, dispatch, or prepare a
-successor from the CCFG-22 closeout.
+Continue only the active CCFG-23 runway at Slice 2. Verify candidate commit
+`a5971caf0a34eaba005e0ad636d2235fb0260f31`, renew the strict live lease before
+the next handoff, and stop before CCFG-24 selection.
 
 ## Stop Conditions
 
@@ -108,3 +110,9 @@ successor from the CCFG-22 closeout.
 - Stop if CCFG-22 execution changes the stable Codex home, migrates live command
   owners, weakens supported-schema blocking, or expands into CCFG-23+ ownership.
 - Stop if CCFG-22 closeout selects or prepares any successor dispatch or runway.
+- Stop if CCFG-23 execution changes production command-owner ownership, live
+  planning state, a real installed generation, or the temporary bridge.
+- Stop if CCFG-23 target scenarios require APR/Batch Runway topology, exact
+  prompt prose, stable-only paths, historical helper names, or real cutover
+  state to turn green.
+- Stop if CCFG-23 closeout selects or prepares any successor dispatch or runway.
