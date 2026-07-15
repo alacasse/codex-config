@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/alacasse/codex-config/schemas/planning-finding-v1.schema.json",
+  "title": "Planning Finding v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "revision", "title", "provenance", "lifecycle", "dependencies", "scope", "evidence", "next_action", "producer"],
+  "properties": {
+    "schema": {"const": "planning-finding/v1"},
+    "id": {"$ref": "#/definitions/nonEmptyString"},
+    "revision": {"type": "integer", "minimum": 0},
+    "title": {"$ref": "#/definitions/nonEmptyString"},
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_id", "source_commit", "source_section"],
+      "properties": {
+        "source_id": {"$ref": "#/definitions/nonEmptyString"},
+        "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "source_section": {"$ref": "#/definitions/nonEmptyString"}
+      }
+    },
+    "lifecycle": {
+      "type": "object", "additionalProperties": false, "required": ["status"],
+      "properties": {"status": {"$ref": "#/definitions/nonEmptyString"}}
+    },
+    "dependencies": {"$ref": "#/definitions/stringList"},
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["summary", "included", "excluded"],
+      "properties": {
+        "summary": {"$ref": "#/definitions/nonEmptyString"},
+        "included": {"$ref": "#/definitions/stringList"},
+        "excluded": {"$ref": "#/definitions/stringList"}
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false, "required": ["pointers"],
+      "properties": {"pointers": {"$ref": "#/definitions/stringList"}}
+    },
+    "next_action": {
+      "type": "object", "additionalProperties": false, "required": ["command", "condition"],
+      "properties": {
+        "command": {"$ref": "#/definitions/nonEmptyString"},
+        "condition": {"$ref": "#/definitions/nonEmptyString"}
+      }
+    },
+    "producer": {"$ref": "#/definitions/producer"}
+  },
+  "definitions": {
+    "nonEmptyString": {"type": "string", "minLength": 1, "pattern": ".*\\S.*"},
+    "stringList": {"type": "array", "items": {"$ref": "#/definitions/nonEmptyString"}, "uniqueItems": true},
+    "producer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["toolchain_generation", "toolchain_commit", "schema_version"],
+      "properties": {
+        "toolchain_generation": {"enum": ["stable", "candidate"]},
+        "toolchain_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "schema_version": {"const": "planning-finding/v1"}
+      }
+    }
+  }
+}

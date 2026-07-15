@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/alacasse/codex-config/schemas/planning-dispatch-v1.schema.json",
+  "title": "Planning Dispatch v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "artifact", "source", "selection", "scope", "approval_gates", "dependencies", "runway", "execution_context", "stops_when", "producer"],
+  "properties": {
+    "schema": {"const": "planning-dispatch/v1"},
+    "artifact": {
+      "type": "object", "additionalProperties": false, "required": ["id", "program", "revision"],
+      "properties": {"id": {"$ref": "#/definitions/nonEmptyString"}, "program": {"$ref": "#/definitions/nonEmptyString"}, "revision": {"$ref": "#/definitions/hash"}}
+    },
+    "source": {
+      "type": "object", "additionalProperties": false, "required": ["ledger_path", "ledger_revision", "finding_ids"],
+      "properties": {"ledger_path": {"$ref": "#/definitions/nonEmptyString"}, "ledger_revision": {"$ref": "#/definitions/hash"}, "finding_ids": {"$ref": "#/definitions/stringList"}}
+    },
+    "selection": {
+      "type": "object", "additionalProperties": false, "required": ["outcome", "rationale_code"],
+      "properties": {"outcome": {"const": "selected"}, "rationale_code": {"$ref": "#/definitions/nonEmptyString"}}
+    },
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["goal", "included_finding_ids", "deferred_finding_ids", "owner_seam", "batch_kind", "risk_summary"],
+      "properties": {
+        "goal": {"$ref": "#/definitions/nonEmptyString"}, "included_finding_ids": {"$ref": "#/definitions/stringList"},
+        "deferred_finding_ids": {"$ref": "#/definitions/stringList"}, "owner_seam": {"$ref": "#/definitions/nonEmptyString"},
+        "batch_kind": {"$ref": "#/definitions/nonEmptyString"}, "risk_summary": {"$ref": "#/definitions/stringList"}
+      }
+    },
+    "approval_gates": {"$ref": "#/definitions/stringList"},
+    "dependencies": {
+      "type": "object", "additionalProperties": false, "required": ["satisfied", "blocking"],
+      "properties": {"satisfied": {"$ref": "#/definitions/stringList"}, "blocking": {"$ref": "#/definitions/stringList"}}
+    },
+    "runway": {
+      "type": "object", "additionalProperties": false, "required": ["expected_path"],
+      "properties": {"expected_path": {"$ref": "#/definitions/nonEmptyString"}}
+    },
+    "execution_context": {
+      "type": "object", "additionalProperties": false,
+      "required": ["toolchain_source_root", "canonical_planning_repository_root", "implementation_target_root"],
+      "properties": {
+        "toolchain_source_root": {"$ref": "#/definitions/absolutePath"},
+        "canonical_planning_repository_root": {"$ref": "#/definitions/absolutePath"},
+        "implementation_target_root": {"$ref": "#/definitions/absolutePath"}
+      }
+    },
+    "stops_when": {"$ref": "#/definitions/stringList"},
+    "producer": {"$ref": "#/definitions/producer"}
+  },
+  "definitions": {
+    "nonEmptyString": {"type": "string", "minLength": 1, "pattern": ".*\\S.*"},
+    "stringList": {"type": "array", "items": {"$ref": "#/definitions/nonEmptyString"}, "uniqueItems": true},
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "absolutePath": {"type": "string", "pattern": "^/[^\\u0000]+$"},
+    "producer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["toolchain_generation", "toolchain_commit", "schema_version"],
+      "properties": {
+        "toolchain_generation": {"enum": ["stable", "candidate"]}, "toolchain_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "schema_version": {"const": "planning-dispatch/v1"}
+      }
+    }
+  }
+}

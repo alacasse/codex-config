@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/alacasse/codex-config/schemas/planning-closeout-v1.schema.json",
+  "title": "Planning Closeout v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "artifact", "result", "evidence", "reconciliation", "execution_context", "producer"],
+  "properties": {
+    "schema": {"const": "planning-closeout/v1"},
+    "artifact": {
+      "type": "object", "additionalProperties": false, "required": ["batch_id"],
+      "properties": {"batch_id": {"$ref": "#/definitions/nonEmptyString"}}
+    },
+    "result": {
+      "type": "object", "additionalProperties": false, "required": ["status", "implementation_commits"],
+      "properties": {"status": {"enum": ["completed", "blocked", "abandoned"]}, "implementation_commits": {"$ref": "#/definitions/commitList"}}
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false, "required": ["validation", "review"],
+      "properties": {
+        "validation": {"$ref": "#/definitions/evidenceSet"},
+        "review": {"$ref": "#/definitions/evidenceSet"}
+      }
+    },
+    "reconciliation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["finding_mutations", "selected_dispatch_after", "queued_runway_after", "active_runway_after", "successor_selected"],
+      "properties": {
+        "finding_mutations": {"$ref": "#/definitions/stringList"}, "selected_dispatch_after": {"$ref": "#/definitions/nullablePath"},
+        "queued_runway_after": {"$ref": "#/definitions/nullablePath"}, "active_runway_after": {"$ref": "#/definitions/nullablePath"},
+        "successor_selected": {"const": false}
+      }
+    },
+    "execution_context": {
+      "type": "object", "additionalProperties": false, "required": ["canonical_planning_repository_root", "implementation_target_root"],
+      "properties": {"canonical_planning_repository_root": {"$ref": "#/definitions/absolutePath"}, "implementation_target_root": {"$ref": "#/definitions/absolutePath"}}
+    },
+    "producer": {"$ref": "#/definitions/producer"}
+  },
+  "definitions": {
+    "nonEmptyString": {"type": "string", "minLength": 1, "pattern": ".*\\S.*"},
+    "stringList": {"type": "array", "items": {"$ref": "#/definitions/nonEmptyString"}, "uniqueItems": true},
+    "commitList": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{40}$"}, "uniqueItems": true},
+    "absolutePath": {"type": "string", "pattern": "^/[^\\u0000]+$"},
+    "nullablePath": {"oneOf": [{"$ref": "#/definitions/nonEmptyString"}, {"type": "null"}]},
+    "evidenceSet": {
+      "type": "object", "additionalProperties": false, "required": ["passed", "failed"],
+      "properties": {"passed": {"$ref": "#/definitions/stringList"}, "failed": {"$ref": "#/definitions/stringList"}}
+    },
+    "producer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["toolchain_generation", "toolchain_commit", "schema_version"],
+      "properties": {
+        "toolchain_generation": {"enum": ["stable", "candidate"]}, "toolchain_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "schema_version": {"const": "planning-closeout/v1"}
+      }
+    }
+  }
+}

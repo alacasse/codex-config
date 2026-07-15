@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/alacasse/codex-config/schemas/planning-current-v1.schema.json",
+  "title": "Planning Current v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "program", "revision", "ledger", "selected_dispatch", "queued_runway", "active_runway", "latest_closeout", "blockers", "producer"],
+  "properties": {
+    "schema": {"const": "planning-current/v1"},
+    "program": {"$ref": "#/definitions/nonEmptyString"},
+    "revision": {"type": "integer", "minimum": 0},
+    "ledger": {"$ref": "#/definitions/path"},
+    "selected_dispatch": {"$ref": "#/definitions/nullablePath"},
+    "queued_runway": {"$ref": "#/definitions/nullablePath"},
+    "active_runway": {"$ref": "#/definitions/nullablePath"},
+    "latest_closeout": {"$ref": "#/definitions/nullablePath"},
+    "blockers": {"$ref": "#/definitions/stringList"},
+    "producer": {"$ref": "#/definitions/producer"}
+  },
+  "definitions": {
+    "nonEmptyString": {"type": "string", "minLength": 1, "pattern": ".*\\S.*"},
+    "path": {"$ref": "#/definitions/nonEmptyString"},
+    "nullablePath": {"oneOf": [{"$ref": "#/definitions/path"}, {"type": "null"}]},
+    "stringList": {"type": "array", "items": {"$ref": "#/definitions/nonEmptyString"}, "uniqueItems": true},
+    "producer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["toolchain_generation", "toolchain_commit", "schema_version"],
+      "properties": {
+        "toolchain_generation": {"enum": ["stable", "candidate"]},
+        "toolchain_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "schema_version": {"const": "planning-current/v1"}
+      }
+    }
+  }
+}

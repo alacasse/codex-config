@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/alacasse/codex-config/schemas/planning-runway-v1.schema.json",
+  "title": "Planning Runway v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "artifact", "batch", "execution", "slices", "review", "closeout", "producer"],
+  "properties": {
+    "schema": {"const": "planning-runway/v1"},
+    "artifact": {
+      "type": "object", "additionalProperties": false, "required": ["id", "source_dispatch", "source_dispatch_revision"],
+      "properties": {"id": {"$ref": "#/definitions/nonEmptyString"}, "source_dispatch": {"$ref": "#/definitions/nonEmptyString"}, "source_dispatch_revision": {"$ref": "#/definitions/hash"}}
+    },
+    "batch": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "status"],
+      "properties": {"kind": {"$ref": "#/definitions/nonEmptyString"}, "status": {"enum": ["queued", "active", "blocked", "completed"]}}
+    },
+    "execution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["result_contract", "branch_policy", "dirty_worktree_policy", "successor_selection", "implementation_target_root"],
+      "properties": {
+        "result_contract": {"const": "registered-agent/v2"}, "branch_policy": {"$ref": "#/definitions/nonEmptyString"},
+        "dirty_worktree_policy": {"$ref": "#/definitions/nonEmptyString"}, "successor_selection": {"const": "forbidden"},
+        "implementation_target_root": {"$ref": "#/definitions/absolutePath"}
+      }
+    },
+    "slices": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "title", "risk", "status", "allowed_paths", "validation"],
+        "properties": {
+          "id": {"$ref": "#/definitions/nonEmptyString"}, "title": {"$ref": "#/definitions/nonEmptyString"},
+          "risk": {"$ref": "#/definitions/nonEmptyString"}, "status": {"enum": ["pending", "active", "blocked", "completed"]},
+          "allowed_paths": {"$ref": "#/definitions/stringList"}, "validation": {"$ref": "#/definitions/stringList"}
+        }
+      }
+    },
+    "review": {
+      "type": "object", "additionalProperties": false, "required": ["final_gate"],
+      "properties": {"final_gate": {"$ref": "#/definitions/nonEmptyString"}}
+    },
+    "closeout": {
+      "type": "object", "additionalProperties": false, "required": ["same_batch_only", "required_artifacts"],
+      "properties": {"same_batch_only": {"const": true}, "required_artifacts": {"$ref": "#/definitions/stringList"}}
+    },
+    "producer": {"$ref": "#/definitions/producer"}
+  },
+  "definitions": {
+    "nonEmptyString": {"type": "string", "minLength": 1, "pattern": ".*\\S.*"},
+    "stringList": {"type": "array", "items": {"$ref": "#/definitions/nonEmptyString"}, "uniqueItems": true},
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "absolutePath": {"type": "string", "pattern": "^/[^\\u0000]+$"},
+    "producer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["toolchain_generation", "toolchain_commit", "schema_version"],
+      "properties": {
+        "toolchain_generation": {"enum": ["stable", "candidate"]}, "toolchain_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "schema_version": {"const": "planning-runway/v1"}
+      }
+    }
+  }
+}
