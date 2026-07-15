@@ -76,6 +76,81 @@ test_quality_review: clean_after_bounded_fix
 }
 ```
 
+## Slice 3: Prove The Two Fixture-Only Authoring Trials
+
+- Candidate commit: `6779b9ca1e9f43f486d24222c0120ea5e3c8a5e7`.
+- Outcome: one standalone evidence-skill fixture and one branching
+  human-command-owner catalog with fixture-local mechanical support now prove
+  the shared v1 authoring owner without migrating a live skill.
+- Validation: 4 focused trial tests passed; the complete authoring and existing
+  skill-contract suites passed 57 tests; both fixture catalogs validated through
+  the public CLI; Ruff and tracked plus untracked whitespace checks passed.
+- Review: independent final review was clean. Delta-only test-quality review
+  first found that branch labels were not fully bound to their condition and
+  outcome clauses; the bounded recovery added exact mappings and the repeat
+  review was clean.
+- Compatibility and cleanup residue: none. The fixtures are evidence only and
+  create no command-owner runtime dependency or live topology contract.
+
+### Slice 3 Execution Receipt
+
+```yaml
+runway: docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md
+live_lease:
+  interface: cross-checkout-context/v1
+  toolchain_source_root: /home/alacasse/projects/codex-config
+  toolchain_commit: 71768fe96484e7f44738b1f3d3830bca9430f9b6
+  canonical_planning_repository_root: /home/alacasse/projects/codex-config
+  canonical_planning_commit_before: 71768fe96484e7f44738b1f3d3830bca9430f9b6
+  implementation_target_root: /home/alacasse/projects/codex-config-command-owner-redesign
+  implementation_commit_before: 23db635dba08d7d1641fccfa0652ff5d3df0d2f6
+  codex_home: /home/alacasse/.codex
+  generation_role: stable
+  canonical_state_mutation_allowed: true
+validated_scope:
+  planning_paths: []
+  implementation_paths:
+    - tests/fixtures/skill-authoring/narrow-evidence/
+    - tests/fixtures/skill-authoring/branching-command/
+    - tests/test_skill_authoring.py
+worker_verification: matched
+reviewer_verification: matched
+test_quality_review: clean_after_bounded_fix
+```
+
+### Stable Planning Receipt
+
+```json
+{
+  "interface": "cross-checkout-receipt/v1",
+  "caller": "work-batch",
+  "reason": "CCFG-22 Slice 3 stable planning receipt",
+  "allowed_scope": {
+    "canonical_planning_repository_root": "/home/alacasse/projects/codex-config",
+    "canonical_planning_root": "/home/alacasse/projects/codex-config/docs/plans",
+    "implementation_target_root": "/home/alacasse/projects/codex-config-command-owner-redesign",
+    "planning_paths": [
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/completed-slices.md",
+      "/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-22-skill-authoring-v1/runway.md"
+    ],
+    "implementation_paths": []
+  },
+  "generation_identity": {
+    "generation_role": "stable",
+    "toolchain_source_root": "/home/alacasse/projects/codex-config",
+    "toolchain_commit": "71768fe96484e7f44738b1f3d3830bca9430f9b6",
+    "codex_home": "/home/alacasse/.codex",
+    "canonical_state_mutation_allowed": true
+  },
+  "repository_revisions": {
+    "toolchain_commit": "71768fe96484e7f44738b1f3d3830bca9430f9b6",
+    "canonical_planning_commit_before": "71768fe96484e7f44738b1f3d3830bca9430f9b6",
+    "implementation_commit_before": "6779b9ca1e9f43f486d24222c0120ea5e3c8a5e7"
+  },
+  "deletion_condition": "CCFG-29 final integration"
+}
+```
+
 ## Slice 2: Add The Conditional Planning-Artifact Reference
 
 - Candidate commit: `23db635dba08d7d1641fccfa0652ff5d3df0d2f6`.
