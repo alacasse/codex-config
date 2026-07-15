@@ -513,14 +513,20 @@ Reviewer brief for every slice:
 
 | Slice | Risk | Status | Candidate commit | Stable receipt | Validation | Review | Next proof | Notes |
 |---|---|---|---|---|---|---|---|---|
-| 2. Conditional planning reference | migration | Pending | — | — | Pending | Pending | Supported-schema gate green | — |
 | 3. Fixture-only trials | none | Pending | — | — | Pending | Pending | Both trial classes green | — |
 | 4. Candidate registration and install | migration | Pending | — | — | Pending | Pending | Candidate-only links and no runtime dependency | — |
 
 ## Orchestration Anomalies
 
 ```yaml
-orchestration_anomalies: []
+orchestration_anomalies:
+  - slice: 2
+    severity: low
+    category: incomplete_handoff_context
+    observed: "The repeat test-quality handoff initially abbreviated the unchanged strict live lease."
+    impact: "No write or acceptance impact; the full payload was supplied immediately and the reviewer independently returned matching verified identity."
+    action_taken: "Completed the same read-only handoff with the full exact payload before accepting its result."
+    follow_up: "Keep every later cross-checkout handoff self-contained even when revisions are unchanged."
 ```
 
 ## Slice Shape
