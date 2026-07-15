@@ -1,0 +1,318 @@
+schema: command-owner-scenario/v1
+provenance:
+  accepted_snapshot: caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c
+  source: command-owner redesign accepted contract-to-scenario map
+required_contracts:
+  - INTAKE-SOURCE-001
+  - INTAKE-IDENTITY-002
+  - INTAKE-NORMALIZE-003
+  - INTAKE-MUTATE-004
+  - INTAKE-STOP-005
+  - PLAN-SOURCE-001
+  - PLAN-ACTIVE-002
+  - PLAN-SELECT-003
+  - PLAN-SCOPE-004
+  - PLAN-DISPATCH-005
+  - PLAN-RUNWAY-006
+  - PLAN-RISK-007
+  - PLAN-STOP-008
+  - EXEC-CURRENT-001
+  - EXEC-RESUME-002
+  - EXEC-WORKER-003
+  - EXEC-VALIDATE-004
+  - EXEC-REVIEW-005
+  - EXEC-COMMIT-006
+  - EXEC-RECOVER-007
+  - EXEC-STOP-008
+  - CLOSE-FINAL-001
+  - CLOSE-RECONCILE-002
+  - CLOSE-NEXT-003
+  - STATE-DIAG-001
+  - STATE-TRANSITION-002
+  - STATE-CANONICAL-003
+  - STATE-HISTORY-004
+  - EVIDENCE-LEGACY-001
+  - EVIDENCE-DEAD-002
+  - EVIDENCE-TEST-003
+required_families:
+  - intake
+  - planning
+  - planning-fault-injection
+  - execution
+  - commit-receipt-fault-injection
+  - closeout
+  - closeout-fault-injection
+  - root-generation-isolation
+  - branch-design-lineage
+  - candidate-validation
+  - installer-cutover
+  - physical-deletion
+  - contract-first-format
+  - planning-state-ledger
+  - planning-quality
+  - execution-currentness
+  - cutover-lifecycle
+forbidden_target_terms:
+  - architecture-program-runway
+  - batch-runway
+  - create-spec
+  - execute-spec
+  - closeout-runway
+  - preflight_cross_checkout_live_lease
+  - prepare_cross_checkout_context_refresh
+scenarios:
+  - id: intake-family-skeleton
+    family: intake
+    evidence_kind: source_characterization
+    contracts:
+      - INTAKE-SOURCE-001
+      - INTAKE-IDENTITY-002
+      - INTAKE-NORMALIZE-003
+      - INTAKE-MUTATE-004
+      - INTAKE-STOP-005
+    initial_artifacts: []
+    command: intake.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: &unavailable_binding
+      status: unavailable
+      adapter: null
+      reason: Future behavior slice owns the fixture adapter.
+  - id: planning-family-skeleton
+    family: planning
+    evidence_kind: source_characterization
+    contracts:
+      - PLAN-SOURCE-001
+      - PLAN-ACTIVE-002
+      - PLAN-SELECT-003
+      - PLAN-SCOPE-004
+      - PLAN-DISPATCH-005
+      - PLAN-RUNWAY-006
+      - PLAN-RISK-007
+      - PLAN-STOP-008
+    initial_artifacts: []
+    command: planning.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: planning-fault-family-skeleton
+    family: planning-fault-injection
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: []
+    command: planning-fault.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: execution-family-skeleton
+    family: execution
+    evidence_kind: source_characterization
+    contracts:
+      - EXEC-CURRENT-001
+      - EXEC-RESUME-002
+      - EXEC-WORKER-003
+      - EXEC-VALIDATE-004
+      - EXEC-REVIEW-005
+      - EXEC-COMMIT-006
+      - EXEC-RECOVER-007
+      - EXEC-STOP-008
+    initial_artifacts: []
+    command: execution.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: commit-receipt-fault-family-skeleton
+    family: commit-receipt-fault-injection
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: []
+    command: commit-receipt-fault.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: closeout-family-skeleton
+    family: closeout
+    evidence_kind: source_characterization
+    contracts:
+      - CLOSE-FINAL-001
+      - CLOSE-RECONCILE-002
+      - CLOSE-NEXT-003
+    initial_artifacts: []
+    command: closeout.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: closeout-fault-family-skeleton
+    family: closeout-fault-injection
+    evidence_kind: fault_injection
+    contracts: []
+    initial_artifacts: []
+    command: closeout-fault.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: root-generation-family-skeleton
+    family: root-generation-isolation
+    evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: []
+    command: root-generation.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: branch-lineage-family-skeleton
+    family: branch-design-lineage
+    evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: []
+    command: branch-lineage.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: candidate-validation-family-skeleton
+    family: candidate-validation
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: []
+    command: candidate-validation.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: installer-cutover-family-skeleton
+    family: installer-cutover
+    evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: []
+    command: installer-cutover.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: physical-deletion-family-skeleton
+    family: physical-deletion
+    evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: []
+    command: physical-deletion.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: contract-first-format-family-skeleton
+    family: contract-first-format
+    evidence_kind: coverage
+    contracts:
+      - EVIDENCE-LEGACY-001
+      - EVIDENCE-DEAD-002
+      - EVIDENCE-TEST-003
+    initial_artifacts: []
+    command: contract-format.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: planning-state-ledger-family-skeleton
+    family: planning-state-ledger
+    evidence_kind: target_interface
+    contracts:
+      - STATE-DIAG-001
+      - STATE-TRANSITION-002
+      - STATE-CANONICAL-003
+      - STATE-HISTORY-004
+    initial_artifacts: []
+    command: planning-state.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: planning-quality-family-skeleton
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: []
+    command: planning-quality.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: execution-currentness-family-skeleton
+    family: execution-currentness
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: []
+    command: execution-currentness.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding
+  - id: cutover-lifecycle-family-skeleton
+    family: cutover-lifecycle
+    evidence_kind: bootstrap_cutover
+    contracts: []
+    initial_artifacts: []
+    command: cutover-lifecycle.observe
+    expected_transition: null
+    expected_writes: []
+    forbidden_writes: []
+    expected_stop_reason: null
+    generation_and_roots: {generation: null, roots: []}
+    validation: []
+    binding: *unavailable_binding

@@ -1,0 +1,129 @@
+schema: command-owner-scenario/v1
+provenance:
+  accepted_snapshot: "0000000000000000000000000000000000000000"
+  source: scenario harness runtime self-test
+required_contracts: [TEST-001]
+required_families: [status-model]
+forbidden_target_terms: [legacy-owner]
+scenarios:
+  - &base_scenario
+    id: declared-scenario
+    family: status-model
+    evidence_kind: coverage
+    contracts: [TEST-001]
+    initial_artifacts: []
+    command: status.declared
+    expected_transition: observed
+    expected_writes: [results/evidence.json]
+    forbidden_writes: [outside/forbidden.txt]
+    expected_stop_reason: null
+    generation_and_roots:
+      generation: candidate
+      roots:
+        - role: fixture
+          path: roots/fixture
+    validation: [focused.green]
+    binding:
+      status: declared
+      adapter: null
+      reason: Adapter is intentionally not selected.
+  - id: bound-scenario
+    family: status-model
+    evidence_kind: coverage
+    contracts: [TEST-001]
+    initial_artifacts: []
+    command: status.bound
+    expected_transition: observed
+    expected_writes: [results/evidence.json]
+    forbidden_writes: [outside/forbidden.txt]
+    expected_stop_reason: null
+    generation_and_roots:
+      generation: candidate
+      roots:
+        - role: fixture
+          path: roots/fixture
+    validation: [focused.green]
+    binding:
+      status: bound
+      adapter: adapters.py:waiting_observation
+      reason: Adapter is bound but has no observation yet.
+  - id: green-scenario
+    family: status-model
+    evidence_kind: coverage
+    contracts: [TEST-001]
+    initial_artifacts: []
+    command: status.green
+    expected_transition: observed
+    expected_writes: [results/evidence.json]
+    forbidden_writes: [outside/forbidden.txt]
+    expected_stop_reason: null
+    generation_and_roots:
+      generation: candidate
+      roots:
+        - role: fixture
+          path: roots/fixture
+    validation: [focused.green]
+    binding:
+      status: bound
+      adapter: adapters.py:matching_observation
+      reason: null
+  - id: mismatch-scenario
+    family: status-model
+    evidence_kind: coverage
+    contracts: [TEST-001]
+    initial_artifacts: []
+    command: status.mismatch
+    expected_transition: observed
+    expected_writes: [results/evidence.json]
+    forbidden_writes: [outside/forbidden.txt]
+    expected_stop_reason: null
+    generation_and_roots:
+      generation: candidate
+      roots:
+        - role: fixture
+          path: roots/fixture
+    validation: [focused.green]
+    binding:
+      status: bound
+      adapter: adapters.py:mismatching_observation
+      reason: null
+  - id: blocked-scenario
+    family: status-model
+    evidence_kind: coverage
+    contracts: [TEST-001]
+    initial_artifacts: []
+    command: status.blocked
+    expected_transition: observed
+    expected_writes: [results/evidence.json]
+    forbidden_writes: [outside/forbidden.txt]
+    expected_stop_reason: null
+    generation_and_roots:
+      generation: candidate
+      roots:
+        - role: fixture
+          path: roots/fixture
+    validation: [focused.green]
+    binding:
+      status: blocked
+      adapter: null
+      reason: Fixture precondition is intentionally blocked.
+  - id: unavailable-scenario
+    family: status-model
+    evidence_kind: coverage
+    contracts: [TEST-001]
+    initial_artifacts: []
+    command: status.unavailable
+    expected_transition: observed
+    expected_writes: [results/evidence.json]
+    forbidden_writes: [outside/forbidden.txt]
+    expected_stop_reason: null
+    generation_and_roots:
+      generation: candidate
+      roots:
+        - role: fixture
+          path: roots/fixture
+    validation: [focused.green]
+    binding:
+      status: unavailable
+      adapter: null
+      reason: Production interface is intentionally unavailable.

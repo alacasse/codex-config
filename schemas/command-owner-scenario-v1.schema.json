@@ -1,0 +1,247 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/alacasse/codex-config/schemas/command-owner-scenario-v1.schema.json",
+  "title": "Command Owner Scenario Catalog v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "provenance",
+    "required_contracts",
+    "required_families",
+    "forbidden_target_terms",
+    "scenarios"
+  ],
+  "properties": {
+    "schema": {
+      "const": "command-owner-scenario/v1"
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accepted_snapshot", "source"],
+      "properties": {
+        "accepted_snapshot": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "source": {
+          "$ref": "#/definitions/nonEmptyString"
+        }
+      }
+    },
+    "required_contracts": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/definitions/contractId"
+      }
+    },
+    "required_families": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/definitions/identifier"
+      }
+    },
+    "forbidden_target_terms": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/definitions/nonEmptyString"
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/scenario"
+      }
+    }
+  },
+  "definitions": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": ".*\\S.*"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "semanticLabel": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:[.:][a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$"
+    },
+    "contractId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$"
+    },
+    "safePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!~)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "safePathList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/definitions/safePath"
+      }
+    },
+    "semanticLabelList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/definitions/semanticLabel"
+      }
+    },
+    "nullableString": {
+      "oneOf": [
+        {"$ref": "#/definitions/nonEmptyString"},
+        {"type": "null"}
+      ]
+    },
+    "rootFact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "path"],
+      "properties": {
+        "role": {
+          "$ref": "#/definitions/identifier"
+        },
+        "path": {
+          "$ref": "#/definitions/safePath"
+        }
+      }
+    },
+    "generationAndRoots": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generation", "roots"],
+      "properties": {
+        "generation": {
+          "$ref": "#/definitions/nullableString"
+        },
+        "roots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/rootFact"
+          }
+        }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "adapter", "reason"],
+      "properties": {
+        "status": {
+          "enum": ["declared", "bound", "blocked", "unavailable"]
+        },
+        "adapter": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_./-]+\\.py:[A-Za-z_][A-Za-z0-9_]*$"
+            },
+            {"type": "null"}
+          ]
+        },
+        "reason": {
+          "$ref": "#/definitions/nullableString"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"status": {"const": "bound"}}
+          },
+          "then": {
+            "properties": {"adapter": {"type": "string"}}
+          }
+        },
+        {
+          "if": {
+            "properties": {"status": {"enum": ["declared", "unavailable"]}}
+          },
+          "then": {
+            "properties": {"adapter": {"type": "null"}}
+          }
+        }
+      ]
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "family",
+        "evidence_kind",
+        "contracts",
+        "initial_artifacts",
+        "command",
+        "expected_transition",
+        "expected_writes",
+        "forbidden_writes",
+        "expected_stop_reason",
+        "generation_and_roots",
+        "validation",
+        "binding"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/identifier"
+        },
+        "family": {
+          "$ref": "#/definitions/identifier"
+        },
+        "evidence_kind": {
+          "enum": [
+            "source_characterization",
+            "target_interface",
+            "bootstrap_cutover",
+            "fault_injection",
+            "coverage"
+          ]
+        },
+        "contracts": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/definitions/contractId"
+          }
+        },
+        "initial_artifacts": {
+          "$ref": "#/definitions/safePathList"
+        },
+        "command": {
+          "$ref": "#/definitions/semanticLabel"
+        },
+        "expected_transition": {
+          "$ref": "#/definitions/nullableString"
+        },
+        "expected_writes": {
+          "$ref": "#/definitions/safePathList"
+        },
+        "forbidden_writes": {
+          "$ref": "#/definitions/safePathList"
+        },
+        "expected_stop_reason": {
+          "$ref": "#/definitions/nullableString"
+        },
+        "generation_and_roots": {
+          "$ref": "#/definitions/generationAndRoots"
+        },
+        "validation": {
+          "$ref": "#/definitions/semanticLabelList"
+        },
+        "binding": {
+          "$ref": "#/definitions/binding"
+        }
+      }
+    }
+  }
+}
