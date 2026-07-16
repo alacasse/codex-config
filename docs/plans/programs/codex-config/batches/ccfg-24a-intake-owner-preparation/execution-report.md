@@ -10,6 +10,20 @@
 - Closeout: none; this report is not a `closeout.md`
 - Planning-state commit: `c087024` (`docs: record CCFG-24A execution blocker`)
 
+## Later Planning Resolution
+
+This report remains the historical record of the failed attempt; none of its
+execution facts are rewritten. The planning blocker was later resolved by the
+explicit contract clarification in
+`../../findings/ccfg-24a-add-to-ledger-v1-decision-amendment.md`.
+
+The attempt's original dispatch and runway are preserved verbatim as
+`blocked-dispatch.md` and `blocked-runway.md`. They are superseded and must not
+be resumed. The current executable artifacts are `dispatch.md` and `runway.md`.
+The clarification leaves DEC-037 and `ledger-store/v1` unchanged: upstream
+semantic reevaluation belongs to `add-to-ledger/v1`, while the store binds only
+the exact prepared apply request.
+
 ## Intended Work
 
 CCFG-24A was queued as the preparation half of CCFG-24. Its three slices were
@@ -128,7 +142,11 @@ Planning State `current` and `validate` remained green after the blocker-state
 commit. Structural validity does not mean the batch is executable; the queued
 runway and program current-state file explicitly prohibit resuming it.
 
-## Next Safe Action
+## Historical Next Safe Action At Stop Time
+
+This section records the controlling next action when the failed attempt
+stopped. It is superseded by the accepted decision amendment and executable
+replacement runway linked below.
 
 A later explicit `plan-batch` request must amend or replace this same CCFG-24A
 batch with:
@@ -145,8 +163,9 @@ close CCFG-24, or select successor work.
 
 ## Evidence
 
-- `dispatch.md`
-- `runway.md`, especially `Execution Ledger` and `Execution Blocker`
+- `blocked-dispatch.md`
+- `blocked-runway.md`, especially `Execution Ledger` and `Execution Blocker`
+- `superseded.md`
 - `../../CURRENT.md`
 - `../../LEDGER.md`
 - stable planning commit `c087024`

@@ -10,7 +10,7 @@
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID:
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/runway.md`
-- Queued batch execution status: `Blocked in Slice 1; explicit replanning required`
+- Queued batch execution status: `Queued and executable; no slice started`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/closeout.md`
 - Run artifact location: `None selected`
@@ -45,6 +45,8 @@
   transfer or real cutover.
 - Live CCFG-24 two-batch amendment:
   `docs/plans/programs/codex-config/findings/ccfg-24-two-batch-execution-amendment.md`
+- Accepted CCFG-24A decision amendment:
+  `docs/plans/programs/codex-config/findings/ccfg-24a-add-to-ledger-v1-decision-amendment.md`
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -62,11 +64,13 @@
 - Active runway: `None`
 - Queued batch:
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/runway.md`
-- Queued batch execution status: `Blocked in Slice 1; explicit replanning required`
+- Queued batch execution status: `Queued and executable; no slice started`
 - Queued dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/dispatch.md`
 - Superseded CCFG-24 planning evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/superseded.md`
+- Superseded CCFG-24A blocked attempt:
+  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/superseded.md`
 - Expected CCFG-24B cutover batch: unselected; no dispatch or runway exists.
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
@@ -80,11 +84,12 @@
 
 ## Next Safe Action
 
-Do not resume CCFG-24A execution. Slice 1 proved that metadata-only no-op
-idempotency cannot satisfy the mandatory matrix through the accepted apply-only
-store request. A later explicit `plan-batch` request must amend or replace this
-same batch with an authorized store-contract decision and corresponding scope.
-Keep CCFG-24 pending, CCFG-24B and CCFG-25 unselected, and select no successor.
+A later explicit `work-batch` request may execute only the current two-slice
+CCFG-24A runway. Start from Planning State, require a fresh ready strict
+cross-checkout preflight, consume the accepted CCFG-24A decision amendment, and
+use only temporary or fixture ledgers from candidate execution. Do not resume
+`blocked-runway.md`. Keep CCFG-24 `Pending` until same-batch closeout, and keep
+CCFG-24B and CCFG-25 unselected.
 
 ## Stop Conditions
 
@@ -151,8 +156,9 @@ Keep CCFG-24 pending, CCFG-24B and CCFG-25 unselected, and select no successor.
 - Stop if CCFG-24A moves semantic intake decisions into `ledger-store/v1`,
   mutates stable installed state, or lets the candidate mutate canonical
   planning state.
-- Stop if work resumes CCFG-24A Slice 2 before explicit replanning authorizes
-  the store request or semantic change required by the Slice 1 blocker.
+- Stop if work executes `blocked-runway.md`, recreates its decision slice, or
+  requires a store/schema semantic change instead of consuming the accepted
+  CCFG-24A decision amendment.
 - Stop if CCFG-24A closeout marks CCFG-24 `Closed`, selects or creates CCFG-24B,
   or selects or prepares CCFG-25.
 - Stop if final CCFG-24 cutover leaves APR or `legacy-removal` as a normal intake

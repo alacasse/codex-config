@@ -2,108 +2,107 @@
 
 ## Purpose
 
-Create and candidate-install a real `add-to-ledger/v1` owner, close the bounded
-v1 intake decisions needed to implement it deterministically, bind the stable
-intake scenarios to that installed owner, and produce compact cost and retained-
-surface evidence for a later separately planned ownership-cutover batch.
+Implement and candidate-install the bounded `add-to-ledger/v1` owner from the
+accepted decision amendment, bind the relevant intake scenarios to that exact
+installed owner, and collect the evidence needed for a later separately planned
+cutover reassessment.
 
-This batch implements only the preparation half of CCFG-24. It must not remove
-APR or `legacy-removal` authority, delete migration fixtures, close CCFG-24, or
-prepare CCFG-25.
+This runway replaces the blocked planning attempt preserved as
+`blocked-runway.md`. It does not resume the blocked Slice 1. The old decision
+slice is resolved by `../../findings/ccfg-24a-add-to-ledger-v1-decision-amendment.md`.
 
 ## Source And Authority
 
-- Finding: CCFG-24
+- Finding: CCFG-24, still `Pending`.
+- Dispatch: `dispatch.md`.
 - Accepted source: COR-007 at
-  `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
-- Dispatch: `dispatch.md`
-- Live split amendment:
-  `../../findings/ccfg-24-two-batch-execution-amendment.md`
-- Superseded five-slice evidence:
-  `../ccfg-24-intake-ownership-transfer/`
+  `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`.
+- Preparation/cutover boundary:
+  `../../findings/ccfg-24-two-batch-execution-amendment.md`.
+- Accepted semantic decisions:
+  `../../findings/ccfg-24a-add-to-ledger-v1-decision-amendment.md`.
+- Historical failure evidence: `execution-report.md`, `blocked-dispatch.md`, and
+  `blocked-runway.md`.
 
-The split amendment controls batch boundaries. COR-007 and DEC-037 remain the
-behavior and store authorities.
+The decision amendment controls semantic implementation. DEC-037 controls
+mechanical apply replay. `ledger-store/v1` remains unchanged.
 
 ## Batch Kind And Slice Risk Contract
 
-- Batch kind: `mixed-risk`
-- Slice 1, Define the bounded v1 intake owner contract: `decision-only`
-- Slice 2, Implement and candidate-install the target owner: `migration`
-- Slice 3, Bind production scenarios and produce reassessment evidence:
-  `migration`
+- Batch kind: `migration`.
+- Slice 1, Implement and candidate-install the bounded owner: `migration`.
+- Slice 2, Bind scenarios and measure preparation evidence: `migration`.
+- No contract-narrowing or destructive-cleanup slice is authorized.
 
-No destructive-cleanup or contract-narrowing slice is authorized.
+`slice_shape`: two slices.
 
-`slice_shape`: three slices.
+- `1 -> 2`: Slice 1 produces a directly tested and candidate-installed owner
+  over temporary ledgers. Slice 2 consumes that exact installed command in the
+  broader behavioral harness and produces an independently reviewable
+  integration/evidence commit.
 
-- `1 -> 2`: Slice 1 produces the accepted semantic contract consumed by the
-  coding slice; implementation is blocked while policy remains unresolved.
-- `2 -> 3`: Slice 2 produces an installed candidate owner; Slice 3 consumes that
-  exact owner from the behavioral harness and measures real integration cost.
-
-Cleanup remains outside this batch because it has a different risk, review, and
-rollback boundary.
+The intermediate state is valid and rollback-safe: old intake paths are
+unchanged, the stable home is untouched, and the candidate owner has no
+canonical mutation authority.
 
 ## Current Baseline And Assumptions
 
-- Stable planning checkout: `/home/alacasse/projects/codex-config`, branch
-  `master`.
-- Candidate checkout:
+- Stable toolchain and canonical planning checkout:
+  `/home/alacasse/projects/codex-config`, branch `master`.
+- Candidate implementation checkout:
   `/home/alacasse/projects/codex-config-command-owner-redesign`, branch
   `implementation/command-owner-redesign`.
+- Candidate implementation baseline:
+  `b38570bcd97b2584f3828abcd395b0f45ed91e58`.
 - Stable Codex home: `/home/alacasse/.codex`.
 - Candidate Codex home: `/home/alacasse/.codex-command-owner-redesign`.
-- Candidate baseline from completed CCFG-33:
-  `b38570bcd97b2584f3828abcd395b0f45ed91e58`.
-- `add-to-ledger` remains a transitional owner routed through APR.
-- Disposable CCFG-23 fixture helpers still own executable intake observations.
-- `scripts/planning_contract.py` already supplies apply-only
-  `ledger-store/v1` mechanics.
-- CCFG-33 supplies the practical exact-commit scenario acceptance owner.
+- Existing `scripts/planning_contract.py` implements accepted apply-only
+  `ledger-store/v1` mechanics and is read-only for this batch.
+- CCFG-33 provides the exact-commit acceptance owner with one evidence-pytest
+  process.
 
-Execution must refresh all live revisions and write scopes. These are source
-facts, not a live lease.
+Execution refreshes all live revisions and exact scopes. The immutable planning
+snapshot below is historical selection evidence, not a live lease.
 
 ## Batch Non-Goals
 
-- No APR intake or mutation-route removal.
-- No `legacy-removal` authority narrowing.
-- No fixture/helper deletion.
-- No final source-boundary migration guard.
+- No public digest, idempotency key, request ID, or replay token.
+- No store, planning-schema, or planning-state semantic change.
+- No APR, `legacy-removal`, Batch Runway, `plan-batch`, or `work-batch`
+  ownership narrowing.
+- No intake fixture/helper deletion or topology cleanup.
+- No canonical planning write by candidate code or tests.
 - No stable-home install, refresh, unlink, rebind, or default switch.
-- No canonical planning write from candidate processes.
-- No public general intake framework, public request schema, durable intake
-  queue, second store, or second ledger.
-- No CCFG-24B dispatch/runway and no CCFG-25 work.
+- No final CCFG-24 cutover, CCFG-24B planning, or CCFG-25 work.
 
 ## Allowed Candidate Areas
 
 - `skills/add-to-ledger/**`
 - `scripts/add_to_ledger.py`
-- `codex-features.json`
-- focused installation metadata for `add-to-ledger` and `planning-contracts`
+- `codex-features.json`, limited to the target owner and neutral
+  `planning-contracts` registration
+- focused installation metadata for those two features
 - `tests/test_add_to_ledger.py`
-- focused skill-contract migration fixtures/tests
-- intake-only CCFG-23 catalog, workflow-case, adapter, and scenario test surfaces
+- intake-only CCFG-23 catalog, workflow-case, adapter, and scenario tests
+- focused source fixtures required by the accepted adapters
 - `CHANGELOG.md`
-- one candidate implementation decision record under the existing command-owner
-  redesign design area
+- compact preparation evidence produced under the current batch directory when
+  closeout is written by the canonical coordinator
 
-## Read-Only Unless A Focused Blocking Gap Is Proven
+## Read-Only Candidate Areas
 
 - `scripts/planning_contract.py`
+- `tests/test_planning_contract_store.py`, except that it may be executed
 - `schemas/planning-*-v1.schema.json`
-- `scripts/skill_contract.py`
-- `schemas/skill-contract-v1.schema.json`
 - `scripts/planning_state.py`
+- `scripts/skill_contract.py`
 - `skills/architecture-program-runway/**`
 - `skills/legacy-removal/**`
 - `skills/plan-batch/**`
 - `skills/work-batch/**`
 - `skills/batch-runway/**`
 
-A semantic change to a read-only owner requires stop and replan.
+Any required semantic change in a read-only area stops execution for replan.
 
 ## Execution Contract
 
@@ -129,15 +128,16 @@ Reference files:
 - `skills/batch-runway/references/cross-checkout-context-v1.md`
 - `skills/test-quality-review/SKILL.md`
 
-Workers implement one slice only and do not delegate. Candidate installation is
-coordinator-owned after source validation and review. Every test-changing slice
-receives independent review followed by delta-only test-quality review.
+Workers implement one slice only and do not delegate. The coordinator owns
+validation, review, candidate installation, execution-ledger updates, commits,
+and same-batch closeout. Every test-changing slice receives independent review
+followed by delta-only test-quality review.
 
 ## Required Planning Snapshot
 
 Interface: `cross-checkout-context/v1`.
 
-Installed helper used by the immediately superseded validated planning flight:
+Installed helper:
 
 ```text
 /home/alacasse/.codex/scripts/cross_checkout_context.py
@@ -149,15 +149,15 @@ Canonical planning root:
 /home/alacasse/projects/codex-config/docs/plans
 ```
 
-Inherited complete validated plan-time payload:
+Validated plan-time payload:
 
 ```yaml
 interface: cross-checkout-context/v1
 execution_context:
   toolchain_source_root: /home/alacasse/projects/codex-config
-  toolchain_commit: d739bd5660165fe321981ae0219a61c56667560b
+  toolchain_commit: 199f4a9cd86edf7e80a13b174b162ce6798c18af
   canonical_planning_repository_root: /home/alacasse/projects/codex-config
-  canonical_planning_commit_before: d739bd5660165fe321981ae0219a61c56667560b
+  canonical_planning_commit_before: 199f4a9cd86edf7e80a13b174b162ce6798c18af
   implementation_target_root: /home/alacasse/projects/codex-config-command-owner-redesign
   implementation_commit_before: b38570bcd97b2584f3828abcd395b0f45ed91e58
   codex_home: /home/alacasse/.codex
@@ -165,173 +165,108 @@ execution_context:
   canonical_state_mutation_allowed: true
 ```
 
-This payload is retained verbatim because the replacement preserves the same
-finding scope, roots, generation role, and candidate baseline. It is historical
-evidence only. At startup, `work-batch` must confirm this replacement queued
-scope through Planning State, obtain a fresh ready preflight, and validate the
-current exact write scope before every delegated handoff. Do not hand-edit the
-historical revisions above.
+This snapshot was validated with the installed helper and an exact planning
+write scope before the replacement artifacts were written. Preserve it
+verbatim after this planning commit advances stable HEAD. At startup,
+`work-batch` must confirm this exact queued scope through Planning State, obtain
+a fresh `ready` live-lease preflight, and validate each handoff's exact write
+scope. A stale or blocked preflight stops before delegation.
 
 ## Context Control
 
-The execute coordinator should read, in order:
-
-1. current Planning State facts;
-2. this dispatch and runway;
-3. the active slice section;
-4. compact prior-slice receipts and reviews;
-5. only source files required for a named unanswered question.
-
-Do not replay the full superseded runway after startup or paste worker/reviewer
-transcripts into coordinator context. Record broad and large-file reads in the
-runner input inventory when available.
+The execution coordinator reads current Planning State, this dispatch and
+runway, the accepted decision amendment, the active slice, and compact prior
+receipts. It reopens historical failure evidence or broad design material only
+for a named contradiction.
 
 - Soft execute budget: 120,000 input tokens.
 - Hard warning: 180,000 input tokens.
-- Above 85% of the model context window: stop recommended unless only compact
-  validation/closeout remains and no semantic choice is unresolved.
+- Stop when context pressure coincides with a new semantic decision or scope
+  expansion.
 
 ## Validation Profile And Status Classes
 
 - Runway density: `full-runway`.
-- Validation profile:
+- Profile:
   `skills/batch-runway/references/validation-profiles/project-harness-production.md`.
-- Existing planning-store, skill-contract, behavioral/catalog, routing,
-  cross-checkout, installer status/dry-run, Ruff, BasedPyright, and whitespace
-  baselines used by the active candidate are `required-green`.
-- Slice 1 decision-record validation is implementation-created
-  `required-green` before Slice 2.
-- Slice 2 direct owner tests and candidate installation checks are
-  implementation-created `required-green`.
-- Slice 3 migrated intake scenarios, caller inventory, cost evidence, and
-  exact-commit acceptance are implementation-created `required-green`.
-- The full manifest diagnostic remains `known-red-baseline`: only the previously
-  assigned CCFG-24/25, CCFG-25, and CCFG-26 identities may remain red.
-- Existing stable-interpreter dependency collection failures remain
-  `diagnostic-only`; they do not authorize package installation.
+- Existing planning-store, skill-contract, scenario catalog, cross-checkout,
+  installer, Ruff, BasedPyright, and whitespace checks are `required-green`.
+- New owner tests and installed-owner scenarios are `implementation-created`
+  until their owning slice makes them `required-green`.
+- The existing manifest diagnostic retains its recorded
+  `known-red-baseline`; only the already assigned CCFG-24/25, CCFG-25, and
+  CCFG-26 identities may remain red.
+- Stable-interpreter dependency collection failures remain `diagnostic-only`
+  and do not authorize package installation.
 
-Every concrete command must be recorded with its status class before it gates a
-slice or closeout.
+Every concrete execution command must be recorded with one status class before
+it gates acceptance.
 
 ## Execution Ledger
 
 | Slice | Status | Risk | Commit | Focused validation | Review | Notes |
 |---|---|---|---|---|---|---|
-| 1. Define bounded v1 decisions | Blocked | decision-only | None | Decision record drafted; store-contract investigation complete | Findings | Required metadata-only no-op idempotency cannot be represented by the accepted apply-only store request; stop and replan before implementation |
-| 2. Implement and install target owner | Pending | migration | None | Not run | Pending | Candidate owner over apply-only store; old routes unchanged |
-| 3. Bind scenarios and measure | Pending | migration | None | Not run | Pending | Prove installed behavior and classify retained surfaces |
+| 1. Implement and candidate-install bounded owner | Pending | migration | None | Not run | Pending | Consume accepted amendment; unchanged apply-only store; temporary ledgers only |
+| 2. Bind scenarios and measure preparation evidence | Pending | migration | None | Not run | Pending | Installed owner behavior, retained-surface inventory, and measured evidence |
 
 Accepted results move to `completed-slices.md`.
 
-## Execution Blocker
+## Slice 1: Implement And Candidate-Install The Bounded Owner
 
-Detailed execution report: `execution-report.md`.
+### Allowed Areas
 
-Slice 1 stopped on 2026-07-16 before any commit or production change.
-Independent review and a focused `ledger-store/v1` code-path investigation
-proved that the required same-key/different-complete-caller-payload behavior
-cannot be implemented for a metadata-only no-op through the accepted store API:
+- `skills/add-to-ledger/**`
+- `scripts/add_to_ledger.py`
+- `codex-features.json`, only target-owner and `planning-contracts` entries
+- focused target-owner fixtures and `tests/test_add_to_ledger.py`
+- `CHANGELOG.md`
 
-- DEC-037 hashes the apply request, not the upstream intake request;
-- a valid no-op has empty finding mutations and therefore must also have empty
-  touched-finding revisions;
-- the request exposes no existing metadata carrier for source/proposal identity;
-- fake touches are rejected, and an unchanged finding mutation must increment
-  its revision.
+### Non-Goals
 
-Distinct no-op intake payloads using the same `request_id` can therefore
-collapse to one store payload and return `exact_replay` instead of the required
-`idempotency_mismatch`. Encoding the missing identity requires a store request
-or semantic change, which this runway classifies as read-only and names as a
-Slice 1 stop condition.
-
-The other review findings remain decision-record work: canonical mutation
-authority, create-ID allocation from the CAS-bound snapshot, URL/timestamp
-canonicalization, file-at-commit verification, and semantic-overlap
-normalization. They do not make Slice 2 safe while the store gap remains.
-
-Next safe action: preserve this queued runway and use a later explicit planning
-request to amend or replace it with an authorized store-contract decision and
-corresponding execution scope. Do not start Slice 2, weaken the required
-idempotency matrix, close CCFG-24, or select successor work.
-
-## Slice 1: Define Bounded V1 Decisions
+- No CCFG-23 scenario migration yet.
+- No edit to the store, schemas, planning-state, old intake owners, stable home,
+  canonical planning artifacts, or cutover state.
 
 ### Scope
 
-Produce one durable candidate decision record defining:
+- Implement `scripts/add_to_ledger.py` and the human-facing skill boundary from
+  the accepted decision amendment.
+- Support only `github_issue`, structured `external_ticket`, `plain_text`,
+  `git_file`, and `file_snapshot` adapters.
+- Bind explicit invocation authority, complete-snapshot allocation, exact
+  duplicate/update/controlled-merge/no-op/block behavior, prepared-operation
+  key derivation, and command receipts.
+- Add focused direct tests against temporary schema-valid ledgers, including
+  interrupted retry of the same prepared operation and later independent
+  reevaluation.
+- Register only the neutral `planning-contracts` mechanism and target
+  `add-to-ledger` feature links required by the owner.
+- After validation and clean reviews, coordinator-install those two features
+  only into the candidate Codex home and verify exact link ownership.
 
-- the `SKILL.md -> scripts/add_to_ledger.py` invocation boundary;
-- supported v1 source types and exact mapping to `planning-finding/v1`;
-- meanings of `source_id`, `source_commit`, `source_section`, and evidence
-  pointers for each supported source type;
-- create/update/merge/no-op/block behavior;
-- field-level update/merge behavior, or explicit blocking where ambiguous;
-- idempotency construction and separation from semantic duplicates;
-- success, exact-replay, and blocked results;
-- unsupported cases and no-downstream-work behavior.
-
-The decision matrix must cover new work, exact replay, same key/different
-payload, changed same-source payload, different-source semantic overlap,
-in-request identity conflict, stale whole-ledger CAS, stale finding revision,
-unsupported source type, and ambiguous update/merge.
-
-### Acceptance And Gate
-
-- A coding worker can implement v1 without choosing policy.
-- No planning schema or store semantic change is required.
-- Ambiguous cases fail closed instead of generalizing.
-- No production or installed file changes occur.
-- Independent review accepts the record before Slice 2.
-
-### Validation
-
-Decision-record link/reference checks: `required-green`.
-No test-quality review unless tests change.
-
-### Commit
-
-`docs: define bounded add-to-ledger v1 decisions`
-
-### Stop Conditions
-
-- Stop on schema conflict, unresolved user decision, or coupling to CCFG-25.
-
-## Slice 2: Implement And Candidate-Install The Target Owner
-
-### Approval Gate
-
-Slice 1 is committed, independently accepted, and contains no unresolved
-implementation-semantic choice.
-
-### Scope
-
-- Migrate `skills/add-to-ledger/SKILL.md` to one contract-first owner.
-- Add `scripts/add_to_ledger.py` implementing only accepted v1 decisions.
-- Keep semantic decisions in the command owner and consume
-  `read_ledger_document`/`apply_ledger_decision` as apply-only mechanics.
-- Register neutral `planning-contracts` and target `add-to-ledger` links.
-- Add focused direct tests against temporary schema-valid ledgers.
-- After clean source reviews, install/update only the candidate Codex home and
-  verify exact links.
-
-Do not remove or narrow old routes. Any transitional dependency retained in the
-manifest must name Batch B as its removal owner and final CCFG-24 cutover as its
-removal condition.
+Old intake routes and installed support surfaces remain unchanged.
 
 ### Acceptance Criteria
 
-- Candidate-installed command invokes the real owner.
-- Supported fresh/multi intake is atomic.
-- Exact replay does not reapply.
-- Same-key/different-payload, stale CAS, source conflict, unsupported, and
-  ambiguous cases write nothing.
-- Intake creates no selected/queued/active/closeout/successor state.
-- Store remains apply-only; stable home remains unchanged.
+- The human command accepts source material without public replay identity.
+- Create and atomic multi-create allocate from one complete CAS-bound snapshot.
+- Same-source unchanged content is semantic no-op; same-source accepted changes
+  update; compatible explicit target merges only exact supported evidence;
+  ambiguity blocks.
+- Empty, malformed, mixed, concurrent, and stale allocation cases follow the
+  accepted decision exactly.
+- Git-bound files are verified at exact commit/path; standalone snapshots claim
+  no Git provenance.
+- Candidate-installed execution uses temporary or fixture ledgers only and
+  rejects canonical mutation.
+- Exact prepared-operation retry reaches store exact replay; a later human
+  invocation reevaluates current state.
+- `ledger-store/v1`, DEC-037, planning schemas, and old intake paths are
+  unchanged.
 
 ### Focused Validation
 
-The following are implementation-created `required-green` gates:
+Implementation-created, promoted to `required-green` by this slice:
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_add_to_ledger.py
@@ -339,75 +274,148 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider test
 .venv/bin/ruff check --no-cache scripts/add_to_ledger.py tests/test_add_to_ledger.py
 .venv/bin/basedpyright scripts/add_to_ledger.py
 git diff --check
+```
+
+Existing `required-green` store regression:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_planning_contract_store.py
+```
+
+Coordinator-owned candidate installation after source validation and review:
+
+```sh
+./install.sh --codex-home /home/alacasse/.codex-command-owner-redesign --dry-run
+./install.sh --codex-home /home/alacasse/.codex-command-owner-redesign --feature planning-contracts
+./install.sh --codex-home /home/alacasse/.codex-command-owner-redesign --feature add-to-ledger
+./install.sh --codex-home /home/alacasse/.codex-command-owner-redesign --status
 ./install.sh --codex-home /home/alacasse/.codex-command-owner-redesign --dry-run
 ```
 
 ### Reviews
 
-- Independent ownership/store/failure-path review.
-- `import_topology_reviewer` for one owner and neutral store imports.
-- Delta-only test-quality review for real effects and negative paths.
+- Independent ownership, store-boundary, source, allocation, and failure-path
+  review over the exact current diff.
+- `import_topology_reviewer` for one semantic owner and narrow store imports.
+- Delta-only `test-quality-review` for real file effects, negative paths, retry,
+  and canonical-write rejection.
+
+### Agent Briefs
+
+- Worker: read this runway, the accepted decision amendment, and only the Slice
+  1 candidate areas. The spawned `runway_worker` is already the required coding
+  worker, implements this slice directly, uses the fresh strict live lease and
+  exact candidate write scope, and must not spawn, delegate to, or wait on any
+  additional agent. It must return the v2 result with verified cross-checkout
+  identity and stop on any unclosed semantic choice.
+- Reviewer: the coordinator supplies the exact task-scoped worktree diff before
+  commit. The independent `runway_reviewer` stays read-only, validates the
+  decision/store/authority/failure boundaries and permitted files, echoes
+  `diff_basis` in its v2 result, and reports `clean`, `findings`, or `blocked`.
 
 ### Commit
 
-`feat: prepare installed add-to-ledger owner`
+`feat: prepare bounded add-to-ledger owner`
 
 ### Stop Conditions
 
-- Stop on required store/schema semantic change, stable-home mutation, hidden APR
-  semantic dependency, or pressure to generalize unsupported policy.
+- Stop on any decision not closed by the accepted amendment.
+- Stop on store/schema semantic change, public replay identity, canonical
+  candidate write, stable-home mutation, hidden APR semantics, or generalized
+  source ingestion.
 
-## Slice 3: Bind Scenarios And Produce Reassessment Evidence
+## Slice 2: Bind Scenarios And Measure Preparation Evidence
 
 ### Approval Gate
 
-Slice 2 direct gates, candidate links, independent review, import-topology
-review, and test-quality review are clean.
+Slice 1 is committed; direct and store tests are green; candidate links are
+exact; independent, import-topology, and test-quality reviews are clean.
+
+### Allowed Areas
+
+- `tests/test_add_to_ledger.py`, only integration additions not owned by Slice 1
+- intake-only CCFG-23 scenario catalog, workflow-case, adapter, and scenario
+  test surfaces
+- focused intake source fixtures
+- `CHANGELOG.md`
+- current batch `completed-slices.md` and `closeout.md`, coordinator-owned only
+
+### Non-Goals
+
+- No owner/store/schema redesign.
+- No fixture deletion, APR or `legacy-removal` narrowing, manifest cutover,
+  stable-home mutation, canonical candidate write, CCFG-24B artifact, or
+  CCFG-25 work.
 
 ### Scope
 
-- Rebind the four stable intake scenarios to the installed production owner.
-- Add focused conflict, replay, stale, recovery, unsupported/ambiguous, and
-  no-state-effect coverage where direct tests are insufficient.
-- Keep old helpers physically present, but ensure migrated scenarios no longer
-  depend on them.
-- Inventory every remaining intake-helper caller and APR/`legacy-removal` route.
-- Record caller, reason, owner, and removal condition for each retained surface.
-- Record changed files, line delta, direct-suite duration, behavioral-suite
-  duration, exact-acceptance duration, installation duration when observable,
-  and coordinator context telemetry when available.
-- Produce compact Batch B reassessment evidence, not a dispatch or runway.
+- Rebind the relevant CCFG-23 intake scenarios to the candidate-installed owner.
+- Prove create, atomic multi-create, semantic no-op, accepted update,
+  controlled merge/block behavior, stale CAS, unsupported source, exact retry,
+  and no downstream planning effects.
+- Ensure all candidate-installed scenario calls use fresh temporary or fixture
+  ledgers and canonical mutation false.
+- Inventory every retained CCFG-23 intake helper/caller, APR intake route, and
+  `legacy-removal` intake/lifecycle route.
+- Record caller, reason, final CCFG-24 removal owner, and final-cutover removal
+  condition for every retained surface.
+- Record slice and final duration, coordinator context when available,
+  evidence-pytest process count, changed-file count, line delta, and diff size.
+- Produce compact CCFG-24B reassessment evidence without creating a dispatch or
+  runway.
 
 ### Acceptance Criteria
 
-- Stable intake scenarios exercise the installed owner.
-- Intake contracts are green without legacy topology or disposable helper logic.
-- Old helpers are not acceptance owners and have a complete caller inventory.
-- All retained surfaces have explicit later removal ownership.
+- Installed-owner scenarios cover every required positive and negative intake
+  path without bypassing `scripts/add_to_ledger.py`.
+- One atomic intake either applies all requested mutations or writes nothing.
+- Semantic no-op is distinct from mechanical exact replay in observed results.
+- No test or candidate process can write canonical planning state.
+- Stable intake behavior remains green; old paths are unchanged and no longer
+  the primary acceptance path for migrated scenarios.
+- All retained surfaces have complete caller/reason/owner/condition entries.
 - Exact acceptance preserves all 69 scenarios, 31 contracts, 17 families, six
-  keys, and six aliases.
-- No legacy authority or CCFG-25 behavior changes.
+  keys, and six aliases with one evidence-pytest process.
 
 ### Focused Validation
 
-The following are implementation-created `required-green` gates:
+Implementation-created, promoted to `required-green` by this slice:
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_add_to_ledger.py tests/test_command_owner_behavioral_scenarios.py tests/test_command_owner_scenario_catalog.py
+.venv/bin/python scripts/command_owner_scenarios.py validate tests/fixtures/command-owner-scenarios
 .venv/bin/ruff check --no-cache scripts/add_to_ledger.py tests/test_add_to_ledger.py tests/test_command_owner_behavioral_scenarios.py tests/test_command_owner_scenario_catalog.py tests/fixtures/command-owner-scenarios/workflow_adapters.py
 git diff --check
 ```
 
-Run the CCFG-33 exact-commit acceptance owner once from a clean candidate commit
-with fresh `/tmp/ccfg-24a-*` outputs.
+From a clean exact candidate commit, the coordinator runs CCFG-33 acceptance
+once with fresh `/tmp/ccfg-24a-*` outputs:
+
+```sh
+.venv/bin/python scripts/command_owner_scenarios.py accept tests/fixtures/command-owner-scenarios --result-output /tmp/ccfg-24a-acceptance-result.json --json-report-output /tmp/ccfg-24a-report.json --text-report-output /tmp/ccfg-24a-report.txt
+```
 
 ### Reviews
 
-- Independent scenario/behavior review.
-- `dead-surface-audit` for caller/retention classification only.
-- Delta-only test-quality review.
+- Independent installed-owner scenario and behavior review.
+- `dead-surface-audit` for retained-surface classification only.
+- Delta-only `test-quality-review`.
 - Final exact-range independent, import-topology, dead-surface, and test-quality
   reviews.
+
+### Agent Briefs
+
+- Worker: read this runway, Slice 1 commit receipt, and the installed-owner
+  scenario boundary. The spawned `runway_worker` is already the required coding
+  worker, implements only Slice 2, uses temporary or fixture ledgers with the
+  fresh strict lease and exact candidate scope, and must not spawn, delegate to,
+  or wait on another agent. It returns the v2 result and the complete retained-
+  surface inventory without deleting or narrowing any surface.
+- Reviewer: the coordinator supplies the exact Slice 2 task-scoped diff and
+  installed-owner evidence. The independent `runway_reviewer` stays read-only,
+  verifies that scenarios traverse the installed owner and that evidence and
+  inventory are complete, echoes `diff_basis`, and reports `clean`, `findings`,
+  or `blocked`.
 
 ### Commit
 
@@ -415,46 +423,47 @@ with fresh `/tmp/ccfg-24a-*` outputs.
 
 ### Stop Conditions
 
-- Stop if scenarios bypass the production owner, inventory is incomplete,
-  cleanup is required to turn green, or non-intake acceptance regresses.
+- Stop if scenarios bypass the installed owner, use canonical planning state,
+  require cleanup to pass, omit a retained caller, regress non-intake behavior,
+  or expand into cutover.
 
 ## Final Validation
 
-1. Confirm Planning State identifies only this batch and no successor.
+1. Confirm Planning State identifies only this queued/active CCFG-24A runway and
+   no conflicting batch or successor.
 2. Obtain a fresh strict read-only review lease for the exact final range.
-3. Run required-green owner, store, skill-contract, behavioral/catalog,
-   routing/manifest mechanics, Ruff, BasedPyright, whitespace, and candidate
-   installer status/dry-run gates.
-4. Reproduce the exact known-red manifest identities without a new failure.
-5. Run the CCFG-33 exact-commit acceptance owner once and validate its artifacts.
-6. Verify candidate links are candidate-owned and stable links remain stable-
-   owned without a stable write.
-7. Record range, files, line delta, durations, context telemetry when available,
-   and retained-surface inventory.
-8. Obtain clean final reviews.
-9. Write `completed-slices.md` and `closeout.md`; mark CCFG-24 `Prepared`; clear
-   same-batch state; stop without selecting Batch B or CCFG-25.
+3. Run all Slice 1 and Slice 2 required-green commands plus strict context,
+   candidate installer status/dry-run, Ruff, BasedPyright, and whitespace gates.
+4. Prove `scripts/planning_contract.py`, planning schemas, and old intake paths
+   have no semantic diff.
+5. Reproduce the exact recorded manifest known-red identities without a new
+   failure.
+6. Run the exact-commit acceptance command once and validate its three outputs.
+7. Verify all candidate links resolve under the candidate source root and all
+   stable links remain stable-owned without a stable write.
+8. Record commit range, changed files, line delta, diff size, durations, context
+   when available, evidence-pytest process count, and retained-surface inventory.
+9. Obtain clean exact-range independent and specialist reviews.
+10. Write `completed-slices.md` and `closeout.md`; mark CCFG-24 `Prepared`; clear
+    same-batch state; stop without selecting CCFG-24B or CCFG-25.
 
 ## Closeout Result Contract
 
-Successful closeout means the target owner is candidate-installed and exercised
-by stable intake scenarios, direct and aggregate behavior is green, old paths
-remain only as classified migration surfaces, CCFG-24 is `Prepared`, final
-COR-007 acceptance remains open, and no successor is selected.
-
-The closeout must be compact enough for a future planner to design the smallest
-Batch B without rereading this complete runway by default.
+Successful closeout means the bounded owner is candidate-installed and
+behaviorally exercised against non-canonical ledgers, the unchanged apply-only
+store remains the sole mutation mechanism, all retained paths are classified,
+CCFG-24 is `Prepared`, and final cutover remains unplanned.
 
 ## Batch Stop Conditions
 
-- Stop on Planning State mismatch, another queued/active batch, failed strict
-  context, repository movement, or dirty-file conflict.
-- Stop on candidate canonical planning writes or stable-home mutation.
-- Stop if semantic decisions move into the store or another support skill.
-- Stop if Slice 1 leaves unresolved policy.
-- Stop if Slice 2 cannot produce an isolated candidate-installed owner.
-- Stop if Slice 3 does not exercise that owner end to end.
-- Stop if work removes APR, `legacy-removal`, or fixture surfaces.
+- Stop on Planning State mismatch, conflicting selected/active state, blocked
+  strict preflight, repository movement, or dirty-file conflict.
+- Stop on candidate canonical planning access for mutation or stable-home write.
+- Stop if semantic decisions move into the store or another support owner.
+- Stop if any accepted source, allocation, duplicate, merge, or retry rule is
+  still ambiguous.
+- Stop if old intake paths, APR, `legacy-removal`, or fixtures must be deleted or
+  narrowed.
 - Stop if CCFG-24 would be `Closed`.
-- Stop if Batch B or CCFG-25 is selected, dispatched, queued, or prepared.
+- Stop if CCFG-24B or CCFG-25 is selected, dispatched, queued, or prepared.
 - Stop after same-batch closeout with CCFG-24 `Prepared`.

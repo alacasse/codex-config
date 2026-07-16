@@ -30,12 +30,18 @@ Expected batch ID: `ccfg-24a-intake-owner-preparation`.
 
 This batch owns the expand side of the migration:
 
-1. close the unresolved command-to-script, source-identity, normalization, and
-   semantic-decision rules needed for a deterministic v1 owner;
-2. implement and candidate-install the real `add-to-ledger/v1` owner and the
-   neutral `planning-contracts` mechanism;
-3. bind the CCFG-23 intake scenarios to that installed production owner and
+1. consume the accepted command-to-script, source-identity, normalization,
+   idempotency, allocation, authority, and semantic-decision rules in
+   `ccfg-24a-add-to-ledger-v1-decision-amendment.md`, then implement and
+   candidate-install the real `add-to-ledger/v1` owner and neutral
+   `planning-contracts` mechanism over the unchanged apply-only store;
+2. bind the CCFG-23 intake scenarios to that installed production owner and
    measure implementation and validation cost.
+
+The original three-slice CCFG-24A attempt stopped before implementation and is
+preserved as historical evidence in the batch directory. Its executable
+planning is superseded by the current two-slice dispatch and runway; the
+blocked runway must not be resumed.
 
 Batch A must preserve the existing APR intake route, `legacy-removal` lifecycle
 surface, and disposable intake helpers as explicitly temporary rollback and
@@ -113,6 +119,7 @@ After this planning amendment:
 
 - CCFG-24: `Pending`, controlled by queued Batch A;
 - original `ccfg-24-intake-ownership-transfer`: `superseded`;
-- `ccfg-24a-intake-owner-preparation`: `pending` and queued;
+- `ccfg-24a-intake-owner-preparation`: queued for execution; CCFG-24 itself
+  remains `Pending`;
 - expected Batch B: unselected and without dispatch or runway;
 - CCFG-25 through CCFG-29: unchanged and unselected.
