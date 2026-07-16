@@ -223,12 +223,48 @@ Slices 2, 3, and the final range receive import-topology review.
 
 | Slice | Status | Risk | Commit | Validation | Review |
 |---|---|---|---|---|---|
-| 1. Remove obsolete CCFG-23 intake residue | Pending | destructive-cleanup | None | Not run | Pending |
-| 2. Remove APR intake ownership | Pending | contract-narrowing | None | Not run | Pending |
+| 2. Remove APR intake ownership | Blocked | contract-narrowing | None | Ownership subset: 3 passed; exact two-file skill-contract CLI gate is unsatisfiable because its closed catalog omits three legitimate external mechanisms | Not run; candidate diff frozen |
 | 3. Make `legacy-removal` evidence-only | Pending | contract-narrowing | None | Not run | Pending |
 | 4. Reconcile and close COR-007 | Pending | migration | None | Not run | Pending |
 
 Accepted results move to `completed-slices.md`.
+
+## Active Recovery
+
+- Slice: 2, Remove APR intake ownership.
+- Blocker: the required command
+  `.venv/bin/python scripts/skill_contract.py validate --toolchain-root .
+  skills/add-to-ledger/SKILL.md
+  skills/architecture-program-runway/SKILL.md` supplies a complete two-document
+  catalog, so it rejects the legitimate external mechanisms
+  `planning_contract_store`, `planning-artifacts`, and `planning-state`.
+- Cause: `skill-contract/v1` keeps external-mechanism allowance in the
+  validator-call policy; a skill cannot self-authorize it, and
+  `--toolchain-root` does not discover manifest dependencies or additional
+  contracts.
+- Current candidate state: eleven Slice 2 files are modified against candidate
+  commit `5cb0e6cfccc2aba6f18a011651619157c637af28`; focused ownership validation
+  passed 3 tests with 50 deselected; `git diff --check` passed; no review or
+  commit has been accepted.
+- Next safe action: amend this validation gate to run the existing focused
+  catalog test with `ExternalMechanismPolicy` for exactly the three legitimate
+  external mechanisms, then renew the strict execution lease, rerun Slice 2
+  validation, and continue the same slice. Do not weaken complete-catalog
+  validation, remove legitimate dependency declarations, add fake contract
+  identities, start Slice 3, or select successor work.
+
+## Active Orchestration Anomalies
+
+```yaml
+orchestration_anomalies:
+  - slice: 2
+    severity: medium
+    category: ambiguous_validation_command
+    observed: "The runway's exact two-file CLI command cannot express the external-mechanism policy required by the accepted closed-world contract model."
+    impact: "The implementation diff is frozen before review and commit even though focused ownership validation is green."
+    action_taken: "Classified the failure through execute-recovery-v1 and stopped before widening scope or weakening validation."
+    follow_up: "Amend the gate to use policy-backed focused catalog validation, then resume Slice 2."
+```
 
 ## Slice 1: Remove Obsolete CCFG-23 Intake Residue
 
@@ -332,7 +368,7 @@ Required-green ownership subset:
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_skill_routing_rule_ownership.py tests/test_skill_contract_catalog.py tests/test_skill_contract_migration.py tests/test_codex_features_manifest.py -k 'add_to_ledger or architecture_program or command_owner_input_contracts'
-.venv/bin/python scripts/skill_contract.py validate --toolchain-root . skills/add-to-ledger/SKILL.md skills/architecture-program-runway/SKILL.md
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -c 'from pathlib import Path; from scripts.skill_contract import ExternalMechanismPolicy, validate_skill_contracts; result = validate_skill_contracts((Path("skills/add-to-ledger/SKILL.md"), Path("skills/architecture-program-runway/SKILL.md")), toolchain_root=Path("."), external_mechanism_policy=ExternalMechanismPolicy(allowed_mechanisms=frozenset({"planning_contract_store", "planning-artifacts", "planning-state"})), complete_catalog=True); assert result.is_valid, "\n".join(f"{diagnostic.path}:{diagnostic.location}: {diagnostic.code}: {diagnostic.message}" for diagnostic in result.diagnostics)'
 git diff --check
 ```
 
