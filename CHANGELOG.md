@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Bounded add-to-ledger command owner
+
+Problem: ledger intake still routed through broad planning support and exposed
+no deterministic owner for supported-source identity, whole-request duplicate
+decisions, complete-snapshot ID allocation, or exact store preparation.
+
+Decision: make `add-to-ledger/v1` the bounded owner for plain text and GitHub
+issues, install its deterministic script with the unchanged planning-contract
+store and schemas, and derive the private idempotency key only after one exact
+CAS-bound store request is prepared. Block unsupported sources, cross-source
+merges, malformed namespaces, stale state, and unauthorized roots before any
+write.
+
+Expected effect: supported intake creates, updates, replays, or reports no-op
+atomically on temporary and authorized canonical ledgers without asking humans
+for hashes or replay identities, and stops before batch planning or execution.
+
 ### Exact-commit command-owner acceptance
 
 Problem: aggregate reports recursively launched one pytest process per evidence

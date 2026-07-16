@@ -12,18 +12,53 @@
       ]
     },
     "add-to-ledger": {
-      "version": "1.0.2",
-      "description": "User-facing command-owner skill for adding findings and work requests to planning ledgers.",
+      "version": "2.0.0",
+      "description": "User-facing command-owner skill for bounded plain-text and GitHub-issue planning-ledger intake.",
       "requires": [
-        "planning-artifacts",
-        "planning-state",
-        "architecture-program-runway",
-        "legacy-removal"
+        "planning-contracts"
       ],
       "links": [
         {
           "source": "skills/add-to-ledger",
           "target": "skills/add-to-ledger"
+        },
+        {
+          "source": "scripts/add_to_ledger.py",
+          "target": "scripts/add_to_ledger.py"
+        }
+      ]
+    },
+    "planning-contracts": {
+      "version": "1.0.0",
+      "description": "Agent-facing planning contract schemas, validation, and atomic stores.",
+      "links": [
+        {
+          "source": "scripts/planning_contract.py",
+          "target": "scripts/planning_contract.py"
+        },
+        {
+          "source": "schemas/planning-current-v1.schema.json",
+          "target": "schemas/planning-current-v1.schema.json"
+        },
+        {
+          "source": "schemas/planning-finding-v1.schema.json",
+          "target": "schemas/planning-finding-v1.schema.json"
+        },
+        {
+          "source": "schemas/planning-dispatch-v1.schema.json",
+          "target": "schemas/planning-dispatch-v1.schema.json"
+        },
+        {
+          "source": "schemas/planning-runway-v1.schema.json",
+          "target": "schemas/planning-runway-v1.schema.json"
+        },
+        {
+          "source": "schemas/planning-closeout-v1.schema.json",
+          "target": "schemas/planning-closeout-v1.schema.json"
+        },
+        {
+          "source": "schemas/planning-selection-transaction-v1.schema.json",
+          "target": "schemas/planning-selection-transaction-v1.schema.json"
         }
       ]
     },
