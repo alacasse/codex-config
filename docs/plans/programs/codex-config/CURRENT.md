@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/closeout.md`
 - Run artifact location: `None selected`
@@ -30,9 +31,9 @@
 ## Open Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11,
-  CCFG-24 through CCFG-29, and CCFG-33.
-- Pending ledger rows: none.
+- Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
+  CCFG-24 through CCFG-29.
+- Pending ledger row: CCFG-33.
 - Closed ledger rows: CCFG-18 through CCFG-23 and CCFG-30 through CCFG-32.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -56,8 +57,10 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Queued dispatch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/runway.md`
+- Queued dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/dispatch.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-23-behavioral-scenario-harness`
@@ -70,10 +73,9 @@
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. The next recommended command-owner
-redesign selection is CCFG-33, but it remains unselected until a later explicit
-`plan-batch` request. CCFG-24 waits for CCFG-33. Do not infer selection,
-dispatch, or execution from this recommendation.
+Execute only the queued CCFG-33 runway through a later explicit `work-batch`
+request. CCFG-24 waits for CCFG-33 closeout. Do not replace this runway, select
+another batch, or infer successor work from its eventual closeout.
 
 ## Stop Conditions
 

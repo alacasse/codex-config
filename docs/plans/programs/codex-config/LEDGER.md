@@ -88,11 +88,12 @@ row-by-row here.
 | CCFG-30. Separate Planning Snapshots from Live Execution Leases | Closed | `notes/cross-flight-execution-baseline-plan.md`; `batches/ccfg-30-cross-flight-execution-leases/dispatch.md` | Batch Runway / cross-checkout execution lifecycle | None | Closed by `batches/ccfg-30-cross-flight-execution-leases/closeout.md`: all ten regression scenarios, exact live-lease validation, joined lifecycle proof, linked-state checks, and clean exact-range review are green. No successor was selected. |
 | CCFG-31. Narrow ready/blocked live-lease preflight | Closed | GitHub issue #53; `findings/github-issue-53-narrow-live-lease-preflight.md` | Batch Runway / cross-checkout execution lifecycle | None | Closed by `batches/ccfg-31-narrow-live-lease-preflight/closeout.md`: exact queue-transaction proof, ready/blocked behavior, preserved strict per-handoff safety, broad-protocol deletion, final validation, and clean exact-range review are complete. CCFG-29 remains the sole bridge-removal owner; no successor was selected. |
 | CCFG-32. Make Planning State authoritative for queue currentness | Closed | GitHub issue #55; `findings/github-issue-55-planning-state-queue-currentness.md`; `batches/ccfg-32-planning-state-queue-currentness/closeout.md` | Cross-checkout startup / planning-currentness ownership | None | Closed by `batches/ccfg-32-planning-state-queue-currentness/closeout.md`: Git-derived queue paths, history inference, planning fingerprints, and topology-preserving tests are removed; material first-handoff and later lease safety remain behaviorally protected. CCFG-21, CCFG-25, and CCFG-29 remain separate and unselected. |
-| CCFG-33. Simplify CCFG-23 acceptance execution | Open | `batches/ccfg-23-behavioral-scenario-harness/execution-retrospective.md` | Command-owner redesign / behavioral-harness execution | Select before CCFG-24 | Preserve the COR-006 behavior while replacing recursive reporter-owned pytest with one exact-commit acceptance run/receipt, separating fast and acceptance gates, and deleting or migrating topology/migration-retention tests instead of restoring removed code. Record before/after duration and process evidence. CCFG-23 remains closed. |
+| CCFG-33. Simplify CCFG-23 acceptance execution | Pending | `batches/ccfg-23-behavioral-scenario-harness/execution-retrospective.md` | Command-owner redesign / behavioral-harness execution | Execute `batches/ccfg-33-acceptance-execution-simplification/runway.md` | Queued as a two-slice mixed-risk batch: migrate reporter-owned pytest to one exact-commit acceptance receipt, then remove or migrate evidence-classified preserving tests. Preserve COR-006 and record before/after duration and process evidence. CCFG-23 remains closed; CCFG-24 waits. |
 
 ## Batch Queue
 
-Queued batch: `None`.
+Queued batch:
+`docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/runway.md`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
@@ -117,18 +118,18 @@ Queued batch: `None`.
 | `ccfg-30-cross-flight-execution-leases` | completed | `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-30-cross-flight-execution-leases/runway.md` | CCFG-30 | Completed in stable range `d8f3952^..7917ace`; all ten regression scenarios and final range review are green; same-batch closeout selected no successor. |
 | `ccfg-31-narrow-live-lease-preflight` | completed | `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-31-narrow-live-lease-preflight/runway.md` | CCFG-31 | Completed in stable range `cdcb05e^..401a468`; the normal result is only ready/blocked, preserved safety is behaviorally proven, broad protocol topology is deleted, and same-batch closeout selected no successor. |
 | `ccfg-32-planning-state-queue-currentness` | completed | `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-32-planning-state-queue-currentness/runway.md` | CCFG-32 | Completed in stable range `6ede5b2..7ef07dc`; Planning State owns semantic currentness, material handoff safety remains green, and same-batch closeout selected no successor. |
+| `ccfg-33-acceptance-execution-simplification` | pending | `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/runway.md` | CCFG-33 | Queued from a validated strict planning snapshot; two slices migrate exact-commit acceptance execution, then remove or migrate obsolete preserving tests behind an evidence gate. |
 
 ## Recommended Work Order
 
 1. Start pickup from root and program `CURRENT.md`.
 2. CCFG-18 through CCFG-23 and CCFG-30 through CCFG-32 are closed.
-3. No batch is selected, queued, or active.
-4. The next recommended command-owner-redesign selection is CCFG-33; it remains
-   unselected until a later explicit `plan-batch` request.
-5. CCFG-24 waits for CCFG-33; keep CCFG-24 through CCFG-29 and all older open
-   rows unselected until separately requested.
-6. Do not revive archived APR/PST ledgers as pickup sources.
-7. Keep CCFG-11 open but do not execute its displaced runway.
+3. CCFG-33 is the only queued batch. Execute it only through a later explicit
+   `work-batch` request; do not replace it or select another batch.
+4. CCFG-24 waits for CCFG-33 closeout. Keep CCFG-24 through CCFG-29 and all
+   older open rows unselected until separately requested.
+5. Do not revive archived APR/PST ledgers as pickup sources.
+6. Keep CCFG-11 open but do not execute its displaced runway.
 
 ## Closeout Rules
 
