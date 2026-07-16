@@ -8,8 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
-- Queued batch execution status: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
+- Queued batch execution status: `Queued; strict preflight required before execution`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Run artifact location: `None selected`
@@ -32,8 +33,8 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-25 through CCFG-29.
-- Pending ledger rows: none.
+  CCFG-26 through CCFG-29.
+- Pending ledger row: CCFG-25.
 - Closed ledger rows: CCFG-18 through CCFG-24 and CCFG-30 through CCFG-33.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -50,6 +51,8 @@
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/closeout.md`
 - CCFG-24B closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
+- Live CCFG-25 planning-quality amendment:
+  `docs/plans/programs/codex-config/findings/ccfg-25-planning-quality-amendment.md`
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -65,9 +68,11 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Queued batch execution status: `None`
-- Queued dispatch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
+- Queued batch execution status: `Queued; strict preflight required before execution`
+- Queued dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
 - Superseded CCFG-24 planning evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/superseded.md`
 - Superseded CCFG-24A blocked attempt:
@@ -76,7 +81,8 @@
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/closeout.md`
 - Completed intake-ownership cutover:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
-- CCFG-25 remains unselected and has no dispatch or runway.
+- Queued planning-ownership transfer:
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-24b-intake-ownership-cutover`
@@ -89,10 +95,11 @@
 
 ## Next Safe Action
 
-CCFG-24 is closed by the completed CCFG-24B cutover and no selected, queued, or
-active batch remains. A later explicit `plan-batch` request may assess exactly
-one bounded row from the canonical ledger. CCFG-25 remains unselected and has no
-dispatch or runway.
+Execute the queued CCFG-25 runway through an explicit `work-batch` request. Before
+any delegation, require a fresh ready `cross-checkout-context/v1` preflight against
+the immutable planning snapshot and current Planning State. Implement only the
+active slice, preserve CCFG-26 execution/closeout responsibilities, and stop after
+same-batch CCFG-25 closeout without selecting a successor.
 
 ## Stop Conditions
 
@@ -131,3 +138,12 @@ dispatch or runway.
   escape hatch, or stable-home ownership from the candidate generation.
 - Stop if CCFG-24 through CCFG-29 retain replaced CCFG-23 fixtures or tests
   without a named caller, reason, owner, and removal condition.
+- Stop if another dispatch or runway is selected, queued, activated, or created
+  while CCFG-25 is queued or active.
+- Stop if CCFG-25 introduces a new planning schema, store, queue transaction,
+  lifecycle state, public command, persistent draft store, or compatibility layer.
+- Stop if planner/reviewer independence is not direct and mechanically evidenced,
+  or if queue mutation can occur before the exact draft is clean and approved.
+- Stop if CCFG-25 removes or narrows APR or Batch Runway responsibilities reserved
+  for CCFG-26.
+- Stop if CCFG-25 closeout selects, dispatches, queues, or prepares CCFG-26.
