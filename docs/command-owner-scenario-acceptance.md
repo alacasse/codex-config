@@ -11,15 +11,20 @@ runtime evidence. Reporting never launches pytest.
 
 ## Fast Gate
 
-Run the schema, catalog, mapping, comparison, receipt-shape, and pure rendering
-checks during implementation:
+Run schema, catalog, mapping, comparison, receipt-shape, cache, safe-path, and
+pure rendering checks during implementation:
 
 ```bash
-uv run --frozen pytest tests/test_command_owner_scenario_catalog.py -q
+uv run --frozen pytest \
+  tests/test_command_owner_scenario_catalog.py \
+  tests/test_command_owner_scenario_cache.py \
+  --deselect=tests/test_command_owner_scenario_catalog.py::test_live_catalog_report_is_green_but_cannot_self_certify_aggregate \
+  -q
 ```
 
-The fast gate must not create disposable Git repositories, run installation or
-cutover fixtures, or launch nested pytest.
+The explicit deselection keeps the one live all-scenario characterization out
+of the fast path. The fast gate must not create disposable Git repositories,
+run installation or cutover fixtures, or launch nested pytest.
 
 Use the smallest directly affected runtime test when changing an adapter. Do
 not rerun the complete acceptance flight after every edit.
@@ -52,6 +57,20 @@ The acceptance command:
 - stores the accepted report in the exact-commit receipt.
 
 The receipt is evidence, not repository state. Do not commit it.
+
+The aggregate evidence nodes retain the main COR-006 oracle. Bounded safety
+regressions that are intentionally not aggregate keys remain a separate focused
+command and should run when cutover or installer adapters change:
+
+```bash
+uv run --frozen pytest \
+  tests/test_command_owner_scenario_cutover_regressions.py \
+  -q
+```
+
+These tests preserve candidate-module provenance, failed-install cleanup and
+default stability, and rejection of unlink/relink publication masquerading as
+an atomic switch. They do not restore source-hash or report topology.
 
 ## Pure Reporting And Receipt Reuse
 
@@ -102,7 +121,7 @@ before changing production code:
   module presence, paths, or old ownership shape.
 
 Never restore removed code solely to make a migration-retention or
- topology-assertion test green. The test must move or disappear with the
+`topology-assertion` test green. The test must move or disappear with the
 mechanism it protected.
 
 Individual pytest-function source hashes are deprecated migration metadata and
