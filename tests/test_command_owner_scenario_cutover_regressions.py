@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib.util
 import json
-import shutil
 import sys
 from collections.abc import Mapping
 from pathlib import Path
@@ -63,24 +62,20 @@ def _fixture_bytes(root: Path) -> dict[str, bytes]:
     }
 
 
-def test_first_live_evaluation_is_observed_before_cache_reuse(
-    tmp_path: Path,
-) -> None:
-    fixture_root = tmp_path / "fixtures"
-    shutil.copytree(
-        FIXTURES,
-        fixture_root,
-        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
-    )
-    validation = harness.validate_catalog(fixture_root)
+def test_first_live_evaluation_is_observed_before_cache_reuse() -> None:
+    harness._EVALUATION_CACHE.clear()
+    validation = harness.validate_catalog(FIXTURES)
     assert validation.catalog is not None
-    before = _fixture_bytes(fixture_root)
+    before = _fixture_bytes(FIXTURES)
 
     first = harness.evaluate_catalog(validation.catalog)
+    cache_size = len(harness._EVALUATION_CACHE)
     second = harness.evaluate_catalog(validation.catalog)
 
+    assert all(evaluation.status == "green" for evaluation in first)
     assert first == second
-    assert _fixture_bytes(fixture_root) == before
+    assert len(harness._EVALUATION_CACHE) == cache_size == len(first)
+    assert _fixture_bytes(FIXTURES) == before
 
 
 def test_adapter_rejects_foreign_cached_project_module(
