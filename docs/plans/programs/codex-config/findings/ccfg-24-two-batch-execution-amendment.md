@@ -4,83 +4,75 @@
 
 CCFG-24 remains one durable finding mapped to COR-007. Its implementation is
 split across two separately planned and executed batches to bound coordinator
-context, create a deliberate reassessment point, and avoid combining target-owner
-design, production implementation, behavioral migration, destructive cleanup,
-legacy-owner narrowing, installation convergence, and final acceptance in one
-execute context.
+context and create a deliberate reassessment point.
 
-Do not create a new `CCFG-24.5` finding. Batch identity and finding identity are
-separate. The first batch may close with CCFG-24 `Prepared`; only the second batch
-may close CCFG-24 as `Closed`.
+Do not create a `CCFG-24.5` finding. Batch identity and finding identity are
+separate. Batch A may leave CCFG-24 `Prepared`; only Batch B may close it.
 
 ## Superseded Planning
 
-The following five-slice batch is superseded as executable planning evidence:
+The original five-slice `ccfg-24-intake-ownership-transfer` dispatch and runway
+are superseded as executable planning. Their source analysis remains historical
+evidence and they must not be selected or executed.
 
-- `batches/ccfg-24-intake-ownership-transfer/dispatch.md`
-- `batches/ccfg-24-intake-ownership-transfer/runway.md`
-
-Its source analysis, guardrails, acceptance mappings, and preserved-owner
-constraints remain evidence. It must not be executed or used as active queue
-state.
+The first CCFG-24A attempt also stopped before implementation. Its facts remain
+in `batches/ccfg-24a-intake-owner-preparation/execution-report.md` and commits
+`33f7adf`, `c087024`, and `199f4a9`. It must not be resumed.
 
 ## Batch A: Intake Owner Preparation
 
-Expected batch ID: `ccfg-24a-intake-owner-preparation`.
+Batch ID: `ccfg-24a-intake-owner-preparation`.
 
-This batch owns the expand side of the migration:
+Batch A owns only the expand/preparation side:
 
-1. consume the accepted command-to-script, source-identity, normalization,
-   idempotency, allocation, authority, and semantic-decision rules in
-   `ccfg-24a-add-to-ledger-v1-decision-amendment.md`, then implement and
-   candidate-install the real `add-to-ledger/v1` owner and neutral
-   `planning-contracts` mechanism over the unchanged apply-only store;
-2. bind the CCFG-23 intake scenarios to that installed production owner and
-   measure implementation and validation cost.
+1. implement and candidate-install the real `add-to-ledger/v1` owner over the
+   unchanged apply-only store;
+2. support only `plain_text` and `github_issue` in CCFG-24A v1;
+3. bind relevant CCFG-23 intake scenarios to that installed owner;
+4. measure implementation, validation, context, and retained-surface cost.
 
-The original three-slice CCFG-24A attempt stopped before implementation and is
-preserved as historical evidence in the batch directory. Its executable
-planning is superseded by the current two-slice dispatch and runway; the
-blocked runway must not be resumed.
+Batch A explicitly defers generic tickets, file ingestion, cross-source merge,
+fuzzy duplicate detection, fixture deletion, APR narrowing, `legacy-removal`
+narrowing, final cutover, and successor planning.
 
-Batch A must preserve the existing APR intake route, `legacy-removal` lifecycle
-surface, and disposable intake helpers as explicitly temporary rollback and
-comparison surfaces. They must not remain the primary acceptance owner after the
-production scenarios are bound.
+Old intake paths remain available as temporary rollback and comparison surfaces,
+but they must not remain the primary acceptance path after scenario migration.
 
 Batch A closeout must:
 
 - mark CCFG-24 `Prepared`, not `Closed`;
-- clear selected, queued, and active state;
-- record the candidate commit range and installed feature links;
-- record the final source mapping and semantic decision matrix;
-- record test duration, acceptance duration, changed-file count, and line delta;
-- classify every retained APR, `legacy-removal`, and CCFG-23 intake surface with a
+- clear selected, queued, and active same-batch state;
+- record candidate commits and installed feature links;
+- record direct and scenario validation;
+- record duration, context when available, changed-file count, line delta, diff
+  size, and test-process count;
+- classify every retained APR, `legacy-removal`, and CCFG-23 intake surface with
   caller, reason, owner, and removal condition;
 - stop without selecting or creating Batch B.
 
 ## Mandatory Reassessment
 
-After Batch A closeout, a fresh explicit `plan-batch` request must review:
+After Batch A closeout, a fresh explicit `plan-batch` request must review only
+compact closeout evidence:
 
-- the implemented command-to-script contract;
-- the source identity mapping for direct text, GitHub issues, external tickets,
-  and file/path sources actually supported by v1;
-- the implemented create/update/merge/no-op/block matrix;
-- the changed-file and line counts;
+- the implemented command-to-script boundary;
+- the two implemented source mappings;
+- the create/update/no-op/block matrix;
+- implementation and test size;
 - focused and exact-acceptance runtime;
-- retained migration surfaces and caller inventory;
-- any implementation discovery that changes the smallest credible cleanup.
+- retained migration surfaces;
+- any implementation discovery that changes the smallest credible cutover.
 
-The follow-up plan may narrow, split, or block the remaining work. It must not
-assume that the superseded five-slice runway remains proportionate.
+The follow-up may narrow, split, or block remaining work. It must not assume the
+superseded five-slice runway remains proportionate or automatically add deferred
+adapter families.
 
 ## Batch B: Intake Ownership Cutover
 
 Expected but unselected batch ID: `ccfg-24b-intake-ownership-cutover`.
 
-Batch B is not planned or queued by this amendment. A later explicit
-`plan-batch` request may create it after the mandatory reassessment.
+Batch B has no dispatch or runway. A later explicit `plan-batch` request may
+create it only after the mandatory reassessment.
 
 Its expected contract side is:
 
@@ -98,28 +90,24 @@ Only Batch B may close CCFG-24. CCFG-25 remains blocked until that closeout.
 
 ## Context And Orchestration Boundary
 
-The split intentionally creates two fresh execute coordinator contexts. Batch A
-must not carry cleanup and cutover instructions that it cannot execute. Batch B
-must consume compact Batch A closeout evidence instead of rereading the full
-Batch A runway, worker transcripts, or broad repository history by default.
+The split intentionally creates two fresh execute coordinator contexts.
 
-Both batches retain the existing strict cross-checkout safety model:
+- Batch A must not carry cleanup or cutover instructions it cannot execute.
+- Batch B must consume compact Batch A closeout evidence instead of rereading the
+  Batch A runway, worker transcripts, or broad repository history by default.
+- Active CCFG-24A execution should read current state, its dispatch/runway, the
+  compact decision amendment, and the active slice only.
 
-- stable checkout and default Codex home remain authoritative before cutover;
-- candidate work is limited to the command-owner redesign checkout and candidate
-  Codex home;
-- candidate processes must not mutate canonical planning state;
-- every execution startup and handoff requires fresh Planning State and strict
-  cross-checkout validation;
-- same-batch closeout stops without successor selection.
+Both batches retain strict cross-checkout safety: stable control before cutover,
+candidate-only implementation and install, no canonical planning mutation by
+candidate processes, fresh validation at startup and every handoff, and no
+successor selection during same-batch closeout.
 
 ## Status Effect
 
-After this planning amendment:
-
-- CCFG-24: `Pending`, controlled by queued Batch A;
-- original `ccfg-24-intake-ownership-transfer`: `superseded`;
-- `ccfg-24a-intake-owner-preparation`: queued for execution; CCFG-24 itself
-  remains `Pending`;
-- expected Batch B: unselected and without dispatch or runway;
+- CCFG-24: `Pending`, controlled by queued Batch A.
+- Original `ccfg-24-intake-ownership-transfer`: `superseded`.
+- Failed CCFG-24A attempt: historical evidence only.
+- Current `ccfg-24a-intake-owner-preparation`: queued for execution.
+- Expected Batch B: unselected and without dispatch or runway.
 - CCFG-25 through CCFG-29: unchanged and unselected.
