@@ -9,7 +9,7 @@
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/closeout.md`
 - Run artifact location: `None selected`
@@ -42,6 +42,8 @@
   CCFG-23 closes all six COR-006 behavioral-harness acceptance keys and six
   aliases across all 31 immutable contracts without production ownership
   transfer or real cutover.
+- Live CCFG-24 two-batch amendment:
+  `docs/plans/programs/codex-config/findings/ccfg-24-two-batch-execution-amendment.md`
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -58,9 +60,12 @@
 - Selected dispatch: `None`
 - Active runway: `None`
 - Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/runway.md`
 - Queued dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/dispatch.md`
+- Superseded CCFG-24 planning evidence:
+  `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/superseded.md`
+- Expected CCFG-24B cutover batch: unselected; no dispatch or runway exists.
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-33-acceptance-execution-simplification`
@@ -73,9 +78,10 @@
 
 ## Next Safe Action
 
-Execute only the queued CCFG-24 runway through a later explicit `work-batch`
-request. Do not replace this runway, select another batch, or infer successor
-work from its eventual closeout.
+Execute only the queued CCFG-24A preparation runway through a later explicit
+`work-batch` request. Its successful closeout leaves CCFG-24 `Prepared`, clears
+same-batch state, and stops without selecting or creating CCFG-24B or CCFG-25.
+A later explicit `plan-batch` request owns reassessment and any CCFG-24B planning.
 
 ## Stop Conditions
 
@@ -133,10 +139,20 @@ work from its eventual closeout.
   process, process-local evaluation reuse, pure reporting, removal of
   per-function source-hash authority, unchanged known-red manifest diagnostics,
   or before/after cost evidence.
-- Stop if CCFG-24 execution moves semantic intake decisions into
-  `ledger-store/v1`, leaves APR or `legacy-removal` as a normal intake owner,
-  removes CCFG-25 planning or CCFG-26 closeout responsibilities, mutates stable
-  installed state, or lets the candidate mutate canonical planning state.
-- Stop if CCFG-24 closeout selects or prepares any successor dispatch or runway.
+- Stop if work executes, resumes, or closes the superseded
+  `ccfg-24-intake-ownership-transfer` dispatch or runway.
+- Stop if CCFG-24A removes or narrows APR, `legacy-removal`, or retained intake
+  fixtures instead of classifying them for later reassessment.
+- Stop if CCFG-24A leaves the target owner prose-only, fixture-only, or not
+  candidate-installed.
+- Stop if CCFG-24A moves semantic intake decisions into `ledger-store/v1`,
+  mutates stable installed state, or lets the candidate mutate canonical
+  planning state.
+- Stop if CCFG-24A closeout marks CCFG-24 `Closed`, selects or creates CCFG-24B,
+  or selects or prepares CCFG-25.
+- Stop if final CCFG-24 cutover leaves APR or `legacy-removal` as a normal intake
+  owner, removes CCFG-25 planning or CCFG-26 closeout responsibilities, or lacks
+  complete COR-007 acceptance.
+- Stop if any CCFG-24 closeout selects or prepares successor work.
 - Stop if CCFG-24 through CCFG-29 retain replaced CCFG-23 fixtures or tests
   without a named caller, reason, owner, and removal condition.
