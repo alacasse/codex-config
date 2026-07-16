@@ -225,6 +225,8 @@ Accepted results move to `completed-slices.md`.
 
 ## Execution Blocker
 
+Detailed execution report: `execution-report.md`.
+
 Slice 1 stopped on 2026-07-16 before any commit or production change.
 Independent review and a focused `ledger-store/v1` code-path investigation
 proved that the required same-key/different-complete-caller-payload behavior
