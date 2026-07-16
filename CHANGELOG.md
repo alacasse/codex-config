@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Exact-commit command-owner acceptance
+
+Problem: aggregate reports recursively launched one pytest process per evidence
+node, reevaluated the full catalog, and treated individual test-function source
+hashes as acceptance authority.
+
+Decision: add one private exact-clean-commit acceptance execution, run all
+marked evidence nodes in one sanitized pytest process, reuse immutable catalog
+evaluations within a process, and write its report-digest-bound minimal result
+plus JSON/text reports from the accepted in-memory report. Regular reporting
+remains explicitly unobserved. Remove per-function source hashes and AST
+body-preservation checks.
+
+Expected effect: fast validation avoids disposable runtime work, final
+acceptance rejects stale inputs and every non-pass outcome, and report
+formatting launches no pytest process. The harness remains non-installed and
+does not transfer command ownership or perform cutover.
+
 ### Non-installed command-owner scenario evidence
 
 Add the repo-local behavioral scenario catalog, disposable cutover fixtures,

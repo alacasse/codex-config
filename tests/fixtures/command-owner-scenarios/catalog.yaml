@@ -1337,7 +1337,6 @@ aggregate_evidence:
         - closeout-same-batch-no-successor
       tests:
         - node: tests/test_command_owner_behavioral_scenarios.py::test_workflow_catalog_keeps_slice_two_families_green
-          source_sha256: 8a72760a9b41110774c7cd007bc965bbdcdf97df25fb74b0e5627f5437a39df5
           scenarios:
             - intake-fresh-atomic
             - planning-single-slice-queued
@@ -1353,19 +1352,14 @@ aggregate_evidence:
         - history-readable-nonauthoritative
       tests:
         - node: tests/test_command_owner_behavioral_scenarios.py::test_planning_quality_scenarios_cover_semantic_scope_approval_and_drafts
-          source_sha256: 6f64b5a8674c61ba6923035119d188bb9db2d3f9c4bacf6babd84c5576071825
           scenarios: [quality-cohesive-single-slice]
         - node: tests/test_command_owner_scenario_currentness.py::test_current_and_validate_are_the_semantic_state_authority
-          source_sha256: 4d98938f2bda3e3a43e313c3b287da37b1812599cad26b1ccf843f2353aff90a
           scenarios: [planning-selected-current]
         - node: tests/test_command_owner_scenario_currentness.py::test_protected_handoff_binds_lease_scope_receipt_and_reviewer_base
-          source_sha256: 095a27802c9b0e5ded43fc8380722361428acefdc919eefe7b3bf1a586e9fa21
           scenarios: [protected-handoff-ready]
         - node: tests/test_command_owner_scenario_cutover.py::test_lineage_and_child_generation_use_observed_repository_and_process_facts
-          source_sha256: d8521115f19610b6724b2ce247bd1c34edc3064fdf0cc1ce0f0c4b40852da673
           scenarios: [candidate-child-generation-ready]
         - node: tests/test_command_owner_scenario_cutover.py::test_bridge_absence_is_synthetic_and_history_never_becomes_pickup_authority
-          source_sha256: 55bd674d01b146f3dff464cd0ca932ce4b2a27c734c8dae2a6165d569763be91
           scenarios: [history-readable-nonauthoritative]
     - key: bootstrap_cutover_green
       aliases: [bootstrap_and_cutover_scenarios_green]
@@ -1380,20 +1374,16 @@ aggregate_evidence:
         - physical-synthetic-absence-ready
       tests:
         - node: tests/test_command_owner_scenario_cutover.py::test_root_and_generation_faults_fail_closed_without_canonical_write
-          source_sha256: 3aa284915384093bad5963f659df79319f5940e541cd191551889490fb71b88e
           scenarios: [root-three-way-ready]
         - node: tests/test_command_owner_scenario_cutover.py::test_lineage_and_child_generation_use_observed_repository_and_process_facts
-          source_sha256: d8521115f19610b6724b2ce247bd1c34edc3064fdf0cc1ce0f0c4b40852da673
           scenarios: [branch-lineage-ready]
         - node: tests/test_command_owner_scenario_cutover.py::test_install_switch_rollback_and_quiescence_are_disposable_and_atomic
-          source_sha256: 89daa20824ff5fe38b4d128f7c933975d7b091473a55726227dad9f2aaa1d463
           scenarios:
             - installer-clean-ready
             - cutover-atomic-switch-ready
             - cutover-rollback-ready
             - cutover-quiescence-ready
         - node: tests/test_command_owner_scenario_cutover.py::test_bridge_absence_is_synthetic_and_history_never_becomes_pickup_authority
-          source_sha256: 55bd674d01b146f3dff464cd0ca932ce4b2a27c734c8dae2a6165d569763be91
           scenarios:
             - cutover-bridge-minimum-ready
             - physical-synthetic-absence-ready
@@ -1411,21 +1401,16 @@ aggregate_evidence:
         - cutover-quiescence-blocked
       tests:
         - node: tests/test_command_owner_behavioral_scenarios.py::test_public_store_scenarios_expose_atomic_recovery_and_no_successor_effects
-          source_sha256: 684786f4aa3bf84306d597c245f22125226480a4a9db62230d0c10226e5a3c64
           scenarios: [planning-partial-selection-resumes]
         - node: tests/test_command_owner_scenario_currentness.py::test_movement_faults_cross_distinct_observation_boundaries
-          source_sha256: 8219cefcfa86088a6058ecb79454f5dee4fe53963b0514615d551fe9f6f2327f
           scenarios: [implementation-moved-blocked]
         - node: tests/test_command_owner_scenario_currentness.py::test_each_independent_handoff_consumer_fails_closed
-          source_sha256: 4173010dc3171231363d309d6addd4af25b893e302d20dee06d7da7526e8c25f
           scenarios: [missing-receipt-blocked]
         - node: tests/test_command_owner_scenario_cutover.py::test_root_and_generation_faults_fail_closed_without_canonical_write
-          source_sha256: 3aa284915384093bad5963f659df79319f5940e541cd191551889490fb71b88e
           scenarios:
             - root-canonical-write-blocked
             - root-mixed-generation-blocked
         - node: tests/test_command_owner_scenario_cutover.py::test_install_switch_rollback_and_quiescence_are_disposable_and_atomic
-          source_sha256: 89daa20824ff5fe38b4d128f7c933975d7b091473a55726227dad9f2aaa1d463
           scenarios:
             - installer-partial-blocked
             - installer-stale-link-blocked
@@ -1442,8 +1427,7 @@ aggregate_evidence:
         - history-readable-nonauthoritative
         - contract-format-topology-independent
       tests:
-        - node: tests/test_command_owner_scenario_cutover.py::test_contract_coverage_evidence_is_exact_and_green
-          source_sha256: 77faa3e7ce38096c165abd4850d8151c9cc6cff361bec8da949e1fe7fa2c00fd
+        - node: tests/test_command_owner_scenario_catalog.py::test_live_catalog_reports_final_green_only_from_matching_observations
           scenarios:
             - intake-fresh-atomic
             - planning-single-slice-queued
@@ -1459,8 +1443,6 @@ aggregate_evidence:
         - physical-synthetic-absence-ready
       tests:
         - node: tests/test_command_owner_behavioral_scenarios.py::test_scenario_command_is_a_semantic_label_not_an_executable_dispatch
-          source_sha256: 947f5237127ca1713e343b36fd34d677bf8708ca3379bbd32f1b6deb7671d85e
           scenarios: [contract-format-topology-independent]
         - node: tests/test_command_owner_scenario_cutover.py::test_bridge_absence_is_synthetic_and_history_never_becomes_pickup_authority
-          source_sha256: 55bd674d01b146f3dff464cd0ca932ce4b2a27c734c8dae2a6165d569763be91
           scenarios: [physical-synthetic-absence-ready]

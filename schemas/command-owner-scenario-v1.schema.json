@@ -228,15 +228,11 @@
     "testEvidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["node", "source_sha256", "scenarios"],
+      "required": ["node", "scenarios"],
       "properties": {
         "node": {
           "type": "string",
           "pattern": "^(?!/)(?!~)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9_./-]+\\.py::test_[A-Za-z0-9_]+$"
-        },
-        "source_sha256": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
         },
         "scenarios": {
           "type": "array",

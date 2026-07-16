@@ -16,6 +16,10 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "command_owner_acceptance: acceptance-owner and negative runtime tests",
+    "command_owner_evidence: runtime evidence selected by exact-commit acceptance",
+]
 
 [tool.ruff]
 target-version = "py311"

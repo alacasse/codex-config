@@ -153,6 +153,7 @@ def test_stale_planning_state_blocks_before_mechanical_context(
         ("planning-active-current", "active"),
     ),
 )
+@pytest.mark.command_owner_evidence
 def test_current_and_validate_are_the_semantic_state_authority(
     tmp_path: Path, scenario_id: str, semantic_state: str
 ) -> None:
@@ -173,6 +174,7 @@ def test_current_and_validate_are_the_semantic_state_authority(
     }
 
 
+@pytest.mark.command_owner_evidence
 def test_protected_handoff_binds_lease_scope_receipt_and_reviewer_base(
     tmp_path: Path,
 ) -> None:
@@ -231,6 +233,7 @@ def test_protected_handoff_binds_lease_scope_receipt_and_reviewer_base(
         ("preparation-movement-blocked", "movement_during_preparation"),
     ),
 )
+@pytest.mark.command_owner_evidence
 def test_movement_faults_cross_distinct_observation_boundaries(
     tmp_path: Path, scenario_id: str, boundary: str
 ) -> None:
@@ -297,6 +300,7 @@ def test_between_observations_hook_is_the_preparation_race_boundary(
         ("undeclared-planning-write-blocked", "workspace_writes"),
     ),
 )
+@pytest.mark.command_owner_evidence
 def test_each_independent_handoff_consumer_fails_closed(
     tmp_path: Path, scenario_id: str, boundary: str
 ) -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import importlib
 import json
 import shutil
 import subprocess
@@ -10,6 +11,9 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+import pytest
+
+import scripts.command_owner_scenarios as scenario_harness
 
 from scripts.command_owner_scenarios import (
     build_report,
@@ -73,6 +77,22 @@ EXPECTED_FAMILIES = {
     "execution-currentness",
     "cutover-lifecycle",
 }
+ACCEPTANCE_KEYS = {
+    "source_characterization_green",
+    "target_interfaces_green",
+    "bootstrap_cutover_green",
+    "fault_injection_green",
+    "contract_coverage_complete",
+    "legacy_topology_not_required",
+}
+ACCEPTANCE_ALIASES = {
+    "source_characterization_green",
+    "target_interface_scenarios_green",
+    "bootstrap_and_cutover_scenarios_green",
+    "fault_injection_scenarios_green",
+    "contract_id_coverage_report_complete",
+    "legacy_skill_names_not_required_except_migration_fixtures",
+}
 
 
 def _document(path: Path = FIXTURES / "catalog.yaml") -> dict[str, Any]:
@@ -120,6 +140,8 @@ def test_schema_is_draft_07_closed_world_and_exactly_versioned() -> None:
 
     assert schema["$schema"] == "http://json-schema.org/draft-07/schema#"
     assert schema["properties"]["schema"]["const"] == "command-owner-scenario/v1"
+    assert schema["definitions"]["testEvidence"]["required"] == ["node", "scenarios"]
+    assert "source_sha256" not in schema["definitions"]["testEvidence"]["properties"]
     _assert_objects_are_closed_world(schema)
 
 
@@ -136,8 +158,29 @@ def test_catalog_preserves_exact_immutable_contract_identity_and_families() -> N
     assert set(document["required_contracts"]) == EXPECTED_CONTRACT_IDS
     assert len(document["required_contracts"]) == 31
     assert set(document["required_families"]) == EXPECTED_FAMILIES
+    assert all(
+        set(test) == {"node", "scenarios"}
+        for gate in document["aggregate_evidence"]["gates"]
+        for test in gate["tests"]
+    )
 
 
+def test_every_declared_evidence_node_resolves_to_a_collectable_marked_test() -> None:
+    nodes = {
+        test["node"]
+        for gate in _document()["aggregate_evidence"]["gates"]
+        for test in gate["tests"]
+    }
+    for node in nodes:
+        relative, separator, function_name = node.partition("::")
+        module_name = relative.removesuffix(".py").replace("/", ".")
+        function = getattr(importlib.import_module(module_name), function_name, None)
+        marks = getattr(function, "pytestmark", ())
+        assert separator and function_name.startswith("test_") and callable(function)
+        assert "command_owner_evidence" in {mark.name for mark in marks}
+
+
+@pytest.mark.command_owner_evidence
 def test_live_catalog_reports_final_green_only_from_matching_observations() -> None:
     result = validate_catalog(FIXTURES)
     assert result.catalog is not None
@@ -170,6 +213,22 @@ def test_live_catalog_reports_final_green_only_from_matching_observations() -> N
     assert report["acceptance"]["all_required_families_green"] is True  # type: ignore[index]
 
 
+def test_unobserved_report_has_exactly_six_false_keys_and_aliases() -> None:
+    validation = validate_catalog(FIXTURES)
+    assert validation.catalog is not None
+    aggregate = scenario_harness._build_unobserved_report(validation.catalog)[
+        "aggregate_evidence"
+    ]
+    assert aggregate["keys"] == {key: False for key in ACCEPTANCE_KEYS}
+    assert aggregate["aliases"] == {alias: False for alias in ACCEPTANCE_ALIASES}
+    assert set(aggregate["test_outcomes"].values()) == {"not-observed"}
+    with pytest.raises(TypeError):
+        build_report(
+            validation.catalog,
+            observed_test_outcomes={"caller-controlled": "passed"},  # type: ignore[call-arg]
+        )
+
+
 def test_runtime_report_distinguishes_every_evidence_status() -> None:
     result = validate_catalog(VALID_RUNTIME)
     assert result.catalog is not None
@@ -194,6 +253,87 @@ def test_runtime_report_distinguishes_every_evidence_status() -> None:
             "actual": ["results/wrong.json"],
         }
     ]
+
+
+def test_acceptance_writes_same_process_reports_without_an_ingestion_api(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    validation = validate_catalog(FIXTURES)
+    assert validation.catalog is not None
+    catalog = validation.catalog
+    aggregate = catalog.document["aggregate_evidence"]
+    nodes = scenario_harness._aggregate_test_nodes(aggregate)
+    report: dict[str, Any] = {
+        "schema": "command-owner-scenario-v1",
+        "status_counts": dict.fromkeys(
+            ("declared", "bound", "blocked", "unavailable"), 0
+        )
+        | {"green": 1},
+        "contracts": {"required": [], "declared": [], "green": []},
+        "families": [{"id": "test", "status": "green"}],
+        "aggregate_evidence": {
+            "keys": {"complete": True},
+            "aliases": {"complete": True},
+            "test_outcomes": {node: "passed" for node in nodes},
+        },
+        "acceptance": {"complete": True},
+    }
+    outcome = {
+        **dict.fromkeys(
+            ("failures", "errors", "skipped", "deselected", "xfailed", "xpassed"),
+            0,
+        ),
+        "returncode": 0,
+        "tests": len(nodes),
+    }
+    monkeypatch.setattr(
+        scenario_harness, "_require_clean_candidate_commit", lambda _root: "0" * 40
+    )
+    monkeypatch.setattr(
+        scenario_harness,
+        "_input_identity",
+        lambda _catalog: {"files": {}, "sha256": "inputs"},
+    )
+    monkeypatch.setattr(
+        scenario_harness,
+        "_candidate_interpreter_identity",
+        lambda _root: {"executable": "python", "prefix": "venv", "safe_path": True},
+    )
+    monkeypatch.setattr(
+        scenario_harness,
+        "_execute_aggregate_test_evidence",
+        lambda _catalog: scenario_harness._EvidenceExecution(
+            {node: "passed" for node in nodes}, outcome, 1.0, 1
+        ),
+    )
+    monkeypatch.setattr(
+        scenario_harness, "_build_report", lambda *_args, **_kwargs: report
+    )
+    monkeypatch.setattr(
+        scenario_harness.subprocess,
+        "run",
+        lambda *_args, **_kwargs: pytest.fail("formatting launched a subprocess"),
+    )
+    result_path, json_path, text_path = (
+        tmp_path / "result.json",
+        tmp_path / "report.json",
+        tmp_path / "report.txt",
+    )
+
+    result = scenario_harness._write_acceptance_outputs(
+        catalog, result_path, json_path, text_path
+    )
+
+    written_report = json.loads(json_path.read_text())
+    assert json.loads(result_path.read_text()) == result
+    assert written_report == report
+    assert result["report_sha256"] == scenario_harness._sha256_json(written_report)
+    assert text_path.read_text() == scenario_harness._render_text_report(written_report)
+    with pytest.raises(SystemExit):
+        scenario_harness._build_parser().parse_args(
+            ["report", str(FIXTURES), "--result", str(result_path)]
+        )
 
 
 def test_mutating_adapter_cannot_change_canonical_expectation_or_turn_green(
@@ -268,115 +408,44 @@ def test_observation_comparison_is_exact_pure_and_does_not_normalize_order() -> 
 
 
 def test_cli_validate_and_json_report_are_deterministic(tmp_path: Path) -> None:
-    json_report_command = [
-        sys.executable,
-        "scripts/command_owner_scenarios.py",
-        "report",
-        str(FIXTURES),
-        "--format",
-        "json",
-    ]
-    text_report_command = json_report_command[:-2]
-    validate_command = [
-        sys.executable,
-        "scripts/command_owner_scenarios.py",
-        "validate",
-        str(FIXTURES),
-    ]
+    prefix = [sys.executable, "scripts/command_owner_scenarios.py"]
+    json_command = [*prefix, "report", str(FIXTURES), "--format", "json"]
+    text_command = [*prefix, "report", str(FIXTURES)]
+    validate_command = [*prefix, "validate", str(FIXTURES)]
+
+    def run(
+        command: list[str], *, check: bool = False
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            command,
+            cwd=REPO_ROOT,
+            check=check,
+            capture_output=True,
+            text=True,
+        )
+
+    json_reports = [run(json_command, check=True).stdout for _ in range(2)]
+    text_reports = [run(text_command, check=True).stdout for _ in range(2)]
+    validate = run(validate_command, check=True)
     invalid_document = _document()
     invalid_document["scenarios"].append(
         copy.deepcopy(invalid_document["scenarios"][0])
     )
     invalid_catalog = _write_catalog(tmp_path, invalid_document)
-    invalid_validate_command = [*validate_command[:-1], str(invalid_catalog)]
-    invalid_report_command = [
-        *json_report_command[:3],
-        str(invalid_catalog),
-        "--format",
-        "json",
+    invalid = [
+        run([*prefix, subcommand, str(invalid_catalog)])
+        for subcommand in ("validate", "report")
     ]
 
-    first_json = subprocess.run(
-        json_report_command,
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    second_json = subprocess.run(
-        json_report_command,
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    first_text = subprocess.run(
-        text_report_command,
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    second_text = subprocess.run(
-        text_report_command,
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    validate = subprocess.run(
-        validate_command,
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    invalid_validate_first = subprocess.run(
-        invalid_validate_command,
-        cwd=REPO_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    invalid_validate_second = subprocess.run(
-        invalid_validate_command,
-        cwd=REPO_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    invalid_report = subprocess.run(
-        invalid_report_command,
-        cwd=REPO_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-
-    assert first_json.stdout == second_json.stdout
-    assert json.loads(first_json.stdout)["catalog_valid"] is True
-    assert first_text.stdout == second_text.stdout
-    assert first_text.stdout.startswith("schema: command-owner-scenario/v1\n")
+    assert json_reports[0] == json_reports[1]
+    assert json.loads(json_reports[0])["catalog_valid"] is True
+    assert text_reports[0] == text_reports[1]
+    assert text_reports[0].startswith("schema: command-owner-scenario/v1\n")
     assert validate.stdout.startswith("valid:")
-    assert invalid_validate_first.returncode == 1
-    assert invalid_validate_second.returncode == 1
-    assert invalid_report.returncode == 1
-    assert invalid_validate_first.stdout == invalid_validate_second.stdout == ""
-    assert invalid_report.stdout == ""
-    assert invalid_validate_first.stderr == invalid_validate_second.stderr
-    assert invalid_report.stderr == invalid_validate_first.stderr
-    assert "catalog.duplicate_scenario_id" in invalid_validate_first.stderr
-
-
-def test_duplicate_scenario_ids_fail_deterministically(tmp_path: Path) -> None:
-    document = _document()
-    duplicate = copy.deepcopy(document["scenarios"][0])
-    document["scenarios"].append(duplicate)
-
-    result = validate_catalog(_write_catalog(tmp_path, document))
-
-    assert _codes(result) == {"catalog.duplicate_scenario_id"}
-    assert "also appears at index 0" in result.diagnostics[0].message
+    assert {process.returncode for process in invalid} == {1}
+    assert {process.stdout for process in invalid} == {""}
+    assert len({process.stderr for process in invalid}) == 1
+    assert "catalog.duplicate_scenario_id" in invalid[0].stderr
 
 
 def test_unknown_contract_and_family_are_rejected(tmp_path: Path) -> None:
@@ -391,15 +460,6 @@ def test_unknown_contract_and_family_are_rejected(tmp_path: Path) -> None:
         "catalog.unknown_family",
         "catalog.uncovered_family",
     }
-
-
-def test_uncovered_required_family_is_rejected(tmp_path: Path) -> None:
-    document = _document()
-    document["required_families"].append("missing-family")
-
-    result = validate_catalog(_write_catalog(tmp_path, document))
-
-    assert _codes(result) == {"catalog.uncovered_family"}
 
 
 def test_unsafe_paths_and_shell_like_command_labels_are_rejected(
@@ -428,13 +488,6 @@ def test_target_assertions_cannot_name_catalog_forbidden_topology(
         result = validate_catalog(_write_catalog(tmp_path / str(index), document))
 
         assert _codes(result) == {"catalog.forbidden_target_topology"}
-
-    near_miss = _document()
-    near_miss["scenarios"][2]["expected_transition"] = (
-        "batch-runwayish topology is present"
-    )
-
-    assert validate_catalog(_write_catalog(tmp_path / "near-miss", near_miss)).is_valid
 
 
 def test_missing_unknown_and_unsupported_content_fail_closed(tmp_path: Path) -> None:

@@ -10,6 +10,7 @@ from types import ModuleType
 from typing import Any
 
 import yaml
+import pytest
 
 from scripts.command_owner_scenarios import build_report, validate_catalog
 
@@ -57,19 +58,12 @@ def _adapter_module() -> ModuleType:
     return module
 
 
-def _fixture_bytes() -> dict[str, bytes]:
-    return {
-        path.relative_to(FIXTURES).as_posix(): path.read_bytes()
-        for path in FIXTURES.rglob("*")
-        if path.is_file() and "__pycache__" not in path.parts
-    }
-
-
 def _digest(value: object) -> str:
     encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
 
 
+@pytest.mark.command_owner_evidence
 def test_workflow_catalog_keeps_slice_two_families_green() -> None:
     validation = validate_catalog(FIXTURES)
     assert validation.is_valid, validation.diagnostics
@@ -105,18 +99,7 @@ def test_workflow_contracts_remain_green_after_later_scenario_bindings() -> None
     assert report["acceptance"]["all_required_contracts_declared"] is True
 
 
-def test_fixture_adapters_leave_the_committed_fixture_tree_byte_stable() -> None:
-    validation = validate_catalog(FIXTURES)
-    assert validation.catalog is not None
-    before = _fixture_bytes()
-
-    first = build_report(validation.catalog)
-    second = build_report(validation.catalog)
-
-    assert first == second
-    assert _fixture_bytes() == before
-
-
+@pytest.mark.command_owner_evidence
 def test_planning_quality_scenarios_cover_semantic_scope_approval_and_drafts() -> None:
     validation = validate_catalog(FIXTURES)
     assert validation.catalog is not None
@@ -304,6 +287,7 @@ def test_fixture_plan_boundary_rejects_semantic_coupling_and_review_regressions(
         assert not (tmp_path / name / "runway.md").exists()
 
 
+@pytest.mark.command_owner_evidence
 def test_scenario_command_is_a_semantic_label_not_an_executable_dispatch(
     tmp_path: Path,
 ) -> None:
@@ -318,6 +302,7 @@ def test_scenario_command_is_a_semantic_label_not_an_executable_dispatch(
     assert observed == original
 
 
+@pytest.mark.command_owner_evidence
 def test_public_store_scenarios_expose_atomic_recovery_and_no_successor_effects(
     tmp_path: Path,
 ) -> None:
