@@ -10,6 +10,7 @@
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID:
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/runway.md`
+- Queued batch execution status: `Blocked in Slice 1; explicit replanning required`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/closeout.md`
 - Run artifact location: `None selected`
@@ -61,6 +62,7 @@
 - Active runway: `None`
 - Queued batch:
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/runway.md`
+- Queued batch execution status: `Blocked in Slice 1; explicit replanning required`
 - Queued dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/dispatch.md`
 - Superseded CCFG-24 planning evidence:
@@ -78,10 +80,11 @@
 
 ## Next Safe Action
 
-Execute only the queued CCFG-24A preparation runway through a later explicit
-`work-batch` request. Its successful closeout leaves CCFG-24 `Prepared`, clears
-same-batch state, and stops without selecting or creating CCFG-24B or CCFG-25.
-A later explicit `plan-batch` request owns reassessment and any CCFG-24B planning.
+Do not resume CCFG-24A execution. Slice 1 proved that metadata-only no-op
+idempotency cannot satisfy the mandatory matrix through the accepted apply-only
+store request. A later explicit `plan-batch` request must amend or replace this
+same batch with an authorized store-contract decision and corresponding scope.
+Keep CCFG-24 pending, CCFG-24B and CCFG-25 unselected, and select no successor.
 
 ## Stop Conditions
 
@@ -148,6 +151,8 @@ A later explicit `plan-batch` request owns reassessment and any CCFG-24B plannin
 - Stop if CCFG-24A moves semantic intake decisions into `ledger-store/v1`,
   mutates stable installed state, or lets the candidate mutate canonical
   planning state.
+- Stop if work resumes CCFG-24A Slice 2 before explicit replanning authorizes
+  the store request or semantic change required by the Slice 1 blocker.
 - Stop if CCFG-24A closeout marks CCFG-24 `Closed`, selects or creates CCFG-24B,
   or selects or prepares CCFG-25.
 - Stop if final CCFG-24 cutover leaves APR or `legacy-removal` as a normal intake

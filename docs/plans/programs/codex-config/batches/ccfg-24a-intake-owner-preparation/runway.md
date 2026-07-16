@@ -217,11 +217,41 @@ slice or closeout.
 
 | Slice | Status | Risk | Commit | Focused validation | Review | Notes |
 |---|---|---|---|---|---|---|
-| 1. Define bounded v1 decisions | Pending | decision-only | None | Not run | Pending | Close invocation, source mapping, and semantic decision rules |
+| 1. Define bounded v1 decisions | Blocked | decision-only | None | Decision record drafted; store-contract investigation complete | Findings | Required metadata-only no-op idempotency cannot be represented by the accepted apply-only store request; stop and replan before implementation |
 | 2. Implement and install target owner | Pending | migration | None | Not run | Pending | Candidate owner over apply-only store; old routes unchanged |
 | 3. Bind scenarios and measure | Pending | migration | None | Not run | Pending | Prove installed behavior and classify retained surfaces |
 
 Accepted results move to `completed-slices.md`.
+
+## Execution Blocker
+
+Slice 1 stopped on 2026-07-16 before any commit or production change.
+Independent review and a focused `ledger-store/v1` code-path investigation
+proved that the required same-key/different-complete-caller-payload behavior
+cannot be implemented for a metadata-only no-op through the accepted store API:
+
+- DEC-037 hashes the apply request, not the upstream intake request;
+- a valid no-op has empty finding mutations and therefore must also have empty
+  touched-finding revisions;
+- the request exposes no existing metadata carrier for source/proposal identity;
+- fake touches are rejected, and an unchanged finding mutation must increment
+  its revision.
+
+Distinct no-op intake payloads using the same `request_id` can therefore
+collapse to one store payload and return `exact_replay` instead of the required
+`idempotency_mismatch`. Encoding the missing identity requires a store request
+or semantic change, which this runway classifies as read-only and names as a
+Slice 1 stop condition.
+
+The other review findings remain decision-record work: canonical mutation
+authority, create-ID allocation from the CAS-bound snapshot, URL/timestamp
+canonicalization, file-at-commit verification, and semantic-overlap
+normalization. They do not make Slice 2 safe while the store gap remains.
+
+Next safe action: preserve this queued runway and use a later explicit planning
+request to amend or replace it with an authorized store-contract decision and
+corresponding execution scope. Do not start Slice 2, weaken the required
+idempotency matrix, close CCFG-24, or select successor work.
 
 ## Slice 1: Define Bounded V1 Decisions
 
