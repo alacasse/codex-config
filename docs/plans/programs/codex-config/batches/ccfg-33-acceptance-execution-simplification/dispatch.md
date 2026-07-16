@@ -3,8 +3,7 @@
 ## Selection
 
 - Batch ID: `ccfg-33-acceptance-execution-simplification`
-- Source ledger:
-  `docs/plans/programs/codex-config/LEDGER.md`
+- Source ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Included finding: CCFG-33, Simplify CCFG-23 acceptance execution.
 - Source packet:
   `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/execution-retrospective.md`
@@ -12,85 +11,68 @@
   `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/runway.md`
 - CCFG-23 remains closed. CCFG-24 through CCFG-29 remain unselected.
 
-## Selection Decision
+## Amended Selection Decision
 
-Select the user-requested CCFG-33 row. Planning State reports no selected
-dispatch, queued runway, active runway, or blocker. CCFG-33 is the canonical
-ledger's recommended next command-owner-redesign work and CCFG-24 waits for it.
+Select CCFG-33 as the only queued batch, but keep it bounded to the work named by
+the source retrospective: optimize the CCFG-23 scenario-harness execution model
+without changing production command ownership or unrelated manifest contracts.
 
-The vague-row guard passes after applying the source retrospective and a
-focused dead-surface audit. The batch has two explicit semantic boundaries:
+The original plan split a second destructive-cleanup slice around three existing
+known-red manifest tests. That was scope expansion. Those tests exercise
+command-owner source, planning-owner, and closeout-owner boundaries; they do not
+cause the CCFG-23 nested-pytest multiplier. They remain diagnostic until the
+corresponding real ownership transfers:
 
-1. migrate the non-installed CCFG-23 harness from reporter-owned recursive
-   pytest to one exact-commit acceptance run and validated receipt while
-   preserving all COR-006 behavior; then
-2. remove or migrate three test functions that preserve exact prose and runtime
-   topology only after their behavioral obligations are mapped to the green
-   scenario harness.
+- `test_executable_work_source_boundary_is_explicit`: CCFG-24/CCFG-25;
+- `test_plan_batch_command_owner_runtime_boundaries_are_explicit`: CCFG-25;
+- `test_work_batch_reconciles_same_batch_closeout`: CCFG-26.
 
-The first boundary is a behavior-preserving harness migration. The second is a
-separate destructive test-cleanup boundary with its own approval and rollback
-gate. Production command-owner transfer, real cutover, and bridge deletion are
-not part of this batch.
+CCFG-33 must not edit, delete, promote, or make green those tests. It must
+preserve the exact known-red manifest baseline unless an unrelated baseline
+change blocks execution.
+
+The batch therefore has one semantic boundary: replace recursive acceptance
+execution and its harness-internal preserving tests with a smaller exact-commit
+acceptance path, then validate and close the same cohesive migration.
 
 ## Goal And Owner Seam
 
-Make the accepted CCFG-23 evidence practical to run repeatedly without letting
-the report self-certify its own pytest evidence:
+Make the accepted CCFG-23 evidence practical to run repeatedly:
 
-- one acceptance owner launches all declared evidence nodes in one pytest
-  process for one immutable candidate commit;
-- one validated receipt binds the candidate commit, environment, input
-  digests, exclusive pytest result, duration, and process/evaluation evidence;
-- report formatting consumes validated observed evidence without launching
-  pytest;
-- schema, mapping, pure comparison, and negative-shape checks form a fast gate;
-- runtime evidence, disposable Git/install behavior, negative runtime outcomes,
-  and end-to-end observed reporting form the acceptance gate;
-- repeated JSON/text determinism checks reuse one validated immutable report;
-  and
-- the six COR-006 keys, six aliases, 31 contracts, 17 families, 69 scenarios,
-  provenance checks, and every negative-runtime rejection remain green.
+- launch all declared evidence nodes in one pytest process for one immutable
+  candidate commit;
+- evaluate each scenario at most once per immutable input within that process;
+- make JSON/text report formatting consume already validated evidence and never
+  launch pytest;
+- separate fast structural tests from runtime acceptance by behavior;
+- replace repeated full report executions with pure formatting checks;
+- remove per-test-function source hashes as acceptance authority, together with
+  validator/tests that preserve that topology;
+- preserve the six COR-006 keys, six aliases, 31 contracts, 17 families, 69
+  scenario meanings, provenance checks, and all negative-runtime rejection
+  classes; and
+- record comparable before/after duration and process evidence.
 
-Primary owner: `scripts/command_owner_scenarios.py` and its four focused
-scenario test modules. The aggregate-evidence node declarations remain in the
-scenario catalog. No production command-owner skill or installed feature is an
-implementation surface.
+Primary owner: `scripts/command_owner_scenarios.py`, its scenario schema/catalog,
+and the four focused scenario test modules. No production command-owner skill,
+manifest dependency, installed feature, or bridge is an implementation surface.
 
-## Batch Kind, Risk, And Approval
+## Batch Kind And Risk
 
-- Batch kind: `mixed-risk`.
-- Slice 1 risk: `migration`.
-  - Approval authority: the canonical CCFG-33 ledger row plus a later explicit
-    `work-batch` request.
-  - Required evidence: Planning State still identifies this queued runway;
-    candidate baseline remains the closed CCFG-23 commit lineage; all work stays
-    inside the non-installed harness; and focused receipt/anti-self-certification
-    tests are green before commit.
-- Slice 2 risk: `destructive-cleanup`.
-  - Approval authority: the canonical CCFG-33 ledger row plus a later explicit
-    `work-batch` request.
-  - Required evidence: Slice 1 is committed and reviewed; a fresh
-    `dead-surface-audit` still classifies each removed assertion as
-    `delete-now` or `migrate-tests-first`; every retained semantic obligation is
-    mapped to green behavioral evidence; and no test classified `keep`,
-    `keep-thin-entrypoint`, or `human-contract-decision` is deleted.
+- Batch kind: `migration`.
+- Slice risk: `migration`.
+- Approval authority: the canonical queued CCFG-33 row plus an explicit later
+  `work-batch` request.
+- Required evidence before delegation:
+  - Planning State still identifies this runway as the only queued or active
+    batch;
+  - strict first-handoff preflight is `ready`;
+  - candidate `HEAD` descends from the closed CCFG-23 baseline and its worktree
+    is clean;
+  - all writes remain inside the non-installed harness allowlist; and
+  - the known-red manifest baseline remains diagnostic and untouched.
 
-## Dead-Surface Evidence
-
-The current candidate manifest suite has exactly three known-red tests: 18
-other tests and 202 subtests pass. Each failure is caused by exact prose or
-runtime-owner topology assertions while the underlying command-owner behavior
-is represented in the accepted scenario catalog.
-
-| Surface | Caller and contract evidence | Status | Required action |
-|---|---|---|---|
-| `test_executable_work_source_boundary_is_explicit` | Test-only exact Markdown phrasing; intake/planning source behavior belongs to INTAKE/PLAN scenario contracts | `migrate-tests-first` | Preserve the behavior in scenario evidence, then remove exact prose coupling |
-| `test_plan_batch_command_owner_runtime_boundaries_are_explicit` | Test-only manifest dependency and support-owner topology plus exact prose; CCFG-23 planning and topology-independent evidence is authoritative | `migrate-tests-first` | Keep behavioral planning boundaries, delete runtime-topology preservation |
-| `test_work_batch_reconciles_same_batch_closeout` | Test-only dependency/prose checks; `closeout-same-batch-no-successor` and fault scenarios protect observable closeout behavior | `migrate-tests-first` | Keep observable closeout evidence, delete exact prose/topology preservation |
-
-This classification does not authorize restoring a phrase, dependency, helper,
-alias, or removed owner solely to make the old tests pass.
+No destructive-cleanup or contract-narrowing slice is authorized.
 
 ## Baseline And Cost Evidence
 
@@ -98,75 +80,83 @@ alias, or removed owner solely to make the old tests pass.
   `/home/alacasse/projects/codex-config-command-owner-redesign`
 - Baseline candidate commit:
   `e8d07a785581e26ffb202b13ae43a0a83173205b`
-- Baseline scenario suite: 123 passed in 814.32 seconds.
+- Four-module scenario suite: 123 passed in 814.32 seconds.
 - One observed report: approximately 92.20 seconds.
 - One observed report launches 13 pytest processes and performs four complete
   catalog evaluations.
-- The focused suite performs 35 complete catalog evaluations; one instrumented
+- The suite performs 35 complete catalog evaluations; one instrumented
   evaluation launched 1,175 subprocesses, implying approximately 41,125
   process executions at the recorded suite shape.
-- Full manifest baseline reconfirmed at the same candidate commit: exactly
-  three failed, 18 passed, and 202 subtests passed.
+- Full manifest diagnostic: exactly three failed, 18 passed, and 202 subtests
+  passed. This is unrelated known-red evidence and is not CCFG-33 remediation.
 
-Closeout must compare the final exact-commit acceptance receipt with this
-baseline by cause and ratio. It must record duration, evidence-pytest process
-count, catalog-evaluation count, and available child-process evidence without
-inventing a universal timeout or arbitrary pass threshold.
+Closeout must compare the final exact-commit acceptance path with this baseline
+by cause and ratio. Benchmark instrumentation belongs to validation/closeout,
+not to the permanent receipt contract.
 
-## Validation Class And Artifacts
+## Acceptance Evidence Boundary
 
-- Validation profile: `project-harness-production`.
-- Runway density: `full-runway` because the batch changes acceptance evidence
-  ownership, retains anti-self-certification, uses strict cross-checkout
-  execution, and includes destructive test cleanup.
-- Test-quality review: `delta-only` for both slices and the final exact
-  candidate range.
-- Harness output root for this batch:
-  `/tmp/codex-config-ccfg-33-acceptance/`.
-- The acceptance receipt is generated output, not Planning State. The exact
-  receipt summary and digest belong in completed-slice/closeout evidence; raw
-  JSON must not become active planning state.
-- No install, default-generation switch, index refresh, or generated-doc
-  refresh is required.
+The acceptance result is private generated evidence, not a new public protocol
+or durable repository schema. It must minimally bind:
+
+- exact clean candidate commit;
+- digest/identity of the schema, catalog, adapters, and selected evidence tests;
+- exact selected evidence nodes;
+- candidate interpreter/environment identity;
+- one exclusive pytest result that rejects zero tests, failure, error, skip,
+  xfail/xpass, and deselection;
+- accepted aggregate report or its verified digest;
+- wall duration; and
+- proof that exactly one evidence-pytest process was used.
+
+Do not add a permanent receipt schema file, public raw-observed-outcome API,
+cross-run cache, or general CI framework. Child Git/Python/Planning State counts
+may be measured externally for the before/after benchmark; they are not required
+fields of the runtime receipt.
 
 ## Included Implementation Surfaces
 
+- `schemas/command-owner-scenario-v1.schema.json`
 - `scripts/command_owner_scenarios.py`
 - `tests/fixtures/command-owner-scenarios/catalog.yaml`
 - `tests/test_command_owner_scenario_catalog.py`
 - `tests/test_command_owner_behavioral_scenarios.py`
 - `tests/test_command_owner_scenario_currentness.py`
 - `tests/test_command_owner_scenario_cutover.py`
-- `tests/test_codex_features_manifest.py`
 - `pyproject.toml`
 - `CHANGELOG.md`
 
+## Read-Only Diagnostic Surface
+
+- `tests/test_codex_features_manifest.py`
+- production skills, workflow docs, `codex-features.json`, installer and bridge
+  code
+- scenario adapters and fixture models reserved for CCFG-24 through CCFG-29
+
 ## Deferred And Excluded
 
-- Changes to production `add-to-ledger`, `plan-batch`, or `work-batch`
-  ownership; CCFG-24 through CCFG-26 own those migrations.
-- Real candidate installation, default-generation switching, rehearsal,
-  cutover, rollback, or bridge deletion; CCFG-27 through CCFG-29 own them.
-- Deleting CCFG-23 scenario adapters or fixture models that CCFG-24 through
-  CCFG-29 are assigned to replace.
-- Changing the 69 scenario semantics, 31 immutable contract identities, 17
-  families, six keys, or six aliases.
-- Exposing a public caller-controlled raw observed-outcome mapping.
-- Adding a universal duration threshold or optimizing by arbitrary test count.
-- Restoring removed runtime owners, dependencies, aliases, paths, or prose to
-  satisfy topology/migration-retention tests.
-- Changing stable installed files or the stable Codex home.
+- The three existing known-red manifest tests and their production-owner
+  contracts.
+- Production ownership transfer to `add-to-ledger`, `plan-batch`, or
+  `work-batch`.
+- Real installation, generation switching, rehearsal, cutover, rollback, or
+  bridge deletion.
+- Changing accepted scenario meanings, contract IDs, family membership,
+  evidence keys, aliases, or provenance semantics.
+- Persistent caching, committed receipts, a new stable receipt schema, or a
+  GitHub Actions workflow.
+- Restoring removed owners, dependencies, aliases, paths, or prose to satisfy a
+  preserving test.
 
 ## Slice Shape
 
-`slice_shape`: two slices.
+`slice_shape`: one slice.
 
-- `1 -> 2`: Slice 1 produces a valid reviewed acceptance-run/receipt boundary
-  with green fast validation. Slice 2 consumes that boundary to remove or
-  migrate preserving tests. The split is required because the owner seam,
-  risk class, approval gate, rollback boundary, and acceptance evidence differ.
-- Cost evidence and changelog text stay with the behavior they report; they do
-  not form filler slices.
+The acceptance owner, session-local evaluation reuse, pure report rendering,
+removal of per-function source-hash authority, directly associated tests,
+validation, and changelog share one owner seam, migration risk, rollback
+boundary, and acceptance contract. A second cleanup slice would either be
+filler or improperly consume CCFG-24 through CCFG-26 scope.
 
 ## Required Strict Execution Context
 
@@ -200,28 +190,27 @@ execution_context:
   canonical_state_mutation_allowed: true
 ```
 
-The installed helper parsed this payload and validated six canonical planning
-paths plus the nine candidate implementation paths listed above. This payload
-is an immutable planning snapshot, not a live execution lease. Do not rewrite
-it after the containing plan commit advances stable `HEAD`.
+This remains immutable plan-time evidence. Execution must obtain fresh live
+leases and separately validate write scope; do not rewrite this snapshot to the
+commit containing this amendment.
 
 ## Stop Conditions
 
-- Stop if Planning State no longer identifies this selected/queued batch.
-- Stop if strict live-lease preflight is blocked or a worker/reviewer handoff
-  lacks newly validated exact context and write scope.
-- Stop if the candidate worktree is dirty before Slice 1 or a slice diff
-  escapes its allowlist.
-- Stop if reporter formatting still launches pytest or acceptance requires more
-  than one evidence-pytest process for one exact commit.
-- Stop if a caller-controlled raw outcome map can make the aggregate green.
-- Stop if any COR-006 key, alias, contract, family, scenario, provenance check,
-  negative-runtime rejection, or topology-independent behavior weakens.
-- Stop if obsolete test cleanup lacks canonical dead-surface evidence or would
-  delete a `keep`, `keep-thin-entrypoint`, or `human-contract-decision` surface.
-- Stop if implementation restores removed production code or old topology to
-  satisfy a preserving test.
-- Stop if execution touches stable production files, installed homes, CCFG-24+
-  owners, real cutover state, or the temporary bridge.
-- Stop if final closeout lacks exact-commit duration and process evidence.
-- Stop closeout before selecting or preparing CCFG-24 or any other successor.
+- Stop if Planning State no longer identifies this queued batch.
+- Stop if strict preflight or any worker/reviewer lease/write-scope validation
+  is blocked.
+- Stop on candidate dirt or a diff outside the allowlist.
+- Stop if report formatting launches pytest or one acceptance run needs more
+  than one evidence-pytest process.
+- Stop if per-function source hashes remain acceptance authority rather than
+  being removed or demoted from the schema/catalog/validator/tests.
+- Stop if a persistent cache, public outcome injection seam, permanent receipt
+  schema, CI workflow, or committed generated receipt is introduced.
+- Stop if any COR-006 behavior or negative-runtime/provenance protection weakens.
+- Stop if `tests/test_codex_features_manifest.py`, production skills/docs,
+  manifest dependencies, installed homes, bridge code, or CCFG-24+ ownership is
+  changed.
+- Stop if the exact three-failure manifest diagnostic changes without a named
+  external cause.
+- Stop if closeout lacks exact-commit duration and process evidence.
+- Stop closeout before selecting or preparing any successor.
