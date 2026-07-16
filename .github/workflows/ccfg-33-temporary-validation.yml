@@ -15,6 +15,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ccfg-33-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -44,8 +48,10 @@ jobs:
           printf '.venv/\n.pytest_cache/\n.ruff_cache/\n' >> baseline/.git/info/exclude
           printf '.venv/\n.pytest_cache/\n.ruff_cache/\n' >> candidate/.git/info/exclude
 
-          echo "baseline_sha=$(git -C baseline rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
-          echo "candidate_sha=$(git -C candidate rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          baseline_sha=$(git -C baseline rev-parse HEAD)
+          candidate_sha=$(git -C candidate rev-parse HEAD)
+          echo "CCFG33_IDENTITY baseline_sha=$baseline_sha" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "CCFG33_IDENTITY candidate_sha=$candidate_sha" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Install isolated validation environments
         run: |
@@ -67,7 +73,7 @@ jobs:
           set -euo pipefail
           cd baseline
           start=$(date +%s%N)
-          strace -f -e trace=process -o /tmp/ccfg23-baseline.strace \
+          strace -f -c -e trace=process -o /tmp/ccfg23-baseline.strace \
             .venv/bin/python -m pytest \
               tests/test_command_owner_scenario_catalog.py \
               tests/test_command_owner_behavioral_scenarios.py \
@@ -76,10 +82,9 @@ jobs:
               -q
           finish=$(date +%s%N)
           duration_ms=$(( (finish - start) / 1000000 ))
-          execve_count=$(grep -c 'execve(' /tmp/ccfg23-baseline.strace || true)
-          clone_count=$(grep -Ec 'clone3?\(' /tmp/ccfg23-baseline.strace || true)
-          printf '### Baseline\n\n- duration_ms: %s\n- execve_count: %s\n- clone_count: %s\n' \
-            "$duration_ms" "$execve_count" "$clone_count" >> "$GITHUB_STEP_SUMMARY"
+          echo "CCFG33_METRIC baseline_duration_ms=$duration_ms" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo 'CCFG33_STRACE baseline'
+          cat /tmp/ccfg23-baseline.strace
 
       - name: Validate and benchmark CCFG-33 candidate
         run: |
@@ -95,9 +100,10 @@ jobs:
             -q
           fast_finish=$(date +%s%N)
           fast_duration_ms=$(( (fast_finish - fast_start) / 1000000 ))
+          echo "CCFG33_METRIC fast_duration_ms=$fast_duration_ms" | tee -a "$GITHUB_STEP_SUMMARY"
 
           suite_start=$(date +%s%N)
-          strace -f -e trace=process -o /tmp/ccfg33-suite.strace \
+          strace -f -c -e trace=process -o /tmp/ccfg33-suite.strace \
             .venv/bin/python -m pytest \
               tests/test_command_owner_scenario_catalog.py \
               tests/test_command_owner_behavioral_scenarios.py \
@@ -108,25 +114,32 @@ jobs:
               -q
           suite_finish=$(date +%s%N)
           suite_duration_ms=$(( (suite_finish - suite_start) / 1000000 ))
-          suite_execve_count=$(grep -c 'execve(' /tmp/ccfg33-suite.strace || true)
-          suite_clone_count=$(grep -Ec 'clone3?\(' /tmp/ccfg33-suite.strace || true)
+          echo "CCFG33_METRIC suite_duration_ms=$suite_duration_ms" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo 'CCFG33_STRACE suite'
+          cat /tmp/ccfg33-suite.strace
 
           test -z "$(git status --porcelain --untracked-files=all)"
           accept_start=$(date +%s%N)
-          strace -f -e trace=process -o /tmp/ccfg33-accept.strace \
+          strace -f -c -e trace=process -o /tmp/ccfg33-accept.strace \
             .venv/bin/python scripts/command_owner_scenarios.py \
               accept tests/fixtures/command-owner-scenarios \
               --receipt /tmp/command-owner-acceptance.json \
               --format json > /tmp/command-owner-report.json
           accept_finish=$(date +%s%N)
           accept_duration_ms=$(( (accept_finish - accept_start) / 1000000 ))
-          accept_execve_count=$(grep -c 'execve(' /tmp/ccfg33-accept.strace || true)
-          accept_clone_count=$(grep -Ec 'clone3?\(' /tmp/ccfg33-accept.strace || true)
+          receipt_duration_ms=$(
+            .venv/bin/python -c \
+              "import json; print(json.load(open('/tmp/command-owner-acceptance.json'))['duration_ms'])"
+          )
+          echo "CCFG33_METRIC accept_duration_ms=$accept_duration_ms" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "CCFG33_METRIC accept_receipt_duration_ms=$receipt_duration_ms" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo 'CCFG33_STRACE accept'
+          cat /tmp/ccfg33-accept.strace
 
           .venv/bin/python scripts/command_owner_scenarios.py \
             report tests/fixtures/command-owner-scenarios \
             --receipt /tmp/command-owner-acceptance.json \
-            --format text > /tmp/command-owner-report.txt
+            --format text | tee /tmp/command-owner-report.txt
 
           .venv/bin/ruff check --no-cache \
             scripts/command_owner_scenarios.py \
@@ -137,14 +150,5 @@ jobs:
           .venv/bin/basedpyright scripts/command_owner_scenarios.py
           git diff --check
           test -z "$(git status --porcelain --untracked-files=all)"
-
-          receipt_duration_ms=$(
-            .venv/bin/python -c \
-              "import json; print(json.load(open('/tmp/command-owner-acceptance.json'))['duration_ms'])"
-          )
-          printf '### Candidate\n\n- fast_duration_ms: %s\n- suite_duration_ms: %s\n- suite_execve_count: %s\n- suite_clone_count: %s\n- accept_duration_ms: %s\n- accept_receipt_duration_ms: %s\n- accept_execve_count: %s\n- accept_clone_count: %s\n' \
-            "$fast_duration_ms" "$suite_duration_ms" "$suite_execve_count" \
-            "$suite_clone_count" "$accept_duration_ms" "$receipt_duration_ms" \
-            "$accept_execve_count" "$accept_clone_count" >> "$GITHUB_STEP_SUMMARY"
 
           cat /tmp/command-owner-report.txt >> "$GITHUB_STEP_SUMMARY"
