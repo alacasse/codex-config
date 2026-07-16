@@ -223,19 +223,9 @@ Slices 2, 3, and the final range receive import-topology review.
 
 | Slice | Status | Risk | Commit | Validation | Review |
 |---|---|---|---|---|---|
-| 3. Make `legacy-removal` evidence-only | Pending | contract-narrowing | None | Not run | Pending |
 | 4. Reconcile and close COR-007 | Pending | migration | None | Not run | Pending |
 
 Accepted results move to `completed-slices.md`.
-
-## Resume Boundary
-
-- Slice 2 is accepted and committed as
-  `7821435c452d7e97e76b422981b569a5878831c6`.
-- This execution stops before Slice 3 by explicit user instruction.
-- A later explicit `work-batch` request may resume this same runway at Slice 3
-  after fresh Planning State and strict-context validation. Do not select or
-  prepare successor work.
 
 ## Active Orchestration Anomalies
 
