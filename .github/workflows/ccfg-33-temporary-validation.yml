@@ -1,0 +1,143 @@
+name: CCFG-33 temporary validation
+
+on:
+  push:
+    branches:
+      - agent/ccfg-33-harness-acceptance-rewrite
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Prepare exact baseline and candidate checkouts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          CANDIDATE_SHA: ${{ github.sha }}
+          BASELINE_SHA: e8d07a785581e26ffb202b13ae43a0a83173205b
+        run: |
+          set -euo pipefail
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${REPOSITORY}.git"
+
+          git init --quiet baseline
+          git -C baseline remote add origin "$remote"
+          git -C baseline fetch --quiet --depth=1 origin "$BASELINE_SHA"
+          git -C baseline checkout --quiet --detach FETCH_HEAD
+
+          git init --quiet candidate
+          git -C candidate remote add origin "$remote"
+          git -C candidate fetch --quiet --depth=1 origin "$CANDIDATE_SHA"
+          git -C candidate checkout --quiet --detach FETCH_HEAD
+
+          printf '.venv/\n.pytest_cache/\n.ruff_cache/\n' >> baseline/.git/info/exclude
+          printf '.venv/\n.pytest_cache/\n.ruff_cache/\n' >> candidate/.git/info/exclude
+
+          echo "baseline_sha=$(git -C baseline rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          echo "candidate_sha=$(git -C candidate rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install isolated validation environments
+        run: |
+          set -euo pipefail
+          python3 -m venv baseline/.venv
+          python3 -m venv candidate/.venv
+          baseline/.venv/bin/python -m pip install --quiet \
+            'jsonschema>=4.25.1' 'PyYAML>=6.0.2' 'pytest>=9.1.1'
+          candidate/.venv/bin/python -m pip install --quiet \
+            'jsonschema>=4.25.1' 'PyYAML>=6.0.2' 'pytest>=9.1.1' \
+            'ruff==0.15.20' 'basedpyright==1.39.9'
+          command -v strace >/dev/null || {
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq strace
+          }
+
+      - name: Benchmark CCFG-23 baseline
+        run: |
+          set -euo pipefail
+          cd baseline
+          start=$(date +%s%N)
+          strace -f -e trace=process -o /tmp/ccfg23-baseline.strace \
+            .venv/bin/python -m pytest \
+              tests/test_command_owner_scenario_catalog.py \
+              tests/test_command_owner_behavioral_scenarios.py \
+              tests/test_command_owner_scenario_currentness.py \
+              tests/test_command_owner_scenario_cutover.py \
+              -q
+          finish=$(date +%s%N)
+          duration_ms=$(( (finish - start) / 1000000 ))
+          execve_count=$(grep -c 'execve(' /tmp/ccfg23-baseline.strace || true)
+          clone_count=$(grep -Ec 'clone3?\(' /tmp/ccfg23-baseline.strace || true)
+          printf '### Baseline\n\n- duration_ms: %s\n- execve_count: %s\n- clone_count: %s\n' \
+            "$duration_ms" "$execve_count" "$clone_count" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Validate and benchmark CCFG-33 candidate
+        run: |
+          set -euo pipefail
+          cd candidate
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+          fast_start=$(date +%s%N)
+          .venv/bin/python -m pytest \
+            tests/test_command_owner_scenario_catalog.py \
+            tests/test_command_owner_scenario_cache.py \
+            --deselect=tests/test_command_owner_scenario_catalog.py::test_live_catalog_report_is_green_but_cannot_self_certify_aggregate \
+            -q
+          fast_finish=$(date +%s%N)
+          fast_duration_ms=$(( (fast_finish - fast_start) / 1000000 ))
+
+          suite_start=$(date +%s%N)
+          strace -f -e trace=process -o /tmp/ccfg33-suite.strace \
+            .venv/bin/python -m pytest \
+              tests/test_command_owner_scenario_catalog.py \
+              tests/test_command_owner_behavioral_scenarios.py \
+              tests/test_command_owner_scenario_currentness.py \
+              tests/test_command_owner_scenario_cutover.py \
+              tests/test_command_owner_scenario_cache.py \
+              tests/test_command_owner_scenario_cutover_regressions.py \
+              -q
+          suite_finish=$(date +%s%N)
+          suite_duration_ms=$(( (suite_finish - suite_start) / 1000000 ))
+          suite_execve_count=$(grep -c 'execve(' /tmp/ccfg33-suite.strace || true)
+          suite_clone_count=$(grep -Ec 'clone3?\(' /tmp/ccfg33-suite.strace || true)
+
+          test -z "$(git status --porcelain --untracked-files=all)"
+          accept_start=$(date +%s%N)
+          strace -f -e trace=process -o /tmp/ccfg33-accept.strace \
+            .venv/bin/python scripts/command_owner_scenarios.py \
+              accept tests/fixtures/command-owner-scenarios \
+              --receipt /tmp/command-owner-acceptance.json \
+              --format json > /tmp/command-owner-report.json
+          accept_finish=$(date +%s%N)
+          accept_duration_ms=$(( (accept_finish - accept_start) / 1000000 ))
+          accept_execve_count=$(grep -c 'execve(' /tmp/ccfg33-accept.strace || true)
+          accept_clone_count=$(grep -Ec 'clone3?\(' /tmp/ccfg33-accept.strace || true)
+
+          .venv/bin/python scripts/command_owner_scenarios.py \
+            report tests/fixtures/command-owner-scenarios \
+            --receipt /tmp/command-owner-acceptance.json \
+            --format text > /tmp/command-owner-report.txt
+
+          .venv/bin/ruff check --no-cache \
+            scripts/command_owner_scenarios.py \
+            tests/test_command_owner_scenario_catalog.py \
+            tests/test_command_owner_scenario_cutover.py \
+            tests/test_command_owner_scenario_cache.py \
+            tests/test_command_owner_scenario_cutover_regressions.py
+          .venv/bin/basedpyright scripts/command_owner_scenarios.py
+          git diff --check
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+          receipt_duration_ms=$(
+            .venv/bin/python -c \
+              "import json; print(json.load(open('/tmp/command-owner-acceptance.json'))['duration_ms'])"
+          )
+          printf '### Candidate\n\n- fast_duration_ms: %s\n- suite_duration_ms: %s\n- suite_execve_count: %s\n- suite_clone_count: %s\n- accept_duration_ms: %s\n- accept_receipt_duration_ms: %s\n- accept_execve_count: %s\n- accept_clone_count: %s\n' \
+            "$fast_duration_ms" "$suite_duration_ms" "$suite_execve_count" \
+            "$suite_clone_count" "$accept_duration_ms" "$receipt_duration_ms" \
+            "$accept_execve_count" "$accept_clone_count" >> "$GITHUB_STEP_SUMMARY"
+
+          cat /tmp/command-owner-report.txt >> "$GITHUB_STEP_SUMMARY"
