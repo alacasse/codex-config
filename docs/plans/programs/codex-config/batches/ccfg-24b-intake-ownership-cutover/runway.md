@@ -223,7 +223,7 @@ Slices 2, 3, and the final range receive import-topology review.
 
 | Slice | Status | Risk | Commit | Validation | Review |
 |---|---|---|---|---|---|
-| 2. Remove APR intake ownership | Blocked | contract-narrowing | None | Ownership subset: 3 passed; exact two-file skill-contract CLI gate is unsatisfiable because its closed catalog omits three legitimate external mechanisms | Not run; candidate diff frozen |
+| 2. Remove APR intake ownership | Blocked | contract-narrowing | None | Ownership subset: 3 passed; policy-backed complete catalog and diff check passed; diagnostic has only the named CCFG-25 failure | Final review found required fixes; candidate diff remains frozen |
 | 3. Make `legacy-removal` evidence-only | Pending | contract-narrowing | None | Not run | Pending |
 | 4. Reconcile and close COR-007 | Pending | migration | None | Not run | Pending |
 
@@ -232,26 +232,27 @@ Accepted results move to `completed-slices.md`.
 ## Active Recovery
 
 - Slice: 2, Remove APR intake ownership.
-- Blocker: the required command
-  `.venv/bin/python scripts/skill_contract.py validate --toolchain-root .
-  skills/add-to-ledger/SKILL.md
-  skills/architecture-program-runway/SKILL.md` supplies a complete two-document
-  catalog, so it rejects the legitimate external mechanisms
-  `planning_contract_store`, `planning-artifacts`, and `planning-state`.
-- Cause: `skill-contract/v1` keeps external-mechanism allowance in the
-  validator-call policy; a skill cannot self-authorize it, and
-  `--toolchain-root` does not discover manifest dependencies or additional
-  contracts.
+- Blocker: final review rejected the unchanged eleven-file Slice 2 diff. It
+  retains two active APR ledger-creation synonyms, an obsolete manifest
+  topology assertion that rejects the supported `scripts/add_to_ledger.py`
+  entrypoint, and a durable contract test that disables complete-catalog
+  relationship validation and under-protects retained CCFG-25/26 seams.
+- Validation: the amended policy-backed complete catalog passed with exactly
+  `planning_contract_store`, `planning-artifacts`, and `planning-state`
+  permitted; the ownership subset passed 3 tests with 50 deselected;
+  `git diff --check` passed; and the diagnostic failed only on the named
+  CCFG-25 `plan-batch` assertion.
+- Review: `dead-surface-audit`, `import_topology_reviewer`, delta-only
+  `test-quality-review`, and the final independent review all require fixes.
 - Current candidate state: eleven Slice 2 files are modified against candidate
-  commit `5cb0e6cfccc2aba6f18a011651619157c637af28`; focused ownership validation
-  passed 3 tests with 50 deselected; `git diff --check` passed; no review or
-  commit has been accepted.
-- Next safe action: amend this validation gate to run the existing focused
-  catalog test with `ExternalMechanismPolicy` for exactly the three legitimate
-  external mechanisms, then renew the strict execution lease, rerun Slice 2
-  validation, and continue the same slice. Do not weaken complete-catalog
-  validation, remove legitimate dependency declarations, add fake contract
-  identities, start Slice 3, or select successor work.
+  commit `5cb0e6cfccc2aba6f18a011651619157c637af28`; its SHA-256 diff identity is
+  `7e64325ebc2725736f535f6316f9c04fa9412db11de4af16b77234122405f3c4`.
+  No candidate edit or commit has been accepted.
+- Next safe action: obtain explicit authority to revise only the existing
+  eleven-file Slice 2 diff, renew the strict execution lease and exact write
+  scope, run a worker fix loop for the recorded findings, then repeat all Slice
+  2 validation and review gates. Do not commit the current diff, start Slice 3,
+  or select successor work.
 
 ## Active Orchestration Anomalies
 
@@ -262,8 +263,15 @@ orchestration_anomalies:
     category: ambiguous_validation_command
     observed: "The runway's exact two-file CLI command cannot express the external-mechanism policy required by the accepted closed-world contract model."
     impact: "The implementation diff is frozen before review and commit even though focused ownership validation is green."
-    action_taken: "Classified the failure through execute-recovery-v1 and stopped before widening scope or weakening validation."
-    follow_up: "Amend the gate to use policy-backed focused catalog validation, then resume Slice 2."
+    action_taken: "Amended the gate in stable commit f9cf1b009d75a082d393acbc14ad87ad7914dc08, renewed a strict live lease, and confirmed the policy-backed complete catalog passes."
+    follow_up: "Resolved."
+  - slice: 2
+    severity: high
+    category: review_rejected_frozen_diff
+    observed: "All required review lenses found material fixes in the unchanged eleven-file candidate diff."
+    impact: "Slice 2 cannot be accepted or committed without changing a diff the user explicitly froze."
+    action_taken: "Preserved the candidate diff unchanged, recorded its identity and findings, and stopped before the Slice 2 commit."
+    follow_up: "Obtain explicit authority for an in-scope Slice 2 fix loop; do not start Slice 3."
 ```
 
 ## Slice 1: Remove Obsolete CCFG-23 Intake Residue
