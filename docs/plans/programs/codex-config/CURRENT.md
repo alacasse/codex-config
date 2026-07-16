@@ -8,11 +8,10 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/runway.md`
-- Queued batch execution status: `Queued; strict preflight required before execution`
+- Queued batch path or ID: `None`
+- Queued batch execution status: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -34,8 +33,8 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-25 through CCFG-29.
-- Pending ledger row: CCFG-24.
-- Closed ledger rows: CCFG-18 through CCFG-23 and CCFG-30 through CCFG-33.
+- Pending ledger rows: none.
+- Closed ledger rows: CCFG-18 through CCFG-24 and CCFG-30 through CCFG-33.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
   CCFG-22 closes all nine COR-005 authoring acceptance keys with candidate-only
@@ -49,6 +48,8 @@
   `docs/plans/programs/codex-config/findings/ccfg-24a-add-to-ledger-v1-decision-amendment.md`
 - CCFG-24A closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/closeout.md`
+- CCFG-24B closeout evidence:
+  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Accepted command-owner redesign snapshot:
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
 - Live redesign decisions:
@@ -64,35 +65,34 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/runway.md`
-- Queued batch execution status: `Queued; strict preflight required before execution`
-- Queued dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/dispatch.md`
+- Queued batch: `None`
+- Queued batch execution status: `None`
+- Queued dispatch: `None`
 - Superseded CCFG-24 planning evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/superseded.md`
 - Superseded CCFG-24A blocked attempt:
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/superseded.md`
 - Completed preparation batch:
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/closeout.md`
+- Completed intake-ownership cutover:
+  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - CCFG-25 remains unselected and has no dispatch or runway.
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-24a-intake-owner-preparation`
+- Latest completed batch: `ccfg-24b-intake-ownership-cutover`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 
 ## Next Safe Action
 
-A later explicit `work-batch` request may execute only the queued four-slice
-CCFG-24B runway. Start from Planning State, pass the immutable planning snapshot
-through the installed ready/blocked strict preflight, and proceed only on
-`ready`. CCFG-24 remains `Pending` until same-batch closeout. Do not select or
-prepare CCFG-25.
+CCFG-24 is closed by the completed CCFG-24B cutover and no selected, queued, or
+active batch remains. A later explicit `plan-batch` request may assess exactly
+one bounded row from the canonical ledger. CCFG-25 remains unselected and has no
+dispatch or runway.
 
 ## Stop Conditions
 
@@ -101,7 +101,7 @@ prepare CCFG-25.
   planning snapshot as a live execution lease.
 - Stop if any default stable-home installed link resolves to the redesign branch
   or candidate clone.
-- Stop if selected dispatch, active runway, or a second queued batch appears.
+- Stop if work treats the completed CCFG-24B dispatch or runway as active state.
 - Stop if planning would write outside the canonical stable planning repository.
 - Stop if candidate code or helpers would control canonical state before final
   integration.
@@ -125,17 +125,9 @@ prepare CCFG-25.
 - Stop if work executes, resumes, or closes the superseded
   `ccfg-24-intake-ownership-transfer` dispatch or runway.
 - Stop if work executes or reopens CCFG-24A rather than consuming its closeout.
-- Stop if CCFG-24B adds an adapter, merge behavior, store/schema change, or public
-  retry identity.
-- Stop if CCFG-24B deletes a surface without current caller and replacement
-  evidence.
-- Stop if CCFG-24B removes APR responsibilities reserved for CCFG-25 or CCFG-26.
-- Stop if CCFG-24B removes `legacy-removal` evidence, compatibility decisions,
-  cleanup-residue classification, or deletion/dead-surface vocabulary.
-- Stop if CCFG-24B mutates the stable Codex home or candidate code mutates
-  canonical planning state.
-- Stop if CCFG-24B closeout does not leave `add-to-ledger/v1` as the sole intake
-  and normal ledger-mutation decision owner with complete COR-007 evidence.
-- Stop if any CCFG-24 closeout selects or prepares successor work.
+- Stop if work reopens CCFG-24 or treats its closeout as authority to select or
+  prepare CCFG-25 without a later explicit `plan-batch` request.
+- Stop if future work restores an APR intake route, a `legacy-removal` state-owner
+  escape hatch, or stable-home ownership from the candidate generation.
 - Stop if CCFG-24 through CCFG-29 retain replaced CCFG-23 fixtures or tests
   without a named caller, reason, owner, and removal condition.

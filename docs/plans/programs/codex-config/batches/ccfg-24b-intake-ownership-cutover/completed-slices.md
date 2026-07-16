@@ -7,6 +7,7 @@
 | 1. Remove obsolete CCFG-23 intake residue | `5cb0e6cfccc2aba6f18a011651619157c637af28` | Deleted only the zero-caller fixture helper; replaced fixed aggregate identity/count assertions with required identity, family, contract, and green-behavior evidence; retained all installed-owner adapters and behavior. | `git show --stat 5cb0e6c`; 48 focused tests passed; catalog valid with 69 scenarios; Ruff and whitespace green; dead-surface, delta-only test-quality, and independent runway reviews clean. |
 | 2. Remove APR intake ownership | `7821435c452d7e97e76b422981b569a5878831c6` | Removed APR intake, bootstrap, and normal-mutation authority; preserved structured CCFG-25 planning/selection/queue and CCFG-26 lifecycle/closeout/reconciliation responsibilities; retained the supported `scripts/add_to_ledger.py` entrypoint. | `git show --stat 7821435`; ownership subset 3 passed with 50 deselected; policy-backed complete catalog, Ruff, and whitespace green; named CCFG-25 diagnostic only; dead-surface, import-topology, delta-only test-quality, and independent runway reviews clean. |
 | 3. Make `legacy-removal` evidence-only | `ab463ece2f17138bbb1710b3c82fc268b4ae8ecb` | Removed program-owner, selection, queue, dispatch-mutation, runway, execution, lifecycle, closeout, and parallel-ledger authority; preserved canonical-model, compatibility, cleanup-residue, dispatch-handoff, and dead-surface evidence. | `git show --stat ab463ec`; selected gate 8 passed with 44 deselected and 20 subtests; skill contract, Ruff, and whitespace green; broad diagnostic retained the same 12 failure identities with 20 passes and 61 subtests; dead-surface, import-topology, delta-only test-quality, and independent runway reviews clean. |
+| 4. Reconcile installation and final COR-007 acceptance | `91179e84c7cfed666be224575db7000ca0ea01b3` | Replaced stale prose-only migration guards with structural skill-contract assertions, converged all five changed feature groups in the isolated candidate home, and completed exact-clean-commit acceptance without changing production contracts or the stable home. | `git show --stat 91179e8`; core gate 149 passed with 12 subtests; selected manifest and legacy gates green; diagnostics retained only the declared CCFG-25/26 and preclassified failures; candidate dry-run converged; exact acceptance passed 25 tests in one pytest process across 69 scenarios, 31 contracts, and 17 families; final independent, import-topology, dead-surface, and delta-only test-quality reviews clean. |
 
 ## Cross-Checkout Receipts
 
@@ -43,6 +44,19 @@
   all verdicts `clean`.
 - Accepted coordinator movement: candidate commit `ab463ec` changed exactly the
   ten reviewed Slice 3 files.
+- Slice 4 worker and bounded validation-fix pass: refreshed strict lease at
+  stable commit `6ceddff` and candidate commit `ab463ec`; planning write scope
+  empty; accepted changes were limited to
+  `tests/test_codex_features_manifest.py` and
+  `tests/test_skill_routing_rule_ownership.py`.
+- Slice 4 final reviews: independently refreshed read-only leases at the same
+  commits; cumulative sixteen-file candidate diff from `3b0941a` plus the
+  two-file worktree diff had SHA-256
+  `53938732582412c1b7336a029fa7ec944b6dc4efe0ab1b815f5b551ecee20cf0`;
+  all verdicts `clean`.
+- Accepted coordinator movement: candidate commit `91179e8` changed exactly the
+  two reviewed Slice 4 test files. Candidate installation then converged only
+  the isolated candidate Codex home; exact acceptance bound the clean commit.
 
 ## Orchestration Anomalies
 

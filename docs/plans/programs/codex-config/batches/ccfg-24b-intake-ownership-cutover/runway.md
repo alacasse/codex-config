@@ -221,11 +221,8 @@ Slices 2, 3, and the final range receive import-topology review.
 
 ## Execution Ledger
 
-| Slice | Status | Risk | Commit | Validation | Review |
-|---|---|---|---|---|---|
-| 4. Reconcile and close COR-007 | Pending | migration | None | Not run | Pending |
-
-Accepted results move to `completed-slices.md`.
+No remaining slice rows. Accepted results are in `completed-slices.md` and
+final evidence is in `closeout.md`.
 
 ## Active Orchestration Anomalies
 
