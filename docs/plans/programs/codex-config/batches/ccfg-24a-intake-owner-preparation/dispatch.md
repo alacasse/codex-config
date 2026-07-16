@@ -90,8 +90,8 @@ must not:
 
 ## Batch Kind And Slice Shape
 
-- Batch kind: `migration-with-decision-gate`
-- Slice 1: `evidence-only` — close the v1 owner decisions and define the smallest
+- Batch kind: `mixed-risk`
+- Slice 1: `decision-only` — close the v1 owner decisions and define the smallest
   supported behavior.
 - Slice 2: `migration` — implement and candidate-install the target owner and
   neutral mechanism.
@@ -101,6 +101,18 @@ must not:
 The three slices form one vertical preparation path. Slice 2 is blocked until
 Slice 1 decisions are explicit and reviewable. Slice 3 is blocked until the
 candidate-installed owner is green.
+
+### Approval Gates
+
+- Slice 2 is approved only after the Slice 1 decision record is committed,
+  independently reviewed, and contains no unresolved implementation-semantic
+  choice.
+- Slice 3 is approved only after the candidate-installed owner is green, exact
+  candidate links are verified, and Slice 2 independent, import-topology, and
+  delta-only test-quality reviews are clean.
+
+The gates authorize preparation only. They do not authorize cleanup, contract
+narrowing, final cutover, successor planning, or CCFG-25 work.
 
 ## Required Intermediate States
 
@@ -146,7 +158,7 @@ execute phase context telemetry when available.
 
 ## Validation Class
 
-- Runway density: `bounded-full-runway`
+- Runway density: `full-runway`
 - Validation profile: `project-harness-production`
 - Every test-changing slice requires delta-only `test-quality-review` after
   independent review.
