@@ -21,6 +21,13 @@ ARCHITECTURE_PROGRAM_RUNWAY = (
 BATCH_RUNWAY = REPO_ROOT / "skills/batch-runway/SKILL.md"
 PLANNING_STATE = REPO_ROOT / "skills/planning-state/SKILL.md"
 PLANNING_ARTIFACTS = REPO_ROOT / "skills/planning-artifacts/SKILL.md"
+ARCHITECTURE_PROGRAM_AGENT = (
+    REPO_ROOT / "skills/architecture-program-runway/agents/openai.yaml"
+)
+ARCHITECTURE_PROGRAM_TEMPLATE = (
+    REPO_ROOT
+    / "skills/architecture-program-runway/references/program-ledger-template.md"
+)
 
 
 def normalized(path: Path) -> str:
@@ -194,6 +201,23 @@ class SkillRoutingRuleOwnershipTests(unittest.TestCase):
         self.assertIn("defines placement, naming, file shape", planning_artifacts)
         self.assertIn("Planning Artifact Layout v1", planning_artifacts)
         self.assertIn("does not replace its pickup diagnostic", planning_artifacts)
+
+    def test_architecture_program_excludes_intake_and_keeps_program_state(
+        self,
+    ) -> None:
+        architecture = normalized(ARCHITECTURE_PROGRAM_RUNWAY)
+        agent = normalized(ARCHITECTURE_PROGRAM_AGENT)
+        template = normalized(ARCHITECTURE_PROGRAM_TEMPLATE)
+        routing = normalized(ROUTING_CONTRACT)
+
+        self.assertNotIn("`intake-findings`", architecture)
+        self.assertNotIn("One-shot intake allowed", template)
+        self.assertNotIn("$add-to-ledger", agent)
+        self.assertIn("`planning-contracts` atomic store mechanism", routing)
+        self.assertIn("selected dispatch packet", architecture)
+        self.assertIn("queue state", architecture)
+        self.assertIn("same_batch_closeout_reconciliation", architecture)
+        self.assertIn("route that work through `add-to-ledger`", architecture)
 
     def test_finding_lifecycle_status_stays_separate_from_batch_artifact_state(
         self,

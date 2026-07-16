@@ -59,7 +59,9 @@ the normal direct commands for the ledger-driven workflow.
   active-state file shape, batch directories, archives, and state vocabulary.
 - `architecture-program-runway`: program selection, selected dispatch, batch
   queue metadata, selected/queued/active artifact state, finding lifecycle
-  status, and same-batch closeout reconciliation.
+  status, and same-batch closeout reconciliation for existing findings. It does
+  not ingest or normally mutate finding content; new follow-up findings route
+  through `add-to-ledger` before program grouping or lifecycle handling.
 - `batch-runway`: concrete runway specs, slice ledgers, validation/review
   loops, completed-slice archives, and commit receipt mechanics.
 - `legacy-removal`

@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Architecture Program Runway intake cutover
+
+Problem: `architecture-program-runway` still advertised broad finding intake,
+normalization, and normal ledger mutation after `add-to-ledger/v1` became the
+bounded owner for those decisions and atomic writes.
+
+Decision: remove APR's intake mode, caller-facing route, prompt, template field,
+and normal mutation claims while retaining grouping, prioritization,
+sequencing, selected dispatch, queue state, planning handoff, lifecycle updates,
+and same-batch closeout reconciliation. New follow-up findings must be created
+through `add-to-ledger` before APR applies grouping or lifecycle state.
+
+Expected effect: normal finding create, update, no-op, block, replay, and
+stale-CAS outcomes have one owner, while `plan-batch` and `work-batch` keep the
+program planning and closeout seams needed for their later cutovers.
+
 ### Bounded add-to-ledger command owner
 
 Problem: ledger intake still routed through broad planning support and exposed

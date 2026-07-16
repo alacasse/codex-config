@@ -113,8 +113,8 @@
       ]
     },
     "architecture-program-runway": {
-      "version": "1.1.7",
-      "description": "Agent-facing program-ledger support used by add-to-ledger, plan-batch, and work-batch for grouping, sequencing, selected dispatches, and closeout reconciliation.",
+      "version": "2.0.0",
+      "description": "Agent-facing program-ledger support used by plan-batch and work-batch for grouping, prioritization, sequencing, selected dispatches, queue state, and closeout reconciliation.",
       "requires": [
         "planning-artifacts",
         "planning-state"

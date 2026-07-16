@@ -650,12 +650,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         )
 
         expected = {
-            "add-to-ledger": [
-                "planning-artifacts",
-                "planning-state",
-                "architecture-program-runway",
-                "legacy-removal",
-            ],
+            "add-to-ledger": ["planning-contracts"],
             "plan-batch": [
                 "planning-artifacts",
                 "planning-state",
@@ -669,14 +664,29 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 "architecture-program-runway",
             ],
         }
+        expected_links = {
+            "add-to-ledger": {
+                ("skills/add-to-ledger", "skills/add-to-ledger"),
+                ("scripts/add_to_ledger.py", "scripts/add_to_ledger.py"),
+            },
+            "plan-batch": {
+                ("skills/plan-batch", "skills/plan-batch"),
+            },
+            "work-batch": {
+                ("skills/work-batch", "skills/work-batch"),
+            },
+        }
 
         for skill_name, required_features in expected.items():
             with self.subTest(skill=skill_name):
                 feature = features[skill_name]
                 self.assertEqual(feature.get("requires", []), required_features)
                 self.assertEqual(
-                    {link["source"] for link in feature["links"]},
-                    {f"skills/{skill_name}"},
+                    {
+                        (link["source"], link["target"])
+                        for link in feature["links"]
+                    },
+                    expected_links[skill_name],
                 )
 
                 skill_text = (REPO_ROOT / f"skills/{skill_name}/SKILL.md").read_text(

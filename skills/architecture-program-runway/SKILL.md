@@ -1,15 +1,15 @@
 ---
 name: architecture-program-runway
-description: Agent-facing program-ledger support used by add-to-ledger, plan-batch, and work-batch for broad finding intake, grouping, sequencing, selected dispatch packets, queue state, and closeout reconciliation.
+description: Agent-facing program-ledger support used by plan-batch and work-batch for grouping, prioritization, sequencing, selected dispatch packets, queue state, and closeout reconciliation.
 ---
 
 # Architecture Program Runway
 
-Agent-facing program-ledger support for `add-to-ledger`, `plan-batch`, and
-`work-batch`. Do not present this as the normal human command for ledger
-intake, batch planning, or batch closeout; use the command-owner skill first,
-then apply this workflow when program-level grouping, sequencing, selected
-dispatch packets, queue state, or closeout reconciliation are needed.
+Agent-facing program-ledger support for `plan-batch` and `work-batch`. Do not
+present this as the normal human command for batch planning or batch closeout;
+use the command-owner skill first, then apply this workflow when program-level
+grouping, prioritization, sequencing, selected dispatch packets, queue state,
+or closeout reconciliation are needed.
 `batch-runway` owns the concrete 3-5 slice execution spec and per-slice
 execution workflow.
 
@@ -21,9 +21,94 @@ current/validate ordering, target-policy checks, and projection routing.
 program selection, grouping, sequencing, queue state, selected dispatch packets,
 handoff to `batch-runway`, and closeout reconciliation.
 
+## Contract
+
+```yaml
+schema: skill-contract/v1
+identity:
+  name: architecture-program-runway
+  audience: support-mechanism
+producer:
+  toolchain_generation: candidate
+  toolchain_commit: 5cb0e6cfccc2aba6f18a011651619157c637af28
+  schema_version: skill-contract/v1
+purpose: >-
+  Group, prioritize, and sequence existing program-ledger findings, maintain
+  selected dispatch and queue state, and reconcile lifecycle state for the
+  current batch without owning finding intake or normal finding mutation.
+owns:
+  decisions:
+    - finding_grouping
+    - finding_prioritization
+    - finding_sequencing
+    - vague_row_disposition
+    - program_batch_selection
+    - program_lifecycle_reconciliation
+  durable_facts:
+    - grouped_finding_state
+    - selected_dispatch
+    - queue_state
+    - finding_lifecycle_state
+reads:
+  required:
+    - planning_state_diagnostic
+    - existing_program_ledger
+  conditional:
+    - selected_dispatch_state
+    - queued_or_active_runway
+    - completed_batch_evidence
+    - source_authorized_risk_boundaries
+writes:
+  - program_grouping_mutation
+  - selected_dispatch_mutation
+  - queue_state_mutation
+  - program_lifecycle_mutation
+  - same_batch_closeout_reconciliation
+requires:
+  mechanisms:
+    - planning-artifacts
+    - planning-state
+  evidence_skills: []
+delegates: []
+forbids:
+  - finding_intake
+  - source_canonicalization
+  - finding_normalization
+  - duplicate_decision
+  - finding_id_allocation
+  - atomic_planning_finding_mutation
+  - normal_finding_content_mutation
+  - follow_up_finding_creation
+outputs:
+  one_of:
+    - grouped_program_state
+    - selected_dispatch_packet
+    - queue_state_update
+    - program_lifecycle_update
+    - same_batch_reconciliation_result
+stops_when:
+  - missing_existing_finding
+  - vague_row_lacks_authorized_boundaries
+  - new_follow_up_requires_add_to_ledger
+  - selected_or_queued_state_conflict
+  - closeout_evidence_is_incomplete
+references: []
+```
+
+This skill consumes existing ledger findings. It does not canonicalize sources,
+normalize findings, allocate finding IDs, or decide create, update, no-op,
+block, replay, or stale-CAS outcomes for normal ledger intake. Those decisions
+and the atomic finding mutation belong to `add-to-ledger/v1`.
+
+When grouping, splitting, or closeout reveals genuinely new follow-up work,
+stop and route that work through `add-to-ledger`. After the command owner
+returns a created finding, this skill may group, sequence, select, queue, or
+apply lifecycle state to that existing finding. Do not create the follow-up
+implicitly under an amendment, split, or reconciliation synonym.
+
 ## Core Rule
 
-Do not turn a broad findings document into one giant batch. Preserve the
+Do not turn broad existing ledger work into one giant batch. Preserve the
 overarching ledger, maintain a compact batch queue, dispatch one selected batch
 with a bounded brief, and leave unselected findings visible with status and
 rationale.
@@ -83,12 +168,13 @@ The normal flow is:
    for the operational state facts before broader exploration.
 3. For placement, naming, active-state file shape, batch directory, archive, or
    run/output-root questions, follow `planning-artifacts`.
-4. Read the findings, review, PRD, ADR, selected dispatch packet, or planning
-   document needed for the chosen mode.
+4. Read the existing ledger findings and selected dispatch packet needed for
+   the chosen mode. Read a review, PRD, ADR, or other source only when an
+   existing finding cites it as evidence.
 5. Read active or recently completed related runway specs only enough to know
    what is already closed, prepared, or open.
 6. Check the worktree before editing planning files.
-7. Decide the mode: `intake-findings`, `group-batches`, `select-next-batch`,
+7. Decide the mode: `group-batches`, `select-next-batch`,
    `create-next-runway`, `closeout-runway`, or `reprioritize`.
 
 If the planning location, active ledger, status vocabulary, or relationship to
@@ -120,8 +206,6 @@ specific unresolved evidence question. State that question before continuing.
 
 ## Modes
 
-- `intake-findings`: normalize an architecture review or messy notes into a
-  durable findings ledger. Keep findings individually addressable.
 - `group-batches`: cluster findings into future runway candidates by owner
   seam, validation profile, dependency, risk, and likely file area.
 - `select-next-batch`: choose exactly one next batch, explain why it is next,
@@ -199,8 +283,9 @@ cleanup, migration, demotion, or contract narrowing without enough owner, risk,
 or acceptance boundaries, choose one of these outcomes before creating
 `dispatch.md`:
 
-- Split the row into smaller program findings when the source row already
-  authorizes distinct bounded work.
+- Decide that the row must split when the source row already authorizes
+  distinct bounded work. Route each new child finding through `add-to-ledger`,
+  then mark the source row `Split` and group the returned finding IDs.
 - Block the row when a decision, owner, risk class, acceptance boundary, or
   approval gate is missing.
 - Narrow the selected dispatch to characterization-only or evidence-only work
@@ -209,8 +294,9 @@ or acceptance boundaries, choose one of these outcomes before creating
 
 Record the split, block, or narrow-scope rationale in the program ledger and
 selected dispatch packet. Newly discovered destructive, migration, demotion, or
-contract-narrowing work must become explicit follow-up ledger work unless the
-source row already authorized that risk with precise boundaries.
+contract-narrowing work must be routed through `add-to-ledger` as explicit
+follow-up ledger work unless the source row already authorized that risk with
+precise boundaries.
 
 ## Ledger Statuses
 
@@ -239,15 +325,17 @@ completed implementation evidence.
 Do not widen or rewrite a `Pending` finding through ordinary source-ledger
 edits after selected, queued, or active batch artifacts control its scope.
 Allowed scope changes must be explicit: closeout evidence, supersession,
-abandonment, split, a named amendment, or a new follow-up finding. If the
-selected dispatch or concrete runway no longer matches the source finding,
-record the amendment or follow-up before continuing; do not hide the change in
+abandonment, split, or a named amendment. New follow-up work must first become
+a finding through `add-to-ledger`. If the selected dispatch or concrete runway
+no longer matches the source finding, record the amendment or route the
+follow-up through `add-to-ledger` before continuing; do not hide the change in
 narrative notes.
 
 ## Program Ledger Shape
 
 For a detailed reusable template, read
-`references/program-ledger-template.md` when creating or reorganizing a ledger.
+`references/program-ledger-template.md` when reorganizing or restructuring an
+existing program ledger.
 
 Every program ledger should make these things visible:
 

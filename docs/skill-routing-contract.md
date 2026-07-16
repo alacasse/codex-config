@@ -79,7 +79,7 @@ For this repository, the active program ledger is
 
 | User command/input | Primary skill | Input source | Output | Runtime/support skills |
 | --- | --- | --- | --- | --- |
-| Capture fresh work/finding text, review results, bugs, cleanup needs, or work requests | `add-to-ledger` | User-provided work/finding text plus project planning state | New or updated ledger finding | `planning-state`, `planning-artifacts`, `architecture-program-runway`; `legacy-removal` only for evidence-backed legacy scoping |
+| Capture fresh work/finding text, review results, bugs, cleanup needs, or work requests | `add-to-ledger` | User-provided work/finding text plus project planning state | New or updated ledger finding | `planning-contracts` atomic store mechanism |
 | Plan the next bounded batch/spec from existing ledger work | `plan-batch` | Existing ledger state, selected dispatch, or user preference pointing at existing ledger work | One dispatch/runway; no implementation | `planning-state`, `planning-artifacts`, `architecture-program-runway`, then `batch-runway` in `create-spec` mode |
 | Execute the current queued or active batch runway | `work-batch` | Current queued or active runway state | Executed slices, validation/review evidence, commits, closeout evidence, and same-batch program reconciliation | `planning-state`, `planning-artifacts`, then `batch-runway` in `execute-spec` mode, then `architecture-program-runway` in `closeout-runway` mode for the completed batch only |
 | Extract behavior contracts before a rewrite, migration, or port | `port-by-contract` | Current implementation and durable domain context | Implementation-neutral contract artifacts before any runway | `batch-runway` or `architecture-program-runway` only after contract artifacts exist |

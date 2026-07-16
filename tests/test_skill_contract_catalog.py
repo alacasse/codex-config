@@ -95,6 +95,86 @@ def test_valid_catalog_exercises_every_audience_profile() -> None:
     }
 
 
+def test_add_to_ledger_and_architecture_program_contracts_have_one_intake_owner(
+) -> None:
+    result = validate_skill_contracts(
+        (
+            REPO_ROOT / "skills/add-to-ledger/SKILL.md",
+            REPO_ROOT / "skills/architecture-program-runway/SKILL.md",
+        ),
+        toolchain_root=REPO_ROOT,
+        external_mechanism_policy=ExternalMechanismPolicy(
+            allowed_mechanisms=frozenset(
+                {
+                    "planning_contract_store",
+                    "planning-artifacts",
+                    "planning-state",
+                }
+            )
+        ),
+        complete_catalog=True,
+    )
+
+    assert result.is_valid
+    contracts = {
+        contract.contract["identity"]["name"]: contract.contract
+        for contract in result.contracts
+    }
+    add_to_ledger = contracts["add-to-ledger"]
+    architecture = contracts["architecture-program-runway"]
+
+    assert add_to_ledger["requires"] == {
+        "mechanisms": ["planning_contract_store"],
+        "evidence_skills": [],
+    }
+    assert add_to_ledger["delegates"] == [
+        {
+            "responsibility": "atomic_ledger_application",
+            "target": "planning_contract_store",
+        }
+    ]
+    assert architecture["requires"] == {
+        "mechanisms": ["planning-artifacts", "planning-state"],
+        "evidence_skills": [],
+    }
+    assert architecture["delegates"] == []
+
+    assert "finding_normalization" in add_to_ledger["owns"]["decisions"]
+    assert "atomic_planning_finding_mutation" in add_to_ledger["writes"]
+    assert "finding_normalization" not in architecture["owns"]["decisions"]
+    assert "atomic_planning_finding_mutation" not in architecture["writes"]
+    assert "finding_normalization" in architecture["forbids"]
+    assert "atomic_planning_finding_mutation" in architecture["forbids"]
+    assert set(architecture["owns"]["decisions"]) == {
+        "finding_grouping",
+        "finding_prioritization",
+        "finding_sequencing",
+        "vague_row_disposition",
+        "program_batch_selection",
+        "program_lifecycle_reconciliation",
+    }
+    assert set(architecture["owns"]["durable_facts"]) == {
+        "grouped_finding_state",
+        "selected_dispatch",
+        "queue_state",
+        "finding_lifecycle_state",
+    }
+    assert set(architecture["writes"]) == {
+        "program_grouping_mutation",
+        "selected_dispatch_mutation",
+        "queue_state_mutation",
+        "program_lifecycle_mutation",
+        "same_batch_closeout_reconciliation",
+    }
+    assert set(architecture["outputs"]["one_of"]) == {
+        "grouped_program_state",
+        "selected_dispatch_packet",
+        "queue_state_update",
+        "program_lifecycle_update",
+        "same_batch_reconciliation_result",
+    }
+
+
 def test_rejects_owned_decisions_and_writes_that_are_also_forbidden(
     tmp_path: Path,
 ) -> None:

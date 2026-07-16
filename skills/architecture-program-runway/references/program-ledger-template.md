@@ -1,7 +1,7 @@
 # Program Ledger Template
 
-Use this template when creating or restructuring a broad architecture findings
-ledger that feeds future Batch Runway specs.
+Use this template when reorganizing or restructuring an existing broad
+architecture findings ledger that feeds future Batch Runway specs.
 
 ````markdown
 # <Area> Architecture Findings
@@ -52,7 +52,6 @@ deferred_legacy_followups: []
 - Program archive root: `<path>`
 - Run artifact root: `<path>`
 - Output root: `<path>`
-- One-shot intake allowed: `<path or None>`
 - Compatibility exceptions: `<short note or None>`
 
 ## Findings Ledger
@@ -85,10 +84,11 @@ without making `Pending` a batch queue status.
 Do not widen or rewrite a `Pending` finding through ordinary source-ledger
 edits after selected, queued, or active batch artifacts control its scope.
 Allowed scope changes must be explicit: closeout evidence, supersession,
-abandonment, split, a named amendment, or a new follow-up finding. If the
-selected dispatch or concrete runway no longer matches the source finding,
-record the amendment or follow-up before continuing; do not hide the change in
-narrative notes.
+abandonment, split, or a named amendment. Route genuinely new follow-up work
+through `add-to-ledger`, then attach lifecycle state to the created finding. If
+the selected dispatch or concrete runway no longer matches the source finding,
+record the amendment or route the follow-up through `add-to-ledger` before
+continuing; do not hide the change in narrative notes.
 
 ## Batch Queue
 
@@ -242,7 +242,8 @@ so the program ledger stays readable.
   open.
 - Do not widen or rewrite `Pending` finding scope through ordinary
   source-ledger edits; use closeout evidence, supersession, abandonment, split,
-  a named amendment, or a new follow-up finding.
+  or a named amendment. Route genuinely new follow-up work through
+  `add-to-ledger` before applying program lifecycle state.
 - Mark a finding `Prepared` when tests or seams improve but the production
   finding remains.
 - Mark a finding `Closed` only after implementation, validation, review, and

@@ -1,4 +1,4 @@
 interface:
   display_name: "Architecture Program Runway"
   short_description: "Program-ledger support for commands"
-  default_prompt: "For agents: apply program-ledger grouping, dispatch, queue, and closeout support behind $add-to-ledger or $plan-batch."
+  default_prompt: "For agents: apply program-ledger grouping, dispatch, queue, and closeout support behind $plan-batch or $work-batch."
