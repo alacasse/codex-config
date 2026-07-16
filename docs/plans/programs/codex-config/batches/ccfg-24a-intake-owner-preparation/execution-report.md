@@ -66,8 +66,9 @@ The pre-attempt queued planning is recoverable from commit:
 33f7adfd1a5948f9176f8b2d1ddc47040cebb6e3
 ```
 
-Git history is the authoritative copy of the old dispatch and runway. Duplicate
-`blocked-dispatch.md` and `blocked-runway.md` files are not required.
+Git history is the authoritative copy of the old dispatch and runway. The
+`blocked-dispatch.md` and `blocked-runway.md` files are compact pointers only;
+they do not duplicate the old planning content.
 
 ## Final Attempt State
 
