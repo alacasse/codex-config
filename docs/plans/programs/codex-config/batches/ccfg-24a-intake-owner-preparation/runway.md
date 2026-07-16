@@ -163,7 +163,6 @@ only.
 
 | Slice | Status | Risk | Commit | Validation | Review |
 |---|---|---|---|---|---|
-| 1. Implement and install bounded owner | Pending | migration | None | Not run | Pending |
 | 2. Bind scenarios and measure | Pending | migration | None | Not run | Pending |
 
 Accepted results move to `completed-slices.md`.
