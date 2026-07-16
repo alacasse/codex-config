@@ -58,6 +58,13 @@ worker history, or broad redesign sources only for a named contradiction.
 - Current assigned manifest diagnostic: four failures, of which one CCFG-24
   intake assertion must become green; the remaining three belong only to
   CCFG-25/26.
+- Recorded broad legacy/projection diagnostic before CCFG-24B: 12 failures,
+  19 passes, and 50 passing subtests. This is diagnostic context, not authority
+  to fix unrelated failures.
+
+At execution startup, reproduce the manifest and broad legacy/projection
+baselines before delegation. Block on new or reclassified failures instead of
+silently widening the batch.
 
 ## Batch Non-Goals
 
@@ -196,9 +203,13 @@ Status classes:
 - Existing owner/store, skill-contract, behavioral/catalog, routing,
   strict-context, installer, Ruff, BasedPyright, and whitespace baselines:
   `required-green` or their explicitly recorded baseline class.
-- The full manifest diagnostic before final convergence:
-  `known-red-baseline` with exactly the four CCFG-24A-closeout failures.
-- After Slice 4, the full manifest diagnostic may remain red only for:
+- Full manifest before final convergence: `known-red-baseline`, exactly the four
+  failures recorded by CCFG-24A.
+- Full broad legacy/projection suite: `known-red-baseline`. CCFG-24B promotes only
+  the selected `legacy_removal`, `legacy_evidence_no_state_writes`, and
+  `parallel_planning_systems` nodes. Other pre-existing failures remain outside
+  this batch and no new failure is allowed.
+- After Slice 4, the full manifest may remain red only for:
   - `test_executable_work_source_boundary_is_explicit` — CCFG-25 remainder;
   - `test_plan_batch_command_owner_runtime_boundaries_are_explicit` — CCFG-25;
   - `test_work_batch_reconciles_same_batch_closeout` — CCFG-26.
@@ -232,14 +243,14 @@ Before deletion, record a fresh caller inventory proving:
 
 The gate is approved by the coordinator only after dead-surface evidence and a
 read-only independent review agree. Missing or ambiguous evidence blocks this
-slice without blocking later replanning.
+slice without authorizing broader cleanup.
 
 ### Work
 
 - Delete `_new_finding` and only other proven zero-caller intake migration residue.
 - Replace the temporary exact-69-ID topology/count assertion with assertions that
-  preserve the required scenario IDs/families/contracts by behavior rather than
-  incidental aggregate shape.
+  preserve required scenario IDs, families, and contracts by behavior rather
+  than incidental aggregate shape.
 - Remove or rewrite tests that preserve obsolete helper topology.
 - Keep installed-owner request builders and scenario adapters when they remain
   legitimate behavioral harness callers; do not delete them merely because they
@@ -317,15 +328,22 @@ Allowed files:
 - The executable-work-source manifest test has no CCFG-24 remainder; any failure
   is exclusively the named CCFG-25 planning remainder.
 
+Required-green ownership subset:
+
 ```sh
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_skill_routing_rule_ownership.py tests/test_skill_contract_catalog.py tests/test_skill_contract_migration.py tests/test_codex_features_manifest.py -k 'add_to_ledger or architecture_program or command_owner_input_contracts or executable_work_source_boundary'
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_skill_routing_rule_ownership.py tests/test_skill_contract_catalog.py tests/test_skill_contract_migration.py tests/test_codex_features_manifest.py -k 'add_to_ledger or architecture_program or command_owner_input_contracts'
 .venv/bin/python scripts/skill_contract.py validate --toolchain-root . skills/add-to-ledger/SKILL.md skills/architecture-program-runway/SKILL.md
 git diff --check
 ```
 
-Focused ownership commands: `required-green`, except the separately recorded
-CCFG-25 remainder of `test_executable_work_source_boundary_is_explicit`, which is
-`known-red-baseline` and must contain no CCFG-24 assertion.
+Separately run:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_codex_features_manifest.py -k 'test_executable_work_source_boundary_is_explicit'
+```
+
+Status: `known-red-baseline`. Its only remaining failing assertion may concern
+CCFG-25 planning ownership; any CCFG-24/APR-intake assertion must be green.
 
 Reviews: targeted `dead-surface-audit`, independent ownership-preservation review,
 `import_topology_reviewer`, and delta-only test-quality review.
@@ -378,7 +396,11 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider test
 git diff --check
 ```
 
-All selected nodes: `required-green`.
+Selected nodes: `required-green`.
+
+The unfiltered two-file legacy/projection diagnostic remains
+`known-red-baseline`; record its failure identities before and after and accept
+no new failure. CCFG-24-owned nodes must no longer be among its failures.
 
 Reviews: targeted `dead-surface-audit`, independent evidence/state-boundary
 review, `import_topology_reviewer`, and delta-only test-quality review.
@@ -408,8 +430,11 @@ owner, no APR intake route, and no `legacy-removal` state-owner escape hatch.
 
 ### Required-Green Validation
 
+Core and ownership suites:
+
 ```sh
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_add_to_ledger.py tests/test_planning_contract_schema.py tests/test_planning_contract_store.py tests/test_skill_contract_schema.py tests/test_skill_contract_catalog.py tests/test_skill_contract_migration.py tests/test_command_owner_behavioral_scenarios.py tests/test_command_owner_scenario_catalog.py tests/test_skill_routing_rule_ownership.py tests/test_planning_state_consumer_projection_routing.py tests/test_deletion_test_vocabulary_ownership.py
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_add_to_ledger.py tests/test_planning_contract_schema.py tests/test_planning_contract_store.py tests/test_skill_contract_schema.py tests/test_skill_contract_catalog.py tests/test_skill_contract_migration.py tests/test_command_owner_behavioral_scenarios.py tests/test_command_owner_scenario_catalog.py tests/test_skill_routing_rule_ownership.py
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_planning_state_consumer_projection_routing.py tests/test_deletion_test_vocabulary_ownership.py -k 'legacy_removal or legacy_evidence_no_state_writes or parallel_planning_systems'
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_codex_features_manifest.py -k 'not test_executable_work_source_boundary_is_explicit and not test_plan_batch_command_owner_runtime_boundaries_are_explicit and not test_work_batch_reconciles_same_batch_closeout'
 .venv/bin/python scripts/command_owner_scenarios.py validate tests/fixtures/command-owner-scenarios
 .venv/bin/ruff check --no-cache scripts/add_to_ledger.py tests/test_add_to_ledger.py tests/fixtures/command-owner-scenarios/workflow_adapters.py tests/test_command_owner_behavioral_scenarios.py tests/test_command_owner_scenario_catalog.py tests/test_skill_routing_rule_ownership.py tests/test_skill_contract_catalog.py tests/test_skill_contract_migration.py tests/test_planning_state_consumer_projection_routing.py tests/test_deletion_test_vocabulary_ownership.py tests/test_codex_features_manifest.py
@@ -417,14 +442,16 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider test
 git diff --check 3b0941af769ef4f4cd184c1b110df3fa2bf48f32
 ```
 
-Full manifest diagnostic:
+Known-red diagnostics, run separately:
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_codex_features_manifest.py
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_planning_state_consumer_projection_routing.py tests/test_deletion_test_vocabulary_ownership.py
 ```
 
-Status: `known-red-baseline`; exactly the three named CCFG-25/26 tests may fail.
-No CCFG-24 assertion or additional failure is accepted.
+The manifest may fail only the three named CCFG-25/26 tests. The broad
+legacy/projection diagnostic may retain only reproduced, preclassified
+non-CCFG-24 failures; no new failure and no CCFG-24-owned failure is accepted.
 
 Candidate installation:
 
@@ -449,13 +476,14 @@ Reviews: final exact-range independent review, `import_topology_reviewer`,
 Commit: `refactor: complete add-to-ledger ownership cutover`
 
 Stop if installation requires stable-home writes, an omitted feature, a new
-manifest failure, or semantic changes to the owner/store boundary.
+manifest failure, an unclassified legacy/projection failure, or semantic changes
+to the owner/store boundary.
 
 ## Final Validation And Closeout
 
 1. Confirm only this CCFG-24B runway is queued or active.
 2. Confirm all approval gates and retained-surface decisions are recorded.
-3. Run all required-green commands and the exact known-red manifest diagnostic.
+3. Run all required-green commands and both known-red diagnostics.
 4. Prove `add-to-ledger/v1` is the sole intake and mutation-decision owner.
 5. Prove APR retains only the responsibilities reserved for CCFG-25/26.
 6. Prove `legacy-removal` is evidence-only.
@@ -471,5 +499,6 @@ manifest failure, or semantic changes to the owner/store boundary.
 Stop on Planning State mismatch, blocked strict preflight, repository movement,
 dirty conflict, unclassified deletion, behavior loss, store/schema drift, a new
 owner seam, stable-home mutation, CCFG-25/26 responsibility loss, deferred adapter
-work, or any CCFG-25 through CCFG-29 selection. Stop after same-batch closeout
-with CCFG-24 `Closed` and no successor selected.
+work, a new or reclassified known-red failure, or any CCFG-25 through CCFG-29
+selection. Stop after same-batch closeout with CCFG-24 `Closed` and no successor
+selected.
