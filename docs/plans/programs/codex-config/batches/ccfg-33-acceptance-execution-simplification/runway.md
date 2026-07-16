@@ -2,12 +2,12 @@
 
 ## Purpose
 
-Execute the selected CCFG-33 finding in the redesign candidate checkout while
-keeping canonical planning in stable. Replace reporter-owned recursive pytest
-with one exact-commit acceptance run and validated receipt, separate fast and
-acceptance gates by behavior, remove or migrate obsolete preserving tests, and
-record before/after duration and process evidence without changing COR-006
-semantics or reopening CCFG-23.
+Execute CCFG-33 in the redesign candidate checkout while canonical planning
+remains on stable `master`. Replace reporter-owned recursive pytest with one
+exact-commit acceptance execution, reuse one immutable scenario evaluation per
+process/input identity, make report formatting pure, remove per-test-function
+source hashes as acceptance authority, separate fast and runtime gates, and
+record before/after cost evidence without changing COR-006 behavior.
 
 ## Identity And State
 
@@ -28,105 +28,89 @@ semantics or reopening CCFG-23.
   `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/closeout.md`
 - CCFG-23 remains closed. CCFG-24 through CCFG-29 remain open and unselected.
 
-## Batch Kind And Slice Risk
+## Amended Batch Kind And Risk
 
-- Batch kind: `mixed-risk`.
-- Slice 1: `migration`; move accepted evidence execution behind one
-  exact-commit acceptance-run/receipt boundary.
-- Slice 2: `destructive-cleanup`; delete or migrate preserving test assertions
-  only after their behavioral obligations are protected by Slice 1 and the
-  accepted scenario catalog.
+- Batch kind: `migration`.
+- Slice 1 risk: `migration`.
+- No destructive-cleanup or contract-narrowing slice is authorized.
 
-### Slice 1 Approval Gate
+The previously planned Slice 2 was removed because the three known-red manifest
+tests belong to future command-owner transfers, not to scenario-harness
+execution cost. They remain read-only diagnostic evidence.
 
-Approval authority is the canonical CCFG-33 ledger row plus a later explicit
+### Approval Gate
+
+Approval authority is the queued CCFG-33 ledger row plus a later explicit
 `work-batch` request. Before delegation:
 
-- Planning State must identify this runway as the only queued or active batch;
-- the first strict live-lease preflight must return `ready` for the same selected
-  scope;
-- candidate `HEAD` must descend from the closed CCFG-23 baseline and the
-  candidate worktree must be clean;
-- the slice must remain inside the non-installed scenario harness and its
-  focused tests; and
-- no production command-owner, installed generation, or bridge surface may be
-  changed.
+- Planning State identifies this runway as the only queued or active batch;
+- first strict live-lease preflight returns `ready` for this scope;
+- candidate `HEAD` descends from the closed CCFG-23 baseline and its worktree is
+  clean;
+- intended writes are limited to the non-installed harness allowlist; and
+- the exact known-red manifest diagnostic is unchanged.
 
-### Slice 2 Approval Gate
+## Current Baseline
 
-Approval authority is the canonical CCFG-33 ledger row plus a later explicit
-`work-batch` request. Before delegation:
-
-- Slice 1 must be committed, focused validation green, and independently
-  reviewed;
-- the coordinator must refresh the dispatch's focused `dead-surface-audit` and
-  classify every assertion proposed for deletion as `delete-now` or
-  `migrate-tests-first`;
-- each retained semantic obligation must map to a named green scenario,
-  contract, or focused behavioral test;
-- no `keep`, `keep-thin-entrypoint`, or `human-contract-decision` surface may be
-  deleted; and
-- the three-test known-red manifest baseline must still be exact before Slice 2
-  changes it.
-
-## Current Baseline And Assumptions
-
-- Planning State `current` and `validate` passed with no blockers before this
-  runway was created. The two redirect-ledger warnings are known and unrelated.
-- Stable `master` was clean at
+- Stable plan-time snapshot commit:
   `dded8097c947a745b63dbc44a4501d9b702b9f68`.
-- Candidate `implementation/command-owner-redesign` was clean at
+- Candidate baseline commit:
   `e8d07a785581e26ffb202b13ae43a0a83173205b`.
-- The four focused scenario modules pass 123 tests at the baseline commit. The
-  accepted final run took 814.32 seconds.
-- One observed report launches 13 pytest processes and evaluates the full
-  catalog four times. The full focused suite evaluates it 35 times.
-- One instrumented catalog evaluation launched 1,175 subprocesses; the
-  retrospective estimates approximately 41,125 process executions for the
-  baseline suite shape.
-- The full candidate manifest baseline was reconfirmed during planning: exactly
-  three failed, 18 passed, and 202 subtests passed. The failures are the three
-  preserving tests listed in the dispatch.
-- The harness is non-installed CCFG-23 evidence. Its six keys, six aliases, 31
-  immutable contracts, 17 families, and 69 scenario semantics are the behavior
-  contract for this batch.
-- The explicit generated-output root is
-  `/tmp/codex-config-ccfg-33-acceptance/`. Receipt summaries and digests are
-  persisted in execution/closeout Markdown; raw receipt JSON is not Planning
-  State.
+- Four focused scenario modules: 123 passed in 814.32 seconds.
+- One observed report: approximately 92.20 seconds.
+- One observed report launches 13 pytest processes and performs four full
+  catalog evaluations.
+- The suite performs 35 full catalog evaluations. One instrumented evaluation
+  launched 1,175 subprocesses, implying approximately 41,125 process
+  executions at the recorded suite shape.
+- Full manifest diagnostic: exactly three failed, 18 passed, and 202 subtests
+  passed.
+- The harness is non-installed evidence covering six keys, six aliases, 31
+  immutable contracts, 17 families, and 69 scenario meanings.
+
+## Scope Correction For Known-Red Manifest Tests
+
+CCFG-33 must not edit `tests/test_codex_features_manifest.py` or promote its
+full suite to required-green. The three failures are deferred as follows:
+
+- `test_executable_work_source_boundary_is_explicit`: intake/planning ownership
+  transfer under CCFG-24 and CCFG-25;
+- `test_plan_batch_command_owner_runtime_boundaries_are_explicit`: planning
+  ownership transfer under CCFG-25;
+- `test_work_batch_reconciles_same_batch_closeout`: execution/closeout ownership
+  transfer under CCFG-26.
+
+During CCFG-33 the full manifest remains `known-red-baseline`. Final validation
+must reproduce the same failure identities and the same 18-pass/202-subtest
+green remainder. Do not restore old prose or owner topology to change this
+baseline.
 
 ## Non-Goals
 
 - Do not transfer production ownership to `add-to-ledger`, `plan-batch`, or
   `work-batch`.
-- Do not change stable source, stable installed links, either Codex home, real
-  default-generation state, or temporary cross-checkout bridge code.
+- Do not change stable source, stable installed links, Codex homes, generation
+  state, installer, bridge, production skill text, workflow docs, manifest
+  dependencies, or `tests/test_codex_features_manifest.py`.
 - Do not delete scenario adapters or fixture models reserved for CCFG-24 through
   CCFG-29 replacement.
 - Do not change accepted scenario meanings, contract IDs, family membership,
-  evidence keys, aliases, provenance checks, or negative-runtime semantics.
-- Do not expose a public raw observed-outcomes argument or let a caller claim
-  acceptance without an exact validated receipt.
-- Do not optimize through arbitrary test-count thresholds or a universal
-  timeout.
-- Do not add cache state or receipts to the repository, active planning state,
-  or installed homes.
-- Do not restore old prose, runtime dependencies, owner topology, aliases,
-  paths, or helper names to satisfy preserving tests.
+  keys, aliases, or provenance semantics.
+- Do not expose a public raw observed-outcome mapping.
+- Do not add a permanent acceptance-receipt schema, committed receipt, durable
+  cache, general benchmark subsystem, or GitHub Actions workflow.
+- Do not optimize by arbitrary test count or a universal timeout.
 
 ## Execution Contract
 
 Use Batch Runway Standard Execution Contract v2.
-Use Batch Runway Registered Agent Result Contract v2. Registered agent TOMLs
-own worker, reviewer, specialist, investigator, and Spark result schemas.
-Use Batch Runway Compact Report Contract v1 only for coordinator receipts and
-its other non-agent reporting rules under the v2 compatibility statement.
-Use Batch Runway Compact Convergence Assessment v1 for routine status reports,
-slice summaries, commit receipts, and ledger notes.
-Use Batch Runway Orchestration Anomaly Log v1 for suspicious coordinator or
-subagent-lifecycle behavior.
+Use Batch Runway Registered Agent Result Contract v2.
+Use Batch Runway Compact Report Contract v1 for coordinator receipts and other
+non-agent reporting rules under the v2 compatibility statement.
+Use Batch Runway Compact Convergence Assessment v1.
+Use Batch Runway Orchestration Anomaly Log v1.
 Use Batch Runway Standard Ledger Retention v1.
-Use Batch Runway Execute Slice Core v1 for routine slice execution.
+Use Batch Runway Execute Slice Core v1.
 
 Reference files:
 
@@ -137,17 +121,15 @@ Reference files:
 - `skills/batch-runway/references/ledger-retention-v1.md`
 - `skills/batch-runway/references/cross-checkout-context-v1.md`
 - `skills/test-quality-review/SKILL.md`
-- `skills/dead-surface-audit/SKILL.md`
 
 Overrides:
 
-- The full live acceptance gate is coordinator-owned final validation. Workers
-  and reviewers must not launch it unless a recovery handoff explicitly assigns
-  one exact candidate commit and receipt path.
-- A green exact-commit receipt may be reused for read-only same-commit review.
-  Any candidate movement or input-digest mismatch invalidates reuse.
-- If a material fix changes candidate `HEAD`, final acceptance runs again for
-  that new exact commit; this is a new necessary gate, not an unchanged rerun.
+- The final live acceptance gate is coordinator-owned. Worker and reviewer must
+  not independently rerun it.
+- A green generated receipt may be reused only for read-only review of the exact
+  same clean commit and matching input identity.
+- Candidate movement invalidates the receipt and requires one new final
+  acceptance execution after the next committed fix.
 
 ## Required Planning Snapshot
 
@@ -181,201 +163,88 @@ execution_context:
   canonical_state_mutation_allowed: true
 ```
 
-This planning snapshot is immutable historical evidence, not a live execution
-lease. Do not rewrite it after the containing planning commit or later
-between-flight commits advance stable `HEAD`. At execution startup,
-`work-batch` must confirm this selected scope through Planning State and call
-the installed helper's ready/blocked preflight. Every later worker/reviewer
-handoff requires a newly prepared strict live lease, separately validated write
-scope, the canonical planning root, and the installed helper path.
+This is immutable plan-time evidence. At execution startup, `work-batch` must
+confirm the selected scope through Planning State and obtain a fresh ready
+preflight. Every worker/reviewer handoff requires a newly prepared strict live
+lease and separately validated write scope.
 
-Planning validated these canonical paths:
+## Implementation Contract
 
-- `docs/plans/programs/codex-config/CURRENT.md`
-- `docs/plans/programs/codex-config/LEDGER.md`
-- this dispatch and runway
-- this batch's future `completed-slices.md` and `closeout.md`
+### 1. One Acceptance Execution Owner
 
-Planning validated these candidate paths:
+Add one internal acceptance owner in `scripts/command_owner_scenarios.py` that:
 
-- `scripts/command_owner_scenarios.py`
-- `tests/fixtures/command-owner-scenarios/catalog.yaml`
-- the four `tests/test_command_owner_*scenario*.py` focused modules named in
-  the dispatch
-- `tests/test_codex_features_manifest.py`
-- `pyproject.toml`
-- `CHANGELOG.md`
+- resolves all declared aggregate-evidence nodes;
+- invokes them together in exactly one pytest process and one JUnit/output
+  observation;
+- rejects zero tests, failures, errors, skips, xfail/xpass, deselection, missing
+  nodes, foreign interpreter, stale commit, changed inputs, and raw outcome
+  substitution; and
+- derives the aggregate report only from verified runtime evidence.
 
-## Acceptance Receipt Contract
+### 2. One Evaluation Per Immutable Input
 
-Slice 1 must create an internal acceptance owner that runs all declared evidence
-nodes in one pytest process and emits one versioned receipt for one immutable
-candidate commit. The exact internal type and serialization layout may be
-chosen by the worker, but acceptance requires all of these facts:
+Within one Python/pytest process, repeated consumers of the same immutable
+catalog and source identity must reuse one evaluation result rather than
+rebuilding all 69 scenarios. The reuse must be process-local or session-local:
 
-- interface/version identifier;
-- exact candidate repository root and 40-character commit;
-- candidate Python/pytest environment identity and provenance;
-- catalog digest, adapter-source digests, evidence-test source digests, and the
-  exact selected evidence nodes;
-- exact pytest command and JUnit/output digest;
-- start/end or wall duration;
-- collected, passed, failed, error, skipped, xfailed, xpassed, and deselected
-  outcomes sufficient to reject every non-exclusive pass and zero-test result;
-- evidence-pytest process count;
-- full-catalog evaluation count;
-- available child-process counts grouped at least by Git, candidate Python, and
-  Planning State when the harness can observe them without faking execution;
-- the six key and six alias results; and
-- a receipt digest used by pure report formatting and same-commit review.
+- no committed cache;
+- no cross-commit cache;
+- no reuse after catalog, schema, adapter, evidence-test, interpreter, or
+  environment movement; and
+- no public caller-controlled green result.
 
-The acceptance owner must reject stale commit, foreign interpreter, changed
-catalog/adapter/test inputs, missing nodes, deselection, skip, xfail/xpass,
-failure, error, zero tests, and caller-provided raw outcome substitution. Report
-formatting must never launch pytest.
+Evidence-node tests that currently rebuild the full catalog should consume a
+shared immutable evaluation or evaluate only their declared scenario subset.
 
-## Validation Profile
+### 3. Pure Report Formatting
 
-Profile: `project-harness-production`.
+`report` formatting must not launch pytest. It may:
 
-### Baseline Commands
+- render an explicit unobserved/non-green report; or
+- consume a fully validated generated result for the exact current commit.
 
-- Full scenario baseline, accepted green at the exact baseline commit:
+JSON/text determinism tests must format the same report repeatedly rather than
+run acceptance repeatedly.
 
-  ```sh
-  PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_command_owner_scenario_catalog.py tests/test_command_owner_behavioral_scenarios.py tests/test_command_owner_scenario_currentness.py tests/test_command_owner_scenario_cutover.py
-  ```
+### 4. Minimal Generated Acceptance Result
 
-  Status: `required-green`. Current recorded result: 123 passed in 814.32s.
-  Do not rerun this unchanged baseline during execution.
+The generated result is private validation evidence, not a new stable public
+contract. Keep it minimal:
 
-- Full manifest:
+- exact clean candidate commit;
+- identity/digest of schema, catalog, adapters, and selected evidence tests;
+- exact evidence nodes;
+- candidate interpreter/environment identity;
+- exclusive pytest outcome summary;
+- accepted report or verified report digest;
+- wall duration; and
+- evidence-pytest process count, which must be one.
 
-  ```sh
-  PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_codex_features_manifest.py
-  ```
+A small internal interface/version tag is permitted. Do not create a separate
+schema file or generalized receipt framework. Measure detailed child-process
+counts externally during final benchmarking rather than adding instrumentation
+to the permanent harness.
 
-  Status: `known-red-baseline`. Current result: exactly three failed, 18 passed,
-  and 202 subtests passed. Slice 2 owns remediation and promotion to
-  `required-green`.
+### 5. Remove Per-Function Source-Hash Authority
 
-### Implementation-Created Gates
+Remove `source_sha256` for individual pytest functions from acceptance
+ownership:
 
-- Fast gate:
+- update `schemas/command-owner-scenario-v1.schema.json`;
+- update the live catalog;
+- delete or simplify AST/source-extraction and hash-comparison code;
+- delete or migrate tests that exist only to preserve exact function bodies,
+  decorators, or source hashes; and
+- bind the overall exact input identity through the generated acceptance result
+  instead.
 
-  ```sh
-  PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider -m 'not command_owner_acceptance' tests/test_command_owner_scenario_catalog.py tests/test_command_owner_behavioral_scenarios.py tests/test_command_owner_scenario_currentness.py tests/test_command_owner_scenario_cutover.py
-  ```
+Retain runtime proof against skip, xfail/xpass, deselection, zero tests,
+failure, error, foreign interpreter, and evidence-node substitution.
 
-  Status: `implementation-created`. Slice 1 registers the marker, proves the
-  fast/acceptance partition is complete and disjoint, and promotes this to
-  `required-green` before its commit.
+## Allowed Files
 
-- Focused receipt and partition tests:
-
-  ```sh
-  PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_command_owner_scenario_catalog.py tests/test_command_owner_scenario_cutover.py -k 'acceptance_runner or acceptance_receipt or fast_and_acceptance_markers or report_formatting_reuses_receipt'
-  ```
-
-  Status: `implementation-created`. Slice 1 creates the named behavior and
-  promotes this to `required-green` before its commit.
-
-- Exact-commit acceptance run:
-
-  ```sh
-  PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/command_owner_scenarios.py accept tests/fixtures/command-owner-scenarios --receipt-root /tmp/codex-config-ccfg-33-acceptance --format json --durations 20
-  ```
-
-  Status: `implementation-created`. Slice 1 creates it. The coordinator runs it
-  only in final validation from a clean exact candidate commit. The command must
-  run all evidence nodes through one pytest process and write the receipt under
-  a commit-keyed path below the explicit receipt root.
-
-- Receipt-backed pure report:
-
-  ```sh
-  PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/command_owner_scenarios.py report tests/fixtures/command-owner-scenarios --receipt-root /tmp/codex-config-ccfg-33-acceptance --format json
-  PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/command_owner_scenarios.py report tests/fixtures/command-owner-scenarios --receipt-root /tmp/codex-config-ccfg-33-acceptance --format text
-  ```
-
-  Status: `implementation-created`. Slice 1 creates it. Both commands must reuse
-  the exact current-commit receipt, emit the same accepted evidence, and launch
-  no pytest process.
-
-### Shared Focused Checks
-
-- Catalog validation:
-
-  ```sh
-  PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/command_owner_scenarios.py validate tests/fixtures/command-owner-scenarios
-  ```
-
-  Status: `required-green` at the baseline commit.
-
-- Lint and type checks:
-
-  ```sh
-  .venv/bin/ruff check --no-cache scripts/command_owner_scenarios.py tests/test_command_owner_scenario_catalog.py tests/test_command_owner_behavioral_scenarios.py tests/test_command_owner_scenario_currentness.py tests/test_command_owner_scenario_cutover.py tests/test_codex_features_manifest.py
-  .venv/bin/basedpyright scripts/command_owner_scenarios.py
-  ```
-
-  Status: `required-green` at the baseline commit.
-
-- Candidate range whitespace:
-
-  ```sh
-  git diff --check e8d07a785581e26ffb202b13ae43a0a83173205b
-  ```
-
-  Status: `required-green`.
-
-Project-level installs, stable/candidate generation switches, index refreshes,
-and generated-doc refreshes are not worker validation.
-
-## Slice Shape
-
-`slice_shape`: two slices.
-
-- `1 -> 2`: Slice 1 creates the acceptance-run/receipt boundary consumed by
-  Slice 2's behavior-preserving test cleanup. The intermediate candidate is
-  valid, fast-green, independently reviewable, and rollback-safe. Slice 2 has a
-  different owner seam, destructive risk, approval gate, and validation
-  promotion, so combining it with Slice 1 would hide the deletion decision.
-- The final exact-commit acceptance receipt, cost comparison, and closeout are
-  batch-level evidence rather than filler slices.
-
-## Execution Ledger
-
-| Slice | Status | Risk | Commit | Focused validation | Review | Notes |
-|---|---|---|---|---|---|---|
-| 1. Migrate acceptance execution to one exact-commit receipt | Pending | migration | — | — | — | Creates fast/acceptance boundary; does not run final live acceptance |
-| 2. Remove or migrate obsolete preserving tests | Pending | destructive-cleanup | — | — | — | Requires refreshed dead-surface evidence and promotes full manifest to green |
-
-## Slice 1: Migrate Acceptance Execution
-
-### Scope
-
-- Introduce one acceptance execution owner in
-  `scripts/command_owner_scenarios.py` that launches all declared evidence nodes
-  in one pytest process and produces the Acceptance Receipt Contract above.
-- Make report rendering pure with respect to pytest. A report may consume only
-  a fully validated current-commit receipt or remain explicitly unobserved/non-
-  green.
-- Register and apply a semantic `command_owner_acceptance` marker. Keep schema,
-  mapping, pure comparison, serialization, and negative-shape behavior in the
-  fast gate; keep runtime evidence, disposable Git/install behavior,
-  negative-runtime outcomes, and end-to-end observed reporting in acceptance.
-- Evaluate the catalog once per immutable acceptance input. Narrow evidence-node
-  tests to their declared scenario subsets where they currently rebuild all 69
-  scenarios.
-- Replace four live observed-report CLI executions in determinism testing with
-  one acceptance execution plus repeated pure formatting of one immutable
-  validated report.
-- Update catalog evidence-source hashes only where the changed evidence tests
-  require it.
-
-### Allowed Files
-
+- `schemas/command-owner-scenario-v1.schema.json`
 - `scripts/command_owner_scenarios.py`
 - `tests/fixtures/command-owner-scenarios/catalog.yaml`
 - `tests/test_command_owner_scenario_catalog.py`
@@ -383,60 +252,153 @@ and generated-doc refreshes are not worker validation.
 - `tests/test_command_owner_scenario_currentness.py`
 - `tests/test_command_owner_scenario_cutover.py`
 - `pyproject.toml`
+- `CHANGELOG.md`
 
-### Non-Goals
+## Read-Only Files
 
-- Do not change scenario semantics, accepted keys/aliases/contracts/families,
-  adapters, production skills, manifests, installed features, or cutover state.
-- Do not use a public raw outcome mapping, a caller-supplied green flag, or a
-  receipt that is valid across candidate movement or input changes.
-- Do not launch the full live acceptance gate from the worker or reviewer.
+- `tests/test_codex_features_manifest.py`
+- `codex-features.json`
+- production skills and workflow documentation
+- installer, bridge, and scenario adapter implementations
+
+## Validation Profile
+
+Profile: `project-harness-production`.
+
+### Recorded Baselines — Do Not Rerun Unchanged
+
+Scenario baseline:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_command_owner_scenario_catalog.py tests/test_command_owner_behavioral_scenarios.py tests/test_command_owner_scenario_currentness.py tests/test_command_owner_scenario_cutover.py
+```
+
+Status: `required-green`; recorded result 123 passed in 814.32 seconds.
+
+Manifest diagnostic:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_codex_features_manifest.py
+```
+
+Status: `known-red-baseline`; expected result exactly the same three failures,
+18 passes, and 202 passing subtests.
+
+### Implementation-Created Gates
+
+The worker may choose markers, explicit selectors, or a small focused module,
+but must prove a complete semantic partition.
+
+Fast gate requirements:
+
+- schema/catalog validation;
+- aggregate mapping and exact observation comparison;
+- generated-result validation and tamper/staleness rejection;
+- pure JSON/text formatting;
+- negative shape/input tests;
+- no disposable Git repository setup, installer/cutover execution, or nested
+  pytest.
+
+Acceptance gate requirements:
+
+- all declared runtime evidence nodes in one pytest process;
+- disposable Git/Planning State/install/cutover behavior;
+- all negative runtime outcomes and provenance checks;
+- one exact-commit generated result and accepted report.
+
+Implementation-created command examples may be added to this runway's execution
+ledger after Slice 1 code chooses the concrete interface. Do not invent
+nonexistent selectors as pre-existing required-green commands.
+
+### Shared Checks
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/command_owner_scenarios.py validate tests/fixtures/command-owner-scenarios
+.venv/bin/ruff check --no-cache schemas/command-owner-scenario-v1.schema.json scripts/command_owner_scenarios.py tests/test_command_owner_scenario_catalog.py tests/test_command_owner_behavioral_scenarios.py tests/test_command_owner_scenario_currentness.py tests/test_command_owner_scenario_cutover.py
+.venv/bin/basedpyright scripts/command_owner_scenarios.py
+git diff --check e8d07a785581e26ffb202b13ae43a0a83173205b
+```
+
+If Ruff does not accept the JSON schema path, lint only changed Python files and
+validate the schema through the catalog validator. Do not widen scope to tooling
+configuration solely for that command shape.
+
+## Slice Shape
+
+`slice_shape`: one slice.
+
+The acceptance execution owner, process-local evaluation reuse, pure formatting,
+source-hash removal, focused tests, directly associated configuration/changelog,
+and final validation share one owner, migration risk, rollback boundary, and
+acceptance contract. No valid independently shippable second slice remains.
+
+## Execution Ledger
+
+| Slice | Status | Risk | Commit | Focused validation | Review | Notes |
+|---|---|---|---|---|---|---|
+| 1. Simplify exact-commit acceptance execution | Pending | migration | — | — | — | One owner; known-red manifest remains unchanged diagnostic evidence |
+
+## Slice 1: Simplify Exact-Commit Acceptance Execution
+
+### Scope
+
+Implement the five-part Implementation Contract above. During implementation:
+
+- use the smallest affected tests rather than the full acceptance gate;
+- remove redundant harness-internal topology/source-hash tests in the same diff
+  as the mechanism they preserve;
+- classify any failing test before restoring code;
+- preserve behavior and named compatibility contracts, but delete or migrate
+  migration-retention/topology assertions with no external contract; and
+- prefer deletion and direct data flow over a generalized cache, receipt, or
+  reporting framework.
 
 ### Acceptance Criteria
 
-- All declared aggregate evidence nodes execute in one pytest process for one
-  acceptance run.
-- The receipt binds the exact candidate commit, environment provenance, input
-  digests, exclusive results, duration, process/evaluation evidence, and
-  accepted aggregate evidence.
-- Stale or foreign receipts and every non-pass/zero/deselection condition fail
-  closed.
-- Report formatting launches no pytest and cannot self-certify from raw caller
-  outcomes.
-- Fast and acceptance selections are semantic, complete, disjoint, and
-  documented by tests.
-- Repeated JSON/text determinism checks reuse one immutable report object or
-  validated receipt.
-- Focused receipt/partition tests, fast gate, catalog validation, Ruff,
-  BasedPyright, and candidate `git diff --check` pass.
+- One acceptance execution launches exactly one evidence-pytest process.
+- The scenario catalog is evaluated once per immutable process/input identity.
+- Report formatting launches no pytest.
+- Raw caller outcomes cannot make aggregate evidence green.
+- Per-function source hashes and their preserving validator/tests are removed or
+  no longer authoritative.
+- Fast and acceptance gates are behaviorally complete and disjoint.
+- All six keys, six aliases, 31 contracts, 17 families, 69 scenario meanings,
+  negative-runtime outcomes, and provenance checks remain green.
+- The exact known-red manifest diagnostic is unchanged.
+- Combined schema/harness/test implementation should be net-negative in lines;
+  any net growth requires reviewer evidence that it is essential rather than a
+  new generalized machine.
+- Focused tests, fast gate, catalog validation, Ruff, BasedPyright, and range
+  whitespace pass before commit.
 
 ### Validation And Review
 
-- Promote and run the focused receipt/partition tests and fast gate.
-- Run catalog validation, Ruff, BasedPyright, and candidate range whitespace.
-- Do not run the final live acceptance command in this slice.
-- Test-quality review: `delta-only`, with special attention to anti-self-
-  certification, marker completeness, failure-path coverage, and fixture cost.
-- Independent review must use the exact task-scoped worktree diff before commit
-  and echo its `diff_basis`.
+- Run focused tests and the fast gate before worker completion.
+- Do not run final live acceptance from worker or reviewer.
+- Test-quality review: `delta-only`, focused on anti-self-certification,
+  semantic gate partition, failure coverage, evaluation reuse, and whether new
+  machinery is proportional.
+- Independent review must verify the exact task-scoped diff, allowlist,
+  source-hash deletion, unchanged COR-006 behavior, unchanged manifest baseline,
+  and absence of production/cutover drift.
 
 ### Worker Brief
 
-The spawned `runway_worker` is already the required coding subagent. Read this
-runway from
-`/home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/runway.md`,
-implement only Slice 1 in the candidate checkout, and do not spawn, delegate to,
-or wait on any additional subagent. Do not run the final live acceptance gate,
-install anything, switch generations, or edit stable planning files. Return the
-required v2 compact result with exact changed paths and verified strict context.
+The spawned `runway_worker` is the coding subagent. Read this runway from the
+stable planning checkout, implement only Slice 1 in the candidate checkout, and
+do not spawn or wait on another subagent. Do not run final live acceptance,
+install anything, edit stable planning, edit read-only files, add CI, or create a
+permanent receipt/cache framework. Return the required v2 compact result with
+exact changed paths and verified strict context.
 
 ### Reviewer Brief
 
-The separate `runway_reviewer` reads this runway and reviews the coordinator-
-provided exact worktree diff basis. Verify the Acceptance Receipt Contract,
-single-pytest ownership, anti-self-certification, semantic gate partition,
-unchanged COR-006 meanings, allowlist, and absence of production/cutover drift.
-Echo `diff_basis` and verified strict context in the v2 compact result.
+The separate `runway_reviewer` reviews the coordinator-provided exact worktree
+diff. Verify single-pytest ownership, process-local reuse, minimal generated
+evidence, pure formatting, source-hash authority removal, semantic gate
+partition, unchanged COR-006 meanings, unchanged known-red manifest baseline,
+allowlist compliance, and proportional deletion-first implementation. Echo
+`diff_basis` and verified strict context in the v2 result.
 
 ### Commit
 
@@ -444,154 +406,56 @@ Echo `diff_basis` and verified strict context in the v2 compact result.
 
 ### Slice Stop Conditions
 
-- Stop if one acceptance run still launches evidence nodes in separate pytest
-  processes or report formatting launches pytest.
-- Stop if caching/receipt reuse can cross commit, catalog, adapter, test-source,
-  interpreter, or environment movement.
-- Stop if the fast gate omits behavior without assigning it to acceptance, or
-  acceptance is defined by arbitrary count instead of runtime semantics.
-- Stop if a COR-006 behavior, negative-runtime rejection, provenance check, or
-  topology-independent boundary weakens.
-
-## Slice 2: Remove Or Migrate Obsolete Preserving Tests
-
-### Scope
-
-- Re-run the focused dead-surface classification from the dispatch against the
-  committed Slice 1 state.
-- For each of the three known-red manifest tests, map every semantic obligation
-  to a named green scenario/contract/focused test, migrate any missing behavior
-  first, then remove exact prose, manifest dependency, and runtime-owner
-  topology preservation.
-- Delete the old test functions when their behavior is already protected;
-  otherwise retain only the smallest behavior-level assertion with no exact
-  prose/topology coupling.
-- Promote the full manifest command from `known-red-baseline` to
-  `required-green` with no restoration of removed code or old dependency shape.
-- Add a compact candidate `CHANGELOG.md` entry covering the acceptance-runner
-  simplification and removal/migration of preserving tests.
-
-### Allowed Files
-
-- `tests/test_codex_features_manifest.py`
-- `CHANGELOG.md`
-- The four focused scenario tests and catalog only when a named missing
-  behavioral obligation must be migrated before deletion.
-
-`scripts/command_owner_scenarios.py` and `pyproject.toml` are read-only unless
-review finds a Slice 1 defect. Any such defect enters recovery and receives a
-new worker/review/commit cycle before final acceptance.
-
-### Non-Goals
-
-- Do not change production skills, workflow docs, manifest dependencies, old
-  runtime owners, installed features, or bridge code to make preserving tests
-  pass.
-- Do not delete scenario adapters/fixtures assigned to CCFG-24 through CCFG-29.
-- Do not weaken behavior coverage merely to make the manifest suite green.
-
-### Acceptance Criteria
-
-- Every deleted assertion has `delete-now` or `migrate-tests-first` evidence and
-  a named green behavioral replacement.
-- No exact phrase, Markdown line break, manifest dependency list, support-owner
-  presence, import path, alias, or historical topology acts as behavioral
-  acceptance unless a named external contract requires it.
-- The full manifest suite passes; the former exact three-test known-red baseline
-  is gone because tests were migrated/deleted, not because old code was
-  restored.
-- The fast gate, catalog validation, Ruff, and candidate range whitespace pass.
-- Test-quality and independent reviews are clean.
-
-### Validation And Review
-
-- Run the full manifest suite and promote it to `required-green`.
-- Run the fast gate, catalog validation, Ruff, and candidate range whitespace.
-- Do not run the final live acceptance command in this slice.
-- Test-quality review: `delta-only`, focused on lost behavioral protection,
-  assertion strength, and topology/prose coupling.
-- Independent review must use the exact task-scoped worktree diff before commit,
-  verify every dead-surface mapping, and echo its `diff_basis`.
-
-### Worker Brief
-
-The spawned `runway_worker` is already the required coding subagent. Read this
-runway, implement only Slice 2 in the candidate checkout, and do not spawn,
-delegate to, or wait on another subagent. Consume the coordinator's refreshed
-dead-surface evidence. Do not restore production code/topology, run final live
-acceptance, install anything, or edit stable planning files. Return the required
-v2 compact result with exact changed paths and verified strict context.
-
-### Reviewer Brief
-
-The separate `runway_reviewer` reviews the exact task-scoped worktree diff.
-Verify the canonical dead-surface status and named behavioral replacement for
-every deleted assertion, full-manifest promotion without restoration, unchanged
-CCFG-23 semantics, allowlist, and no CCFG-24+ drift. Echo `diff_basis` and
-verified strict context in the v2 compact result.
-
-### Commit
-
-`test: remove obsolete command-owner topology assertions`
-
-### Slice Stop Conditions
-
-- Stop if any proposed deletion is `keep`, `keep-thin-entrypoint`, or
-  `human-contract-decision`, or lacks a named behavioral replacement.
-- Stop if manifest green requires changing production skills, docs, dependencies,
-  owner topology, installed links, aliases, or historical compatibility.
-- Stop if cleanup weakens a scenario, contract, key, alias, negative-runtime
-  case, or provenance check.
+- Stop if the implementation introduces a permanent generalized cache, schema,
+  CI workflow, or public raw outcome seam.
+- Stop if one acceptance run uses multiple evidence-pytest processes or report
+  formatting launches pytest.
+- Stop if reuse crosses input/commit/environment movement.
+- Stop if source-hash topology is preserved as acceptance authority.
+- Stop if any COR-006 or negative-runtime/provenance behavior weakens.
+- Stop if read-only manifest/production/cutover files must change.
 
 ## Final Validation
 
-Final validation occurs only after both slice commits exist and the candidate
-worktree is clean.
+Final validation occurs after the slice commit and a clean candidate worktree.
 
-1. Confirm Planning State still identifies this batch and strict preflight is
-   `ready`; capture the exact stable and candidate revisions.
-2. Run the fast gate, full manifest, catalog validation, Ruff, BasedPyright, and
-   candidate range `git diff --check`.
-3. Run the exact-commit `accept` command once. Reuse an already green receipt
-   only when its commit, environment, and every input digest exactly match.
-4. Validate the receipt and run JSON/text report formatting against it. Prove
-   these formatting commands launch no pytest.
-5. Confirm all 69 scenarios, 31 contracts, 17 families, six keys, six aliases,
-   negative-runtime outcomes, and provenance checks remain green.
-6. Record the final duration, evidence-pytest process count, catalog-evaluation
-   count, available child-process counts, receipt digest, command, environment,
-   and candidate commit.
-7. Compare final evidence with the 814.32-second, 13-pytest-per-report,
-   35-catalog-evaluation, approximately 41,125-process baseline by cause and
-   ratio. Explain any regression or missing measurement; do not invent data or
-   impose an arbitrary timeout.
-8. Run final exact-range `delta-only` test-quality review and independent
-   runway review over
-   `e8d07a785581e26ffb202b13ae43a0a83173205b..<final-candidate-commit>`.
-9. Verify stable and candidate worktrees are clean and all committed paths are
-   inside the validated scope.
-10. Write `completed-slices.md` and `closeout.md`, then reconcile CCFG-33 only:
-    mark it Closed, clear selected/queued/active state, record the exact
-    candidate range and receipt evidence, and select no successor.
+1. Confirm Planning State still identifies CCFG-33 and strict preflight is
+   `ready`; record exact stable and candidate revisions.
+2. Run the fast gate, focused harness suite, catalog validation, Ruff,
+   BasedPyright, and candidate-range `git diff --check`.
+3. Run the exact-commit acceptance command once and validate its generated
+   result.
+4. Render JSON and text from the same validated result and prove formatting
+   starts no pytest process.
+5. Confirm all 69 scenario meanings, 31 contracts, 17 families, six keys, six
+   aliases, negative-runtime outcomes, and provenance checks remain green.
+6. Run the full manifest diagnostic and require the exact same three failure
+   identities, 18 passes, and 202 passing subtests.
+7. Record final wall duration, evidence-pytest process count, full-catalog
+   evaluation count, and available externally measured child-process counts.
+8. Compare with the recorded 814.32-second, 13-pytest-per-report,
+   35-evaluation, approximately 41,125-process baseline by cause and ratio.
+9. Run final exact-range `delta-only` test-quality review and independent review
+   over `e8d07a785581e26ffb202b13ae43a0a83173205b..<final-candidate-commit>`.
+10. Verify both worktrees clean and every committed path inside scope.
+11. Write `completed-slices.md` and `closeout.md`; close CCFG-33, clear queued
+    state, and select no successor.
 
 ## Batch Stop Conditions
 
-- Stop if Planning State identifies a different selected/queued/active scope or
-  currentness is blocked.
-- Stop if strict context or intended write scope fails validation before any
-  worker/reviewer handoff.
-- Stop on unexpected repository movement, dirty-file conflict, or changed path
-  outside the slice allowlist.
-- Stop if final acceptance is not bound to a clean exact candidate commit.
+- Stop if Planning State identifies another scope or strict context/write-scope
+  validation fails.
+- Stop on unexpected repository movement, dirty conflict, or path outside the
+  allowlist.
+- Stop if acceptance is not bound to a clean exact candidate commit.
 - Stop if reporter formatting launches pytest, more than one evidence-pytest
-  process is needed for one acceptance run, or raw outcomes can self-certify.
+  process is required, or raw outcomes self-certify.
+- Stop if a persistent generalized machine replaces the simpler direct flow.
 - Stop if COR-006 behavior, evidence identity, negative-runtime rejection,
   provenance, or topology independence weakens.
-- Stop if a preserving test causes restoration of old production code, owner
-  topology, dependencies, aliases, paths, or prose.
-- Stop if cost evidence is missing, guessed, or compared by an arbitrary
-  threshold rather than cause and ratio.
-- Stop if execution touches production command-owner transfer, real cutover,
-  installed homes, the temporary bridge, or CCFG-24 through CCFG-29 scope.
-- Stop closeout before selecting, dispatching, refreshing, or preparing any
-  successor batch.
+- Stop if the manifest known-red baseline changes or any read-only file is
+  modified.
+- Stop if cost evidence is missing or guessed.
+- Stop if execution touches production ownership transfer, real cutover,
+  installed homes, bridge code, or CCFG-24 through CCFG-29 scope.
+- Stop closeout before selecting or preparing any successor.
