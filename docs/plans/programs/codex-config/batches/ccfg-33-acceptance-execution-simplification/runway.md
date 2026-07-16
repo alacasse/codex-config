@@ -336,7 +336,7 @@ acceptance contract. No valid independently shippable second slice remains.
 
 | Slice | Status | Risk | Commit | Focused validation | Review | Notes |
 |---|---|---|---|---|---|---|
-| 1. Simplify exact-commit acceptance execution | Pending | migration | — | — | — | One owner; known-red manifest remains unchanged diagnostic evidence |
+| 1. Simplify exact-commit acceptance execution | Completed | migration | `b38570b` | Fast gate, focused suite, catalog validation, Ruff, BasedPyright, range whitespace, exact-commit acceptance, and known-red diagnostic completed | Clean exact-range test-quality and independent reviews | One acceptance owner; known-red manifest remained unchanged diagnostic evidence |
 
 ## Slice 1: Simplify Exact-Commit Acceptance Execution
 
@@ -459,3 +459,30 @@ Final validation occurs after the slice commit and a clean candidate worktree.
 - Stop if execution touches production ownership transfer, real cutover,
   installed homes, bridge code, or CCFG-24 through CCFG-29 scope.
 - Stop closeout before selecting or preparing any successor.
+
+## Final Execution Evidence
+
+- Implementation range:
+  `e8d07a785581e26ffb202b13ae43a0a83173205b..b38570bcd97b2584f3828abcd395b0f45ed91e58`.
+- Controlling stable commit:
+  `1b396488a9c05cd114bee947db704625b325b983`.
+- Final strict lease and read-only review scope were revalidated against those
+  exact revisions before each post-commit review.
+- The four-module focused suite completed with 115 passed in 60.02 seconds,
+  down from 123 passed in 814.32 seconds at the recorded baseline.
+- The exact-commit acceptance command ran once: 48.03 seconds total,
+  29.894864 seconds inside the evidence execution, one evidence-pytest process,
+  13 declared nodes, and 25 passing tests with no non-green pytest outcome.
+- The accepted report retained 69 scenarios, 31 required and green contracts,
+  17 families, six acceptance keys, and six aliases. The generated result bound
+  the same-process report with SHA-256
+  `2d40bb4fe2354840f88c1358e2162e509bad5a13bff6cfb677b088cfc3d26472`.
+- Pure JSON/text formatting matched the accepted report and launched zero
+  subprocesses. Process-local reuse and one evaluation per immutable identity
+  are behaviorally protected; no durable cache was introduced.
+- The known-red manifest diagnostic remained exactly the same three failure
+  identities, 18 passes, and 202 passing subtests.
+- Final exact-range test-quality review and independent review were clean.
+  Dead-surface and import-topology specialist reviews were also clean.
+- Both repositories were clean after the candidate commit, and its nine paths
+  are exactly the declared allowlist.

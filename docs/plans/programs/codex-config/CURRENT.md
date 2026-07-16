@@ -8,10 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/runway.md`
+- Queued batch path or ID: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -33,8 +32,8 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-24 through CCFG-29.
-- Pending ledger row: CCFG-33.
-- Closed ledger rows: CCFG-18 through CCFG-23 and CCFG-30 through CCFG-32.
+- Pending ledger rows: none.
+- Closed ledger rows: CCFG-18 through CCFG-23 and CCFG-30 through CCFG-33.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
   CCFG-22 closes all nine COR-005 authoring acceptance keys with candidate-only
@@ -57,26 +56,23 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/runway.md`
-- Queued dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/dispatch.md`
+- Queued batch: `None`
+- Queued dispatch: `None`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-23-behavioral-scenario-harness`
+- Latest completed batch: `ccfg-33-acceptance-execution-simplification`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-23-behavioral-scenario-harness/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/closeout.md`
 
 ## Next Safe Action
 
-Execute only the queued, amended CCFG-33 runway through a later explicit
-`work-batch` request. CCFG-24 waits for CCFG-33 closeout. Do not replace this
-runway, select another batch, or infer successor work from its eventual
-closeout.
+CCFG-33 is closed and no batch is selected or queued. CCFG-24 is now
+dependency-eligible but remains open and unselected. A later explicit
+`plan-batch` request owns any successor selection.
 
 ## Stop Conditions
 
@@ -109,6 +105,7 @@ closeout.
 - Stop if work treats closed CCFG-21 or its completed runway as active work.
 - Stop if work treats closed CCFG-22 or its completed runway as active work.
 - Stop if work treats closed CCFG-23 or its completed runway as active work.
+- Stop if work treats closed CCFG-33 or its completed runway as active work.
 - Stop if CCFG-32 execution restores Git-derived queue currentness, weakens
   material live-handoff safety, touches the redesign candidate, or expands into
   CCFG-21, CCFG-25, or CCFG-29 ownership.
@@ -133,6 +130,6 @@ closeout.
   process, process-local evaluation reuse, pure reporting, removal of
   per-function source-hash authority, unchanged known-red manifest diagnostics,
   or before/after cost evidence.
-- Stop if CCFG-24 is selected before CCFG-33 closes.
+- Stop if CCFG-24 is selected without a later explicit `plan-batch` request.
 - Stop if CCFG-24 through CCFG-29 retain replaced CCFG-23 fixtures or tests
   without a named caller, reason, owner, and removal condition.
