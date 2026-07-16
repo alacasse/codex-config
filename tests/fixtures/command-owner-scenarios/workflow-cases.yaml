@@ -1,19 +1,15 @@
 intake-fresh-atomic:
   operation: intake
-  mode: fresh
-  finding_ids: [CCFG-3]
+  mode: create-update
 intake-multi-atomic:
   operation: intake
-  mode: fresh
-  finding_ids: [CCFG-3, CCFG-4]
+  mode: multi-create
 intake-duplicate-idempotent:
   operation: intake
-  mode: duplicate
-  finding_ids: [CCFG-3]
+  mode: exact-retry-and-semantic-no-op
 intake-stale-blocked:
   operation: intake
-  mode: stale
-  finding_ids: [CCFG-3]
+  mode: blocked-matrix
 
 planning-single-slice-queued:
   operation: planning

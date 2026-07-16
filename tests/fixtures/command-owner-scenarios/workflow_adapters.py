@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import importlib.util
 import json
+import os
 import shutil
+import subprocess
 import sys
 import tempfile
 from collections.abc import Callable, Mapping
@@ -38,6 +41,19 @@ from scripts.planning_contract import (  # noqa: E402
 COMMIT = "0123456789abcdef0123456789abcdef01234567"
 EMPTY_HASH = hashlib.sha256(b"").hexdigest()
 FORBIDDEN_WRITES = ["outside/canonical-planning", "outside/installed-home"]
+CANDIDATE_CODEX_HOME = Path(
+    os.environ.get(
+        "COMMAND_OWNER_CANDIDATE_CODEX_HOME",
+        "/home/alacasse/.codex-command-owner-redesign",
+    )
+)
+CANONICAL_REPOSITORY_ROOT = Path(
+    os.environ.get(
+        "COMMAND_OWNER_CANONICAL_REPOSITORY_ROOT",
+        "/home/alacasse/projects/codex-config",
+    )
+)
+INSTALLED_INTAKE_OWNER = CANDIDATE_CODEX_HOME / "scripts/add_to_ledger.py"
 
 FixtureCallable = Callable[[Mapping[str, object]], Mapping[str, object] | None]
 
@@ -67,6 +83,16 @@ class PlanningBoundaryResult:
     invocations: tuple[Mapping[str, object], ...]
     accepted: bool
     stop_reason: str | None
+
+
+@dataclass(frozen=True)
+class IntakeCaseResult:
+    """One installed-owner intake observation."""
+
+    transition: str
+    writes: list[str]
+    stop_reason: str | None
+    validation: list[str]
 
 
 def observe_intake(
@@ -115,9 +141,18 @@ def run_scenario(
     operation = cast(str, case["operation"])
     workspace.mkdir(parents=True, exist_ok=True)
     if operation == "intake":
-        transition, writes, stop_reason, validation = _run_intake(
-            case, workspace, fixture_root
-        )
+        intake = _run_intake(case, workspace, fixture_root)
+        transition = intake.transition
+        writes = intake.writes
+        stop_reason = intake.stop_reason
+        validation = intake.validation
+        generation_and_roots = {
+            "generation": "candidate-installed",
+            "roots": [
+                {"role": "workspace", "path": "workspace"},
+                {"role": "installed-owner", "path": "installed/scripts/add_to_ledger.py"},
+            ],
+        }
     elif operation == "planning":
         transition, writes, stop_reason, validation = _run_planning(
             case,
@@ -148,7 +183,9 @@ def run_scenario(
         "writes": writes,
         "forbidden_writes": FORBIDDEN_WRITES,
         "stop_reason": stop_reason,
-        "generation_and_roots": {
+        "generation_and_roots": generation_and_roots
+        if operation == "intake"
+        else {
             "generation": "fixture",
             "roots": [{"role": "workspace", "path": "workspace"}],
         },
@@ -169,66 +206,422 @@ def _observe_family(
 
 def _run_intake(
     case: Mapping[str, object], workspace: Path, fixture_root: Path
-) -> tuple[str, list[str], str | None, list[str]]:
+) -> IntakeCaseResult:
     repo_root = _repo_root(fixture_root)
+    owner_path = _require_installed_intake_owner(repo_root)
     ledger_path = workspace / "LEDGER.md"
     shutil.copy2(
         repo_root / "tests/fixtures/planning-contracts/ledger/per-finding-valid/LEDGER.md",
         ledger_path,
     )
-    snapshot = read_ledger_document(ledger_path, toolchain_root=repo_root)
-    finding_ids = cast(list[str], case["finding_ids"])
-    mutations = [_new_finding(snapshot.findings["CCFG-1"], item) for item in finding_ids]
-    request = {
-        "toolchain_root": repo_root,
-        "expected_revision": snapshot.logical_revision,
-        "expected_file_hash": snapshot.file_hash,
-        "action": "create",
-        "finding_mutations": mutations,
-        "touched_finding_revisions": {item: None for item in finding_ids},
-        "idempotency_key": "fixture-intake-" + "-".join(finding_ids),
-    }
+    canonical_before = _snapshot(CANONICAL_REPOSITORY_ROOT / "docs/plans")
     mode = cast(str, case["mode"])
-    if mode == "duplicate":
-        first = apply_ledger_decision(ledger_path, **request)
-        before = _snapshot(workspace)
-        replay = apply_ledger_decision(ledger_path, **request)
-        assert first.outcome == "applied"
-        assert replay.outcome == "exact_replay"
-        return (
-            "intake:replayed",
-            _changed_paths(before, workspace),
-            "intake stops after the existing finding is confirmed",
-            ["ledger.store.green", "intake.idempotence.green", "intake.stop.green"],
+    if mode == "create-update":
+        result = _run_intake_create_update(repo_root, ledger_path, workspace)
+    elif mode == "multi-create":
+        result = _run_intake_multi_create(repo_root, ledger_path, workspace)
+    elif mode == "exact-retry-and-semantic-no-op":
+        result = _run_intake_retry_and_no_op(repo_root, ledger_path, workspace)
+    elif mode == "blocked-matrix":
+        result = _run_intake_blocked_matrix(repo_root, ledger_path, workspace)
+    else:
+        raise AssertionError(f"unsupported intake fixture mode {mode!r}")
+    if _snapshot(CANONICAL_REPOSITORY_ROOT / "docs/plans") != canonical_before:
+        raise AssertionError("candidate-installed intake mutated canonical planning state")
+    _assert_no_downstream_intake_effects(workspace)
+    assert owner_path.resolve() == repo_root / "scripts/add_to_ledger.py"
+    return result
+
+
+def _run_intake_create_update(
+    repo_root: Path, ledger_path: Path, workspace: Path
+) -> IntakeCaseResult:
+    created = _invoke_installed_intake_owner(
+        _intake_request(
+            repo_root,
+            workspace,
+            ledger_path,
+            [_plain_intake_input("fixture create-update", title="Initial intake")],
         )
-    before = _snapshot(workspace)
-    if mode == "stale":
-        try:
-            apply_ledger_decision(
-                ledger_path,
-                **{**request, "expected_revision": snapshot.logical_revision + 1},
-            )
-        except PlanningStoreError as error:
-            assert error.code == "store.revision_mismatch"
-        else:
-            raise AssertionError("stale intake unexpectedly mutated the ledger")
-        return (
-            "intake:blocked",
-            _changed_paths(before, workspace),
-            "stale intake revision",
-            ["ledger.store.green", "intake.atomicity.green", "intake.stop.green"],
-        )
-    result = apply_ledger_decision(ledger_path, **request)
-    after = read_ledger_document(ledger_path, toolchain_root=repo_root)
-    assert result.outcome == "applied"
-    assert result.receipt.touched_finding_ids == tuple(sorted(finding_ids))
-    assert all(item in after.findings for item in finding_ids)
-    return (
-        "intake:recorded",
-        _changed_paths(before, workspace),
-        "intake stops before planning",
-        ["ledger.store.green", "intake.atomicity.green", "intake.stop.green"],
     )
+    before = _snapshot(workspace)
+    updated = _invoke_installed_intake_owner(
+        _intake_request(
+            repo_root,
+            workspace,
+            ledger_path,
+            [
+                _plain_intake_input(
+                    "fixture create-update",
+                    title="Updated intake",
+                    evidence=["evidence/updated.md"],
+                )
+            ],
+        )
+    )
+    after = read_ledger_document(ledger_path, toolchain_root=repo_root)
+    finding_id = cast(str, cast(list[dict[str, object]], created["inputs"])[0]["finding_id"])
+    assert created["outcome"] == "applied"
+    assert cast(list[dict[str, object]], created["inputs"])[0]["action"] == "create"
+    assert updated["outcome"] == "applied"
+    assert cast(list[dict[str, object]], updated["inputs"])[0]["action"] == "update"
+    assert after.findings[finding_id]["title"] == "Updated intake"
+    return IntakeCaseResult(
+        transition="intake:recorded",
+        writes=_changed_paths(before, workspace),
+        stop_reason="intake stops before planning",
+        validation=[
+            "ledger.store.green",
+            "intake.installed-owner.green",
+            "intake.create.green",
+            "intake.update.green",
+            "intake.atomicity.green",
+            "intake.stop.green",
+        ],
+    )
+
+
+def _run_intake_multi_create(
+    repo_root: Path, ledger_path: Path, workspace: Path
+) -> IntakeCaseResult:
+    plain_text = "fixture plain source"
+    plain_digest = "e2df174b180787401cf4e43aaa3ef36937400f6ede438b0a53c04fb21df2e697"
+    github_revision_inputs = {
+        "owner": "openai",
+        "repository": "codex",
+        "number": 42,
+        "title": "Reproducible issue",
+        "body": "Fixture issue body.",
+    }
+    github_digest = "7bd6323b3edeb32ae2b83aa2f982b83d8ab9ff15338cc37136184a3c1b68e382"
+    assert hashlib.sha256(plain_text.encode()).hexdigest() == plain_digest
+    assert hashlib.sha256(
+        json.dumps(
+            github_revision_inputs,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode()
+    ).hexdigest() == github_digest
+    before = _snapshot(workspace)
+    result = _invoke_installed_intake_owner(
+        _intake_request(
+            repo_root,
+            workspace,
+            ledger_path,
+            [
+                _plain_intake_input(plain_text, title="Plain intake"),
+                _github_intake_input(),
+            ],
+        )
+    )
+    inputs = cast(list[dict[str, object]], result["inputs"])
+    source_identities = [cast(str, item["source_identity"]) for item in inputs]
+    after = read_ledger_document(ledger_path, toolchain_root=repo_root)
+    assert result["outcome"] == "applied"
+    assert [item["action"] for item in inputs] == ["create", "create"]
+    assert source_identities[0].startswith("text:sha256:")
+    assert source_identities[1] == "github-issue:github.com/openai/codex#42"
+    assert cast(dict[str, object], result["store"])["outcome"] == "applied"
+    assert all(cast(str, item["finding_id"]) in after.findings for item in inputs)
+    plain_finding = after.findings[cast(str, inputs[0]["finding_id"])]
+    github_finding = after.findings[cast(str, inputs[1]["finding_id"])]
+    assert plain_finding["provenance"] == {
+        "source_id": f"text:sha256:{plain_digest}",
+        "source_commit": plain_digest[:40],
+        "source_section": "inline-text",
+    }
+    assert github_finding["provenance"] == {
+        "source_id": "github-issue:github.com/openai/codex#42",
+        "source_commit": github_digest[:40],
+        "source_section": "https://github.com/openai/codex/issues/42",
+    }
+    return IntakeCaseResult(
+        transition="intake:recorded",
+        writes=_changed_paths(before, workspace),
+        stop_reason="intake stops before planning",
+        validation=[
+            "ledger.store.green",
+            "intake.installed-owner.green",
+            "intake.plain-text-adapter.green",
+            "intake.github-issue-adapter.green",
+            "intake.multi-create.green",
+            "intake.atomicity.green",
+            "intake.stop.green",
+        ],
+    )
+
+
+def _run_intake_retry_and_no_op(
+    repo_root: Path, ledger_path: Path, workspace: Path
+) -> IntakeCaseResult:
+    request = _intake_request(
+        repo_root,
+        workspace,
+        ledger_path,
+        [_plain_intake_input("fixture retry source", title="Retry intake")],
+    )
+    owner = _installed_intake_owner_module(repo_root)
+    prepared = owner._prepare_operation(request)
+    try:
+        owner._apply_prepared_operation(
+            prepared, fault="after_replace_before_return"
+        )
+    except InjectedStoreFailure:
+        pass
+    else:
+        raise AssertionError("installed owner did not expose interrupted apply")
+    before = _snapshot(workspace)
+    replay = owner._apply_prepared_operation(prepared)
+    semantic = _invoke_installed_intake_owner(request)
+    assert replay["outcome"] == "exact_replay"
+    assert replay["write_status"] == "exact_replay"
+    assert replay["private_operation_digest"] is not None
+    assert semantic["outcome"] == "no-op"
+    assert semantic["write_status"] == "not_written"
+    assert semantic["private_operation_digest"] is None
+    return IntakeCaseResult(
+        transition="intake:replayed",
+        writes=_changed_paths(before, workspace),
+        stop_reason="intake stops after the existing finding is confirmed",
+        validation=[
+            "ledger.store.green",
+            "intake.installed-owner.green",
+            "intake.exact-retry.green",
+            "intake.semantic-no-op.green",
+            "intake.identity-distinction.green",
+            "intake.stop.green",
+        ],
+    )
+
+
+def _run_intake_blocked_matrix(
+    repo_root: Path, ledger_path: Path, workspace: Path
+) -> IntakeCaseResult:
+    unsupported = _plain_intake_input("fixture unsupported", title="Unsupported")
+    unsupported["source"] = {"type": "external_ticket", "id": "EXT-1"}
+    before_unsupported = ledger_path.read_bytes()
+    unsupported_result = _invoke_installed_intake_owner(
+        _intake_request(
+            repo_root,
+            workspace,
+            ledger_path,
+            [
+                _plain_intake_input("fixture valid sibling", title="Valid sibling"),
+                unsupported,
+            ],
+        )
+    )
+    assert unsupported_result["outcome"] == "blocked"
+    assert unsupported_result["write_status"] == "not_written"
+    assert unsupported_result["affected_finding_ids"] == []
+    assert unsupported_result["store"] is None
+    assert [
+        item["code"]
+        for item in cast(list[dict[str, object]], unsupported_result["blockers"])
+    ] == ["source.unsupported"]
+    assert ledger_path.read_bytes() == before_unsupported
+
+    ambiguous_result = _invoke_installed_intake_owner(
+        _intake_request(
+            repo_root,
+            workspace,
+            ledger_path,
+            [
+                _plain_intake_input("fixture ambiguous", title="First meaning"),
+                _plain_intake_input("fixture ambiguous", title="Second meaning"),
+            ],
+        )
+    )
+    assert ambiguous_result["outcome"] == "blocked"
+    assert ambiguous_result["write_status"] == "not_written"
+    assert ambiguous_result["affected_finding_ids"] == []
+    assert ambiguous_result["store"] is None
+    assert [
+        item["code"]
+        for item in cast(list[dict[str, object]], ambiguous_result["blockers"])
+    ] == ["input.duplicate_source_conflict"]
+    assert ledger_path.read_bytes() == before_unsupported
+
+    owner = _installed_intake_owner_module(repo_root)
+    stale_request = _intake_request(
+        repo_root,
+        workspace,
+        ledger_path,
+        [_plain_intake_input("fixture stale", title="Stale intake")],
+    )
+    prepared = owner._prepare_operation(stale_request)
+    concurrent = _invoke_installed_intake_owner(
+        _intake_request(
+            repo_root,
+            workspace,
+            ledger_path,
+            [_plain_intake_input("fixture concurrent", title="Concurrent intake")],
+        )
+    )
+    assert concurrent["outcome"] == "applied"
+    before_stale = _snapshot(workspace)
+    before_stale_bytes = ledger_path.read_bytes()
+    stale = owner._apply_prepared_operation(prepared)
+    blocker_codes = [
+        cast(str, item["code"])
+        for item in cast(list[dict[str, object]], stale["blockers"])
+    ]
+    assert stale["outcome"] == "blocked"
+    assert stale["write_status"] == "not_written"
+    assert stale["affected_finding_ids"] == []
+    assert stale["store"] is None
+    assert any(code.endswith("revision_mismatch") for code in blocker_codes)
+    assert ledger_path.read_bytes() == before_stale_bytes
+    return IntakeCaseResult(
+        transition="intake:blocked",
+        writes=_changed_paths(before_stale, workspace),
+        stop_reason="stale intake revision",
+        validation=[
+            "ledger.store.green",
+            "intake.installed-owner.green",
+            "intake.unsupported-block.green",
+            "intake.ambiguous-block.green",
+            "intake.stale-cas.green",
+            "intake.atomicity.green",
+            "intake.stop.green",
+        ],
+    )
+
+
+def _require_installed_intake_owner(repo_root: Path) -> Path:
+    expected = (repo_root / "scripts/add_to_ledger.py").resolve(strict=True)
+    if not INSTALLED_INTAKE_OWNER.is_symlink():
+        raise AssertionError(f"installed intake owner is not a link: {INSTALLED_INTAKE_OWNER}")
+    if INSTALLED_INTAKE_OWNER.resolve(strict=True) != expected:
+        raise AssertionError("installed intake owner does not resolve to candidate source")
+    return INSTALLED_INTAKE_OWNER
+
+
+def _installed_intake_owner_module(repo_root: Path) -> Any:
+    path = _require_installed_intake_owner(repo_root)
+    name = "_candidate_installed_add_to_ledger"
+    cached = sys.modules.get(name)
+    if cached is not None:
+        return cached
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load installed intake owner at {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    if Path(cast(str, module.__file__)).resolve() != (
+        repo_root / "scripts/add_to_ledger.py"
+    ).resolve():
+        raise ImportError("installed intake owner module has foreign provenance")
+    return module
+
+
+def _invoke_installed_intake_owner(request: Mapping[str, object]) -> dict[str, object]:
+    repo_root = Path(cast(str, cast(Mapping[str, object], request["context"])["toolchain_root"]))
+    owner_path = _require_installed_intake_owner(repo_root)
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if key not in {"PYTHONHOME", "PYTHONPATH"}
+    }
+    env["PYTHONSAFEPATH"] = "1"
+    process = subprocess.run(
+        [sys.executable, "-P", str(owner_path)],
+        input=json.dumps(request),
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env,
+    )
+    if process.returncode != 0 or process.stderr:
+        raise AssertionError(
+            f"installed intake owner failed: {process.returncode}: {process.stderr}"
+        )
+    loaded = json.loads(process.stdout)
+    if not isinstance(loaded, dict):
+        raise AssertionError("installed intake owner returned a non-object")
+    return cast(dict[str, object], loaded)
+
+
+def _intake_request(
+    repo_root: Path,
+    planning_root: Path,
+    ledger_path: Path,
+    inputs: list[dict[str, object]],
+) -> dict[str, object]:
+    candidate_head = subprocess.check_output(
+        ["git", "-C", str(repo_root), "rev-parse", "HEAD"], text=True
+    ).strip()
+    canonical_head = subprocess.check_output(
+        ["git", "-C", str(CANONICAL_REPOSITORY_ROOT), "rev-parse", "HEAD"],
+        text=True,
+    ).strip()
+    return {
+        "interface": "add-to-ledger/v1",
+        "context": {
+            "toolchain_generation": "candidate",
+            "toolchain_commit": candidate_head,
+            "toolchain_root": str(repo_root),
+            "canonical_planning_repository_root": str(CANONICAL_REPOSITORY_ROOT),
+            "canonical_planning_commit": canonical_head,
+            "planning_root": str(planning_root),
+            "ledger_path": str(ledger_path),
+            "operation_root_kind": "fixture",
+            "canonical_state_mutation_allowed": False,
+            "project_namespace": None,
+        },
+        "inputs": inputs,
+    }
+
+
+def _plain_intake_input(
+    text: str,
+    *,
+    title: str,
+    evidence: list[str] | None = None,
+) -> dict[str, object]:
+    return {
+        "source": {"type": "plain_text", "text": text},
+        "title": title,
+        "scope": {
+            "summary": "Bounded fixture intake",
+            "included": ["installed owner behavior"],
+            "excluded": ["downstream planning"],
+        },
+        "evidence_pointers": evidence or [],
+        "next_action": {"command": "plan-batch", "condition": "explicit_request"},
+        "explicit_target_finding_id": None,
+        "non_intake_changes": [],
+    }
+
+
+def _github_intake_input() -> dict[str, object]:
+    value = _plain_intake_input(
+        "unused GitHub transport placeholder", title="GitHub issue intake"
+    )
+    value["source"] = {
+        "type": "github_issue",
+        "owner": "OpenAI",
+        "repository": "Codex",
+        "number": 42,
+        "title": "Reproducible issue",
+        "body": "Fixture issue body.",
+    }
+    return value
+
+
+def _assert_no_downstream_intake_effects(workspace: Path) -> None:
+    forbidden = {
+        "CURRENT.md",
+        "dispatch.md",
+        "runway.md",
+        "selection.md",
+        "closeout.md",
+    }
+    present = {path.name for path in workspace.rglob("*") if path.is_file()}
+    if present & forbidden:
+        raise AssertionError(f"intake produced downstream effects: {sorted(present & forbidden)}")
 
 
 def _run_planning(

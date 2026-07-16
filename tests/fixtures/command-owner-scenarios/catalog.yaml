@@ -105,8 +105,20 @@ scenarios:
     expected_writes: [workspace/LEDGER.md]
     forbidden_writes: *forbidden_writes
     expected_stop_reason: intake stops before planning
-    generation_and_roots: *fixture_roots
-    validation: [ledger.store.green, intake.atomicity.green, intake.stop.green]
+    generation_and_roots: &installed_intake_roots
+      generation: candidate-installed
+      roots:
+        - role: workspace
+          path: workspace
+        - role: installed-owner
+          path: installed/scripts/add_to_ledger.py
+    validation:
+      - ledger.store.green
+      - intake.installed-owner.green
+      - intake.create.green
+      - intake.update.green
+      - intake.atomicity.green
+      - intake.stop.green
     binding: &intake_binding
       status: bound
       adapter: workflow_adapters.py:observe_intake
@@ -121,8 +133,15 @@ scenarios:
     expected_writes: []
     forbidden_writes: *forbidden_writes
     expected_stop_reason: stale intake revision
-    generation_and_roots: *fixture_roots
-    validation: [ledger.store.green, intake.atomicity.green, intake.stop.green]
+    generation_and_roots: *installed_intake_roots
+    validation:
+      - ledger.store.green
+      - intake.installed-owner.green
+      - intake.unsupported-block.green
+      - intake.ambiguous-block.green
+      - intake.stale-cas.green
+      - intake.atomicity.green
+      - intake.stop.green
     binding: *intake_binding
   - id: intake-multi-atomic
     family: intake
@@ -134,8 +153,15 @@ scenarios:
     expected_writes: [workspace/LEDGER.md]
     forbidden_writes: *forbidden_writes
     expected_stop_reason: intake stops before planning
-    generation_and_roots: *fixture_roots
-    validation: [ledger.store.green, intake.atomicity.green, intake.stop.green]
+    generation_and_roots: *installed_intake_roots
+    validation:
+      - ledger.store.green
+      - intake.installed-owner.green
+      - intake.plain-text-adapter.green
+      - intake.github-issue-adapter.green
+      - intake.multi-create.green
+      - intake.atomicity.green
+      - intake.stop.green
     binding: *intake_binding
   - id: intake-duplicate-idempotent
     family: intake
@@ -147,8 +173,14 @@ scenarios:
     expected_writes: []
     forbidden_writes: *forbidden_writes
     expected_stop_reason: intake stops after the existing finding is confirmed
-    generation_and_roots: *fixture_roots
-    validation: [ledger.store.green, intake.idempotence.green, intake.stop.green]
+    generation_and_roots: *installed_intake_roots
+    validation:
+      - ledger.store.green
+      - intake.installed-owner.green
+      - intake.exact-retry.green
+      - intake.semantic-no-op.green
+      - intake.identity-distinction.green
+      - intake.stop.green
     binding: *intake_binding
   - id: planning-single-slice-queued
     family: planning

@@ -308,7 +308,10 @@ def test_public_store_scenarios_expose_atomic_recovery_and_no_successor_effects(
 ) -> None:
     module = _adapter_module()
     cases = (
+        "intake-fresh-atomic",
+        "intake-multi-atomic",
         "intake-duplicate-idempotent",
+        "intake-stale-blocked",
         "planning-partial-selection-resumes",
         "closeout-partial-write-resumes",
         "closeout-lost-batch-identity-blocked",
@@ -320,7 +323,58 @@ def test_public_store_scenarios_expose_atomic_recovery_and_no_successor_effects(
         for scenario_id in cases
     }
 
+    installed_owner = module.INSTALLED_INTAKE_OWNER
+    assert installed_owner.is_symlink()
+    assert installed_owner.resolve() == REPO_ROOT / "scripts/add_to_ledger.py"
+    for scenario_id in (
+        "intake-fresh-atomic",
+        "intake-multi-atomic",
+        "intake-duplicate-idempotent",
+        "intake-stale-blocked",
+    ):
+        assert observations[scenario_id]["generation_and_roots"] == {
+            "generation": "candidate-installed",
+            "roots": [
+                {"role": "workspace", "path": "workspace"},
+                {
+                    "role": "installed-owner",
+                    "path": "installed/scripts/add_to_ledger.py",
+                },
+            ],
+        }
+        assert not {
+            "CURRENT.md",
+            "dispatch.md",
+            "runway.md",
+            "selection.md",
+            "closeout.md",
+        } & {
+            path.name
+            for path in (tmp_path / scenario_id).rglob("*")
+            if path.is_file()
+        }
+
+    assert {
+        "intake.create.green",
+        "intake.update.green",
+    } <= set(observations["intake-fresh-atomic"]["validation"])
+    assert {
+        "intake.plain-text-adapter.green",
+        "intake.github-issue-adapter.green",
+        "intake.multi-create.green",
+    } <= set(observations["intake-multi-atomic"]["validation"])
+    assert {
+        "intake.exact-retry.green",
+        "intake.semantic-no-op.green",
+        "intake.identity-distinction.green",
+    } <= set(observations["intake-duplicate-idempotent"]["validation"])
+    assert {
+        "intake.unsupported-block.green",
+        "intake.ambiguous-block.green",
+        "intake.stale-cas.green",
+    } <= set(observations["intake-stale-blocked"]["validation"])
     assert observations["intake-duplicate-idempotent"]["writes"] == []
+    assert observations["intake-stale-blocked"]["writes"] == []
     assert observations["planning-partial-selection-resumes"]["validation"] == [
         "planning.transaction.green",
         "planning.recovery.green",
