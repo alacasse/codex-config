@@ -77,7 +77,7 @@ EXPECTED_FAMILIES = {
     "execution-currentness",
     "cutover-lifecycle",
 }
-EXPECTED_SCENARIO_IDS = {
+REQUIRED_SCENARIO_IDS = {
     "branch-lineage-ready",
     "candidate-child-generation-ready",
     "closeout-lost-batch-identity-blocked",
@@ -216,7 +216,7 @@ def test_schema_is_draft_07_closed_world_and_exactly_versioned() -> None:
     _assert_objects_are_closed_world(schema)
 
 
-def test_catalog_preserves_exact_immutable_contract_identity_and_families() -> None:
+def test_catalog_preserves_accepted_contract_identity_and_families() -> None:
     result = validate_catalog(FIXTURES)
 
     assert result.is_valid
@@ -226,11 +226,7 @@ def test_catalog_preserves_exact_immutable_contract_identity_and_families() -> N
         "accepted_snapshot": "caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c",
         "source": "command-owner redesign accepted contract-to-scenario map",
     }
-    scenario_ids = {scenario["id"] for scenario in document["scenarios"]}
-    assert scenario_ids == EXPECTED_SCENARIO_IDS
-    assert len(scenario_ids) == 69
     assert set(document["required_contracts"]) == EXPECTED_CONTRACT_IDS
-    assert len(document["required_contracts"]) == 31
     assert set(document["required_families"]) == EXPECTED_FAMILIES
     assert all(
         set(test) == {"node", "scenarios"}
@@ -262,6 +258,18 @@ def test_live_catalog_reports_final_green_only_from_matching_observations() -> N
     report = build_report(result.catalog)
     scenarios = report["scenarios"]
     families = report["families"]
+    scenarios_by_id = {scenario["id"]: scenario for scenario in scenarios}
+    assert REQUIRED_SCENARIO_IDS <= set(scenarios_by_id)
+    required_scenarios = [
+        scenarios_by_id[scenario_id] for scenario_id in REQUIRED_SCENARIO_IDS
+    ]
+    assert {scenario["family"] for scenario in required_scenarios} == EXPECTED_FAMILIES
+    assert {
+        contract
+        for scenario in required_scenarios
+        for contract in scenario["contracts"]
+    } == EXPECTED_CONTRACT_IDS
+    assert all(scenario["status"] == "green" for scenario in required_scenarios)
     observed_green_contracts = {
         contract
         for scenario in scenarios

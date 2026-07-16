@@ -1379,21 +1379,6 @@ def _artifact_contracts(repo_root: Path) -> dict[str, dict[str, Any]]:
     }
 
 
-def _new_finding(template: Mapping[str, object], finding_id: str) -> dict[str, Any]:
-    finding = _thaw(template)
-    finding["id"] = finding_id
-    finding["revision"] = 1
-    finding["title"] = f"Fixture finding {finding_id}"
-    finding["provenance"] = {
-        "source_id": f"SRC-{finding_id}",
-        "source_commit": "3" * 40,
-        "source_section": f"source.md#{finding_id.casefold()}",
-    }
-    finding["lifecycle"]["status"] = "open"
-    finding["dependencies"] = []
-    return finding
-
-
 def _repo_root(fixture_root: Path) -> Path:
     repo_root = fixture_root.resolve().parents[2]
     assert repo_root == REPO_ROOT
