@@ -30,8 +30,8 @@
 ## Open Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-24 through CCFG-29.
+- Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11,
+  CCFG-24 through CCFG-29, and CCFG-33.
 - Pending ledger rows: none.
 - Closed ledger rows: CCFG-18 through CCFG-23 and CCFG-30 through CCFG-32.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
@@ -70,9 +70,10 @@
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. A later explicit `plan-batch` request
-may select bounded work from the canonical ledger. Do not infer CCFG-24 or any
-other successor from CCFG-23 closeout.
+No batch is selected, queued, or active. The next recommended command-owner
+redesign selection is CCFG-33, but it remains unselected until a later explicit
+`plan-batch` request. CCFG-24 waits for CCFG-33. Do not infer selection,
+dispatch, or execution from this recommendation.
 
 ## Stop Conditions
 
@@ -118,3 +119,11 @@ other successor from CCFG-23 closeout.
   prompt prose, stable-only paths, historical helper names, or real cutover
   state to turn green.
 - Stop if CCFG-23 closeout selects or prepares any successor dispatch or runway.
+- Stop if CCFG-33 planning restores removed code solely because an import,
+  identity, topology, or migration-retention test fails.
+- Stop if CCFG-33 closeout lacks preserved COR-006 behavior, separate fast and
+  acceptance gates, deletion or migration of obsolete preserving tests, or
+  before/after duration and process evidence.
+- Stop if CCFG-24 is selected before CCFG-33 closes.
+- Stop if CCFG-24 through CCFG-29 retain replaced CCFG-23 fixtures or tests
+  without a named caller, reason, owner, and removal condition.
