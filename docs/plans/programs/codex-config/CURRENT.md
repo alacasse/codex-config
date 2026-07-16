@@ -73,9 +73,10 @@
 
 ## Next Safe Action
 
-Execute only the queued CCFG-33 runway through a later explicit `work-batch`
-request. CCFG-24 waits for CCFG-33 closeout. Do not replace this runway, select
-another batch, or infer successor work from its eventual closeout.
+Execute only the queued, amended CCFG-33 runway through a later explicit
+`work-batch` request. CCFG-24 waits for CCFG-33 closeout. Do not replace this
+runway, select another batch, or infer successor work from its eventual
+closeout.
 
 ## Stop Conditions
 
@@ -121,11 +122,17 @@ another batch, or infer successor work from its eventual closeout.
   prompt prose, stable-only paths, historical helper names, or real cutover
   state to turn green.
 - Stop if CCFG-23 closeout selects or prepares any successor dispatch or runway.
-- Stop if CCFG-33 planning restores removed code solely because an import,
-  identity, topology, or migration-retention test fails.
-- Stop if CCFG-33 closeout lacks preserved COR-006 behavior, separate fast and
-  acceptance gates, deletion or migration of obsolete preserving tests, or
-  before/after duration and process evidence.
+- Stop if CCFG-33 restores removed code solely because an import, identity,
+  topology, source-hash, or migration-retention test fails.
+- Stop if CCFG-33 edits the three known-red manifest tests, production skills or
+  docs, manifest dependencies, installed homes, bridge code, or CCFG-24+
+  ownership.
+- Stop if CCFG-33 introduces a permanent cache, public raw-outcome seam,
+  permanent receipt schema, committed generated receipt, or CI workflow.
+- Stop if CCFG-33 closeout lacks preserved COR-006 behavior, one evidence-pytest
+  process, process-local evaluation reuse, pure reporting, removal of
+  per-function source-hash authority, unchanged known-red manifest diagnostics,
+  or before/after cost evidence.
 - Stop if CCFG-24 is selected before CCFG-33 closes.
 - Stop if CCFG-24 through CCFG-29 retain replaced CCFG-23 fixtures or tests
   without a named caller, reason, owner, and removal condition.
