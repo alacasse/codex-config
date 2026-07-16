@@ -8,11 +8,10 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/runway.md`
-- Queued batch execution status: `Queued and executable; no slice started`
+- Queued batch path or ID: `None`
+- Queued batch execution status: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -34,7 +33,7 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-25 through CCFG-29.
-- Pending ledger row: CCFG-24.
+- Prepared ledger row: CCFG-24.
 - Closed ledger rows: CCFG-18 through CCFG-23 and CCFG-30 through CCFG-33.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -62,11 +61,9 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/runway.md`
-- Queued batch execution status: `Queued and executable; no slice started`
-- Queued dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/dispatch.md`
+- Queued batch: `None`
+- Queued batch execution status: `None`
+- Queued dispatch: `None`
 - Superseded CCFG-24 planning evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/superseded.md`
 - Superseded CCFG-24A blocked attempt:
@@ -74,22 +71,20 @@
 - Expected CCFG-24B cutover batch: unselected; no dispatch or runway exists.
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
-- Latest completed batch: `ccfg-33-acceptance-execution-simplification`
+- Latest completed batch: `ccfg-24a-intake-owner-preparation`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/closeout.md`
 
 ## Next Safe Action
 
-A later explicit `work-batch` request may execute only the current two-slice
-CCFG-24A runway. Start from Planning State, require a fresh ready strict
-cross-checkout preflight, consume the accepted CCFG-24A decision amendment, and
-use only temporary or fixture ledgers from candidate execution. Do not resume
-`blocked-runway.md`. Keep CCFG-24 `Pending` until same-batch closeout, and keep
-CCFG-24B and CCFG-25 unselected.
+No batch is selected, queued, or active. CCFG-24A completed with CCFG-24
+`Prepared`. A later explicit `plan-batch` request may consume only the compact
+CCFG-24A closeout evidence for the mandatory cutover reassessment; it may narrow,
+split, block, or select CCFG-24B then. CCFG-24B and CCFG-25 remain unselected.
 
 ## Stop Conditions
 

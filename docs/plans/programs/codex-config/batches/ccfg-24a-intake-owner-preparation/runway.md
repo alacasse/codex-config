@@ -11,7 +11,7 @@ Historical failure evidence is in `execution-report.md` and commits `33f7adf`,
 
 ## Authority
 
-- Finding: CCFG-24, still `Pending`.
+- Finding: CCFG-24, `Prepared` by same-batch closeout.
 - Dispatch: `dispatch.md`.
 - Source: COR-007 at `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`.
 - Split boundary: `../../findings/ccfg-24-two-batch-execution-amendment.md`.
@@ -161,11 +161,8 @@ only.
 
 ## Execution Ledger
 
-| Slice | Status | Risk | Commit | Validation | Review |
-|---|---|---|---|---|---|
-| 2. Bind scenarios and measure | Pending | migration | None | Not run | Pending |
-
-Accepted results move to `completed-slices.md`.
+No remaining slice rows. Accepted results are in `completed-slices.md` and
+final evidence is in `closeout.md`.
 
 ## Slice 1: Implement And Install The Bounded Owner
 
