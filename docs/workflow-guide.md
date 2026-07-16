@@ -64,7 +64,9 @@ the normal direct commands for the ledger-driven workflow.
   through `add-to-ledger` before program grouping or lifecycle handling.
 - `batch-runway`: concrete runway specs, slice ledgers, validation/review
   loops, completed-slice archives, and commit receipt mechanics.
-- `legacy-removal`
+- `legacy-removal`: evidence-only classification of legacy compatibility,
+  canonical models, cleanup residues, batch candidates, and dispatch handoffs;
+  it never owns program, queue, dispatch, runway, lifecycle, or closeout state.
 - `dead-surface-audit`
 - `test-quality-review`
 

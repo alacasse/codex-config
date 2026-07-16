@@ -215,8 +215,8 @@
       ]
     },
     "legacy-removal": {
-      "version": "1.0.8",
-      "description": "Agent-facing evidence and scoping support for exceptional legacy-removal residues and cleanup handoffs.",
+      "version": "1.0.9",
+      "description": "Agent-facing evidence-only classification support for exceptional legacy-removal residues and cleanup handoffs.",
       "requires": [
         "planning-artifacts",
         "planning-state"

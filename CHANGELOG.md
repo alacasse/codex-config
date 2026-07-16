@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Legacy Removal evidence-only boundary
+
+Problem: `legacy-removal` still contained an exception that let it become a
+program owner and write selected dispatch, queue, lifecycle, or closeout state.
+
+Decision: make `legacy-removal` a structured evidence skill that retains legacy
+evidence, canonical-model and compatibility decisions, cleanup-residue
+classification, batch-candidate evidence, dispatch handoff evidence, and
+deletion-status consumption while forbidding workflow-state ownership.
+
+Expected effect: exceptional cleanup investigation remains available without a
+parallel planning system or a route around the command and program owners.
+
 ### Architecture Program Runway intake cutover
 
 Problem: `architecture-program-runway` still advertised broad finding intake,

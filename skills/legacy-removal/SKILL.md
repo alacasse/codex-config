@@ -7,31 +7,108 @@ description: Agent-facing evidence and scoping support for exceptional legacy-re
 
 Agent-facing discovery and scoping support before concrete execution planning.
 It is not a normal human-facing cleanup command or a ritual to run during every
-batch. It can act as a domain evidence producer, an explicitly selected program owner,
-or a handoff source for another planning workflow. Decide that role
-before writing
-durable ledgers.
+batch. It is a domain evidence producer and handoff source for an owning
+planning workflow. It never becomes a program owner or a parallel planning
+system.
 
-By default, Legacy Removal produces legacy findings, evidence, compatibility
+Legacy Removal produces legacy findings, evidence, compatibility
 decisions, batch candidates, and dispatch handoff material. It does not create
-durable program queue state, selected-batch state, or competing program ledgers
-unless project instructions, local overlays, or active planning docs explicitly
-name Legacy Removal as the owning program workflow.
+or mutate program ledgers, program queue state, selected-batch state, dispatch
+state, concrete runways, execution state, lifecycle state, or closeout state.
+
+## Contract
+
+```yaml
+schema: skill-contract/v1
+identity:
+  name: legacy-removal
+  audience: evidence-skill
+producer:
+  toolchain_generation: candidate
+  toolchain_commit: 7821435c452d7e97e76b422981b569a5878831c6
+  schema_version: skill-contract/v1
+purpose: >-
+  Produce evidence-backed legacy classifications, canonical-model and
+  compatibility decisions, cleanup-residue decisions, batch-candidate evidence,
+  and dispatch handoff evidence without owning workflow state.
+owns:
+  decisions:
+    - legacy_evidence_classification
+    - canonical_model_decision
+    - compatibility_decision
+    - cleanup_residue_classification
+  durable_facts:
+    - legacy_evidence
+    - compatibility_evidence
+    - cleanup_residue_evidence
+reads:
+  required:
+    - target_surface
+    - project_instructions
+    - external_compatibility_commitments
+  conditional:
+    - planning_state_diagnostic
+    - existing_program_context
+    - dead_surface_evidence
+writes:
+  - legacy_evidence_artifact
+  - legacy_evidence_handoff
+requires:
+  mechanisms:
+    - planning-artifacts
+    - planning-state
+  evidence_skills: []
+delegates: []
+forbids:
+  - finding_intake
+  - program_ledger_mutation
+  - batch_selection
+  - queue_state
+  - selected_dispatch
+  - selected_dispatch_mutation
+  - dispatch_creation
+  - runway_creation
+  - execution_state
+  - implementation
+  - commit
+  - program_lifecycle_state
+  - program_lifecycle_reconciliation
+  - program_lifecycle_mutation
+  - same_batch_closeout_reconciliation
+  - queue_state_mutation
+  - closeout_state
+  - planning_state_mutation
+outputs:
+  one_of:
+    - legacy_evidence_report
+    - canonical_model_evidence
+    - compatibility_decision_evidence
+    - cleanup_residue_evidence
+    - batch_candidate_evidence
+    - dispatch_handoff_evidence
+    - blocked_evidence_result
+stops_when:
+  - missing_scope_or_evidence
+  - unresolved_external_compatibility
+  - workflow_state_mutation_requested
+  - owning_program_workflow_not_identified
+references: []
+```
 
 When project instructions, local overlays, or active planning docs select
 Planning Artifact Layout v1, read `../planning-artifacts/SKILL.md` before
-writing or reorganizing the legacy ledger, selected dispatch packet, runner
-artifacts, generated outputs, archives, or active-state files.
+placing a legacy evidence artifact or handoff. Do not create or reorganize
+program ledgers, selected dispatch packets, runner artifacts, archives, or
+active-state files.
 
-Use `../planning-state/SKILL.md` before creating, consuming, validating, or
-reorganizing Layout v1 legacy-removal ledgers, selected dispatch packets, or
-active planning state. Invoke its Diagnostic-First Pickup Interface and carry
-forward only compact Planning State Diagnostic facts such as planning root,
-current and validate status, selected paths, queued batch, blockers, redirect
-warnings, next safe action, and project policy. Planning-state diagnostics do
-not decide the old model, canonical model, evidence value, compatibility
-decision, cleanup-residue classification, or whether legacy code is kept or
-removed.
+Use `../planning-state/SKILL.md` before consuming Layout v1 program context that
+constrains an evidence handoff. Invoke its Diagnostic-First Pickup Interface and
+carry forward only compact Planning State Diagnostic facts such as planning
+root, current and validate status, selected paths, queued batch, blockers,
+redirect warnings, next safe action, and project policy. These facts are
+read-only context. Planning-state diagnostics do not decide the old model,
+canonical model, evidence value, compatibility decision, cleanup-residue
+classification, or whether legacy code is kept or removed.
 
 Read `../planning-state/references/projection-reporting.md` before broad
 historical scans for supported legacy-removal history/reporting questions such
@@ -114,9 +191,9 @@ temporary transition period with a removal condition.
    existing plans, and public compatibility commitments.
    If Planning Artifact Layout v1 is active, use `planning-state` `current` and
    `validate` diagnostics before reading active ledgers or selected dispatch
-   state as authoritative. For next-task, next-batch, selected-dispatch, or
-   queued-work requests, follow `planning-state` Diagnostic-First Pickup before
-   broader exploration.
+   state as authoritative. If the request is actually for next-task,
+   next-batch, selected-dispatch, or queued-work action, stop and route it to
+   the appropriate command owner after `planning-state` Diagnostic-First Pickup.
    For supported history/reporting questions not answered by active-state
    diagnostics, use planning-state projection-reporting guidance and
    policy-compatible `report-projection` command output as the normal route
@@ -133,19 +210,17 @@ temporary transition period with a removal condition.
 5. Decide compatibility and cleanup residue item by item. `keep` and `defer`
    require named reasons; `defer` also requires a removal condition; `remove`
    requires evidence that the behavior is obsolete or internal.
-6. Group findings into batch candidates only far enough to expose scope,
-   sequencing, risk, validation class, and likely slice shape. If this effort is
-   not explicitly the owning program workflow, keep those candidates as source
-   evidence for the program owner instead of writing queue state.
-7. Create dispatch handoff material only when one next batch is clear. Write
-   selected-batch state only when Legacy Removal is explicitly the owning
-   program workflow; otherwise hand the candidate to the program owner for
-   selection.
+6. Group findings into batch-candidate evidence only far enough to expose
+   scope, sequencing, risk, validation class, and likely slice shape. Hand the
+   candidates to the program owner; never write selection or queue state.
+7. Create dispatch handoff evidence only when one next candidate is clear.
+   Hand it to the program owner without creating or mutating a selected
+   dispatch packet.
 8. Hand off:
-   - Use `architecture-program-runway` when the ledger spans multiple findings,
-     seams, risk classes, or possible batches.
-   - Use `batch-runway create-spec` when exactly one clear selected batch is
-     ready for a concrete 3-5 slice runway spec.
+   - Use `architecture-program-runway` when the evidence report contains
+     multiple findings, seams, risk classes, or possible batch candidates.
+   - Let the program owner invoke `batch-runway create-spec` only after it
+     accepts and selects a bounded handoff.
 
 ## Test preservation rules
 
@@ -227,57 +302,45 @@ answer:
   entrypoint, or human contract decision
 
 Convert useful `dead-surface-audit` conclusions into compact legacy-removal
-ledger rows. Do not paste the full dead-surface report unless a blocker decision
-requires it.
+evidence entries. Do not paste the full dead-surface report unless a blocker
+decision requires it.
 
 Ambiguous dead-surface results are not automatic deletion. If the audit finds
 possible external compatibility but no clear contract, record it as a
 Compatibility decision, Open question, `human-contract-decision`, or deferred
 finding for `architecture-program-runway`.
 
-## Ledger Rules
+## Evidence Artifact Rules
 
-Write a durable Markdown evidence ledger only when the target repository has a
+Write a durable Markdown evidence report only when the target repository has a
 planning location and the current role calls for durable evidence. If no
 planning location is defined, ask or use the smallest repo-local location
 consistent with project instructions.
 
-Under Planning Artifact Layout v1, a legacy-removal effort that spans more than
-one finding, decision, or possible batch should own a program directory only
-when Legacy Removal has been explicitly selected as the program owner:
+Under Planning Artifact Layout v1, do not create a program directory, program
+ledger, selected batch directory, or active-state file. Place a legacy evidence
+artifact only at an evidence path supplied by project policy or the existing
+program owner. If neither supplies one, ask for a target or keep the evidence in
+the current report instead of inventing planning topology.
 
-```text
-<planning-root>/programs/<program-slug>/LEDGER.md
-```
+Preserve legacy evidence and dispatch handoff material, then let
+`architecture-program-runway` own program grouping, prioritization, selection,
+queue state, dispatch state, lifecycle state, and closeout reconciliation.
 
-When Legacy Removal is only an evidence producer or handoff source, do not
-create or update program queue state, selected-batch state, or parallel program
-ledgers. Preserve the legacy evidence and dispatch handoff material, then let
-`architecture-program-runway` reconcile grouping, prioritization, and selected
-batch state.
-
-When one next batch is clear and Legacy Removal is the selected program owner,
-put its selected dispatch packet under:
-
-```text
-<program-root>/batches/<batch-id>-<batch-slug>/dispatch.md
-```
-
-Do not create loose legacy ledgers or dispatch packets directly under generic
-`plans/` or `planning/` unless project instructions explicitly allow that
-layout.
-
-Before consuming or updating Layout v1 ledger or dispatch state, use
+Before consuming Layout v1 program context, use
 `planning-state` diagnostics to confirm the current root, program, queued batch,
 selected dispatch, blockers, redirects, and safe next action. Treat those
-diagnostics as active-state intake only; keep legacy-removal findings and
-compatibility decisions evidence-based.
+diagnostics as read-only context only; do not update any of those facts. Keep
+legacy-removal findings and compatibility decisions evidence-based.
 
-Read `planning-state` target-policy or projection guidance only when the task
-needs durable JSON state, generated state fixtures, SQLite projections,
-generated projection reports, or target-policy proof. Ordinary Markdown ledger
-or dispatch work should not invent durable state locations, generated outputs,
-projection databases, cache paths, or downstream project defaults.
+Read `planning-state` target-policy or projection guidance only when read-only
+planning-state or canonical program-ledger context for an evidence report or
+handoff depends on durable JSON state, generated state fixtures, SQLite
+projections, generated projection reports, or target-policy proof. Legacy
+Removal consumes that context and produces evidence reports and dispatch
+handoff evidence only. It does not create or mutate program-ledger or selected-
+dispatch artifacts, durable state locations, generated outputs, projection
+databases, cache paths, or downstream project defaults.
 Projection reports are planning-state context only. They may help locate
 pending work, missing closeout evidence, or batch evidence, but they do not
 classify a legacy surface and do not prove liveness or deadness, justify keeping
@@ -289,7 +352,7 @@ evidence needed to justify decisions.
 Use this structure:
 
 ```markdown
-# Legacy Removal Ledger: <title>
+# Legacy Removal Evidence Report: <title>
 
 ## Purpose
 
@@ -303,6 +366,7 @@ Use this structure:
 - Current goal:
 - Source request or review:
 - Related plans/specs/ledgers:
+- Canonical program ledger (read-only):
 - Planning root:
 - Program root:
 - Run artifact root:
@@ -326,12 +390,12 @@ Use this structure:
 | E2 | test evidence | inspection | path::test_name | topology-assertion | Test asserts old import shape only | Candidate for deletion or rewrite |
 | E3 | test-retained surface | dead-surface-audit | path or symbol | migration-retention/topology-assertion | Tests assert import shape only | Candidate for deletion or test migration |
 
-## Legacy findings
+## Legacy findings evidence
 
-| ID | Status | Severity | Location | Legacy pattern | Test class | Why it matters | Recommended action |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| L1 | Open | blocker/major/minor | path or symbol | shim/alias/fallback/dual-path/legacy-test/stale-name/etc. | n/a or behavioral/compatibility-contract/migration-retention/topology-assertion | impact on conceptual surface area | delete/rename/update-test/defer/keep-with-justification |
-| L2 | Open | major | path or symbol | test-retained legacy surface | topology-assertion | Old surface is kept alive by shape tests only | delete surface and update/delete tests |
+| ID | Severity | Location | Legacy pattern | Test class | Why it matters | Recommended action |
+| --- | --- | --- | --- | --- | --- | --- |
+| L1 | blocker/major/minor | path or symbol | shim/alias/fallback/dual-path/legacy-test/stale-name/etc. | n/a or behavioral/compatibility-contract/migration-retention/topology-assertion | impact on conceptual surface area | delete/rename/update-test/defer/keep-with-justification |
+| L2 | major | path or symbol | test-retained legacy surface | topology-assertion | Old surface is kept alive by shape tests only | delete surface and update/delete tests |
 
 ## Canonical model decision
 
@@ -366,19 +430,14 @@ old-vocabulary taxonomy, aliases, facades, or temporary scaffolding.
 | --- | --- | --- | --- | --- | --- | --- |
 | LR-B1 | <goal> | L1, L2 | L3 | focused/unit/harness/docs/manual | low/medium/high | 3-5 compact slice ideas |
 
-## Dispatch handoff or selected dispatch packet
+## Dispatch handoff evidence
 
-Use this section as dispatch handoff material for the program owner when one
-next batch is clear and Legacy Removal is not the explicit program owner. Do
-not treat it as queued or selected program state until the program owner accepts
-or selects it.
-
-Use it as a selected dispatch packet only when Legacy Removal is explicitly the
-program owner, or when another program owner has already accepted or selected
-the handoff.
+Use this section as evidence for the program owner when one next batch
+candidate is clear. It is never queued or selected program state. The program
+owner decides whether to accept it and creates any selected dispatch packet.
 
 - Batch ID:
-- Source ledger path:
+- Source evidence report path:
 - Included finding IDs:
 - Explicitly deferred finding IDs:
 - Goal:
@@ -393,9 +452,10 @@ the handoff.
 
 - <question that blocks safe dispatch, if any>
 
-## Closeout rules
+## Suggested lifecycle disposition evidence
 
-When concrete implementation work closes, update each finding as:
+When concrete implementation evidence becomes available, report a suggested
+disposition for each finding. The program owner applies lifecycle state:
 
 - Closed: removed with validation/review evidence
 - Prepared: tests, seams, or caller evidence improved but legacy remains
@@ -403,24 +463,24 @@ When concrete implementation work closes, update each finding as:
 - Superseded: made irrelevant by another accepted change
 - Blocked: cannot proceed without a named decision or dependency
 
-Do not mark a legacy-removal finding `Closed` while unclassified cleanup
-residue remains. Remove it, keep it with a named reason, or defer it with a
-removal condition and follow-up owner.
+Do not recommend `Closed` while unclassified cleanup residue remains. Recommend
+removal, retention with a named reason, or deferral with a removal condition and
+follow-up owner.
 ```
 
 ## Relationship To Other Runway Skills
 
-Use `architecture-program-runway` after this skill when the legacy ledger needs
+Use `architecture-program-runway` after this skill when the legacy evidence report needs
 program-level grouping, prioritization, sequencing, or multi-batch closeout
-reconciliation. The legacy ledger is source evidence; the architecture-program
+reconciliation. The legacy evidence report is source evidence; the architecture-program
 ledger owns the batch queue and selected dispatch state.
 
-Use `batch-runway create-spec` after this skill only when Legacy Removal is the
-explicit program owner and the selected dispatch packet identifies exactly one
-bounded batch, or when another program owner has already accepted or selected
-the dispatch. The Batch Runway spec owns execution contracts, slice boundaries,
-validation profile details, delegation, commits, and closeout workflow.
+Do not invoke `batch-runway create-spec` or create a selected dispatch from this
+skill. After the program owner accepts and selects the evidence handoff, that
+owner may invoke Batch Runway. The Batch Runway spec owns execution contracts,
+slice boundaries, validation profile details, delegation, commits, and closeout
+workflow.
 
 Do not duplicate full Architecture Program Runway or Batch Runway contracts in
-the legacy ledger. Preserve only enough evidence and decision context for those
-skills to consume safely.
+the legacy evidence report. Preserve only enough evidence and decision context
+for those skills to consume safely.

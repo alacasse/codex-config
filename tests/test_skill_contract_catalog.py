@@ -175,6 +175,96 @@ def test_add_to_ledger_and_architecture_program_contracts_have_one_intake_owner(
     }
 
 
+def test_legacy_removal_contract_is_evidence_only() -> None:
+    result = validate_skill_contracts(
+        (REPO_ROOT / "skills/legacy-removal/SKILL.md",),
+        toolchain_root=REPO_ROOT,
+        external_mechanism_policy=ExternalMechanismPolicy(
+            allowed_mechanisms=frozenset({"planning-artifacts", "planning-state"})
+        ),
+        complete_catalog=True,
+    )
+
+    assert result.is_valid
+    contract = result.contracts[0].contract
+    assert contract["identity"] == {
+        "name": "legacy-removal",
+        "audience": "evidence-skill",
+    }
+    assert set(contract["owns"]["decisions"]) == {
+        "legacy_evidence_classification",
+        "canonical_model_decision",
+        "compatibility_decision",
+        "cleanup_residue_classification",
+    }
+    assert contract["owns"]["durable_facts"] == [
+        "legacy_evidence",
+        "compatibility_evidence",
+        "cleanup_residue_evidence",
+    ]
+    assert contract["reads"] == {
+        "required": [
+            "target_surface",
+            "project_instructions",
+            "external_compatibility_commitments",
+        ],
+        "conditional": [
+            "planning_state_diagnostic",
+            "existing_program_context",
+            "dead_surface_evidence",
+        ],
+    }
+    assert set(contract["writes"]) == {
+        "legacy_evidence_artifact",
+        "legacy_evidence_handoff",
+    }
+    assert contract["requires"] == {
+        "mechanisms": ["planning-artifacts", "planning-state"],
+        "evidence_skills": [],
+    }
+    assert contract["delegates"] == []
+    assert {
+        "program_ledger_mutation",
+        "batch_selection",
+        "queue_state",
+        "queue_state_mutation",
+        "selected_dispatch",
+        "selected_dispatch_mutation",
+        "dispatch_creation",
+        "runway_creation",
+        "execution_state",
+        "program_lifecycle_state",
+        "program_lifecycle_reconciliation",
+        "program_lifecycle_mutation",
+        "same_batch_closeout_reconciliation",
+        "closeout_state",
+        "planning_state_mutation",
+    } <= set(contract["forbids"])
+    assert contract["outputs"] == {
+        "one_of": [
+            "legacy_evidence_report",
+            "canonical_model_evidence",
+            "compatibility_decision_evidence",
+            "cleanup_residue_evidence",
+            "batch_candidate_evidence",
+            "dispatch_handoff_evidence",
+            "blocked_evidence_result",
+        ]
+    }
+    assert {
+        "batch_candidate_evidence",
+        "dispatch_handoff_evidence",
+        "compatibility_decision_evidence",
+        "cleanup_residue_evidence",
+    } <= set(contract["outputs"]["one_of"])
+    assert contract["stops_when"] == [
+        "missing_scope_or_evidence",
+        "unresolved_external_compatibility",
+        "workflow_state_mutation_requested",
+        "owning_program_workflow_not_identified",
+    ]
+
+
 def test_rejects_owned_decisions_and_writes_that_are_also_forbidden(
     tmp_path: Path,
 ) -> None:

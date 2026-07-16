@@ -312,7 +312,7 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         )
         self.assertGreaterEqual(
             version_tuple(manifest["features"]["legacy-removal"]["version"]),
-            version_tuple("1.0.4"),
+            version_tuple("1.0.9"),
         )
 
     def test_specialized_discovery_skills_do_not_create_parallel_planning_systems(
@@ -323,40 +323,74 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
 
         self.assertIn("evidence producer", legacy)
         self.assertIn("handoff source", legacy)
-        self.assertIn("explicitly selected program owner", legacy)
-        self.assertIn("before writing\ndurable ledgers", legacy)
-        self.assertIn("does not create\ndurable program queue state", legacy)
-        self.assertIn("selected-batch state", legacy)
-        self.assertIn("parallel program\nledgers", legacy)
-        self.assertIn("program owner for", legacy)
-        self.assertIn("selection", legacy)
+        self.assertIn("never becomes a program owner", legacy)
+        self.assertIn("parallel planning\nsystem", legacy)
+        self.assertIn("never write selection or queue state", legacy)
+        self.assertIn("never queued or selected program state", legacy)
+        self.assertNotIn("explicitly selected program owner", legacy)
+        self.assertNotIn("owning program workflow", legacy)
 
         self.assertIn("evidence producer only", dead_surface)
         self.assertIn("does not create durable program ledgers", dead_surface)
         self.assertIn("selected-batch\nstate", dead_surface)
         self.assertIn("evidence\nhandoff material", dead_surface)
 
-    def test_legacy_removal_gates_selected_dispatch_and_batch_runway_handoff(
+    def test_legacy_removal_hands_off_evidence_without_selecting_or_creating_runways(
         self,
     ) -> None:
         legacy = self.read("skills/legacy-removal/SKILL.md")
 
-        self.assertNotIn(
-            "Use this section only if one next batch is clear.",
+        self.assertIn("## Dispatch handoff evidence", legacy)
+        self.assertIn("It is never queued or selected program state", legacy)
+        self.assertIn("The program\nowner decides whether to accept it", legacy)
+        self.assertIn("Do not invoke `batch-runway create-spec`", legacy)
+        self.assertIn("program owner accepts and selects the evidence handoff", legacy)
+        self.assertNotIn("## Dispatch handoff or selected dispatch packet", legacy)
+        self.assertNotIn("Use it as a selected dispatch packet", legacy)
+
+    def test_legacy_removal_evidence_artifact_rejects_self_owned_state_synonyms(
+        self,
+    ) -> None:
+        legacy = self.read("skills/legacy-removal/SKILL.md")
+        evidence_artifact = self.section_between(
             legacy,
+            "## Evidence Artifact Rules",
+            "## Relationship To Other Runway Skills",
         )
-        self.assertNotIn(
-            "Use `batch-runway create-spec` after this skill only when the "
-            "selected dispatch\npacket identifies exactly one bounded batch.",
-            legacy,
+        normalized_artifact = " ".join(evidence_artifact.split())
+
+        for state_synonym in (
+            "Legacy Removal Ledger",
+            "evidence ledger",
+            "legacy-removal ledger rows",
+            "legacy ledger",
+            "| ID | Status |",
+            "| L1 | Open |",
+        ):
+            with self.subTest(state_synonym=state_synonym):
+                self.assertNotIn(state_synonym, evidence_artifact)
+
+        for self_owned_work in (
+            "when the ledger spans",
+            "ordinary markdown ledger or dispatch work",
+            "write the ledger",
+            "update the ledger",
+            "create a dispatch packet",
+        ):
+            with self.subTest(self_owned_work=self_owned_work):
+                self.assertNotIn(self_owned_work, normalized_artifact.lower())
+
+        self.assertIn("# Legacy Removal Evidence Report", evidence_artifact)
+        self.assertIn("Canonical program ledger (read-only)", evidence_artifact)
+        self.assertIn("The program owner applies lifecycle state", evidence_artifact)
+        self.assertIn(
+            "read-only planning-state or canonical program-ledger context",
+            normalized_artifact,
         )
-        self.assertIn("dispatch handoff material for the program owner", legacy)
-        self.assertIn("Do\nnot treat it as queued or selected program state", legacy)
-        self.assertIn("Use it as a selected dispatch packet only when", legacy)
-        self.assertIn("explicitly the\nprogram owner", legacy)
-        self.assertIn("already accepted or selected", legacy)
-        self.assertIn("Use `batch-runway create-spec` after this skill only when", legacy)
-        self.assertIn("another program owner has already accepted or selected", legacy)
+        self.assertIn(
+            "produces evidence reports and dispatch handoff evidence only",
+            normalized_artifact,
+        )
 
     def test_test_quality_review_is_review_support_not_primary_planning_command(
         self,

@@ -17,7 +17,7 @@ the program ledger above individual Batch Runway specs.
 - <Boundary that should remain stable>
 - <Public contract that must not change unless explicitly reclassified>
 
-Optional for active legacy-removal programs:
+Optional legacy-removal evidence consumed by this program owner:
 
 ```yaml
 legacy_removal_policy:
@@ -248,7 +248,7 @@ so the program ledger stays readable.
   finding remains.
 - Mark a finding `Closed` only after implementation, validation, review, and
   ledger closeout are complete.
-- For active legacy-removal runways, do not mark a finding `Closed` while
+- For program-owned runways carrying legacy-removal evidence, do not mark a finding `Closed` while
   unclassified legacy, unreconciled temporary migration guards, or hidden
   deferred legacy remain.
 - Keep unrelated deferred findings visible.
@@ -288,5 +288,5 @@ After a concrete runway finishes:
 6. Update the batch queue row to `Completed` or explain remaining work.
 7. Select or refresh the next `Ready` batch only if evidence supports it.
 8. If a runner drove the work, add a compact goal-run evaluation receipt.
-9. For active legacy-removal runways, record removed surfaces, deferred
+9. For program-owned runways carrying legacy-removal evidence, record removed surfaces, deferred
    surfaces, temporary migration guards that remain, and required follow-up.

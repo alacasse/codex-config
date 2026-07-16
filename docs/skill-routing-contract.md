@@ -28,6 +28,9 @@ Keep human-facing command decisions separate from runtime mechanics:
   status, and same-batch closeout reconciliation.
 - `batch-runway` owns concrete runway specs, slice ledgers, validation/review
   loops, completed-slice archives, and commit receipt mechanics.
+- `legacy-removal` owns legacy evidence and classification only. Its batch
+  candidates and dispatch handoffs are evidence for a program owner, never
+  program, queue, dispatch, runway, lifecycle, execution, or closeout state.
 
 Command-owner skills may reference those runtime/support owners, but should not
 duplicate their procedure details.
@@ -116,5 +119,7 @@ deprecated merely because command-owner skills exist.
 - Using `port-by-contract` as a general skill rewrite excuse before contracts
   exist.
 - Preserving old runtime names forever by accident.
+- Treating `legacy-removal` evidence or handoff material as selected work or
+  active planning state.
 - Marking the migration complete without stating whether it is
   interface-complete or architecture-complete.

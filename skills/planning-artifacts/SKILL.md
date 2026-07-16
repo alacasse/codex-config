@@ -373,12 +373,13 @@ After migration, validate by reading the files, not by trusting the move:
 
 For `legacy-removal`:
 
-- Write the legacy ledger under a program root when the cleanup spans more than
-  one finding, decision, or possible batch.
-- Put the selected dispatch packet in the selected batch directory when one next
-  batch is clear.
-- Keep evidence inventories compact in the ledger; put generated outputs and
-  runner artifacts outside planning.
+- Place a legacy evidence artifact under an existing program root only when
+  project policy or the program owner supplies that evidence target.
+- Keep dispatch handoff material as evidence for the program owner; do not
+  create a selected batch directory, selected dispatch packet, queue state,
+  lifecycle state, runway, or closeout.
+- Keep evidence inventories compact; put generated outputs outside planning and
+  never create runner artifacts from an evidence-only workflow.
 
 For `architecture-program-runway`:
 
