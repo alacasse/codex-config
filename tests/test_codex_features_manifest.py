@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts import install_codex_config
+from scripts.skill_contract import validate_skill_contracts
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -689,17 +690,33 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                     expected_links[skill_name],
                 )
 
-                skill_text = (REPO_ROOT / f"skills/{skill_name}/SKILL.md").read_text(
-                    encoding="utf-8"
-                )
+                skill_path = REPO_ROOT / f"skills/{skill_name}/SKILL.md"
+                skill_text = skill_path.read_text(encoding="utf-8")
                 ui_text = (
                     REPO_ROOT / f"skills/{skill_name}/agents/openai.yaml"
                 ).read_text(encoding="utf-8")
 
                 self.assertIn(f"name: {skill_name}", skill_text)
-                self.assertIn("## Stops", skill_text)
-                self.assertIn("## Agent-Facing Support", skill_text)
-                self.assertIn("docs/skill-routing-contract.md", skill_text)
+                if "## Stops" not in skill_text:
+                    result = validate_skill_contracts(
+                        (skill_path,),
+                        toolchain_root=REPO_ROOT,
+                        complete_catalog=False,
+                    )
+                    self.assertTrue(
+                        result.is_valid,
+                        "\n".join(str(diagnostic) for diagnostic in result.diagnostics),
+                    )
+                    self.assertEqual(len(result.contracts), 1)
+                    contract = result.contracts[0].contract
+                    identity = contract["identity"]
+                    self.assertIsInstance(identity, dict)
+                    self.assertEqual(identity["name"], skill_name)
+                    self.assertEqual(identity["audience"], "human-command-owner")
+                    self.assertTrue(contract["stops_when"])
+                else:
+                    self.assertIn("## Agent-Facing Support", skill_text)
+                    self.assertIn("docs/skill-routing-contract.md", skill_text)
                 self.assertIn(f"Use ${skill_name}", ui_text)
 
         self.assertIn("## Routing Table", routing_contract)

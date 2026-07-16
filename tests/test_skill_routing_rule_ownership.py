@@ -4,6 +4,8 @@ import re
 import unittest
 from pathlib import Path
 
+from scripts.skill_contract import validate_skill_contracts
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ROUTING_CONTRACT = REPO_ROOT / "docs/skill-routing-contract.md"
@@ -102,19 +104,39 @@ class SkillRoutingRuleOwnershipTests(unittest.TestCase):
 
     def test_command_owner_skills_keep_human_facing_routing_decisions(self) -> None:
         routing = normalized(ROUTING_CONTRACT)
-        add_to_ledger = normalized(ADD_TO_LEDGER)
         plan_batch = normalized(PLAN_BATCH)
         work_batch = normalized(WORK_BATCH)
+        add_to_ledger_result = validate_skill_contracts(
+            (ADD_TO_LEDGER,),
+            toolchain_root=REPO_ROOT,
+            complete_catalog=False,
+        )
 
         self.assertIn(
             "command-owner skill that turns fresh user-provided work/finding text",
             routing,
         )
-        self.assertIn(
-            "It records selected work into the canonical program ledger",
-            add_to_ledger,
+        self.assertTrue(
+            add_to_ledger_result.is_valid,
+            "\n".join(
+                str(diagnostic)
+                for diagnostic in add_to_ledger_result.diagnostics
+            ),
         )
-        self.assertIn("it does not select a batch, create a dispatch/runway", add_to_ledger)
+        self.assertEqual(len(add_to_ledger_result.contracts), 1)
+        add_to_ledger = add_to_ledger_result.contracts[0].contract
+        self.assertEqual(add_to_ledger["identity"]["name"], "add-to-ledger")
+        self.assertIn("intake_eligibility", add_to_ledger["owns"]["decisions"])
+        self.assertIn("atomic_planning_finding_mutation", add_to_ledger["writes"])
+        self.assertTrue(
+            {
+                "batch_selection",
+                "dispatch_creation",
+                "runway_creation",
+                "implementation",
+            }
+            <= set(add_to_ledger["forbids"])
+        )
 
         self.assertIn("owns the human \"create the next specs batch\" decision", routing)
         self.assertIn("Command Contract", plan_batch)
