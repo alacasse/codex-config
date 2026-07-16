@@ -7,7 +7,7 @@ split across two separately planned and executed batches to bound coordinator
 context and create a deliberate reassessment point.
 
 Do not create a `CCFG-24.5` finding. Batch identity and finding identity are
-separate. Batch A may leave CCFG-24 `Prepared`; only Batch B may close it.
+separate. Batch A left CCFG-24 `Prepared`; only Batch B may close it.
 
 ## Superseded Planning
 
@@ -23,91 +23,91 @@ in `batches/ccfg-24a-intake-owner-preparation/execution-report.md` and commits
 
 Batch ID: `ccfg-24a-intake-owner-preparation`.
 
-Batch A owns only the expand/preparation side:
+Status: completed by
+`batches/ccfg-24a-intake-owner-preparation/closeout.md` in candidate range
+`b38570b..3b0941a`.
 
-1. implement and candidate-install the real `add-to-ledger/v1` owner over the
+Batch A completed the expand/preparation side:
+
+1. implemented and candidate-installed the real `add-to-ledger/v1` owner over the
    unchanged apply-only store;
-2. support only `plain_text` and `github_issue` in CCFG-24A v1;
-3. bind relevant CCFG-23 intake scenarios to that installed owner;
-4. measure implementation, validation, context, and retained-surface cost.
+2. bounded v1 to `plain_text` and `github_issue`;
+3. bound the four CCFG-23 intake scenarios to that installed owner;
+4. recorded validation, runtime, diff, and retained-surface evidence.
 
-Batch A explicitly defers generic tickets, file ingestion, cross-source merge,
-fuzzy duplicate detection, fixture deletion, APR narrowing, `legacy-removal`
-narrowing, final cutover, and successor planning.
-
-Old intake paths remain available as temporary rollback and comparison surfaces,
-but they must not remain the primary acceptance path after scenario migration.
-
-Batch A closeout must:
-
-- mark CCFG-24 `Prepared`, not `Closed`;
-- clear selected, queued, and active same-batch state;
-- record candidate commits and installed feature links;
-- record direct and scenario validation;
-- record duration, context when available, changed-file count, line delta, diff
-  size, and test-process count;
-- classify every retained APR, `legacy-removal`, and CCFG-23 intake surface with
-  caller, reason, owner, and removal condition;
-- stop without selecting or creating Batch B.
+Batch A closed with CCFG-24 `Prepared`, cleared same-batch state, and selected no
+successor.
 
 ## Mandatory Reassessment
 
-After Batch A closeout, a fresh explicit `plan-batch` request must review only
-compact closeout evidence:
+The explicit CCFG-24B planning request consumed the compact Batch A closeout and
+confirmed the smallest credible cutover. It did not reopen deferred adapter
+families or assume the superseded five-slice runway remained authoritative.
 
-- the implemented command-to-script boundary;
-- the two implemented source mappings;
-- the create/update/no-op/block matrix;
-- implementation and test size;
-- focused and exact-acceptance runtime;
-- retained migration surfaces;
-- any implementation discovery that changes the smallest credible cutover.
+The controlling retained-surface decisions are:
 
-The follow-up may narrow, split, or block remaining work. It must not assume the
-superseded five-slice runway remains proportionate or automatically add deferred
-adapter families.
+- delete `_new_finding` after a fresh zero-caller check;
+- migrate the temporary exact-69-scenario topology/count assertion to behavioral
+  completeness evidence;
+- retain installed-owner scenario adapters only where they are real harness
+  callers and do not duplicate owner semantics;
+- remove APR intake, normalization, and normal ledger-mutation authority while
+  preserving CCFG-25 planning and CCFG-26 execution/closeout responsibilities;
+- remove the `legacy-removal` state-owner escape hatch while preserving evidence,
+  compatibility decisions, residue classification, and deletion vocabulary;
+- reconcile final metadata, routing, installation, tests, and COR-007 acceptance.
 
 ## Batch B: Intake Ownership Cutover
 
-Expected but unselected batch ID: `ccfg-24b-intake-ownership-cutover`.
+Batch ID: `ccfg-24b-intake-ownership-cutover`.
 
-Batch B has no dispatch or runway. A later explicit `plan-batch` request may
-create it only after the mandatory reassessment.
+Status: queued.
 
-Its expected contract side is:
+- Dispatch:
+  `batches/ccfg-24b-intake-ownership-cutover/dispatch.md`
+- Runway:
+  `batches/ccfg-24b-intake-ownership-cutover/runway.md`
 
-1. remove replaced CCFG-23 intake helpers and topology-preserving tests after a
-   current caller inventory;
-2. remove APR intake, normalization, normal ledger-mutation authority, and the
-   `add-to-ledger -> architecture-program-runway` runtime dependency while
-   preserving CCFG-25 planning and CCFG-26 closeout responsibilities;
-3. make `legacy-removal` evidence-only while preserving classification and
-   deletion/dead-surface vocabulary;
-4. reconcile final manifest, routing, docs, candidate installation, migration
-   guards, and complete COR-007 acceptance.
+Batch B owns only the final cutover side:
 
-Only Batch B may close CCFG-24. CCFG-25 remains blocked until that closeout.
+1. remove proven obsolete CCFG-23 intake migration residue and topology-only
+   tests;
+2. remove APR intake, normalization, normal ledger-mutation authority, and any
+   remaining `add-to-ledger -> architecture-program-runway` dependency;
+3. make `legacy-removal` evidence-only;
+4. reconcile manifest, routing, docs, candidate installation, migration guards,
+   and complete COR-007 acceptance.
+
+Batch B must preserve APR grouping, selection, queue, dispatch, planning,
+execution-support, closeout, and reconciliation responsibilities reserved for
+CCFG-25/26. It must preserve `legacy-removal` evidence and classification
+semantics.
+
+Batch B may close CCFG-24 only when `add-to-ledger/v1` is the sole intake and
+canonical mutation-decision owner, the store remains apply-only, replacement
+behavior is green, candidate installation converges, and the final closeout
+selects no successor.
+
+CCFG-25 remains blocked until that closeout.
 
 ## Context And Orchestration Boundary
 
-The split intentionally creates two fresh execute coordinator contexts.
+The split creates two fresh execution coordinator contexts.
 
-- Batch A must not carry cleanup or cutover instructions it cannot execute.
-- Batch B must consume compact Batch A closeout evidence instead of rereading the
-  Batch A runway, worker transcripts, or broad repository history by default.
-- Active CCFG-24A execution should read current state, its dispatch/runway, the
-  compact decision amendment, and the active slice only.
-
-Both batches retain strict cross-checkout safety: stable control before cutover,
-candidate-only implementation and install, no canonical planning mutation by
-candidate processes, fresh validation at startup and every handoff, and no
-successor selection during same-batch closeout.
+- Batch B consumes the compact Batch A closeout inventory by default.
+- It does not reread Batch A worker transcripts or broad redesign history unless
+  a named contradiction requires it.
+- Every startup and handoff uses strict cross-checkout validation and exact write
+  scope.
+- Candidate processes cannot mutate canonical planning state.
+- Stable Codex-home ownership and default generation remain unchanged.
+- Same-batch closeout stops without successor selection.
 
 ## Status Effect
 
-- CCFG-24: `Pending`, controlled by queued Batch A.
+- CCFG-24: `Pending`, controlled by queued Batch B.
 - Original `ccfg-24-intake-ownership-transfer`: `superseded`.
 - Failed CCFG-24A attempt: historical evidence only.
-- Current `ccfg-24a-intake-owner-preparation`: queued for execution.
-- Expected Batch B: unselected and without dispatch or runway.
+- `ccfg-24a-intake-owner-preparation`: completed.
+- `ccfg-24b-intake-ownership-cutover`: queued.
 - CCFG-25 through CCFG-29: unchanged and unselected.
