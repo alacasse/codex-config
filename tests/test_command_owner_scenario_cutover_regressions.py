@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import sys
 from collections.abc import Mapping
 from pathlib import Path
@@ -10,6 +11,8 @@ from typing import Any
 
 import pytest
 import yaml
+
+import scripts.command_owner_scenarios as harness
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -50,6 +53,34 @@ def _evidence(workspace: Path, scenario_id: str) -> Mapping[str, object]:
     )
     assert isinstance(loaded, dict)
     return loaded
+
+
+def _fixture_bytes(root: Path) -> dict[str, bytes]:
+    return {
+        path.relative_to(root).as_posix(): path.read_bytes()
+        for path in root.rglob("*")
+        if path.is_file() and "__pycache__" not in path.parts
+    }
+
+
+def test_first_live_evaluation_is_observed_before_cache_reuse(
+    tmp_path: Path,
+) -> None:
+    fixture_root = tmp_path / "fixtures"
+    shutil.copytree(
+        FIXTURES,
+        fixture_root,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+    validation = harness.validate_catalog(fixture_root)
+    assert validation.catalog is not None
+    before = _fixture_bytes(fixture_root)
+
+    first = harness.evaluate_catalog(validation.catalog)
+    second = harness.evaluate_catalog(validation.catalog)
+
+    assert first == second
+    assert _fixture_bytes(fixture_root) == before
 
 
 def test_adapter_rejects_foreign_cached_project_module(
