@@ -8,7 +8,8 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/runway.md`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-33-acceptance-execution-simplification/closeout.md`
 - Run artifact location: `None selected`
@@ -31,8 +32,8 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-24 through CCFG-29.
-- Pending ledger rows: none.
+  CCFG-25 through CCFG-29.
+- Pending ledger row: CCFG-24.
 - Closed ledger rows: CCFG-18 through CCFG-23 and CCFG-30 through CCFG-33.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -56,8 +57,10 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Queued dispatch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/runway.md`
+- Queued dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/dispatch.md`
 - Abandoned-state correction archived:
   `docs/plans/archive/abandoned/ccfg-8-ledger-dispatch-rule-dedupe/closeout.md`
 - Latest completed batch: `ccfg-33-acceptance-execution-simplification`
@@ -70,9 +73,9 @@
 
 ## Next Safe Action
 
-CCFG-33 is closed and no batch is selected or queued. CCFG-24 is now
-dependency-eligible but remains open and unselected. A later explicit
-`plan-batch` request owns any successor selection.
+Execute only the queued CCFG-24 runway through a later explicit `work-batch`
+request. Do not replace this runway, select another batch, or infer successor
+work from its eventual closeout.
 
 ## Stop Conditions
 
@@ -130,6 +133,10 @@ dependency-eligible but remains open and unselected. A later explicit
   process, process-local evaluation reuse, pure reporting, removal of
   per-function source-hash authority, unchanged known-red manifest diagnostics,
   or before/after cost evidence.
-- Stop if CCFG-24 is selected without a later explicit `plan-batch` request.
+- Stop if CCFG-24 execution moves semantic intake decisions into
+  `ledger-store/v1`, leaves APR or `legacy-removal` as a normal intake owner,
+  removes CCFG-25 planning or CCFG-26 closeout responsibilities, mutates stable
+  installed state, or lets the candidate mutate canonical planning state.
+- Stop if CCFG-24 closeout selects or prepares any successor dispatch or runway.
 - Stop if CCFG-24 through CCFG-29 retain replaced CCFG-23 fixtures or tests
   without a named caller, reason, owner, and removal condition.
