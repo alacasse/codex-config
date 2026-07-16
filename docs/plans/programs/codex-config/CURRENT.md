@@ -30,8 +30,8 @@
 ## Open Ledger
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-24 through CCFG-29.
+- Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11,
+  CCFG-24 through CCFG-29, and CCFG-33.
 - Pending ledger rows: none.
 - Closed ledger rows: CCFG-18 through CCFG-23 and CCFG-30 through CCFG-32.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
@@ -47,6 +47,8 @@
   `docs/plans/programs/codex-config/findings/command-owner-redesign-bootstrap-decisions.md`
 - Live planning and execution carry-forward amendment:
   `docs/plans/programs/codex-config/findings/command-owner-redesign-planning-execution-carry-forward.md`
+- Live CCFG-33 harness simplification finding:
+  `docs/plans/programs/codex-config/findings/github-issue-56-ccfg-23-harness-simplification.md`
 - Archived APR source:
   `docs/plans/archive/program-ledgers/architecture-program-runner-LEDGER.md`
 - Archived PST source:
@@ -70,9 +72,10 @@
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. A later explicit `plan-batch` request
-may select bounded work from the canonical ledger. Do not infer CCFG-24 or any
-other successor from CCFG-23 closeout.
+No batch is selected, queued, or active. The next recommended command-owner
+redesign work is CCFG-33, but it remains unselected until a later explicit
+`plan-batch` request. CCFG-24 must not be selected before CCFG-33 closes. Do not
+infer selection, dispatch, or execution from this recommendation.
 
 ## Stop Conditions
 
@@ -85,8 +88,8 @@ other successor from CCFG-23 closeout.
   new explicit `plan-batch` request.
 - Stop if planning would write outside the canonical stable planning repository.
 - Stop if candidate code or helpers would control canonical state before cutover.
-- Stop if work would repeat command-owner redesign intake or create new
-  identities instead of amending CCFG-18 through CCFG-29.
+- Stop if work would repeat command-owner redesign intake or create replacement
+  identities for CCFG-18 through CCFG-29 instead of amending the existing rows.
 - Stop if work treats CCFG-19 as active after its completed closeout.
 - Stop if work treats CCFG-20 as active after its completed closeout.
 - Stop if work would select from archived APR/PST ledgers instead of the canonical
@@ -118,3 +121,14 @@ other successor from CCFG-23 closeout.
   prompt prose, stable-only paths, historical helper names, or real cutover
   state to turn green.
 - Stop if CCFG-23 closeout selects or prepares any successor dispatch or runway.
+- Stop if CCFG-33 planning reopens CCFG-23, weakens COR-006 behavior, preserves
+  reporter-owned nested pytest, or treats test topology as an external contract.
+- Stop if CCFG-33 implementation restores removed code solely because an import,
+  identity, topology, or migration-retention test fails.
+- Stop if CCFG-33 adds a permanent compatibility wrapper, alias, cache layer, or
+  schema only to preserve the old harness topology.
+- Stop if CCFG-33 closeout lacks a net-negative harness/test diff, exact-commit
+  acceptance receipt, old/new performance evidence, or selects a successor.
+- Stop if CCFG-24 is selected before CCFG-33 closes.
+- Stop if CCFG-24 through CCFG-29 preserve a replaced CCFG-23 adapter or fixture
+  without a named caller, reason, owner, and removal condition.
