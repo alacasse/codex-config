@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
-import importlib.util
+import importlib
 import json
 import os
 import shutil
@@ -54,6 +54,7 @@ CANONICAL_REPOSITORY_ROOT = Path(
     )
 )
 INSTALLED_INTAKE_OWNER = CANDIDATE_CODEX_HOME / "scripts/add_to_ledger.py"
+INSTALLED_PLANNING_CONTRACT = CANDIDATE_CODEX_HOME / "scripts/planning_contract.py"
 
 FixtureCallable = Callable[[Mapping[str, object]], Mapping[str, object] | None]
 
@@ -361,7 +362,7 @@ def _run_intake_retry_and_no_op(
         ledger_path,
         [_plain_intake_input("fixture retry source", title="Retry intake")],
     )
-    owner = _installed_intake_owner_module(repo_root)
+    owner = _canonical_intake_owner_module(repo_root)
     prepared = owner._prepare_operation(request)
     try:
         owner._apply_prepared_operation(
@@ -443,7 +444,7 @@ def _run_intake_blocked_matrix(
     ] == ["input.duplicate_source_conflict"]
     assert ledger_path.read_bytes() == before_unsupported
 
-    owner = _installed_intake_owner_module(repo_root)
+    owner = _canonical_intake_owner_module(repo_root)
     stale_request = _intake_request(
         repo_root,
         workspace,
@@ -491,29 +492,42 @@ def _run_intake_blocked_matrix(
 
 def _require_installed_intake_owner(repo_root: Path) -> Path:
     expected = (repo_root / "scripts/add_to_ledger.py").resolve(strict=True)
+    expected_store = (repo_root / "scripts/planning_contract.py").resolve(strict=True)
     if not INSTALLED_INTAKE_OWNER.is_symlink():
         raise AssertionError(f"installed intake owner is not a link: {INSTALLED_INTAKE_OWNER}")
     if INSTALLED_INTAKE_OWNER.resolve(strict=True) != expected:
         raise AssertionError("installed intake owner does not resolve to candidate source")
+    if not INSTALLED_PLANNING_CONTRACT.is_symlink():
+        raise AssertionError(
+            f"installed planning contract is not a link: {INSTALLED_PLANNING_CONTRACT}"
+        )
+    if INSTALLED_PLANNING_CONTRACT.resolve(strict=True) != expected_store:
+        raise AssertionError(
+            "installed planning contract does not resolve to candidate source"
+        )
     return INSTALLED_INTAKE_OWNER
 
 
-def _installed_intake_owner_module(repo_root: Path) -> Any:
+def _canonical_intake_owner_module(repo_root: Path) -> Any:
     path = _require_installed_intake_owner(repo_root)
-    name = "_candidate_installed_add_to_ledger"
-    cached = sys.modules.get(name)
+    expected = path.resolve(strict=True)
+    cached = sys.modules.get("scripts.add_to_ledger")
     if cached is not None:
-        return cached
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"cannot load installed intake owner at {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    if Path(cast(str, module.__file__)).resolve() != (
-        repo_root / "scripts/add_to_ledger.py"
+        cached_path = Path(cast(str, getattr(cached, "__file__", ""))).resolve()
+        if cached_path != expected:
+            raise ImportError(
+                f"cached scripts.add_to_ledger resolves to {cached_path}, expected {expected}"
+            )
+    module = importlib.import_module("scripts.add_to_ledger")
+    if Path(cast(str, module.__file__)).resolve() != expected:
+        raise ImportError("canonical intake owner module has foreign provenance")
+    store = importlib.import_module("scripts.planning_contract")
+    if Path(cast(str, store.__file__)).resolve() != (
+        repo_root / "scripts/planning_contract.py"
     ).resolve():
-        raise ImportError("installed intake owner module has foreign provenance")
+        raise ImportError("canonical planning store module has foreign provenance")
+    if module.apply_ledger_decision is not store.apply_ledger_decision:
+        raise ImportError("canonical intake owner does not use canonical planning store")
     return module
 
 
