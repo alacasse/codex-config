@@ -1,21 +1,21 @@
-# CCFG-24A Blocked Attempt Supersession
+# CCFG-24A Failed Attempt Supersession
 
-The 2026-07-16 CCFG-24A execution attempt remains historical evidence at:
+The 2026-07-16 CCFG-24A attempt stopped before implementation and must not be
+resumed.
 
-- `execution-report.md`
-- `blocked-dispatch.md`
-- `blocked-runway.md`
+Historical evidence is preserved by:
 
-Those artifacts describe a real Slice 1 stop before implementation and must not
-be resumed. They are superseded as executable planning by the current
-`dispatch.md` and `runway.md` in this directory.
+- `execution-report.md`;
+- queued planning commit `33f7adfd1a5948f9176f8b2d1ddc47040cebb6e3`;
+- blocker-state commit `c0870240c5a7de5f37a6dc1a8a314c3eeed60647`;
+- report commit `199f4a9cd86edf7e80a13b174b162ce6798c18af`.
 
-The blocker was resolved by the accepted contract clarification at
-`../../findings/ccfg-24a-add-to-ledger-v1-decision-amendment.md`: DEC-037 binds
-the exact prepared apply request, while `add-to-ledger/v1` owns upstream source
-semantics and derives the store key internally. `ledger-store/v1` remains
-unchanged.
+Git history is the authoritative copy of the failed dispatch and runway. No
+active duplicate `blocked-dispatch.md` or `blocked-runway.md` is retained.
 
-Planning State may point only to the current `runway.md`. Any direct request to
-execute `blocked-runway.md`, reuse its three-slice ledger, or restart its
-decision slice must block and redirect to the current runway.
+The blocker is resolved by
+`../../findings/ccfg-24a-add-to-ledger-v1-decision-amendment.md`. Current
+executable planning is `dispatch.md` and `runway.md` in this directory.
+
+Planning State may point only to the current `runway.md`. A request to recreate
+or resume the old decision slice must block.
