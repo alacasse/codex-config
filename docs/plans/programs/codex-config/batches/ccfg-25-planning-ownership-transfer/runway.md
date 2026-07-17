@@ -2,20 +2,20 @@
 
 ## Execution Status
 
-- Planning transition: `active; Slice 2 completed; Slice 3 pending`
-- Artifact role: active same-batch runway with two committed slices
+- Planning transition: `active; Slice 3 blocked by required-green BasedPyright command`
+- Artifact role: active same-batch runway with a reviewed Slice 3 static commit and blocked final validation
 - Selected dispatch: `dispatch.md`
 - Queue currentness authority: Planning State `current` and `validate`
-- Candidate Slice 2 commit:
-  `12f70727f7496e2aa2d5fff9b748ee97e19e63a2`
-- Resolved blocker history: `blocker-report.md`
+- Candidate Slice 3 static convergence commit:
+  `89671eceb9103039e7e6660e73837827c167a3a1`
+- Current blocker report: `slice-3-blocker-report.md`
 
-Slices 1 and 2 are complete. The bounded amendments and command-only amendment
-passed exact independent planning review; the Change Allowance correction,
-separate structural skill validations, full required-green matrix, specialist
-reviews, and final independent implementation review are clean. Slice 2 is
-committed as `12f70727f7496e2aa2d5fff9b748ee97e19e63a2`. Slice 3 remains pending
-in this same active batch; no closeout or successor was created.
+Slices 1 and 2 are complete. Slice 3 static convergence is focused-green and
+independently reviewed at `89671eceb9103039e7e6660e73837827c167a3a1`.
+Final validation is blocked before installation because the exact bare
+`.venv/bin/basedpyright` required-green command reproduces a repository-wide
+pre-existing red baseline outside the CCFG-25 changed files and allowed semantic
+scope. No installation, exact acceptance, closeout, or successor was created.
 
 ## Purpose
 
@@ -589,7 +589,7 @@ Every test-changing slice receives delta-only `test-quality-review`. Slices 1 an
 |---|---|---|---|---|
 | 1. Implement installed `plan-batch` owner | Completed | `5aa5add1251d1e4b3630a9678fdec244949cf691` | Clean | Installed owner, exact planning-quality gates, DEC-038 recovery, isolated install, import-topology, and delta-only test-quality proof are green. |
 | 2. Remove displaced planning ownership | Completed | `12f70727f7496e2aa2d5fff9b748ee97e19e63a2` | Clean | Exact reviewed binary diff `815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e`; 181 tests and 241 subtests passed, both single-document structural validations passed, specialist reviews and final independent review clean. |
-| 3. Converge installation and final acceptance | Pending | None | Pending | Clean install, exact acceptance, diagnostics, and final reviews. |
+| 3. Converge installation and final acceptance | Blocked | `89671eceb9103039e7e6660e73837827c167a3a1` | Static clean; final pending | Core pytest: 244 passed and 18 subtests; filtered gates, 69-scenario catalog, structural checks, Ruff, and diff-check green. Bare BasedPyright: baseline 314 errors, current 311, zero diagnostics in CCFG-25 changed files. Installation and exact acceptance not run. |
 
 ## Execution Startup Evidence
 

@@ -10,7 +10,7 @@
 - Active Batch Runway spec path:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch path or ID: `None`
-- Active batch execution status: `Slice 2 completed; Slice 3 pending`
+- Active batch execution status: `Slice 3 blocked by required-green repository-wide BasedPyright baseline`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Run artifact location: `None selected`
@@ -70,7 +70,7 @@
 - Active runway:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch: `None`
-- Active batch execution status: `Slice 2 completed; Slice 3 pending`
+- Active batch execution status: `Slice 3 blocked by required-green repository-wide BasedPyright baseline`
 - Source dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
 - Clean planning review:
@@ -95,10 +95,12 @@
 
 ## Next Safe Action
 
-Stop at the completed Slice 2 receipt. Candidate commit
-`12f70727f7496e2aa2d5fff9b748ee97e19e63a2` contains the exact independently
-reviewed diff; Slice 3 remains pending in the same active CCFG-25 runway. Do not
-execute Slice 3, create closeout, or select a successor in this flight.
+Await an explicit bounded validation-only amendment for the Slice 3 bare
+`.venv/bin/basedpyright` required-green command. It fails with 314 errors at the
+exact batch baseline and 311 at candidate commit
+`89671eceb9103039e7e6660e73837827c167a3a1`, with zero diagnostics in files
+changed by CCFG-25. Do not edit read-only owners, weaken policy silently, run
+installation or exact acceptance, create closeout, or select a successor.
 
 ## Stop Conditions
 

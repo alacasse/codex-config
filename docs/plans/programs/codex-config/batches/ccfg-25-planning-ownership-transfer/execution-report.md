@@ -4,17 +4,37 @@
 
 ```yaml
 batch: ccfg-25-planning-ownership-transfer
-status: slice-2-completed-slice-3-pending
+status: slice-3-blocked-required-green-basedpyright-contract
 completed_slice: 2
-active_slice: null
-candidate_head: 12f70727f7496e2aa2d5fff9b748ee97e19e63a2
+active_slice: 3
+candidate_head: 89671eceb9103039e7e6660e73837827c167a3a1
 stable_planning_head_before_report: 24f5ab9b66bb0e0060df5b8483597cbb5c5146d9
 candidate_worktree: clean
 candidate_diff_sha256: 815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e
 stable_worktree_scope: same-batch planning evidence only
-independent_implementation_review: clean
+independent_implementation_review: static-clean-final-pending
 successor_selected: false
 ```
+
+## Slice 3 Blocked Validation Receipt
+
+- Static convergence correction: `README.md` now names the independent
+  `batch_planner` and `batch_plan_reviewer` roles; exact reviewed diff SHA-256
+  `a0ec3393cd845a4fdb841a89468eea83f37bc140e3cfc10f833e53d17190602a`.
+- Candidate commit: `89671eceb9103039e7e6660e73837827c167a3a1`.
+- Required core tests: `244 passed, 18 subtests passed`; filtered manifest
+  `21 passed, 1 deselected, 210 subtests`; filtered deletion/projection
+  `7 passed, 18 deselected, 20 subtests`; 69 scenarios valid; structural skill
+  checks, Ruff, and range diff-check green.
+- Known-red diagnostics reproduced exactly: one CCFG-26 manifest failure and six
+  preclassified deletion-vocabulary failures.
+- Blocking gate: bare `.venv/bin/basedpyright` exits 1 with 311 errors and 16
+  warnings. The exact `91179e84` baseline exits 1 with 314 errors and 16 warnings.
+  CCFG-25 introduces zero diagnostics; all current diagnostics are in ten
+  unchanged modules, including read-only or out-of-scope owners.
+- Stop decision: do not edit those owners or silently change validation policy.
+  Installation, exact acceptance, final range reviews, and closeout remain
+  unstarted. See `slice-3-blocker-report.md`.
 
 The bounded same-slice amendments culminated in unchanged dispatch SHA-256
 `8fabe265e62b91251370c2733e771291605761caad3844f523c3be8f3990b5c1`
