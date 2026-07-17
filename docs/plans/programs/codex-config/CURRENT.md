@@ -8,8 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
-- Active batch execution status: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-26-execution-closeout-ownership-transfer/runway.md`
+- Active batch execution status: `queued`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
 - Run artifact location: `None selected`
@@ -32,8 +33,8 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-26 through CCFG-29.
-- Pending ledger row: `None`.
+  CCFG-27 through CCFG-29.
+- Pending ledger row: CCFG-26, controlled by the queued dispatch and runway.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-33.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -69,8 +70,9 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Active batch execution status: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-26-execution-closeout-ownership-transfer/runway.md`
+- Active batch execution status: `queued`
 - Superseded CCFG-24 planning evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/superseded.md`
 - Superseded CCFG-24A blocked attempt:
@@ -91,10 +93,10 @@
 
 ## Next Safe Action
 
-CCFG-25 is closed. Stop without selecting, dispatching, queuing, refreshing, or
-preparing a successor. A later explicit `plan-batch` request may select exactly
-one bounded ledger row; until then CCFG-26 through CCFG-29 remain open and
-unselected.
+CCFG-26 is the sole queued batch. Stop before implementation. A later explicit
+`work-batch` invocation may execute exactly
+`docs/plans/programs/codex-config/batches/ccfg-26-execution-closeout-ownership-transfer/runway.md`.
+Do not select, dispatch, queue, refresh, or prepare CCFG-27 through CCFG-29.
 
 ## Stop Conditions
 
@@ -134,7 +136,7 @@ unselected.
 - Stop if CCFG-24 through CCFG-29 retain replaced CCFG-23 fixtures or tests
   without a named caller, reason, owner, and removal condition.
 - Stop if another dispatch or runway is selected, queued, activated, or created
-  while CCFG-25 is queued or active.
+  while CCFG-26 is queued or active.
 - Stop if CCFG-25 introduces a new planning schema, store, queue transaction,
   lifecycle state, public command, persistent draft store, helper behavior,
   runner protocol, or compatibility layer.
@@ -148,3 +150,14 @@ unselected.
   compatibility identities through CCFG-25. CCFG-27 owns their migration/removal
   decision; final physical cleanup is due no later than CCFG-29.
 - Stop if CCFG-25 closeout selects, dispatches, queues, or prepares CCFG-26.
+- Stop if pickup bypasses the queued CCFG-26 runway or treats its reviewed
+  planning snapshot as a live execution lease.
+- Stop if CCFG-26 restores Git, ancestry, path sets, fingerprints, or dirty files
+  as semantic batch-lifecycle or queue authority.
+- Stop if CCFG-26 changes or removes the serialized `select-dispatch`,
+  `create-spec`, `execute`, or `closeout` identities reserved for CCFG-27,
+  physically deletes legacy-owner directories reserved for CCFG-28, or changes
+  the temporary bridge reserved for CCFG-29.
+- Stop if CCFG-26 introduces a new command, script, helper, schema, store,
+  transaction, lifecycle state, persistent execution store, compatibility
+  layer, or runner protocol.
