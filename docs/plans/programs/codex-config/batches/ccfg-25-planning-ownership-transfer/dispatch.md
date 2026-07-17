@@ -3,246 +3,206 @@
 ## Selection
 
 - Batch ID: `ccfg-25-planning-ownership-transfer`
-- Batch state: `queued`
+- Batch state: `selected`
+- Planning gate: `blocked-before-queue`
 - Covered finding: CCFG-25, Transfer Planning Ownership to `plan-batch`
 - Finding state entering the batch: `Open`
-- Accepted source: COR-008 at
-  `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`
-- Planning-quality amendment:
-  `../../findings/ccfg-25-planning-quality-amendment.md`
-- Planning/execution carry-forward:
-  `../../findings/command-owner-redesign-planning-execution-carry-forward.md`
-- Planning-contract evidence:
-  `../ccfg-21-planning-artifact-contracts/closeout.md`
-- Behavioral-harness evidence:
-  `../ccfg-23-behavioral-scenario-harness/closeout.md`
-- Intake-cutover evidence:
-  `../ccfg-24b-intake-ownership-cutover/closeout.md`
-- Current runway: `runway.md`
+- Source program ledger: `../../LEDGER.md`
+- Expected runway path: `runway.md`
+- Current runway status: non-executable amended draft
 
-## Selection Result
+CCFG-24 is closed and the explicit user request selects exactly CCFG-25. CCFG-26
+through CCFG-29 remain deferred by dependency. Queue mutation is blocked until the
+strict planning context is validated with the installed helper and an independent
+planning reviewer returns `clean` against the exact amended draft.
 
-CCFG-24 is closed, the DEC-038 selection transaction is resolved, and no selected,
-queued, or active batch exists. The explicit user request authorizes selection of
-exactly CCFG-25. CCFG-26 through CCFG-29 remain deferred by dependency.
+## Authoritative Sources
 
-This dispatch was produced by the predecessor planning workflow because the target
-`plan-batch` owner, `batch_planner`, and `batch_plan_reviewer` do not exist yet.
-The batch must bootstrap those boundaries without preserving the predecessor
-planning owners as permanent dependencies.
+- COR-008 at `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`.
+- `../../findings/ccfg-25-planning-quality-amendment.md`.
+- `../../findings/command-owner-redesign-planning-execution-carry-forward.md`.
+- `../ccfg-21-planning-artifact-contracts/closeout.md`.
+- `../ccfg-23-behavioral-scenario-harness/closeout.md`.
+- `../ccfg-24b-intake-ownership-cutover/closeout.md`.
 
 ## Goal
 
 Make `plan-batch` the sole owner of selection, scope shaping, dispatch, runway,
 risk, approvals, validation-profile choice, and queue mutation. The default agent
-must invoke a registered `batch_planner` and a separate read-only
-`batch_plan_reviewer` directly, then apply the existing DEC-038 planning
-transaction only after proportionality, currentness, approval, and independent
-review gates are satisfied.
+must directly invoke a registered `batch_planner` and an independent read-only
+`batch_plan_reviewer`, then apply the existing DEC-038 transaction only after
+currentness, proportionality, approval, exact-draft review, and lineage gates pass.
 
 Remove Architecture Program Runway planning ownership and Batch Runway
-`create-spec` semantic ownership in the same batch. Stop before implementation of
-the newly queued runway and before CCFG-26 selection.
+`create-spec` ownership in the same batch. Preserve every execution and closeout
+responsibility reserved for CCFG-26. Stop before implementation of any newly
+queued runway and before successor selection.
 
 ## Authoritative Invariants
 
 - The default `plan-batch` command agent is the only queue mutator.
 - `batch_planner` produces and corrects a non-executable draft only.
-- `batch_plan_reviewer` is independently invoked, read-only, and cannot edit,
-  select, queue, implement, or spawn agents.
-- The planner cannot invoke, frame evidence for, or approve the reviewer.
+- `batch_plan_reviewer` is directly and independently invoked, read-only, and
+  cannot edit, select, queue, implement, delegate, or spawn agents.
+- The planner cannot invoke, select evidence for, frame, or approve the reviewer.
 - Every new or materially amended runway receives independent planning review.
-- Queue mutation consumes the existing CCFG-21 artifact contracts and DEC-038
-  transaction; no parallel store, transaction, queue, command, or executable draft
+- Queue mutation consumes the existing CCFG-21 schemas, artifact writers, and
+  DEC-038 transaction; no parallel store, queue, transaction, or executable draft
   format is introduced.
-- Planning begins from the minimum viable change. Source-proposed mechanics are
-  evidence, not mandatory topology unless explicitly approved as a contract.
-- Slice count is derived from semantic boundaries. Filler decomposition is merged
-  or rejected.
-- A stale draft, unresolved user decision, blocked review, or unapproved residual
-  complexity remains non-executable and cannot mutate queue state.
-- Planning State `current` and `validate` remain the semantic source of selected,
-  queued, and active currentness.
-- Planning stops before implementation and closeout never selects a successor.
+- Planning begins from the minimum viable change and derives slice count from
+  semantic boundaries.
+- Stale drafts, unresolved user decisions, blocked review, and unapproved residual
+  complexity remain non-executable.
+- Planning State `current` and `validate` remain the semantic currentness authority.
+- Planning stops before implementation; closeout selects no successor.
 
 ## Proportionality
 
 ```yaml
 proportionality:
   observed_failure: >-
-    plan-batch is only a thin human-facing router; APR still owns selection,
-    dispatch, and queue preparation, while Batch Runway owns create-spec planning.
-    The candidate has no installed planner/reviewer gate or command-owned use of
-    the resolved selection transaction.
+    plan-batch is a thin router while Architecture Program Runway still owns
+    selection, dispatch, and queue preparation and Batch Runway owns create-spec
+    planning. The candidate lacks an installed command owner and independent
+    planner/reviewer gate over the resolved DEC-038 transaction.
   invariants:
     - one human-facing plan-batch command owner
     - one queue mutator
     - independent planner and reviewer roles
     - existing planning artifact schemas and DEC-038 transaction
     - topology-independent behavioral proof
-    - stop before implementation
     - same-work removal of replaced planning owners
+    - preservation of all CCFG-26 execution and closeout behavior
+    - stop before implementation and successor selection
   minimum_viable_change: >-
-    Add one installed plan-batch command boundary that accepts current ledger and
-    Planning State facts, invokes the two registered planning roles, validates
-    proportionality and review results, and applies the existing selection
-    transaction; then remove the displaced APR and Batch Runway planning routes.
+    Add one installed plan-batch command boundary that consumes current ledger and
+    Planning State facts, directly invokes the two registered planning roles,
+    validates proportionality and exact-draft review results, applies the existing
+    selection transaction, and then removes the displaced APR and Batch Runway
+    planning routes.
   proposed_change: >-
-    Implement the minimum owner boundary, migrate behavioral scenarios and callers
-    to it, remove legacy planning ownership, and converge candidate installation
-    and COR-008 acceptance.
+    Implement that owner boundary, migrate planning scenarios and existing callers
+    to it, remove only displaced planning ownership, and converge candidate
+    installation and COR-008 acceptance.
   additions_beyond_minimum:
-    - >-
-      Two registered agent TOMLs are required by the accepted independent-role
-      contract; they introduce no new lifecycle or persistent planning store.
-    - >-
-      One command-owned deterministic script boundary is required to validate
-      collaborator results and invoke the existing transaction without moving
-      semantic decisions into planning-contract storage.
+    - addition: two registered agent TOMLs
+      prevents: planner self-review and ambiguous role authority
+      why_minimum_is_insufficient: >-
+        The accepted contract requires independently registered planner and reviewer
+        roles; prose or one shared role cannot prove independent invocation.
+    - addition: one deterministic scripts/plan_batch.py boundary
+      prevents: semantic decisions leaking into the apply-only store and queue writes before exact review
+      why_minimum_is_insufficient: >-
+        The default agent needs one mechanically testable boundary for result,
+        lineage, approval, and DEC-038 input validation without copying store logic.
+    - addition: transfer the unchanged cross-checkout helper installation link to the existing planning-state feature
+      prevents: plan-batch retaining Batch Runway solely to receive a mechanical helper
+      why_minimum_is_insufficient: >-
+        Both plan-batch and work-batch already require Planning State. Leaving the
+        link with Batch Runway preserves a forbidden planning dependency; duplicating
+        it or adding a new shared feature would create more topology.
+    - addition: rewire the existing architecture program runner planning phase to the public plan-batch command
+      prevents: the runner remaining a second selection and create-spec owner
+      why_minimum_is_insufficient: >-
+        Removing APR prose alone leaves a live caller bypass. Reusing the existing
+        public command path removes that bypass without adding a protocol or planner.
   simpler_alternatives_rejected:
-    - >-
-      Prose-only skill changes cannot prove queue ownership, stale-draft refusal,
-      fault recovery, or installed-owner behavior.
-    - >-
-      Keeping APR or Batch Runway as a hidden planning service would violate the
-      zero-legacy-owner acceptance condition.
-    - >-
-      A separate preparation slice for agent scaffolding was rejected because the
-      roles have no independently supported outcome outside the complete owner
-      boundary and would create transient machinery.
+    - Prose-only edits cannot prove installed ownership, stale-draft refusal, fault recovery, or queue gating.
+    - Keeping APR or Batch Runway as a hidden planning service violates the zero-legacy-owner acceptance boundary.
+    - Duplicating the helper link or adding a shared bridge feature creates more installation ownership than moving the unchanged link once.
+    - A separate planner/reviewer scaffolding slice has no independently supported outcome.
   verdict: proportionate
 ```
 
-No residual material complexity requires user approval at planning time. Any new
-state, schema, public mode, compatibility layer, or second transaction discovered
-during execution is outside this verdict and blocks for explicit replanning.
+No residual material complexity currently requires user approval. Any new state,
+schema, public mode, compatibility layer, second transaction, or materially larger
+runner/helper redesign is outside this verdict and blocks for replanning.
 
-## Explicitly Included
+## Included Scope
 
-1. One installed `plan-batch` owner boundary that:
-   - consumes current Planning State facts and one existing ledger row or current
-     selected state;
-   - directly invokes registered `batch_planner` and `batch_plan_reviewer` roles;
-   - validates exact draft/review provenance, proportionality, user approvals,
-     stale lineage, and unresolved decisions;
-   - applies the existing planning artifact writers and DEC-038 transaction only
-     after the gate is clean;
-   - produces at most one runnable queued runway and stops before implementation.
-2. Target-behavior migration for all CCFG-23 planning and planning-quality
-   scenarios, including partial-failure recovery and exact replay.
-3. Removal of APR grouping, ranking, selection, dispatch, and queue-preparation
-   ownership and every normal `plan-batch` dependency on it.
-4. Removal of Batch Runway `create-spec` mode and semantic planning ownership while
-   preserving CCFG-26 execution, recovery, validation, review, finalization, and
-   closeout support.
-5. Candidate feature wiring, installed agent registration, focused docs/tests, and
-   final COR-008 plus planning-quality acceptance.
+- Complete installed `plan-batch` command owner, deterministic transaction gate,
+  and registered planner/reviewer roles.
+- Exact selected-dispatch and draft/review lineage, proportionality, approval,
+  currentness, stale-draft, correction-loop, and unresolved-decision gates.
+- Target planning and planning-quality scenarios bound to the installed owner.
+- Removal of APR grouping, ranking, prioritization, selection, dispatch, runway,
+  and queue-preparation ownership.
+- Removal of Batch Runway `create-spec` mode and semantic planning ownership.
+- Existing architecture program runner planning-phase rewiring to `plan-batch`.
+- One unchanged helper-link ownership transfer to Planning State, with no helper
+  semantic change.
+- Candidate feature/agent installation and complete COR-008 acceptance.
 
-## Explicitly Deferred
+## Deferred And Preserved Scope
 
-- CCFG-26 execution and closeout ownership transfer.
-- Removal of Batch Runway `execute-spec` or APR same-batch closeout/reconciliation
-  support still owned by CCFG-26.
-- Default-generation switch, cutover rehearsal, bridge deletion, candidate merge,
-  and CCFG-27 through CCFG-29.
-- Any new planning schema, transaction version, persistent draft store,
-  proportionality artifact type, complexity score, retry identity, or lifecycle
-  state.
-- Any new intake capability or change to `add-to-ledger/v1` or `ledger-store/v1`.
-- Any successor dispatch or runway.
+CCFG-26 remains unselected and owns the future transfer of all proceed/stop,
+recovery, delegation, validation acceptance, implementation review, commit,
+receipt, finalization, closeout, and same-batch reconciliation decisions.
 
-## Batch Kind And Slice Shape
+Until CCFG-26 closes, this batch must preserve:
 
-- Batch kind: `mixed-risk`.
-- Slice 1: `migration` — implement and candidate-install the complete
-  `plan-batch` owner, registered planning roles, independent review gate, and
-  DEC-038 queue transaction; bind target planning scenarios to the installed
-  owner.
-- Slice 2: `contract-narrowing` — remove APR planning ownership and Batch Runway
-  `create-spec` ownership, migrate remaining callers and tests, and preserve only
-  CCFG-26 responsibilities.
-- Slice 3: `migration` — converge feature wiring, isolated installation, exact
-  behavioral acceptance, docs, and final COR-008 evidence.
+- APR closeout and same-batch program reconciliation support;
+- Batch Runway proceed/stop, slice delegation, recovery, validation, review,
+  commit and receipt handling, execution-ledger maintenance, finalization,
+  closeout support, and cross-checkout execution safety;
+- `work-batch`, execution agents, execution contracts, and same-batch no-successor
+  behavior.
 
-`1 -> 2`: Slice 1 creates a valid installed replacement owner with green behavioral
-proof before public planning ownership is physically removed. This is the required
-rollback and deletion-evidence boundary.
+Also deferred:
 
-`2 -> 3`: Slice 2 establishes the final owner topology. Slice 3 uses a different
-validation environment and acceptance boundary: clean candidate installation,
-full exact-commit scenario evidence, manifest convergence, and range-wide review.
+- CCFG-27 through CCFG-29, default-generation switching, candidate merge, cutover
+  rehearsal, and bridge deletion;
+- planning schema, DEC-038, `ledger-store/v1`, Planning State semantic, intake, or
+  projection changes;
+- any new command, lifecycle state, persistent draft store, retry identity,
+  compatibility layer, or successor artifact.
 
-## Approval Gates
+## Slice Shape
 
-- Slice 1 must not queue fixture work until planner/reviewer result contracts,
-  independent invocation evidence, proportionality, stale-draft refusal, and exact
-  DEC-038 recovery are green.
-- Slice 2 may narrow or delete a legacy planning surface only after a current
-  caller inventory names its replacement, preserves every CCFG-26 responsibility,
-  and proves target scenarios no longer depend on APR, Batch Runway, `create-spec`,
-  or fixture-only planning ownership.
-- Any newly discovered unclassified deletion, contract narrowing, schema change,
-  public mode, or compatibility bridge blocks the affected slice for replanning.
+- Slice 1 — `migration`: implement and install the complete replacement owner and
+  bind target planning scenarios while legacy owners remain available only as a
+  rollback baseline.
+- Slice 2 — `contract-narrowing`: remove displaced APR and Batch Runway planning
+  ownership, rewire the existing runner, and preserve the complete CCFG-26
+  inventory above.
+- Slice 3 — `migration`: converge the final installation and exact acceptance.
 
-## Cross-Checkout Context
+`1 -> 2`: Slice 1 creates an independently exercisable installed planning path and
+rollback point before contract narrowing.
 
-- Interface: `cross-checkout-context/v1`
-- Stable toolchain and canonical planning repository:
-  `/home/alacasse/projects/codex-config`
-- Candidate implementation repository:
-  `/home/alacasse/projects/codex-config-command-owner-redesign`
-- Stable Codex home: `/home/alacasse/.codex`
-- Candidate Codex home: `/home/alacasse/.codex-command-owner-redesign`
-- Stable planning baseline: `31d228d4ef9b94e2ccad0f5260670593ea9469f9`
-- Candidate implementation baseline:
-  `91179e84c7cfed666be224575db7000ca0ea01b3`
+`2 -> 3`: Slice 2 creates the final semantic topology; Slice 3 validates a clean
+installation and exact final commit through a distinct environment/review gate.
 
-Every execution startup and delegated handoff requires a fresh ready strict
-preflight and exact write scope. Candidate code and installed candidate agents
-must not mutate canonical planning state.
+## Queue Gate
 
-## Validation And Review
+Queue mutation is forbidden until all of the following are true:
 
-- Runway density: `full-runway` because this changes command ownership, public
-  workflow routing, installed agents, and destructive legacy boundaries.
-- Validation profile:
-  `skills/batch-runway/references/validation-profiles/project-harness-production.md`
-- Every slice receives independent `runway_reviewer` review.
-- Every test-changing slice receives delta-only `test-quality-review`.
-- Slices 1 and 2 receive `import_topology_reviewer` review.
-- Slice 2 and the final range receive targeted `dead-surface-audit` evidence.
-- Final acceptance must use the CCFG-33 single evidence-pytest process and exact
-  candidate commit.
+1. the installed `/home/alacasse/.codex/scripts/cross_checkout_context.py` helper
+   validates the complete strict payload and canonical planning root recorded in
+   the amended runway;
+2. the selected dispatch identity and content hash remain current;
+3. the independent planning reviewer receives this selected dispatch, source
+   evidence, user constraints, Planning State facts, proportionality record, and
+   exact amended draft and returns `clean`;
+4. no unresolved user decision or unapproved residual complexity remains; and
+5. DEC-038 atomically transitions the same selected scope to exactly one queued
+   runway.
 
-## Closeout Contract
-
-Successful closeout must:
-
-- prove all COR-008 and planning-quality acceptance keys;
-- mark CCFG-25 `Closed`;
-- leave `plan-batch` as the only planning decision and queue owner;
-- leave zero runtime or semantic dependency on APR planning ownership or Batch
-  Runway `create-spec`;
-- leave APR and Batch Runway only with named CCFG-26 responsibilities and removal
-  conditions;
-- record exact removed and preserved surfaces, candidate range, installation
-  links, transaction recovery, scenario evidence, reviews, and cost evidence;
-- clear selected, queued, and active same-batch state;
-- stop without selecting, dispatching, or preparing CCFG-26.
+The current `runway.md` is draft evidence only. It is not executable by
+`work-batch` while this gate is blocked.
 
 ## Stop Conditions
 
-- Stop if the work needs a new planning schema, store, transaction, executable
-  draft format, queue owner, public command, lifecycle state, or compatibility
-  layer.
-- Stop if planner and reviewer independence cannot be proven from direct default
-  agent invocation and independently supplied evidence.
-- Stop if queue mutation can occur before a clean exact-draft review and resolved
-  proportionality/user-decision gate.
-- Stop if target scenarios retain APR, Batch Runway, `create-spec`, exact prompt
-  prose, stable-only paths, or fixture-only planning ownership.
-- Stop if APR or Batch Runway CCFG-26 execution/closeout responsibilities would be
-  removed or narrowed.
-- Stop on stable-home mutation, candidate canonical write, strict-context mismatch,
-  unexpected implementation movement, or unclassified dirty-file conflict.
-- Stop if CCFG-25 cannot close without entering CCFG-26 through CCFG-29.
+- Stop on missing or mismatched strict-context validation.
+- Stop if the amended plan review is not clean or is bound to another dispatch or
+  draft hash.
+- Stop if target scenarios depend behaviorally on APR, Batch Runway,
+  `create-spec`, exact prompt prose, stable-only paths, or fixture-only ownership.
+  Historical or negative vocabulary alone is not a dependency.
+- Stop if any CCFG-26 responsibility named above would be removed or narrowed.
+- Stop if work needs a new schema, store, transaction, command, lifecycle state,
+  persistent draft store, compatibility layer, helper behavior, or runner protocol.
+- Stop on stable-home mutation, candidate canonical write, unexpected repository
+  movement, or unclassified dirty-file conflict.
+- Stop if CCFG-25 cannot close without selecting or entering CCFG-26 through
+  CCFG-29.
