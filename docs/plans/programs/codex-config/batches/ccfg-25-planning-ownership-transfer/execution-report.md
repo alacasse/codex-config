@@ -4,13 +4,15 @@
 
 ```yaml
 batch: ccfg-25-planning-ownership-transfer
-status: slice-2-amendment-reviewed
+status: slice-2-blocked-outside-ceiling-runner-owner
 completed_slice: 1
 active_slice: 2
 candidate_head: 5aa5add1251d1e4b3630a9678fdec244949cf691
-stable_planning_head_before_report: 0119de2f346e61eb389ca07a2dd0b48f87ff22fc
-candidate_worktree: clean
+stable_planning_head_before_report: 3919a2288870b8b50737fb722db29387ea252859
+candidate_worktree: uncommitted-slice-2-diff
+candidate_diff_sha256: a2f1b2d443767f41729634a54448bdadfcf7342035be70f282dd8f779cc1d15b
 stable_worktree_scope: same-batch planning evidence only
+independent_implementation_review: findings
 successor_selected: false
 ```
 
@@ -20,6 +22,11 @@ the exact amended runway hash is
 `ddc37370a7e6f1ba0661d8ab9b64b9975c3ff779aad9c11166776ec755ca38f8`.
 The independent planning review is clean. No new batch, queue transition,
 closeout, or successor was created.
+
+Slice 2 implementation and specialist review completed within the amended
+ceiling, but the final independent implementation review found a live runner
+safety owner outside that ceiling. The candidate diff remains uncommitted and
+the explicit stop condition is active.
 
 ## Completed Evidence
 
@@ -84,16 +91,33 @@ boundary. Editing them without an amendment would broaden the slice.
   cross-checkout execution safety.
 - Keep through CCFG-29: temporary cross-checkout helper behavior.
 
-## Amendment Outcome
+## Amended Execution Outcome
 
 - Independent planning review: clean against the exact hashes above.
-- Caller/owner audit: clean; no required edit outside the amended ceiling.
+- Initial caller/owner audit: clean before implementation.
 - Expected runner semantic edit:
   `scripts/architecture_program_runner_phase_contract.py` only.
 - Conditional runner modules: `state.py`, `validation.py`, and `command.py` need
   no edit under current focused evidence.
-- Next safe action: prepare a fresh strict lease at exact candidate commit
-  `5aa5add1251d1e4b3630a9678fdec244949cf691`, validate the exact write scope,
-  and delegate the smallest Slice 2 implementation.
-- Stop if another live planning caller or runner semantic owner requiring an edit
-  appears outside the amended ceiling.
+- Candidate validation: 169 focused tests and 238 subtests passed; the full
+  manifest retained exactly the named CCFG-26 failure; all six current broad
+  diagnostic failures are a subset of the 12 at the exact candidate baseline;
+  Ruff, changed-runner BasedPyright, scenarios, whitespace, import topology,
+  dead-surface audit, and delta-only test-quality review are clean.
+- Independent implementation review: findings. The complete `plan-batch`
+  transaction leaves `CURRENT.md`, dispatch, runway, review/transaction, and
+  related planning artifacts for the runner to accept. The unchanged
+  `create-spec` worktree allowance rejects at least `CURRENT.md` and the
+  selection-transaction artifact before the observation/advance phase.
+- Outside-ceiling owner:
+  `scripts/architecture_program_runner_change_allowance.py`.
+- Separate planning-spec defect: the runway's named `skill_contract.py validate
+  --root .` required-green command uses stale CLI syntax and must be corrected or
+  explicitly reclassified in any newly reviewed amendment.
+- Next safe action: await explicit user direction. A further bounded amendment
+  would need to name the outside-ceiling owner and a focused regression without
+  weakening worktree safety, correct the validation command, and receive a new
+  independent planning review before this same Slice 2 resumes.
+
+No candidate commit, Slice 1 reopening, closeout, or successor selection was
+performed.

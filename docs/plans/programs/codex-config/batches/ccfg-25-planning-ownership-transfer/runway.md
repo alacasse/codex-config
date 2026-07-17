@@ -2,18 +2,20 @@
 
 ## Execution Status
 
-- Planning transition: `active; Slice 2 amendment-review gate`
-- Artifact role: active same-batch runway with an exact amended-review gate
+- Planning transition: `active; Slice 2 blocked by outside-ceiling runner owner`
+- Artifact role: active same-batch runway with a bounded execution blocker
 - Selected dispatch: `dispatch.md`
 - Queue currentness authority: Planning State `current` and `validate`
 - Candidate Slice 2 resume base:
   `5aa5add1251d1e4b3630a9678fdec244949cf691`
 
-Slice 1 is complete. Slice 2 is non-executable until `review.md` records a new
-clean independent review of this exact amended content and Planning State still
-reports this runway as the sole active batch. This amendment resumes the same
-batch and slice; it does not create a queue transition, new batch, closeout, or
-successor selection.
+Slice 1 is complete and the amended planning review is clean. Slice 2 execution
+stopped at independent implementation review because
+`scripts/architecture_program_runner_change_allowance.py` is a live runner safety
+owner outside the exact amended ceiling. Do not widen the ceiling or commit the
+candidate diff without explicit user direction and a newly reviewed amendment.
+This remains the same batch and slice; it creates no queue transition, new batch,
+closeout, or successor selection.
 
 ## Purpose
 
@@ -538,7 +540,7 @@ Every test-changing slice receives delta-only `test-quality-review`. Slices 1 an
 | Slice | Status | Commit | Review | Notes |
 |---|---|---|---|---|
 | 1. Implement installed `plan-batch` owner | Completed | `5aa5add1251d1e4b3630a9678fdec244949cf691` | Clean | Installed owner, exact planning-quality gates, DEC-038 recovery, isolated install, import-topology, and delta-only test-quality proof are green. |
-| 2. Remove displaced planning ownership | Pending | None | Pending | Bounded amendment authorized for the exact runner-owner and support-caller ceiling; execute only after the amended dispatch/runway review is clean and a fresh strict lease proves candidate `5aa5add1251d1e4b3630a9678fdec244949cf691`. |
+| 2. Remove displaced planning ownership | Blocked | None | Findings | Exact candidate diff `a2f1b2d443767f41729634a54448bdadfcf7342035be70f282dd8f779cc1d15b` is uncommitted. Independent review proved that the complete `plan-batch` transaction is rejected before compatibility `create-spec` because `scripts/architecture_program_runner_change_allowance.py` is outside the amended ceiling. Await explicit user direction; do not widen scope. |
 | 3. Converge installation and final acceptance | Pending | None | Pending | Clean install, exact acceptance, diagnostics, and final reviews. |
 
 ## Execution Startup Evidence
@@ -569,7 +571,14 @@ baseline:
 ## Active Orchestration Anomalies
 
 ```yaml
-orchestration_anomalies: []
+orchestration_anomalies:
+  - id: slice-2-interrupted-worker-late-completion
+    impact: low
+    evidence: interrupted worker completed two in-scope edits after interruption
+    reconciliation: >-
+      Exact authorship and the valid strict lease were reconciled; the retry
+      worker stopped on overlap, then resumed only after coordinator approval.
+    lost_or_unknown_changes: false
 ```
 
 ## Slice 1: Implement The Installed `plan-batch` Owner
