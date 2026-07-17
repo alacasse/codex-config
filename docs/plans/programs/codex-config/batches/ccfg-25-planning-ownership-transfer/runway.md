@@ -1,5 +1,18 @@
 # CCFG-25 Planning Ownership Transfer Runway
 
+## Execution Status
+
+- Planning state: `blocked-before-queue`
+- Artifact role: non-executable amended draft
+- Selected dispatch: `dispatch.md`
+- Queued runway: `None`
+- Active runway: `None`
+
+This draft must not be executed through `work-batch`. The original queue mutation
+occurred without the required plan-time validation of the strict cross-checkout
+payload and before a clean independent review of the exact draft. Preserve this
+file as blocked draft evidence until the Plan Repair Gate below is satisfied.
+
 ## Purpose
 
 Implement the complete candidate `plan-batch` command owner, including delegated
@@ -11,8 +24,7 @@ close CCFG-25 without beginning CCFG-26.
 
 ## Authority
 
-- Finding: CCFG-25, entering this batch as `Open`.
-- Dispatch: `dispatch.md`.
+- Finding: CCFG-25, controlled by the selected `dispatch.md`.
 - Accepted source: COR-008 at
   `caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c`.
 - Planning-quality amendment:
@@ -38,23 +50,23 @@ old runways, or raw execution logs only for a named contradiction.
 
 `slice_shape`: three slices.
 
-- `1 -> 2`: Slice 1 produces a complete installed replacement owner and green
-  target-behavior evidence. Slice 2 can therefore narrow and delete legacy
-  planning surfaces against a valid rollback point and current caller inventory.
-- `2 -> 3`: Slice 2 produces the final semantic owner topology. Slice 3 has an
-  independent environment and acceptance boundary: isolated installation,
-  exact-commit scenario evaluation, manifest convergence, and range-wide review.
+- `1 -> 2`: Slice 1 produces an independently exercisable installed replacement
+  owner and a rollback point while legacy planning owners remain physically
+  present. Slice 2 can then remove only the displaced planning routes against
+  current caller and replacement evidence.
+- `2 -> 3`: Slice 2 produces the final semantic owner topology. Slice 3 has a
+  distinct clean-install, exact-commit acceptance, and range-wide review boundary.
 
 A separate planner/reviewer scaffolding slice is forbidden. Those roles have no
 supported standalone outcome and must land with the complete command owner.
-Generic docs, metadata, tests, or closeout work remain with the behavior or final
+Generic docs, metadata, tests, and closeout work remain with the behavior or final
 environment they validate.
 
 ## Baseline
 
 - Stable toolchain and canonical planning checkout:
   `/home/alacasse/projects/codex-config`, branch `master`.
-- Stable planning baseline before dispatch:
+- Stable planning baseline before initial dispatch:
   `31d228d4ef9b94e2ccad0f5260670593ea9469f9`.
 - Candidate implementation checkout:
   `/home/alacasse/projects/codex-config-command-owner-redesign`, branch
@@ -68,18 +80,17 @@ environment they validate.
 - `scripts/planning_contract.py`, the six planning schemas, and DEC-038 are the
   accepted mechanical planning store and transaction. They are read-only for
   semantic changes in this batch.
-- CCFG-24B final exact acceptance reported 69 scenarios, 31 contracts, 17
-  families, six evidence keys, and six aliases green.
-- The candidate full manifest diagnostic has exactly three assigned failures at
-  baseline. CCFG-25 owns:
-  - `test_executable_work_source_boundary_is_explicit`;
-  - `test_plan_batch_command_owner_runtime_boundaries_are_explicit`.
-  CCFG-26 owns `test_work_batch_reconciles_same_batch_closeout`.
+- CCFG-24B exact acceptance reported 69 scenarios, 31 contracts, 17 families, six
+  evidence keys, and six aliases green.
+- Candidate manifest baseline has three assigned failures:
+  - `test_executable_work_source_boundary_is_explicit` — CCFG-25 Slice 1;
+  - `test_plan_batch_command_owner_runtime_boundaries_are_explicit` — CCFG-25
+    Slice 2;
+  - `test_work_batch_reconciles_same_batch_closeout` — CCFG-26, deferred.
 
-At execution startup, reproduce the exact candidate baseline, the two CCFG-25
-manifest failures, the one deferred CCFG-26 failure, and the exact scenario
-acceptance baseline before delegation. Any new or reclassified failure blocks
-instead of widening scope.
+At execution startup, reproduce the exact candidate baseline, these three failure
+identities, and the exact scenario acceptance baseline. Any new or reclassified
+failure blocks instead of widening scope.
 
 ## Project Values
 
@@ -89,8 +100,9 @@ instead of widening scope.
 - Batch directory:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/`.
 - Program archive root: `docs/plans/archive/`.
-- Run artifact root: `None`.
-- Output root: `None`.
+- Run artifact root: `None` for durable state; final acceptance outputs use fresh
+  `/tmp/ccfg-25-*` directories only.
+- Output root: `None` for committed outputs.
 - Validation profile:
   `skills/batch-runway/references/validation-profiles/project-harness-production.md`.
 - Runway density: `full-runway`.
@@ -101,12 +113,39 @@ instead of widening scope.
 - Dirty-file policy: preserve unrelated files; candidate writes are limited to the
   active slice; stable writes are limited to this batch's planning artifacts and
   same-batch reconciliation.
+- Test-quality review: `delta-only` for every test-changing slice and the final
+  exact candidate range.
 
-## Planning Snapshot
+## Plan Repair Gate
 
-Interface: `cross-checkout-context/v1`.
+Before this draft can become a queued runway, a local `plan-batch` planning pass
+must perform all of the following in order:
 
-Installed helper expected at execution:
+1. resolve `/home/alacasse/.codex/scripts/cross_checkout_context.py` from the active
+   stable Codex home and prove it resolves under the declared toolchain root;
+2. parse and validate the complete payload in **Strict Context Candidate** below,
+   including the canonical planning root and exact intended planning and
+   implementation write scopes;
+3. replace the unvalidated label with a **Planning Snapshot** record containing the
+   exact validated payload, canonical planning root, absolute helper path, and a
+   compact validation statement;
+4. invoke an independent planning reviewer against the selected `dispatch.md`, all
+   authoritative sources and user constraints, current Planning State facts, the
+   proportionality record, and the exact amended draft hash;
+5. require `status: clean`, no unresolved user decision, and no unapproved residual
+   complexity; and
+6. apply DEC-038 to transition this exact selected scope to one queued runway.
+
+Any missing or mismatched fact preserves the selected dispatch and this draft but
+stops before queue mutation. A current live execution preflight does not replace
+this plan-time validation record.
+
+## Strict Context Candidate
+
+This payload is unvalidated planning input, not a planning snapshot and not a live
+execution lease.
+
+Installed helper required for validation:
 `/home/alacasse/.codex/scripts/cross_checkout_context.py`.
 
 Canonical planning root:
@@ -126,12 +165,9 @@ execution_context:
   canonical_state_mutation_allowed: true
 ```
 
-This connector-backed planning session could not execute the installed local
-helper. The immutable payload is assembled from the authoritative master revision
-and CCFG-24B candidate closeout and is not a live execution lease. At `work-batch`
-startup, pass it to the installed ready/blocked preflight. Proceed only on `ready`.
-Before every worker and reviewer handoff, prepare a fresh live lease, validate the
-active slice's exact write scope, and require matching non-null
+After valid queue mutation, `work-batch` must still run a fresh ready/blocked
+preflight at execution startup and prepare a fresh live lease before every worker
+and reviewer handoff. Every strict agent result must carry matching non-null
 `verified_cross_checkout_context` evidence.
 
 ## Target Ownership Boundary
@@ -142,16 +178,16 @@ The default agent and `skills/plan-batch/SKILL.md` own all semantic decisions:
 
 1. consume Planning State `current` and `validate` facts;
 2. resolve exactly one existing ledger finding or current selected dispatch;
-3. assemble authoritative source evidence, explicit user constraints and
-   approvals, and the minimum viable change record;
+3. assemble the selected dispatch, authoritative source evidence, explicit user
+   constraints and approvals, and the minimum viable change record;
 4. invoke `batch_planner` directly;
-5. invoke `batch_plan_reviewer` directly with independently supplied evidence and
-   the exact draft;
+5. invoke `batch_plan_reviewer` directly with independently supplied evidence, the
+   selected dispatch identity, and the exact draft;
 6. return named findings to `batch_planner` only through the default agent;
 7. stop on a repeated material finding, expanding architecture, stale evidence, or
    an unrecorded user choice;
-8. invoke the deterministic command-owned boundary to validate the exact accepted
-   draft/review and apply DEC-038;
+8. invoke the deterministic command boundary to validate the exact accepted
+   draft/review and apply DEC-038; and
 9. report at most one queued runway and stop before implementation.
 
 The script must not spawn or invoke agents. The planner must not invoke or select
@@ -163,24 +199,24 @@ Implement one installed `scripts/plan_batch.py` boundary, following the establis
 `add-to-ledger` stdin/stdout pattern where useful. It owns only deterministic
 validation and transaction application:
 
-- validate explicit generation, root, current-state, ledger, source, draft,
-  proportionality, reviewer, approval, and idempotence inputs;
-- reject unsupported sources, missing current/validate facts, stale source or draft
-  identity, mismatched reviewer basis, unresolved decisions, unapproved residual
-  complexity, non-clean review, duplicate queue state, and forbidden paths;
-- validate that the draft contains exactly one `planning-dispatch/v1` and one
-  `planning-runway/v1` contract with semantic slice boundaries and one selected
-  validation profile;
+- validate explicit generation, root, current-state, ledger, selected-dispatch,
+  source, draft, proportionality, reviewer, approval, and idempotence inputs;
+- reject unsupported sources, missing current/validate facts, stale selected
+  dispatch or draft identity, mismatched reviewer basis, unresolved decisions,
+  unapproved residual complexity, non-clean review, duplicate queue state, and
+  forbidden paths;
+- validate exactly one `planning-dispatch/v1` and one `planning-runway/v1` contract,
+  semantic slice boundaries, and one selected validation profile;
 - call the existing `simulate_selection_transaction(...)` or its accepted public
   equivalent without copying store or saga logic;
-- return compact result and transaction receipt facts;
+- return compact result and transaction receipt facts; and
 - perform no planning choice, agent invocation, implementation, commit, closeout,
   or successor selection.
 
 Do not add a schema, persistent draft store, second transaction, queue wrapper,
 public retry token, new lifecycle state, or permanent proportionality artifact.
 Blocked draft and review evidence remains non-executable caller output or uses an
-already-authorized run-artifact location; it must never look queued to
+already-authorized ephemeral run-artifact location; it must never look queued to
 `work-batch`.
 
 ### Planner result semantics
@@ -188,19 +224,19 @@ already-authorized run-artifact location; it must never look queued to
 The registered `batch_planner` TOML owns its exact result schema. It must emit
 machine-readable output containing at least:
 
-- status and exact source/currentness basis;
+- status and exact selected-dispatch, source, and currentness basis;
 - one non-executable dispatch/runway draft or a blocking result;
 - included and deferred finding IDs;
 - batch kind, risk classes, approvals, validation profile, stop conditions, and
   semantic `slice_shape` rationale;
-- the full compact proportionality record from the CCFG-25 amendment;
-- unresolved user decisions and named corrections;
+- the compact proportionality record;
+- unresolved user decisions and named corrections; and
 - no queue, mutation, implementation, review, or delegation authority.
 
 ### Planning reviewer result semantics
 
 The registered `batch_plan_reviewer` TOML owns its exact result schema and returns
-only the accepted fields equivalent to:
+only fields equivalent to:
 
 ```yaml
 status: clean | findings | blocked
@@ -213,10 +249,16 @@ user_decisions: []
 required_fixes: []
 ```
 
-The exact `review_basis` must bind the source/currentness facts, user constraints,
-proportionality record, and byte-stable or canonical hash of the reviewed draft.
-A corrected draft invalidates the prior review and requires a fresh direct reviewer
-invocation.
+`review_basis` must bind all of the following:
+
+- selected dispatch path, finding IDs, revision or canonical content hash;
+- source/currentness facts and Planning State diagnostic identity;
+- explicit user constraints and approvals;
+- proportionality record; and
+- byte-stable or canonical hash of the reviewed draft.
+
+A corrected dispatch or draft invalidates the prior review and requires a fresh
+direct reviewer invocation.
 
 ## Batch Scope
 
@@ -244,6 +286,7 @@ Allowed candidate areas across the batch, restricted further by each slice:
 - `tests/test_skill_contract_catalog.py`
 - `tests/test_skill_contract_migration.py`
 - `tests/test_planning_state_consumer_projection_routing.py`
+- `tests/test_deletion_test_vocabulary_ownership.py`
 - `tests/test_command_owner_behavioral_scenarios.py`
 - `tests/test_command_owner_scenario_catalog.py`
 - `tests/fixtures/command-owner-scenarios/catalog.yaml`
@@ -255,37 +298,52 @@ Read-only except for execution-owned use:
 
 - `scripts/planning_contract.py`
 - `schemas/planning-*.schema.json`
-- `tests/test_planning_contract_schema.py`
-- `tests/test_planning_contract_store.py`
-- `tests/test_planning_contract_artifacts.py`
-- `tests/test_planning_transaction.py`
-- `skills/planning-state/**`
-- `scripts/planning_state.py`
-- `skills/add-to-ledger/**`
-- `scripts/add_to_ledger.py`
+- planning contract tests
+- `skills/planning-state/**` and `scripts/planning_state.py`, except focused
+  manifest ownership of the unchanged helper link
+- `skills/add-to-ledger/**` and `scripts/add_to_ledger.py`
 - `skills/work-batch/**`
-- execution agents and Batch Runway execution contracts retained for CCFG-26
+- execution agents and execution contracts retained for CCFG-26
 - installer implementation except focused manifest/lock consumption
 
 A required semantic edit in a read-only area blocks for replanning. Moving the
-unchanged temporary cross-checkout helper link from Batch Runway to the existing
-`planning-state` feature is allowed only as installation ownership, so
-`plan-batch` can drop its Batch Runway dependency while `work-batch` continues to
-receive the same helper through an already-required neutral feature. Do not change
-helper behavior or give Planning State new semantic authority. A new shared
-feature or bridge version is forbidden.
+unchanged temporary helper installation link from Batch Runway to the existing
+`planning-state` feature is installation ownership only. It must not change helper
+behavior or give Planning State new semantic authority. Duplicating the link,
+adding a shared feature, or creating a bridge version is forbidden.
+
+## CCFG-26 Preservation Contract
+
+CCFG-25 removes planning ownership only. Until CCFG-26 closes, preserve all current
+surfaces supporting:
+
+- proceed and stop decisions;
+- worker and reviewer delegation;
+- recovery and resume;
+- validation execution and acceptance;
+- implementation review coordination;
+- commits and commit receipts;
+- execution-ledger state and per-slice evidence;
+- finalization and closeout artifact production;
+- same-batch program reconciliation and no-successor enforcement; and
+- strict cross-checkout execution safety.
+
+Current owner distribution may span APR, Batch Runway, `work-batch`, agents,
+references, runner phases, tests, and manifest links. A surface may be removed only
+when current caller evidence proves it is planning-only. If ownership is mixed or
+ambiguous, preserve it and block for CCFG-26 or explicit replanning.
 
 ## Batch Non-Goals
 
-- No CCFG-26 execution, recovery, validation acceptance, implementation review,
-  commit, finalization, closeout, or same-batch reconciliation transfer.
+- No CCFG-26 execution or closeout ownership transfer.
 - No planning schema or DEC-038 semantic change.
 - No live migration of canonical Markdown to candidate v1 operational blocks.
 - No default-generation switch, candidate merge, cutover rehearsal, or bridge
   deletion.
-- No new source adapter, intake behavior, ledger-store behavior, or planning
-  projection.
-- No exact prompt-prose acceptance tests. Tests prove behavior and ownership.
+- No new source adapter, intake behavior, ledger-store behavior, planning
+  projection, or runner protocol.
+- No lexical ban on legacy vocabulary. Tests prove absence of behavioral and
+  runtime dependencies; historical and negative assertions may name old surfaces.
 - No new permanent planner/reviewer framework beyond the two registered roles.
 - No successor selection.
 
@@ -316,11 +374,11 @@ execution-ledger updates, and same-batch closeout.
 
 Overrides:
 
-- The execution coordinator must preserve CCFG-26-owned APR and Batch Runway
-  execution/closeout surfaces even when their surrounding planning sections are
-  narrowed.
-- No legacy planning surface may be removed without a current caller inventory and
-  replacement behavioral evidence.
+- Preserve the complete CCFG-26 contract above even when surrounding planning
+  sections are narrowed.
+- Remove no legacy planning surface without current caller evidence and replacement
+  behavioral proof.
+- Candidate implementation and stable planning receipt commits remain distinct.
 
 ## Validation Contract
 
@@ -329,22 +387,25 @@ Profile:
 
 Status classes:
 
-- Candidate baseline unit, schema/store/transaction, scenario/catalog, skill
-  contract, routing, strict-context, installer, Ruff, BasedPyright, and whitespace
-  gates: `required-green` or their explicitly reproduced baseline class.
+- Candidate unit, schema/store/transaction, scenario/catalog, skill-contract,
+  routing, strict-context, installer, Ruff, BasedPyright, and whitespace gates:
+  `required-green`, except commands explicitly classified below.
 - New `tests/test_plan_batch.py` and focused fixtures: `implementation-created` by
   Slice 1, then `required-green`.
-- Full manifest before final convergence: `known-red-baseline`, exactly the three
-  failures recorded by CCFG-24B.
-- After Slice 1: both CCFG-25 manifest failures may remain red only when Slice 2
-  explicitly owns their legacy-removal assertion; no new failure is allowed.
-- After Slice 2: the full manifest may remain red only for
-  `test_work_batch_reconciles_same_batch_closeout`, owned by CCFG-26.
-- Broad legacy/projection diagnostics: preserve the exact preclassified identities;
-  promote only CCFG-25 planning-owner nodes. No unrelated remediation is allowed.
+- Slice 1 manifest:
+  - `test_executable_work_source_boundary_is_explicit`: `required-green`;
+  - `test_plan_batch_command_owner_runtime_boundaries_are_explicit`:
+    `known-red-baseline`, owned by Slice 2;
+  - `test_work_batch_reconciles_same_batch_closeout`: `known-red-baseline`, owned
+    by CCFG-26.
+- After Slice 2 and at final validation, the complete manifest is
+  `known-red-baseline` with exactly the one CCFG-26 failure; a filtered command
+  excluding that node is `required-green`.
+- Full broad legacy/projection suite: `known-red-baseline`; preserve only the
+  reproduced preclassified non-CCFG-25 failures and accept no new failure.
 - Final exact scenario acceptance: `required-green`, one evidence-pytest process,
-  exact candidate commit, all 69 baseline scenarios plus any necessary CCFG-25
-  replacement bindings, all 31 contracts, 17 families, six keys, and six aliases.
+  exact clean candidate commit, all required scenario meanings, 31 contracts, 17
+  families, six keys, and six aliases.
 
 Every test-changing slice receives delta-only `test-quality-review`. Slices 1 and
 2 receive import-topology review. Slice 2 and the final exact range receive
@@ -354,9 +415,9 @@ Every test-changing slice receives delta-only `test-quality-review`. Slices 1 an
 
 | Slice | Status | Commit | Review | Notes |
 |---|---|---|---|---|
-| 1. Implement installed `plan-batch` owner | Pending | None | Pending | Complete command owner, registered planning roles, transaction gate, and installed-owner scenarios. |
-| 2. Remove displaced planning ownership | Pending | None | Pending | Narrow APR and Batch Runway planning only after replacement evidence. |
-| 3. Converge installation and final acceptance | Pending | None | Pending | Exact candidate installation, manifests, scenario acceptance, and COR-008 evidence. |
+| 1. Implement installed `plan-batch` owner | Blocked | None | Pending | Execution cannot begin until Plan Repair Gate queues this exact amended draft. |
+| 2. Remove displaced planning ownership | Pending | None | Pending | Narrow planning-only surfaces after replacement and caller evidence. |
+| 3. Converge installation and final acceptance | Pending | None | Pending | Clean install, exact acceptance, diagnostics, and final reviews. |
 
 ## Active Orchestration Anomalies
 
@@ -368,9 +429,9 @@ orchestration_anomalies: []
 
 ### Scope
 
-Implement, register, install, and prove the complete target planning owner while
-leaving legacy planning surfaces physically present for rollback and deletion
-evidence.
+Implement, register, install, and prove the complete replacement planning path
+while leaving APR and Batch Runway planning surfaces physically present as a
+rollback baseline for Slice 2.
 
 Primary allowed areas:
 
@@ -378,60 +439,63 @@ Primary allowed areas:
 - `scripts/plan_batch.py`
 - `agents/batch_planner.toml`
 - `agents/batch_plan_reviewer.toml`
-- `codex-features.json` and `skills-lock.json` for focused owner, agent, planning
-  contract, Planning State, and temporary helper installation only
+- `codex-features.json` and `skills-lock.json` for the owner, agents, planning
+  contracts, Planning State, and unchanged helper-link ownership
 - `tests/test_plan_batch.py`
 - `tests/fixtures/plan-batch/**`
 - planning and planning-quality scenario/catalog/adapter/test surfaces
 - focused manifest and routing-owner tests
 - `CHANGELOG.md`
 
-`scripts/planning_contract.py`, planning schemas, APR, Batch Runway, work-batch,
-and `add-to-ledger` are read-only in this slice.
+Planning-contract code/schemas, APR, Batch Runway, `work-batch`, and
+`add-to-ledger` are read-only in this slice.
 
 ### Work
 
-- Replace the thin plan-batch router with the complete human command-owner
-  procedure and explicit direct planner/reviewer orchestration.
+- Replace the thin `plan-batch` router with the complete command-owner procedure
+  and explicit direct planner/reviewer orchestration.
 - Add registered `batch_planner` and `batch_plan_reviewer` TOMLs with disjoint
-  capabilities and machine-readable result contracts.
+  capabilities and exact machine-readable result contracts.
 - Implement `scripts/plan_batch.py` as the deterministic validation and DEC-038
-  application boundary described above.
+  application boundary.
 - Make the candidate `plan-batch` feature install its script and require only
-  planning contracts, Planning Artifacts, Planning State, and registered custom
-  agents. Do not use APR or Batch Runway as a semantic or runtime planning owner.
-- Move only the unchanged temporary cross-checkout helper installation link to the
-  existing `planning-state` feature when needed to remove the Batch Runway
-  dependency. Preserve its behavior and deletion condition.
-- Bind all planning and planning-quality CCFG-23 scenarios to the installed
-  `plan-batch` owner rather than fixture-only selection behavior. Keep collaborator
-  injection only where it proves direct independent-role inputs without becoming
-  a second owner.
-- Prove current/validate guards, existing selected/queued/active refusal, one
-  finding only, minimum viable scope, semantic slices, approval scope, direct role
-  invocation, correction routing, repeated-finding stop, stale-draft rejection,
-  unresolved-decision rejection, exact review-basis binding, atomic queue gating,
-  partial failure recovery, exact replay, and stop-before-implementation.
+  planning contracts, Planning Artifacts, Planning State, and registered agents.
+- Move only the unchanged helper installation link to the existing Planning State
+  feature so `plan-batch` does not depend on Batch Runway for mechanical context.
+- Bind planning and planning-quality scenarios to the installed owner. Keep
+  collaborator injection only where it proves direct independent-role input.
+- Prove current/validate guards, selected/queued/active refusal, one finding only,
+  minimum viable scope, semantic slices, approval scope, direct role invocation,
+  correction routing, repeated-finding stop, stale-draft and unresolved-decision
+  rejection, dispatch/draft review-basis binding, atomic queue gating, partial
+  failure recovery, exact replay, and stop-before-implementation.
+
+Do not remove or rewire APR, Batch Runway, or architecture runner callers in this
+slice. Slice 1 changes the `plan-batch` feature dependency list; Slice 2 owns
+system-wide legacy caller rewiring and removal of the helper link from Batch
+Runway.
 
 ### Acceptance
 
-- Candidate-installed `plan-batch` is the sole normal planning decision and queue
-  mutation route.
+- Candidate-installed `plan-batch` provides one complete end-to-end replacement
+  planning path and has no semantic or runtime dependency on APR or Batch Runway.
 - The default command owner directly invokes both registered roles; neither role
-  can invoke the other or mutate state.
-- A clean exact-draft reviewer result and proportionate or explicitly approved
-  residual complexity are mandatory before DEC-038 application.
-- One cohesive slice and one justified producer/consumer split queue successfully;
+  invokes the other or mutates state.
+- Exact selected-dispatch and draft lineage, clean review, proportionality, and
+  approval gates are mandatory before DEC-038 application.
+- Cohesive one-slice and justified producer/consumer plans queue successfully;
   filler decomposition and unjustified expansion block without queue mutation.
-- Blocked and stale drafts remain non-executable and do not appear selected,
-  queued, or active to Planning State or work-batch.
+- Blocked and stale drafts remain non-executable and invisible as queued/active to
+  Planning State and `work-batch`.
 - Interrupted DEC-038 stages resume exactly and replay without duplicate effects.
-- The installed owner writes only the canonical current, dispatch, runway, and
-  selection-transaction paths authorized by the request.
+- The installed owner writes only authorized current, dispatch, runway, and
+  transaction paths.
+- Legacy owners remain physically present and may still have unchanged legacy
+  callers until Slice 2; Slice 1 does not claim sole system-wide ownership.
 - No semantic change exists in planning contracts, Planning State, APR, Batch
-  Runway, work-batch, or add-to-ledger.
+  Runway, `work-batch`, or `add-to-ledger`.
 
-### Focused Validation
+### Required-Green Validation
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
@@ -442,18 +506,47 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
   tests/test_planning_transaction.py \
   tests/test_command_owner_behavioral_scenarios.py \
   tests/test_command_owner_scenario_catalog.py \
-  tests/test_codex_features_manifest.py \
   tests/test_skill_routing_rule_ownership.py
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
+  tests/test_codex_features_manifest.py \
+  -k 'not test_plan_batch_command_owner_runtime_boundaries_are_explicit and not test_work_batch_reconciles_same_batch_closeout'
 .venv/bin/python scripts/command_owner_scenarios.py validate tests/fixtures/command-owner-scenarios
 .venv/bin/ruff check --no-cache scripts/plan_batch.py tests/test_plan_batch.py tests/fixtures/command-owner-scenarios
 .venv/bin/basedpyright scripts/plan_batch.py tests/test_plan_batch.py
-.venv/bin/python scripts/install_codex_config.py --manifest codex-features.json --feature plan-batch --codex-home /home/alacasse/.codex-command-owner-redesign --dry-run
+./install.sh --codex-home /home/alacasse/.codex-command-owner-redesign --feature plan-batch
+./install.sh --codex-home /home/alacasse/.codex-command-owner-redesign --status
+./install.sh --codex-home /home/alacasse/.codex-command-owner-redesign --feature plan-batch --dry-run
 git diff --check
 ```
 
-All commands are `required-green` after the new files exist. The full manifest is
-also run as a diagnostic and must contain no new failure beyond the explicitly
-assigned CCFG-25/26 baseline.
+### Known-Red Manifest Diagnostic
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_codex_features_manifest.py
+```
+
+Expected after Slice 1: exactly
+`test_plan_batch_command_owner_runtime_boundaries_are_explicit` and
+`test_work_batch_reconciles_same_batch_closeout` may fail. No other failure is
+accepted.
+
+### Worker Brief
+
+The spawned `runway_worker` is the coding subagent. Read this runway and the
+selected dispatch from the stable planning checkout, implement only Slice 1 in the
+candidate checkout, and do not spawn, delegate to, or wait on other agents. Do not
+edit APR, Batch Runway, `work-batch`, planning contracts/schemas, Planning State
+semantics, or stable planning state. Return the required v2 result with exact
+changed paths and verified strict context.
+
+### Reviewer Brief
+
+The separate `runway_reviewer` receives the exact candidate commit or task-scoped
+worktree diff from the coordinator. Verify the end-to-end installed owner,
+planner/reviewer independence, selected-dispatch and exact-draft lineage,
+transaction gating, scope, tests, manifest classifications, and absence of legacy
+removal. Echo the coordinator-provided `diff_basis` and verified strict context in
+the v2 result.
 
 Reviews: independent `runway_reviewer`, `import_topology_reviewer`, and delta-only
 `test-quality-review`.
@@ -464,35 +557,35 @@ Commit: `feat: make plan-batch the planning command owner`
 
 - Stop on a new schema, store, queue transaction, lifecycle state, persistent draft
   store, retry token, source adapter, or compatibility wrapper.
-- Stop if agent invocation moves into the script or planner/reviewer independence
-  becomes prose-only.
-- Stop if any queue write can occur before exact clean review and approval gates.
+- Stop if agent invocation moves into the script or role independence is prose-only.
+- Stop if queue writes can occur before exact clean review and approval gates.
 - Stop if target scenarios still execute only a fixture owner.
-- Stop on any semantic edit to planning contracts, Planning State, APR, Batch
-  Runway, work-batch, add-to-ledger, or cross-checkout helper behavior.
+- Stop on semantic edits to planning contracts, Planning State, APR, Batch Runway,
+  `work-batch`, `add-to-ledger`, or helper behavior.
+- Stop if Slice 1 removes system-wide legacy planning routes or claims sole
+  system-wide ownership before Slice 2.
 
 ## Slice 2: Remove Displaced Planning Ownership
 
 ### Approval Gate
 
 Slice 1 is committed, candidate-installed, green, and independently reviewed.
-Before narrowing any surface, the coordinator records a current owner/caller
-matrix proving:
+Before narrowing any surface, the coordinator records a current owner/caller matrix
+proving:
 
-- every `plan-batch` selection, grouping, prioritization, dispatch, runway, risk,
-  approval, validation-profile, and queue route resolves to the new owner;
-- CCFG-23 target planning scenarios have zero dependency on APR, Batch Runway,
-  `create-spec`, exact prompt prose, or fixture-only planning ownership;
-- APR responsibilities retained for CCFG-26 are exactly closeout and same-batch
-  reconciliation support;
-- Batch Runway responsibilities retained for CCFG-26 are exactly execution,
-  recovery, validation, implementation review, commits, finalization, and execution
-  ledger support;
-- the local architecture program runner invokes the public command-owner path for
-  planning and does not reimplement selection or create-spec semantics.
+- all selection, grouping, prioritization, dispatch, runway, risk, approval,
+  validation-profile, and queue routes resolve to `plan-batch`;
+- target planning scenarios have no runtime or behavioral dependency on APR, Batch
+  Runway, `create-spec`, exact prompt prose, stable-only paths, or fixture-only
+  ownership; historical and negative vocabulary remains allowed;
+- every CCFG-26 proceed/stop, delegation, recovery, validation, review, commit,
+  receipt, execution-ledger, finalization, closeout, same-batch reconciliation, and
+  strict execution-safety surface remains identified and preserved; and
+- the architecture program runner invokes the public command-owner path and does
+  not reimplement selection, proportionality, review, or queue semantics.
 
-The coordinator may approve removal only when targeted dead-surface evidence and
-an independent review agree. Ambiguous or unclassified surfaces block.
+Removal requires targeted dead-surface evidence and independent review agreement.
+Ambiguous, mixed planning/execution, or unclassified surfaces block.
 
 ### Scope
 
@@ -506,50 +599,49 @@ Primary allowed areas:
   projection-routing, scenario, and deletion-evidence tests
 - `codex-features.json`, `skills-lock.json`, and `CHANGELOG.md`
 
-The new owner implementation, planning contracts/schemas, Planning State behavior,
-work-batch, execution agents, and cross-checkout helper behavior are read-only.
+The new owner implementation, planning contracts/schemas, Planning State semantics,
+`work-batch`, execution agents, and helper behavior are read-only.
 
 ### Work
 
 - Remove APR grouping, ranking, prioritization, selection, selected-dispatch,
-  create-next-runway, queue-preparation, and plan-batch handoff ownership from its
-  skill, agent metadata, templates, local-runner prompts, feature description, and
-  tests.
-- Preserve only explicitly named CCFG-26 closeout/reconciliation support. Mark each
-  retained temporary surface with current callers, reason, CCFG-26 owner, and
-  removal condition.
-- Remove Batch Runway `create-spec` mode, create-spec semantic guidance, planning
-  project-value ownership, plan-batch handoff claims, and obsolete references or
-  tests. Preserve execute-spec, recovery, validation, review, finalization,
-  execution contracts, and cross-checkout execution safety for CCFG-26.
-- Rewire the architecture program runner's planning phase to the public
-  `plan-batch` command contract without embedding a second planner. Leave execution
-  and closeout phases unchanged except for references required by the new planning
-  handoff.
-- Remove plan-batch manifest dependencies on APR and Batch Runway and remove the
-  helper installation link from Batch Runway after the unchanged link is available
-  through Planning State.
-- Delete or rewrite CCFG-23 fixture helpers and topology assertions that exist only
-  to preserve the replaced planning owners. Keep legitimate target-behavior
-  adapters with a named installed-owner caller.
-- Rewrite skill/routing/migration tests to assert structural ownership and absence
-  of legacy planning routes rather than exact wording.
+  create-next-runway, queue-preparation, and `plan-batch` handoff ownership from its
+  skill, agent metadata, templates, runner prompts, feature description, and tests.
+- Preserve any APR closeout or reconciliation support and every mixed surface named
+  by the CCFG-26 Preservation Contract, with caller, reason, owner, and removal
+  condition.
+- Remove Batch Runway `create-spec` mode, create-spec guidance, planning
+  project-value ownership, `plan-batch` handoff claims, and planning-only tests.
+- Preserve Batch Runway proceed/stop, delegation, recovery, validation acceptance,
+  implementation review, commit and receipt handling, execution-ledger state,
+  finalization, closeout support, and cross-checkout execution safety.
+- Rewire the architecture program runner's existing planning phase to the public
+  `plan-batch` command contract without a new protocol or embedded planner. Leave
+  execution and closeout behavior unchanged.
+- Remove the remaining `plan-batch` manifest dependencies on APR and Batch Runway
+  only if not already removed in Slice 1, and remove the helper link from Batch
+  Runway only after the unchanged link is installed through Planning State.
+- Delete or rewrite fixture helpers and topology assertions that preserve displaced
+  planning owners. Keep legitimate target-behavior adapters with current callers.
+- Rewrite tests to assert structural ownership and runtime absence, not exact legacy
+  wording or blanket vocabulary absence.
 
 ### Acceptance
 
 - Runtime and semantic dependencies from `plan-batch` to APR, Batch Runway, and
   `create-spec` are zero.
-- APR exposes no planning lifecycle or queue authority and retains only named
-  CCFG-26 support.
-- Batch Runway exposes no planning or create-spec authority and retains only named
-  CCFG-26 execution support.
-- The architecture program runner uses `plan-batch` as its planning command owner
-  and contains no duplicate selection, proportionality, review, or queue rules.
+- APR exposes no planning lifecycle or queue authority.
+- Batch Runway exposes no planning or `create-spec` authority.
+- APR, Batch Runway, `work-batch`, agents, contracts, and runner retain the complete
+  CCFG-26 Preservation Contract; no mixed surface is narrowed by inference.
+- The architecture runner uses `plan-batch` and contains no duplicate planning
+  decision rules.
 - No production or scenario caller reaches a removed planning surface.
-- No CCFG-26-owned behavior is narrowed.
+- Target behavior is topology-independent; legacy terms may remain only in
+  historical, negative, migration, or removal assertions that do not bind behavior.
 - The full manifest retains only the one named CCFG-26 failure.
 
-### Focused Validation
+### Required-Green Validation
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
@@ -557,11 +649,16 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
   tests/test_architecture_program_runner.py \
   tests/test_command_owner_behavioral_scenarios.py \
   tests/test_command_owner_scenario_catalog.py \
-  tests/test_codex_features_manifest.py \
   tests/test_skill_routing_rule_ownership.py \
   tests/test_skill_contract_catalog.py \
-  tests/test_skill_contract_migration.py \
-  tests/test_planning_state_consumer_projection_routing.py
+  tests/test_skill_contract_migration.py
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
+  tests/test_codex_features_manifest.py \
+  -k 'not test_work_batch_reconciles_same_batch_closeout'
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
+  tests/test_planning_state_consumer_projection_routing.py \
+  tests/test_deletion_test_vocabulary_ownership.py \
+  -k 'legacy_removal or legacy_evidence_no_state_writes or parallel_planning_systems'
 .venv/bin/python scripts/command_owner_scenarios.py validate tests/fixtures/command-owner-scenarios
 .venv/bin/python scripts/skill_contract.py validate --root .
 .venv/bin/ruff check --no-cache scripts/architecture_program_runner.py scripts/plan_batch.py tests
@@ -569,8 +666,34 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
 git diff --check
 ```
 
-All focused commands: `required-green`. The full manifest diagnostic may remain red
-only for `test_work_batch_reconciles_same_batch_closeout`.
+### Known-Red Diagnostics
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_codex_features_manifest.py
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_planning_state_consumer_projection_routing.py tests/test_deletion_test_vocabulary_ownership.py
+```
+
+The manifest may fail only
+`test_work_batch_reconciles_same_batch_closeout`. The broad legacy/projection
+suite may retain only reproduced, preclassified non-CCFG-25 failures; no new or
+CCFG-25-owned failure is accepted.
+
+### Worker Brief
+
+The spawned `runway_worker` is the coding subagent. Implement only Slice 2 in the
+candidate checkout and do not spawn, delegate to, or wait on other agents. Use the
+coordinator-supplied caller inventory. Remove only planning-owned surfaces; retain
+every CCFG-26 surface and stop on mixed or ambiguous ownership. Do not change the
+new owner, Planning State semantics, `work-batch`, execution agents/contracts, or
+helper behavior. Return exact changed paths and verified strict context.
+
+### Reviewer Brief
+
+The separate `runway_reviewer` receives the coordinator-provided exact Slice 2
+commit or task-scoped diff. Verify each deletion against caller and replacement
+evidence, structural absence of planning ownership, complete CCFG-26 preservation,
+runner rewiring without a second planner, manifest classification, and scope. Echo
+`diff_basis` and verified strict context in the v2 result.
 
 Reviews: targeted `dead-surface-audit`, `import_topology_reviewer`, independent
 `runway_reviewer`, and delta-only `test-quality-review`.
@@ -579,15 +702,14 @@ Commit: `refactor: remove legacy planning ownership`
 
 ### Stop Conditions
 
-- Stop if any proposed removal lacks a current caller inventory and replacement
-  evidence.
-- Stop if CCFG-26 execution, closeout, recovery, review, commit, or reconciliation
-  behavior would be removed or altered.
-- Stop if the runner needs a new public protocol, bridge, or duplicate planning
-  implementation.
-- Stop if helper behavior or Planning State semantic authority would change.
-- Stop on a migration guard that can turn green only by preserving obsolete names,
-  imports, or topology.
+- Stop if removal lacks current caller and replacement evidence.
+- Stop if any CCFG-26 proceed/stop, delegation, recovery, validation, review,
+  commit, receipt, execution-ledger, finalization, closeout, reconciliation, or
+  strict execution-safety behavior would be removed or altered.
+- Stop if the runner needs a new public protocol, bridge, or duplicate planner.
+- Stop if helper behavior or Planning State semantic authority changes.
+- Stop on a test that can turn green only by preserving obsolete topology or by
+  banning legitimate historical/negative vocabulary.
 
 ## Slice 3: Converge Installation And Final Acceptance
 
@@ -600,21 +722,22 @@ is allowed.
 
 ### Work
 
-- Converge `codex-features.json`, `skills-lock.json`, installed skill/script/agent
-  links, versions, routing docs, workflow guide, README, and changelog around the
-  final owner topology.
-- Install the complete candidate generation into an isolated candidate Codex home
-  from a clean target and verify every managed link resolves to candidate source.
-- Verify stable Codex home status is byte-for-byte unchanged before and after the
-  candidate installation.
-- Run the exact-commit CCFG-33 acceptance path with one evidence-pytest process.
-- Prove every COR-008 and planning-quality key, the two former CCFG-25 manifest
-  failures green, the one CCFG-26 failure still classified and unchanged, and zero
-  forbidden target topology in target scenarios.
+- Converge manifest, lock, installed skill/script/agent links, versions, routing
+  docs, workflow guide, README, and changelog around the final owner topology.
+- Perform a real all-feature install into a fresh empty temporary Codex home and
+  converge the fixed isolated candidate home. Verify every managed link resolves to
+  candidate source and both installs are dry-run clean afterward.
+- Verify stable Codex home status is byte-for-byte unchanged before and after.
+- Run the exact CCFG-33 acceptance CLI once from the clean final candidate commit,
+  using explicit fresh result, JSON report, and text report paths.
+- Read and validate the generated outputs and record both SHA-256 hashes.
+- Prove every COR-008 and planning-quality key, both CCFG-25 manifest failures green,
+  the one CCFG-26 failure unchanged, and zero behavioral/runtime dependency on
+  displaced planning topology.
 - Perform final exact-range independent, import-topology, dead-surface, and
   delta-only test-quality reviews.
-- Record cost evidence: files changed, additions/deletions, diff bytes, focused and
-  exact acceptance time, pytest process count, and context usage when available.
+- Record files changed, additions/deletions, diff bytes, focused and exact
+  acceptance time, pytest process count, and context usage when available.
 
 ### Acceptance
 
@@ -625,6 +748,7 @@ planning_quality:
   registered_batch_plan_reviewer: true
   planner_cannot_invoke_reviewer: true
   reviewer_receives_independent_source_evidence: true
+  reviewer_receives_selected_dispatch_identity: true
   every_new_or_amended_runway_reviewed: true
   proportionality_required_before_queue: true
   source_mechanics_can_be_narrowed: true
@@ -646,15 +770,16 @@ cor_008:
 Additional final conditions:
 
 - `plan-batch` installs and operates without APR or Batch Runway dependencies.
-- Target planning scenarios contain none of the forbidden legacy terms as required
-  by their topology-independent contract.
-- APR and Batch Runway retained surfaces are only the exact CCFG-26 temporary
-  responsibilities with named deletion conditions.
+- Target scenarios and production callers do not invoke or depend on displaced
+  planning owners, paths, modes, or fixture-only behavior. Historical and negative
+  assertions may still name them.
+- APR and Batch Runway retained surfaces satisfy the complete CCFG-26 Preservation
+  Contract with named callers and deletion conditions.
 - Candidate code cannot mutate canonical planning state during fixture or isolated
   installation validation.
 - Stable/default generation remains unchanged.
 
-### Final Validation
+### Required-Green Core Validation
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
@@ -666,27 +791,101 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
   tests/test_architecture_program_runner.py \
   tests/test_command_owner_behavioral_scenarios.py \
   tests/test_command_owner_scenario_catalog.py \
-  tests/test_codex_features_manifest.py \
   tests/test_skill_routing_rule_ownership.py \
   tests/test_skill_contract_catalog.py \
-  tests/test_skill_contract_migration.py \
-  tests/test_planning_state_consumer_projection_routing.py
+  tests/test_skill_contract_migration.py
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
+  tests/test_codex_features_manifest.py \
+  -k 'not test_work_batch_reconciles_same_batch_closeout'
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
+  tests/test_planning_state_consumer_projection_routing.py \
+  tests/test_deletion_test_vocabulary_ownership.py \
+  -k 'legacy_removal or legacy_evidence_no_state_writes or parallel_planning_systems'
 .venv/bin/python scripts/command_owner_scenarios.py validate tests/fixtures/command-owner-scenarios
 .venv/bin/python scripts/skill_contract.py validate --root .
 .venv/bin/ruff check --no-cache .
 .venv/bin/basedpyright
-.venv/bin/python scripts/install_codex_config.py --manifest codex-features.json --all-features --codex-home /home/alacasse/.codex-command-owner-redesign --dry-run
-git diff --check
+git diff --check 91179e84c7cfed666be224575db7000ca0ea01b3
 ```
 
-Then run the repository's CCFG-33 exact-commit acceptance command against the final
-candidate commit with one evidence-pytest process. Preserve its canonical report
-hash and generated report hash. Run the complete manifest diagnostic and broad
-legacy/projection diagnostic; only the exact preclassified CCFG-26 identities may
-remain red.
+### Real Candidate Installation And Stable-Home Comparison
 
-All final gates are `required-green` except the explicitly retained CCFG-26
-`known-red-baseline`.
+```sh
+fresh_candidate_home="$(mktemp -d /tmp/ccfg-25-codex-home.XXXXXX)"
+stable_status_before="$(mktemp /tmp/ccfg-25-stable-before.XXXXXX)"
+stable_status_after="$(mktemp /tmp/ccfg-25-stable-after.XXXXXX)"
+
+./install.sh --codex-home /home/alacasse/.codex --status >"$stable_status_before"
+./install.sh --codex-home "$fresh_candidate_home" --all
+./install.sh --codex-home "$fresh_candidate_home" --status
+./install.sh --codex-home "$fresh_candidate_home" --all --dry-run
+./install.sh --codex-home /home/alacasse/.codex-command-owner-redesign --all
+./install.sh --codex-home /home/alacasse/.codex-command-owner-redesign --status
+./install.sh --codex-home /home/alacasse/.codex-command-owner-redesign --all --dry-run
+./install.sh --codex-home /home/alacasse/.codex --status >"$stable_status_after"
+cmp "$stable_status_before" "$stable_status_after"
+```
+
+All commands above are `required-green`. Installation must perform real writes only
+to the fresh temporary home and the isolated candidate home, never the stable home.
+
+### Exact-Commit Acceptance With Explicit Outputs
+
+Run from a clean final candidate commit:
+
+```sh
+acceptance_root="$(mktemp -d /tmp/ccfg-25-acceptance.XXXXXX)"
+COMMAND_OWNER_CANDIDATE_CODEX_HOME=/home/alacasse/.codex-command-owner-redesign \
+PYTHONDONTWRITEBYTECODE=1 \
+  .venv/bin/python scripts/command_owner_scenarios.py accept \
+  tests/fixtures/command-owner-scenarios \
+  --result-output "$acceptance_root/acceptance-result.json" \
+  --json-report-output "$acceptance_root/report.json" \
+  --text-report-output "$acceptance_root/report.txt"
+
+python -m json.tool "$acceptance_root/acceptance-result.json" >/dev/null
+python -m json.tool "$acceptance_root/report.json" >/dev/null
+test -s "$acceptance_root/report.txt"
+cat "$acceptance_root/report.txt"
+sha256sum \
+  "$acceptance_root/acceptance-result.json" \
+  "$acceptance_root/report.json"
+```
+
+Status: `required-green`. The acceptance command must launch exactly one evidence
+pytest process and bind the generated evidence to the clean exact candidate commit.
+The coordinator reads the text report and records the generated-result and canonical
+report hashes in closeout.
+
+### Known-Red Diagnostics
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_codex_features_manifest.py
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_planning_state_consumer_projection_routing.py tests/test_deletion_test_vocabulary_ownership.py
+```
+
+- Manifest status: `known-red-baseline`; exactly
+  `test_work_batch_reconciles_same_batch_closeout` may fail.
+- Broad legacy/projection status: `known-red-baseline`; only reproduced,
+  preclassified non-CCFG-25 failures may remain. No new or CCFG-25 failure is
+  accepted.
+
+### Worker Brief
+
+The spawned `runway_worker` is the coding subagent. Implement only bounded final
+convergence corrections in the candidate checkout and do not spawn, delegate to,
+or wait on other agents. Do not run final exact acceptance, perform final reviews,
+mutate stable planning, change CCFG-26 behavior, or introduce a new design. Return
+exact changed paths and verified strict context.
+
+### Reviewer Brief
+
+The final `runway_reviewer` receives the exact range
+`91179e84c7cfed666be224575db7000ca0ea01b3..<final-candidate-commit>` plus validation,
+installation, acceptance-output, and diagnostic evidence. Verify complete COR-008
+behavior, selected-dispatch lineage, no lexical proxy for topology, complete
+CCFG-26 preservation, stable-home immutability, allowed paths, and proportionality.
+Echo that exact `diff_basis` and verified strict context in the v2 result.
 
 Reviews: final exact-range `runway_reviewer`, `import_topology_reviewer`, targeted
 `dead-surface-audit`, and delta-only `test-quality-review`.
@@ -696,12 +895,13 @@ Commit: `chore: complete plan-batch ownership transfer`
 ### Stop Conditions
 
 - Stop on any new semantic decision, schema, bridge, compatibility wrapper, public
-  mode, or owner not already authorized by this runway.
+  mode, helper behavior, runner protocol, or owner not authorized by this runway.
 - Stop if exact acceptance requires preserving legacy planning topology or exact
-  prompt prose.
+  prompt prose, or if tests rely on blanket absence of legacy words.
 - Stop if stable-home state changes, candidate code writes canonical planning
   state, strict context is not ready, or candidate HEAD moves unexpectedly.
-- Stop if the final manifest contains a new failure or any CCFG-25 failure.
+- Stop if the manifest contains a new failure or any CCFG-25 failure.
+- Stop if any CCFG-26 responsibility is narrowed.
 - Stop if CCFG-25 cannot close while CCFG-26 remains unselected.
 
 ## Final Closeout
@@ -710,10 +910,10 @@ After all slices are committed and every final gate is satisfied:
 
 1. write `completed-slices.md` and `closeout.md` in this batch directory;
 2. record exact candidate range, stable planning receipts, transaction recovery,
-   installed links, removed/preserved surface inventory, validation, reviews, and
-   cost evidence;
+   installed links, removed/preserved surface inventory, validation, acceptance
+   output hashes, reviews, and cost evidence;
 3. mark CCFG-25 `Closed` in the program ledger;
 4. clear selected dispatch, queued runway, and active runway for this batch;
 5. set latest closeout to this batch;
-6. leave CCFG-26 through CCFG-29 open and unselected;
+6. leave CCFG-26 through CCFG-29 open and unselected; and
 7. stop without selecting or preparing a successor.
