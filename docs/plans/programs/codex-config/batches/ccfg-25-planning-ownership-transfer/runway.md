@@ -320,9 +320,10 @@ receipt schema, or resume compatibility. Do not edit
 `architecture_program_runner_command.py`; stop if a focused test proves one is
 required.
 
-The required-green skill-contract command is corrected to the current CLI with
-the exact contract-bearing changed skills. Existing catalog, migration, routing,
-and quick-validation checks remain required for the other changed skills.
+The required-green skill-contract checks use separate single-document structural
+validations for the two contract-bearing changed skills. Existing catalog,
+migration, routing, and quick-validation checks remain unchanged and own
+relationship and ownership-transfer validation.
 
 After a new independent review is clean against the exact second-amended dispatch
 and runway, resume the preserved candidate diff under a fresh strict lease whose
@@ -911,7 +912,9 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
 .venv/bin/python scripts/command_owner_scenarios.py validate tests/fixtures/command-owner-scenarios
 .venv/bin/python scripts/skill_contract.py validate \
   --toolchain-root . \
-  skills/architecture-program-runway/SKILL.md \
+  skills/architecture-program-runway/SKILL.md
+.venv/bin/python scripts/skill_contract.py validate \
+  --toolchain-root . \
   skills/legacy-removal/SKILL.md
 python /home/alacasse/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/batch-runway
 python /home/alacasse/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/plan-batch
@@ -1077,7 +1080,9 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
 .venv/bin/python scripts/command_owner_scenarios.py validate tests/fixtures/command-owner-scenarios
 .venv/bin/python scripts/skill_contract.py validate \
   --toolchain-root . \
-  skills/architecture-program-runway/SKILL.md \
+  skills/architecture-program-runway/SKILL.md
+.venv/bin/python scripts/skill_contract.py validate \
+  --toolchain-root . \
   skills/legacy-removal/SKILL.md
 .venv/bin/ruff check --no-cache .
 .venv/bin/basedpyright

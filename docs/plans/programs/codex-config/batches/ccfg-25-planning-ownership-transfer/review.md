@@ -160,3 +160,30 @@ candidate_commit_created: false
   invocations in place of the combined command, retain relationship proof in the
   existing catalog/migration/routing gates, and obtain a fresh exact planning
   review before resuming.
+
+## Slice 2 Command-Only Amendment Review
+
+```yaml
+status: clean
+review_basis: >-
+  Independently verified the unchanged dispatch SHA-256
+  8fabe265e62b91251370c2733e771291605761caad3844f523c3be8f3990b5c1
+  and exact command-amended runway SHA-256
+  23c33eee6f637d177b6f897bbe832d1fe5639249340b542c3e4493d9d51ed02c.
+  Both combined skill-contract invocations are replaced by separate
+  single-document structural validations, and both exact commands exit 0.
+  Existing catalog, migration, routing, and quick-validation gates remain
+  unchanged and retain relationship and ownership-transfer proof. Candidate
+  HEAD remains 5aa5add1251d1e4b3630a9678fdec244949cf691 and the preserved
+  candidate binary diff remains
+  815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e.
+blocker_findings: []
+advisory_findings: []
+required_fixes: []
+```
+
+- Review role: independent, read-only planning reviewer.
+- Command-only amendment decision: clean; resume the same preserved CCFG-25
+  Slice 2 diff under a fresh strict lease.
+- Validator code, truthful skill requirements, candidate scope, Slice 1,
+  closeout, and successor state: unchanged.
