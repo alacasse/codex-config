@@ -8,6 +8,7 @@
 - Queue currentness authority: Planning State `current` and `validate`
 - Candidate Slice 2 resume base:
   `5aa5add1251d1e4b3630a9678fdec244949cf691`
+- Focused blocker report: `blocker-report.md`
 
 Slice 1 is complete and the amended planning review is clean. Slice 2 execution
 stopped at independent implementation review because

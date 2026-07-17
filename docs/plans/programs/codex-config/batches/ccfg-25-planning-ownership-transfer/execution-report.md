@@ -28,6 +28,9 @@ ceiling, but the final independent implementation review found a live runner
 safety owner outside that ceiling. The candidate diff remains uncommitted and
 the explicit stop condition is active.
 
+Focused blocker analysis and the minimum decision needed to resume are recorded
+in `blocker-report.md`.
+
 ## Completed Evidence
 
 - Slice 1 candidate commit:
