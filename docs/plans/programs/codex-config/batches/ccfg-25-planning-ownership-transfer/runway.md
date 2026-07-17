@@ -475,7 +475,7 @@ Every test-changing slice receives delta-only `test-quality-review`. Slices 1 an
 | Slice | Status | Commit | Review | Notes |
 |---|---|---|---|---|
 | 1. Implement installed `plan-batch` owner | Completed | `5aa5add1251d1e4b3630a9678fdec244949cf691` | Clean | Installed owner, exact planning-quality gates, DEC-038 recovery, isolated install, import-topology, and delta-only test-quality proof are green. |
-| 2. Remove displaced planning ownership | Pending | None | Pending | Build the current owner/caller matrix, then narrow planning-only surfaces while preserving the full CCFG-26 inventory. |
+| 2. Remove displaced planning ownership | Blocked | None | Pending | Owner/caller and dead-surface evidence found required runner modules and active support-skill callers outside the allowed path ceiling; amend and independently review scope before deletion. |
 | 3. Converge installation and final acceptance | Pending | None | Pending | Clean install, exact acceptance, diagnostics, and final reviews. |
 
 ## Execution Startup Evidence

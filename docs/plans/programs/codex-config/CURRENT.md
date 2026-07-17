@@ -10,7 +10,7 @@
 - Active Batch Runway spec path:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch path or ID: `None`
-- Active batch execution status: `Slice 1 committed; Slice 2 is next`
+- Active batch execution status: `Blocked before Slice 2 deletion; scope amendment required`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Run artifact location: `None selected`
@@ -70,7 +70,7 @@
 - Active runway:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch: `None`
-- Active batch execution status: `Slice 1 committed; Slice 2 is next`
+- Active batch execution status: `Blocked before Slice 2 deletion; scope amendment required`
 - Source dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
 - Clean planning review:
@@ -95,11 +95,12 @@
 
 ## Next Safe Action
 
-Continue the active CCFG-25 runway at Slice 2. Before every later delegation,
-prepare a fresh `cross-checkout-context/v1` live lease from the immutable planning
-snapshot and validate the exact handoff scope separately. Preserve all CCFG-26
-execution/closeout responsibilities and stop after same-batch CCFG-25 closeout
-without selecting a successor.
+Amend and independently review the active CCFG-25 Slice 2 scope before any
+deletion. The required runner planning behavior lives in sibling runner modules
+outside the current path ceiling, and active support-skill callers outside the
+current scope still route through displaced planning owners. Preserve the
+serialized four-phase runner names until their compatibility owner is decided,
+preserve all CCFG-26 execution/closeout responsibilities, and select no successor.
 
 ## Stop Conditions
 
