@@ -10,7 +10,7 @@
 - Active Batch Runway spec path:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch path or ID: `None`
-- Active batch execution status: `Slice 3 validation amendment has independent review findings`
+- Active batch execution status: `Slice 3 second validation amendment reviewed clean; final gates executing`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Run artifact location: `None selected`
@@ -70,7 +70,7 @@
 - Active runway:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch: `None`
-- Active batch execution status: `Slice 3 validation amendment has independent review findings`
+- Active batch execution status: `Slice 3 second validation amendment reviewed clean; final gates executing`
 - Source dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
 - Clean planning review:
@@ -95,14 +95,12 @@
 
 ## Next Safe Action
 
-Await an explicit further validation-only amendment after choosing whether the
-changed-file BasedPyright gate covers every changed Python file or only changed
-files inside the configured `scripts` project scope. The exact authorized
-all-changed-Python-files command exits `123` with 120 errors and 3 warnings
-because explicit arguments also analyze excluded tests and a fixture. The fresh
-independent review is `findings`; do not resume Slice 3, change configuration,
-chase diagnostics, run installation or exact acceptance, create closeout, or
-select a successor.
+Resume the same CCFG-25 Slice 3 under the clean exact second validation-amendment
+review. Run every amended core gate, retained diagnostic, fresh and isolated
+installation, stable-home comparison, exact CCFG-33 acceptance, and required
+exact-range review before same-batch closeout. Do not modify BasedPyright policy
+or chase historical diagnostics. Close CCFG-25 only after all gates pass, then
+stop without selecting or preparing a successor.
 
 ## Stop Conditions
 

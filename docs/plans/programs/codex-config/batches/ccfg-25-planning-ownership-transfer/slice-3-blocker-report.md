@@ -5,13 +5,14 @@
 ```yaml
 batch: ccfg-25-planning-ownership-transfer
 slice: 3
-status: blocked
+status: resolved
 blocker_class: required-green-changed-file-command-scope
 stable_planning_commit_before_amendment: e72eeecc4f7eb087dce6fa98b2907de7bfbfb875
 candidate_commit: 89671eceb9103039e7e6660e73837827c167a3a1
 candidate_worktree: clean
-amended_runway_sha256: 67a7640e289e185efde8c99a4b62a7389b13503b14e66a13ba61958d9d7d0081
-independent_planning_review: findings
+first_amended_runway_sha256: 67a7640e289e185efde8c99a4b62a7389b13503b14e66a13ba61958d9d7d0081
+second_amended_runway_sha256: 832fd594b9093f13933026d6b3bdac1778f17e74fd1f1fe7117b4e67361c601e
+independent_planning_review: clean-on-second-amendment
 installation_run: false
 exact_acceptance_run: false
 final_reviews_run: false
@@ -19,20 +20,25 @@ closeout_created: false
 successor_selected: false
 ```
 
-## Blocker
+## Resolution
 
-The authorized changed-Python-files required-green command does not pass:
+The first changed-Python-files amendment was rejected because explicit arguments
+expanded analysis into tests and a fixture outside the configured project. The
+second validation-only amendment replaces it with the exact configured-project
+changed-script gate:
 
 ```sh
-git diff --name-only -z --diff-filter=ACMR \
-  91179e84c7cfed666be224575db7000ca0ea01b3 HEAD \
-  -- '*.py' \
-  | xargs -0 -r .venv/bin/basedpyright
+.venv/bin/basedpyright \
+  scripts/architecture_program_runner_change_allowance.py \
+  scripts/architecture_program_runner_phase_contract.py \
+  scripts/plan_batch.py
 ```
 
-At candidate `89671eceb9103039e7e6660e73837827c167a3a1`, it exits `123`
-with 120 errors and 3 warnings. The exact range contains 14 changed Python
-paths: three production scripts, ten tests, and one scenario fixture.
+At candidate `89671eceb9103039e7e6660e73837827c167a3a1`, the corrected
+command exits `0` with zero errors, zero warnings, and zero notes. A fresh
+independent planning review against amended runway SHA-256
+`832fd594b9093f13933026d6b3bdac1778f17e74fd1f1fe7117b4e67361c601e`
+is clean.
 
 Repository `pyrightconfig.json` includes only `scripts`. The bare
 repository-wide command therefore does not analyze the changed tests or fixture,
@@ -41,10 +47,10 @@ evidence intersected repository-wide default diagnostics with the changed path
 set; it did not prove that explicitly analyzing every changed Python file was
 green.
 
-The amendment's command consequently expands analysis beyond the configured
-repository scope and conflicts with its own required-green classification. The
-fresh independent planning review is `findings`, so the amendment is not released
-for execution.
+Changed tests and the fixture remain outside the configured BasedPyright project
+and continue under pytest and Ruff. No configuration, policy, test, fixture, or
+unchanged owner was modified. The bare configured-project audit remains a separate
+known-red-baseline diagnostic.
 
 ## Preserved Repository-Wide Evidence
 
@@ -56,8 +62,8 @@ The original repository-wide comparison remains valid for its configured scope:
 | Candidate `89671eceb9103039e7e6660e73837827c167a3a1` | 311 | 16 | 1 |
 
 The candidate introduces no new repository-wide diagnostics and removes three.
-That evidence does not make the newly explicit all-changed-Python-files command
-green.
+That evidence did not make the first amendment's explicit
+all-changed-Python-files command green.
 
 ## Green Evidence Before The Stop
 
@@ -72,17 +78,10 @@ green.
   six preclassified deletion-vocabulary failures.
 - Candidate worktree remains clean at the reviewed Slice 3 commit.
 
-## Smallest Safe Decision
+## Next Safe Action
 
-Authorize another validation-only amendment that makes one explicit scope choice:
-
-1. limit changed-file non-regression to changed Python files inside the
-   repository-configured BasedPyright project scope; or
-2. classify the diagnostics produced by explicitly analyzing changed tests and
-   fixtures without requiring out-of-scope cleanup.
-
-The required-green command and its acceptance condition must use the same scope,
-and the exact amended runway must receive another fresh independent planning
-review. Do not modify BasedPyright configuration, edit unchanged owners or tests
-to chase historical diagnostics, run installation or exact acceptance, create
-closeout, or select a successor.
+Resume the same Slice 3 and run the complete amended required-green suite and
+retained diagnostics. If green, continue directly through fresh and isolated
+installation, stable-home comparison, exact acceptance, final exact-range reviews,
+and required same-batch closeout. Stop after closing CCFG-25 without selecting or
+preparing a successor.

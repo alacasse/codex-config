@@ -2,8 +2,8 @@
 
 ## Execution Status
 
-- Planning transition: `active; Slice 3 blocked by required-green BasedPyright command`
-- Artifact role: active same-batch runway with a reviewed Slice 3 static commit and blocked final validation
+- Planning transition: `active; Slice 3 second validation-only amendment pending exact review`
+- Artifact role: active same-batch runway with a reviewed Slice 3 static commit and pending validation release gate
 - Selected dispatch: `dispatch.md`
 - Queue currentness authority: Planning State `current` and `validate`
 - Candidate Slice 3 static convergence commit:
@@ -12,10 +12,10 @@
 
 Slices 1 and 2 are complete. Slice 3 static convergence is focused-green and
 independently reviewed at `89671eceb9103039e7e6660e73837827c167a3a1`.
-Final validation is blocked before installation because the exact bare
-`.venv/bin/basedpyright` required-green command reproduces a repository-wide
-pre-existing red baseline outside the CCFG-25 changed files and allowed semantic
-scope. No installation, exact acceptance, closeout, or successor was created.
+Final validation remains paused before installation while the corrected
+configured-project BasedPyright gate receives exact independent planning review.
+The bare repository-wide audit remains a known-red baseline diagnostic. No
+installation, exact acceptance, closeout, or successor was created.
 
 ## Purpose
 
@@ -560,9 +560,9 @@ Profile:
 Status classes:
 
 - Candidate unit, schema/store/transaction, scenario/catalog, skill-contract,
-  routing, strict-context, installer, Ruff, exact-range changed-Python-file
-  BasedPyright, and whitespace gates: `required-green`, except commands
-  explicitly classified below.
+  routing, strict-context, installer, Ruff, exact configured-project
+  changed-script BasedPyright, and whitespace gates: `required-green`, except
+  commands explicitly classified below.
 - New `tests/test_plan_batch.py` and focused fixtures: `implementation-created` by
   Slice 1, then `required-green`.
 - Slice 1 manifest:
@@ -590,7 +590,7 @@ Every test-changing slice receives delta-only `test-quality-review`. Slices 1 an
 |---|---|---|---|---|
 | 1. Implement installed `plan-batch` owner | Completed | `5aa5add1251d1e4b3630a9678fdec244949cf691` | Clean | Installed owner, exact planning-quality gates, DEC-038 recovery, isolated install, import-topology, and delta-only test-quality proof are green. |
 | 2. Remove displaced planning ownership | Completed | `12f70727f7496e2aa2d5fff9b748ee97e19e63a2` | Clean | Exact reviewed binary diff `815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e`; 181 tests and 241 subtests passed, both single-document structural validations passed, specialist reviews and final independent review clean. |
-| 3. Converge installation and final acceptance | Blocked | `89671eceb9103039e7e6660e73837827c167a3a1` | Static clean; final pending | Core pytest: 244 passed and 18 subtests; filtered gates, 69-scenario catalog, structural checks, Ruff, and diff-check green. Bare BasedPyright: baseline 314 errors, current 311, zero diagnostics in CCFG-25 changed files. Installation and exact acceptance not run. |
+| 3. Converge installation and final acceptance | Blocked | `89671eceb9103039e7e6660e73837827c167a3a1` | Static clean; amended validation review pending | Core pytest: 244 passed and 18 subtests; filtered gates, 69-scenario catalog, structural checks, Ruff, and diff-check green. Bare configured-project BasedPyright audit: baseline 314 errors and 16 warnings; current 311 errors and 16 warnings. Installation and exact acceptance not run. |
 
 ## Execution Startup Evidence
 
@@ -1085,12 +1085,17 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
   --toolchain-root . \
   skills/legacy-removal/SKILL.md
 .venv/bin/ruff check --no-cache .
-git diff --name-only -z --diff-filter=ACMR \
-  91179e84c7cfed666be224575db7000ca0ea01b3 HEAD \
-  -- '*.py' \
-  | xargs -0 -r .venv/bin/basedpyright
+.venv/bin/basedpyright \
+  scripts/architecture_program_runner_change_allowance.py \
+  scripts/architecture_program_runner_phase_contract.py \
+  scripts/plan_batch.py
 git diff --check 91179e84c7cfed666be224575db7000ca0ea01b3
 ```
+
+The BasedPyright command above must exit `0` with zero errors and zero warnings.
+Do not add another Python path merely because it appears in the Git diff. Changed
+tests and scenario fixtures remain outside the repository-configured `scripts`
+project and are covered by the existing pytest and Ruff gates.
 
 ### Real Candidate Installation And Stable-Home Comparison
 
@@ -1155,15 +1160,13 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider test
   preclassified non-CCFG-25 failures may remain. No new or CCFG-25 failure is
   accepted.
 - Repository-wide BasedPyright status: `known-red-baseline`. It is acceptable
-  only when the exact CCFG-25 changed-Python-file gate exits `0`, no diagnostic
-  occurs in a Python file changed by
-  `91179e84c7cfed666be224575db7000ca0ea01b3..HEAD`, the repository-wide result
-  introduces no new error or warning relative to that baseline, the candidate
-  total is no worse than the recorded baseline of 314 errors and 16 warnings,
-  and no unchanged module is edited merely to reduce the count. Candidate
-  `89671eceb9103039e7e6660e73837827c167a3a1` records 311 errors and 16 warnings,
-  removes three baseline diagnostics, and has zero diagnostics in the exact
-  CCFG-25 changed Python files.
+  only when the corrected three-script required-green command exits `0` with
+  zero errors and zero warnings, the bare audit introduces no new diagnostic
+  relative to baseline `91179e84c7cfed666be224575db7000ca0ea01b3`, the
+  candidate total is no worse than the recorded 314 errors and 16 warnings,
+  and no unchanged module is edited merely to reduce historical diagnostics.
+  Candidate `89671eceb9103039e7e6660e73837827c167a3a1` records 311 errors and
+  16 warnings and removes three baseline diagnostics.
 
 ### Worker Brief
 

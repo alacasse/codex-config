@@ -258,3 +258,38 @@ required_fixes:
   execution.
 - Installation, exact acceptance, final reviews, closeout, and successor
   selection remain unstarted.
+
+## Slice 3 Second Validation-Only Amendment Review
+
+```yaml
+status: clean
+review_basis:
+  dispatch_sha256: 8fabe265e62b91251370c2733e771291605761caad3844f523c3be8f3990b5c1
+  amended_runway_sha256: 832fd594b9093f13933026d6b3bdac1778f17e74fd1f1fe7117b4e67361c601e
+  candidate_commit: 89671eceb9103039e7e6660e73837827c167a3a1
+  command: >-
+    .venv/bin/basedpyright
+    scripts/architecture_program_runner_change_allowance.py
+    scripts/architecture_program_runner_phase_contract.py
+    scripts/plan_batch.py
+  command_exit: 0
+  command_result: 0 errors, 0 warnings, 0 notes
+minimum_viable_alternative: >-
+  The exact amendment is already the minimum viable correction: validate only
+  the three changed Python files inside the configured scripts project, retain
+  pytest and Ruff ownership for changed tests and fixtures, and preserve the
+  bare configured-project audit as known-red-baseline.
+unjustified_additions: []
+slice_shape_findings: []
+scope_leaks: []
+user_decisions: []
+required_fixes: []
+```
+
+- Review role: independent, read-only planning reviewer under a fresh strict
+  lease at stable `4f58c6abfd04733dc8fdb400c33301f3440b50dc` and candidate
+  `89671eceb9103039e7e6660e73837827c167a3a1` with empty write scopes.
+- Amendment decision: clean; resume this same CCFG-25 Slice 3 and continue the
+  complete existing runway.
+- Candidate source, configuration, tests, fixtures, completed Slice 2, CCFG-26,
+  and successor state remain unchanged.
