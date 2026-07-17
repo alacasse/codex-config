@@ -6,11 +6,11 @@
 - Purpose: maintain one canonical active program ledger for codex-config
   workflow, runner, planning-state, and skill-cleanup work.
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
-- Selected dispatch path:
-  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
+- Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
-- Queued batch execution status: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
+- Queued batch execution status: `Queued; strict preflight required before execution`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Run artifact location: `None selected`
@@ -66,16 +66,15 @@
 
 ## Batch State
 
-- Selected dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
+- Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Queued batch execution status: `None`
-- Queued dispatch: `None`
-- Blocked non-executable runway draft:
+- Queued batch:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
-- CCFG-25 planning blocker:
-  `plan-time cross-checkout-context/v1 validation and clean exact-draft planning review required`
+- Queued batch execution status: `Queued; strict preflight required before execution`
+- Queued dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
+- Clean planning review:
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/review.md`
 - Superseded CCFG-24 planning evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/superseded.md`
 - Superseded CCFG-24A blocked attempt:
@@ -84,6 +83,8 @@
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/closeout.md`
 - Completed intake-ownership cutover:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
+- Queued planning-ownership transfer:
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Latest completed batch: `ccfg-24b-intake-ownership-cutover`
 - Latest completed dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/dispatch.md`
@@ -94,19 +95,17 @@
 
 ## Next Safe Action
 
-Run a local explicit `plan-batch` repair pass for the selected CCFG-25 dispatch.
-The pass must validate the complete strict payload and canonical planning root with
-the installed stable helper, record the validated planning snapshot, obtain a clean
-independent planning review against the exact dispatch and amended draft, and only
-then apply DEC-038 to queue one runway. Do not invoke `work-batch` while the queue
-is empty and the draft is blocked.
+Execute the queued CCFG-25 runway through an explicit `work-batch` request. Before
+any delegation, require a fresh ready `cross-checkout-context/v1` preflight against
+the immutable planning snapshot and current Planning State. Implement only the
+active slice, preserve CCFG-26 execution/closeout responsibilities, and stop after
+same-batch CCFG-25 closeout without selecting a successor.
 
 ## Stop Conditions
 
 - Stop if work treats closed CCFG-18 or its completed runway as active work.
-- Stop if planning weakens strict `cross-checkout-context/v1`, treats the
-  unvalidated context candidate as a planning snapshot, or substitutes a live
-  execution preflight for the missing plan-time validation record.
+- Stop if planning weakens strict `cross-checkout-context/v1` or treats the
+  planning snapshot as a live execution lease.
 - Stop if any default stable-home installed link resolves to the redesign branch
   or candidate clone.
 - Stop if work treats the completed CCFG-24B dispatch or runway as active state.
@@ -139,15 +138,12 @@ is empty and the draft is blocked.
   escape hatch, or stable-home ownership from the candidate generation.
 - Stop if CCFG-24 through CCFG-29 retain replaced CCFG-23 fixtures or tests
   without a named caller, reason, owner, and removal condition.
-- Stop if another dispatch, runway, or successor is selected while the CCFG-25
-  dispatch is selected or its draft remains blocked.
-- Stop if `work-batch` attempts to execute the blocked CCFG-25 draft.
+- Stop if another dispatch or runway is selected, queued, activated, or created
+  while CCFG-25 is queued or active.
 - Stop if CCFG-25 introduces a new planning schema, store, queue transaction,
   lifecycle state, public command, persistent draft store, helper behavior,
   runner protocol, or compatibility layer.
-- Stop if planner/reviewer independence is not direct and mechanically evidenced,
-  or if queue mutation can occur before the selected dispatch and exact draft are
-  clean and approved.
+- Stop if planner/reviewer independence is not direct and mechanically evidenced.
 - Stop if CCFG-25 removes or narrows any proceed/stop, delegation, recovery,
   validation, review, commit, receipt, finalization, closeout, reconciliation, or
   strict execution-safety responsibility reserved for CCFG-26.

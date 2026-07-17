@@ -2,16 +2,15 @@
 
 ## Execution Status
 
-- Planning state: `blocked-before-queue`
-- Artifact role: non-executable amended draft
+- Planning transition: `queue-candidate`
+- Artifact role: byte-stable runway candidate controlled by the gate below
 - Selected dispatch: `dispatch.md`
-- Queued runway: `None`
-- Active runway: `None`
+- Queue currentness authority: Planning State `current` and `validate`
 
-This draft must not be executed through `work-batch`. The original queue mutation
-occurred without the required plan-time validation of the strict cross-checkout
-payload and before a clean independent review of the exact draft. Preserve this
-file as blocked draft evidence until the Plan Repair Gate below is satisfied.
+This file is non-executable until `review.md` records a clean independent review
+of its exact content hash and Planning State reports this exact runway as queued.
+After those gates pass, this same byte-stable file is the queued runway; do not edit
+it merely to mirror the external queue transition.
 
 ## Purpose
 
@@ -116,54 +115,114 @@ failure blocks instead of widening scope.
 - Test-quality review: `delta-only` for every test-changing slice and the final
   exact candidate range.
 
-## Plan Repair Gate
+## Plan Repair And Queue Gate
 
-Before this draft can become a queued runway, a local `plan-batch` planning pass
-must perform all of the following in order:
+This exact runway may become queued only when one local `plan-batch` pass proves
+all of the following in order:
 
 1. resolve `/home/alacasse/.codex/scripts/cross_checkout_context.py` from the active
    stable Codex home and prove it resolves under the declared toolchain root;
-2. parse and validate the complete payload in **Strict Context Candidate** below,
+2. parse and validate the complete payload in **Planning Snapshot** below,
    including the canonical planning root and exact intended planning and
    implementation write scopes;
-3. replace the unvalidated label with a **Planning Snapshot** record containing the
-   exact validated payload, canonical planning root, absolute helper path, and a
-   compact validation statement;
-4. invoke an independent planning reviewer against the selected `dispatch.md`, all
+3. invoke an independent planning reviewer against the selected `dispatch.md`, all
    authoritative sources and user constraints, current Planning State facts, the
    proportionality record, and the exact amended draft hash;
-5. require `status: clean`, no unresolved user decision, and no unapproved residual
+4. require `status: clean`, no unresolved user decision, and no unapproved residual
    complexity; and
-6. apply DEC-038 to transition this exact selected scope to one queued runway.
+5. apply DEC-038 to transition this exact selected scope to one queued runway.
 
 Any missing or mismatched fact preserves the selected dispatch and this draft but
 stops before queue mutation. A current live execution preflight does not replace
 this plan-time validation record.
 
-## Strict Context Candidate
+## Planning Snapshot
 
-This payload is unvalidated planning input, not a planning snapshot and not a live
-execution lease.
+Interface: `cross-checkout-context/v1`.
 
-Installed helper required for validation:
-`/home/alacasse/.codex/scripts/cross_checkout_context.py`.
+Installed helper:
+
+```text
+/home/alacasse/.codex/scripts/cross_checkout_context.py
+```
 
 Canonical planning root:
-`/home/alacasse/projects/codex-config/docs/plans`.
+
+```text
+/home/alacasse/projects/codex-config/docs/plans
+```
+
+Complete validated plan-time payload:
 
 ```yaml
 interface: cross-checkout-context/v1
 execution_context:
   toolchain_source_root: /home/alacasse/projects/codex-config
-  toolchain_commit: 31d228d4ef9b94e2ccad0f5260670593ea9469f9
+  toolchain_commit: 4dfcc6418fca62b59e17ae4803e28a377b306f4e
   canonical_planning_repository_root: /home/alacasse/projects/codex-config
-  canonical_planning_commit_before: 31d228d4ef9b94e2ccad0f5260670593ea9469f9
+  canonical_planning_commit_before: 4dfcc6418fca62b59e17ae4803e28a377b306f4e
   implementation_target_root: /home/alacasse/projects/codex-config-command-owner-redesign
   implementation_commit_before: 91179e84c7cfed666be224575db7000ca0ea01b3
   codex_home: /home/alacasse/.codex
   generation_role: stable
   canonical_state_mutation_allowed: true
 ```
+
+Plan-time validation:
+
+```yaml
+validation:
+  helper_resolves_to: /home/alacasse/projects/codex-config/scripts/cross_checkout_context.py
+  strict_parse: passed
+  canonical_planning_root: passed
+  write_scope: passed
+  receipt_interface: cross-checkout-receipt/v1
+  caller: plan-batch
+  reason: CCFG-25 Plan Repair Gate and queue transition
+  repository_revisions:
+    toolchain_commit: 4dfcc6418fca62b59e17ae4803e28a377b306f4e
+    canonical_planning_commit_before: 4dfcc6418fca62b59e17ae4803e28a377b306f4e
+    implementation_commit_before: 91179e84c7cfed666be224575db7000ca0ea01b3
+  planning_paths:
+    - /home/alacasse/projects/codex-config/docs/plans/programs/codex-config/CURRENT.md
+    - /home/alacasse/projects/codex-config/docs/plans/programs/codex-config/LEDGER.md
+    - /home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md
+    - /home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md
+    - /home/alacasse/projects/codex-config/docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/review.md
+  implementation_paths:
+    - /home/alacasse/projects/codex-config-command-owner-redesign/skills/plan-batch
+    - /home/alacasse/projects/codex-config-command-owner-redesign/scripts/plan_batch.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/agents/batch_planner.toml
+    - /home/alacasse/projects/codex-config-command-owner-redesign/agents/batch_plan_reviewer.toml
+    - /home/alacasse/projects/codex-config-command-owner-redesign/skills/architecture-program-runway
+    - /home/alacasse/projects/codex-config-command-owner-redesign/skills/batch-runway
+    - /home/alacasse/projects/codex-config-command-owner-redesign/scripts/architecture_program_runner.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/codex-features.json
+    - /home/alacasse/projects/codex-config-command-owner-redesign/skills-lock.json
+    - /home/alacasse/projects/codex-config-command-owner-redesign/docs/skill-routing-contract.md
+    - /home/alacasse/projects/codex-config-command-owner-redesign/docs/workflow-guide.md
+    - /home/alacasse/projects/codex-config-command-owner-redesign/README.md
+    - /home/alacasse/projects/codex-config-command-owner-redesign/CHANGELOG.md
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/test_plan_batch.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/test_architecture_program_runner.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/test_codex_features_manifest.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/test_skill_routing_rule_ownership.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/test_skill_contract_catalog.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/test_skill_contract_migration.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/test_planning_state_consumer_projection_routing.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/test_deletion_test_vocabulary_ownership.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/test_command_owner_behavioral_scenarios.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/test_command_owner_scenario_catalog.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/command-owner-scenarios/catalog.yaml
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/command-owner-scenarios/workflow-cases.yaml
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/command-owner-scenarios/workflow_adapters.py
+    - /home/alacasse/projects/codex-config-command-owner-redesign/tests/fixtures/plan-batch
+  deletion_condition: CCFG-29 final integration
+```
+
+This immutable planning snapshot is historical plan-time evidence, not a live
+execution lease or a promise about later live `HEAD`. Do not rewrite it when the
+containing planning change or later between-flight commits advance stable `HEAD`.
 
 After valid queue mutation, `work-batch` must still run a fresh ready/blocked
 preflight at execution startup and prepare a fresh live lease before every worker
