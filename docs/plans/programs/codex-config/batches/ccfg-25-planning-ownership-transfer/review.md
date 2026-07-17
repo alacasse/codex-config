@@ -210,3 +210,51 @@ required_fixes: []
   audit all clean.
 - Acceptance decision: clean; Slice 2 committed without changing the reviewed
   binary diff. Slice 3 remains pending; no closeout or successor was created.
+
+## Slice 3 Validation-Only Amendment Review
+
+```yaml
+status: findings
+review_basis: >-
+  Independently reviewed unchanged dispatch SHA-256
+  8fabe265e62b91251370c2733e771291605761caad3844f523c3be8f3990b5c1
+  and exact amended runway SHA-256
+  67a7640e289e185efde8c99a4b62a7389b13503b14e66a13ba61958d9d7d0081.
+  Planning State current and validate passed; CCFG-25 remains the sole active
+  runway with no selected or queued batch. The stable diff changes only runway
+  validation classification and commands and preserves completed Slice 2,
+  CCFG-26, semantic scope, and no-successor constraints. The exact proposed
+  changed-Python-file command nevertheless exits 123 at candidate
+  89671eceb9103039e7e6660e73837827c167a3a1 with 120 errors and 3 warnings.
+  Explicit file arguments analyze 14 changed Python paths, including tests and
+  a fixture excluded from the repository-wide pyrightconfig include of scripts.
+minimum_viable_alternative: >-
+  Do not resume Slice 3. A further validation-only amendment must decide whether
+  changed-file non-regression means only changed files inside the configured
+  BasedPyright project scope or includes every changed Python test and fixture.
+  The command and acceptance condition must use the same scope and receive a
+  fresh exact-hash independent review.
+unjustified_additions: []
+slice_shape_findings: []
+scope_leaks:
+  - >-
+    The proposed explicit-file command expands BasedPyright analysis beyond the
+    configured scripts include, so it is not a changed-file projection of the
+    repository-wide diagnostic.
+user_decisions:
+  - >-
+    Decide whether the changed-file gate covers every changed Python file or
+    only changed files in the configured BasedPyright project scope.
+required_fixes:
+  - Keep this amendment non-executable and do not resume Slice 3.
+  - Correct the stale zero-changed-file-diagnostics evidence.
+  - Amend the command and condition consistently, then obtain another review.
+```
+
+- Review role: independent, read-only planning reviewer under a fresh strict
+  lease at stable `e72eeecc4f7eb087dce6fa98b2907de7bfbfb875` and candidate
+  `89671eceb9103039e7e6660e73837827c167a3a1` with empty write scopes.
+- Amendment decision: findings; the exact amendment is not released for
+  execution.
+- Installation, exact acceptance, final reviews, closeout, and successor
+  selection remain unstarted.

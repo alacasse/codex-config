@@ -560,8 +560,9 @@ Profile:
 Status classes:
 
 - Candidate unit, schema/store/transaction, scenario/catalog, skill-contract,
-  routing, strict-context, installer, Ruff, BasedPyright, and whitespace gates:
-  `required-green`, except commands explicitly classified below.
+  routing, strict-context, installer, Ruff, exact-range changed-Python-file
+  BasedPyright, and whitespace gates: `required-green`, except commands
+  explicitly classified below.
 - New `tests/test_plan_batch.py` and focused fixtures: `implementation-created` by
   Slice 1, then `required-green`.
 - Slice 1 manifest:
@@ -1084,7 +1085,10 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
   --toolchain-root . \
   skills/legacy-removal/SKILL.md
 .venv/bin/ruff check --no-cache .
-.venv/bin/basedpyright
+git diff --name-only -z --diff-filter=ACMR \
+  91179e84c7cfed666be224575db7000ca0ea01b3 HEAD \
+  -- '*.py' \
+  | xargs -0 -r .venv/bin/basedpyright
 git diff --check 91179e84c7cfed666be224575db7000ca0ea01b3
 ```
 
@@ -1142,6 +1146,7 @@ report hashes in closeout.
 ```sh
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_codex_features_manifest.py
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_planning_state_consumer_projection_routing.py tests/test_deletion_test_vocabulary_ownership.py
+.venv/bin/basedpyright
 ```
 
 - Manifest status: `known-red-baseline`; exactly
@@ -1149,6 +1154,16 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider test
 - Broad legacy/projection status: `known-red-baseline`; only reproduced,
   preclassified non-CCFG-25 failures may remain. No new or CCFG-25 failure is
   accepted.
+- Repository-wide BasedPyright status: `known-red-baseline`. It is acceptable
+  only when the exact CCFG-25 changed-Python-file gate exits `0`, no diagnostic
+  occurs in a Python file changed by
+  `91179e84c7cfed666be224575db7000ca0ea01b3..HEAD`, the repository-wide result
+  introduces no new error or warning relative to that baseline, the candidate
+  total is no worse than the recorded baseline of 314 errors and 16 warnings,
+  and no unchanged module is edited merely to reduce the count. Candidate
+  `89671eceb9103039e7e6660e73837827c167a3a1` records 311 errors and 16 warnings,
+  removes three baseline diagnostics, and has zero diagnostics in the exact
+  CCFG-25 changed Python files.
 
 ### Worker Brief
 

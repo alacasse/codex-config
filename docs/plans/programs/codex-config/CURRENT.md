@@ -10,7 +10,7 @@
 - Active Batch Runway spec path:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch path or ID: `None`
-- Active batch execution status: `Slice 3 blocked by required-green repository-wide BasedPyright baseline`
+- Active batch execution status: `Slice 3 validation amendment has independent review findings`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Run artifact location: `None selected`
@@ -70,7 +70,7 @@
 - Active runway:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch: `None`
-- Active batch execution status: `Slice 3 blocked by required-green repository-wide BasedPyright baseline`
+- Active batch execution status: `Slice 3 validation amendment has independent review findings`
 - Source dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
 - Clean planning review:
@@ -95,12 +95,14 @@
 
 ## Next Safe Action
 
-Await an explicit bounded validation-only amendment for the Slice 3 bare
-`.venv/bin/basedpyright` required-green command. It fails with 314 errors at the
-exact batch baseline and 311 at candidate commit
-`89671eceb9103039e7e6660e73837827c167a3a1`, with zero diagnostics in files
-changed by CCFG-25. Do not edit read-only owners, weaken policy silently, run
-installation or exact acceptance, create closeout, or select a successor.
+Await an explicit further validation-only amendment after choosing whether the
+changed-file BasedPyright gate covers every changed Python file or only changed
+files inside the configured `scripts` project scope. The exact authorized
+all-changed-Python-files command exits `123` with 120 errors and 3 warnings
+because explicit arguments also analyze excluded tests and a fixture. The fresh
+independent review is `findings`; do not resume Slice 3, change configuration,
+chase diagnostics, run installation or exact acceptance, create closeout, or
+select a successor.
 
 ## Stop Conditions
 
