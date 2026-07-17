@@ -88,8 +88,8 @@ row-by-row here.
 | CCFG-22. Finalize and Validate `skill-authoring` v1 | Closed | [COR-005](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-005--ccfg-22--finalize-and-validate-skill-authoring-v1) | Command-owner redesign / authoring | None | Closed by `batches/ccfg-22-skill-authoring-v1/closeout.md`: all nine COR-005 keys and candidate-only installation are proven. |
 | CCFG-23. Build the Topology-Independent Behavioral Scenario Harness | Closed | [COR-006](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-006--ccfg-23--build-the-topology-independent-behavioral-harness) plus live harness scenarios in `findings/command-owner-redesign-planning-execution-carry-forward.md` | Command-owner redesign / behavioral harness | None | Closed by `batches/ccfg-23-behavioral-scenario-harness/closeout.md`: all six COR-006 keys and six aliases are green across 69 scenarios, 31 contracts, and 17 families. |
 | CCFG-24. Transfer Intake Ownership to `add-to-ledger` | Closed | [COR-007](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-007--ccfg-24--transfer-intake-ownership-to-add-to-ledger), `findings/ccfg-24-two-batch-execution-amendment.md`, and `findings/ccfg-24a-add-to-ledger-v1-decision-amendment.md` | Command-owner redesign / intake ownership | None | Closed by `batches/ccfg-24b-intake-ownership-cutover/closeout.md`: `add-to-ledger/v1` is the sole intake and normal mutation-decision owner; APR intake and legacy state-owner routes are absent; candidate range `3b0941a..91179e8`, isolated installation, exact acceptance, and final reviews are green. CCFG-25 remains unselected. |
-| CCFG-25. Transfer Planning Ownership to `plan-batch` | Pending | [COR-008](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-008--ccfg-25--transfer-planning-ownership-to-plan-batch), `findings/ccfg-25-planning-quality-amendment.md`, and `findings/command-owner-redesign-planning-execution-carry-forward.md` | Command-owner redesign / planning ownership | Complete Slice 3 final gates and same-batch closeout | Slice 3 static convergence commit `89671eceb9103039e7e6660e73837827c167a3a1` is focused-green and reviewed. The exact second validation-only amendment is independently reviewed clean: the configured-project three-script BasedPyright gate reports zero errors and warnings, while the bare audit remains known-red-baseline at 311 errors and 16 warnings. Resume final validation, installation, exact acceptance, reviews, and closeout; CCFG-26 remains preserved and no successor is selected. |
-| CCFG-26. Transfer Execution and Closeout Ownership to `work-batch` | Open | [COR-009](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-009--ccfg-26--transfer-execution-and-closeout-ownership-to-work-batch) plus live execution boundary in `findings/command-owner-redesign-planning-execution-carry-forward.md` | Command-owner redesign / execution ownership | Wait for CCFG-25 | Transfer execution/closeout decisions and remove replaced APR/Batch Runway execution fixtures in the same work. Unselected. |
+| CCFG-25. Transfer Planning Ownership to `plan-batch` | Closed | [COR-008](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-008--ccfg-25--transfer-planning-ownership-to-plan-batch), `findings/ccfg-25-planning-quality-amendment.md`, and `findings/command-owner-redesign-planning-execution-carry-forward.md` | Command-owner redesign / planning ownership | None | Closed by `batches/ccfg-25-planning-ownership-transfer/closeout.md`: one complete `plan-batch` invocation owns selection, independent planning review, proportionality, and the DEC-038 transaction; displaced planning owners are removed; candidate range `91179e8..89671ec`, real installations, exact acceptance, and final reviews are green. CCFG-26 remains open and unselected. |
+| CCFG-26. Transfer Execution and Closeout Ownership to `work-batch` | Open | [COR-009](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-009--ccfg-26--transfer-execution-and-closeout-ownership-to-work-batch) plus live execution boundary in `findings/command-owner-redesign-planning-execution-carry-forward.md` | Command-owner redesign / execution ownership | Await a later explicit `plan-batch` request | Transfer execution/closeout decisions and remove replaced APR/Batch Runway execution fixtures in the same work. Open and unselected; this closeout does not select or prepare it. |
 | CCFG-27. Prepare and Rehearse Candidate Cutover | Open | [COR-010](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-010--ccfg-27--prepare-and-rehearse-candidate-cutover) plus live bridge-readiness gate in `findings/command-owner-redesign-planning-execution-carry-forward.md` | Command-owner redesign / cutover preparation | Wait for CCFG-26 | Prove candidate-installed bridge parity and rehearse cutover without changing the default generation. Own the runner public-protocol decision to migrate or remove the temporary serialized `select-dispatch` and `create-spec` labels and old runner modes. Unselected. |
 | CCFG-28. Remove Legacy Owners and Commit Final Cutover | Open | [COR-011](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-011--ccfg-28--remove-legacy-owners-and-commit-final-cutover) plus live switch gate in `findings/command-owner-redesign-planning-execution-carry-forward.md` | Command-owner redesign / deletion and final switch | Wait for CCFG-27 | Delete remaining legacy owners and switch only after rehearsal proof. Unselected. |
 | CCFG-29. Contract-First Convergence and Final Integration | Open | [COR-012](https://github.com/alacasse/codex-config/blob/caf343a14bf8dae5ba3bfda6d8ab974929bb4c7c/docs/design/command-owner-redesign/07-implementation-ledger-intake.md#cor-012--ccfg-29--contract-first-convergence-and-final-integration) plus live convergence obligations in `findings/command-owner-redesign-planning-execution-carry-forward.md` | Command-owner redesign / convergence and final integration | Wait for CCFG-28 | Merge candidate into authoritative master, remove the temporary bridge, restore integrated master as default, and complete physical cleanup of the temporary planning phase labels if CCFG-27 retained them. Unselected. |
@@ -100,7 +100,7 @@ row-by-row here.
 
 ## Batch Queue
 
-Active batch: `ccfg-25-planning-ownership-transfer`.
+Active batch: `None`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
@@ -129,17 +129,16 @@ Active batch: `ccfg-25-planning-ownership-transfer`.
 | `ccfg-24-intake-ownership-transfer` | superseded | `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/runway.md` | CCFG-24 | Superseded historical source analysis. |
 | `ccfg-24a-intake-owner-preparation` | completed | `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/runway.md` | CCFG-24 | Completed in candidate range `b38570b..3b0941a`; CCFG-24 became `Prepared`. |
 | `ccfg-24b-intake-ownership-cutover` | completed | `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/runway.md` | CCFG-24 | Completed in candidate range `3b0941a..91179e8`; COR-007 closed with converged isolated installation, exact acceptance, and no stable-home mutation. |
-| `ccfg-25-planning-ownership-transfer` | active | `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md` | CCFG-25 | Slices 1 and 2 are complete; Slice 3 static convergence is committed as `89671eceb9103039e7e6660e73837827c167a3a1`. Its exact second validation-only amendment is reviewed clean; complete final gates and same-batch closeout without successor selection. |
+| `ccfg-25-planning-ownership-transfer` | completed | `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md` | CCFG-25 | Closed in candidate range `91179e8..89671ec`; configured-project validation, fresh and isolated installation, stable-home comparison, exact acceptance, and all final reviews are green. No successor was selected. |
 
 ## Recommended Work Order
 
 1. Start pickup from root and program `CURRENT.md`.
 2. CCFG-18 through CCFG-24 and CCFG-30 through CCFG-33 are closed.
-3. Complete the same `ccfg-25-planning-ownership-transfer` Slice 3 under its clean
-   second validation-amendment review, then reconcile same-batch closeout. Do not
-   edit BasedPyright policy, chase historical diagnostics, or select a successor.
-4. Keep CCFG-26 through CCFG-29 and all older open rows unselected while CCFG-25 is
-   queued or active.
+3. CCFG-25 is closed. Keep CCFG-26 through CCFG-29 and all older open rows
+   unselected until a later explicit `plan-batch` request selects exactly one
+   bounded row.
+4. Do not infer or prepare a successor from CCFG-25 closeout.
 5. Do not revive archived APR/PST ledgers as pickup sources.
 6. Keep CCFG-11 open but do not execute its displaced runway.
 
@@ -164,14 +163,9 @@ Active batch: `ccfg-25-planning-ownership-transfer`.
   - candidate installation converges and stable/default ownership is unchanged;
   - only the three named CCFG-25/26 manifest diagnostics remain red;
   - same-batch closeout clears selected/queued/active state and selects no successor.
-- CCFG-25 is active at
-  `batches/ccfg-25-planning-ownership-transfer/runway.md`; its clean review is
-  bound to exact amended dispatch hash
-  `0e07a56a6f7cc1ff81f3f0851d329f95277a2574c1bbe97cd26e72d635a7bd2a`
-  and runway hash
-  `ddc37370a7e6f1ba0661d8ab9b64b9975c3ff779aad9c11166776ec755ca38f8`.
-  Slice 1 is committed as `5aa5add1251d1e4b3630a9678fdec244949cf691`, and
-  every later handoff requires a freshly prepared strict lease.
+- CCFG-25 is closed by
+  `batches/ccfg-25-planning-ownership-transfer/closeout.md` in exact candidate
+  range `91179e84c7cfed666be224575db7000ca0ea01b3..89671eceb9103039e7e6660e73837827c167a3a1`.
 - CCFG-25 owns APR planning/selection/queue and Batch Runway create-spec transfer.
 - CCFG-25 must preserve all proceed/stop, delegation, recovery, validation,
   implementation review, commit, receipt, execution-ledger, finalization,

@@ -293,3 +293,38 @@ required_fixes: []
   complete existing runway.
 - Candidate source, configuration, tests, fixtures, completed Slice 2, CCFG-26,
   and successor state remain unchanged.
+
+## Slice 3 Final Exact-Range Reviews
+
+```yaml
+status: clean
+diff_basis:
+  base_commit: 91179e84c7cfed666be224575db7000ca0ea01b3
+  candidate_commit: 89671eceb9103039e7e6660e73837827c167a3a1
+  binary_diff_sha256: c5dee2c8d0f0fc65ed758360dd8dad51fbf66cf3fe9ed387d218197d8b283ae4
+  files_changed: 38
+verified_cross_checkout_context:
+  interface: cross-checkout-context/v1
+  generation_role: stable
+  toolchain_commit: 203320ea0cba1d7525f2dd271e65701ce91aeb77
+  canonical_planning_commit_before: 203320ea0cba1d7525f2dd271e65701ce91aeb77
+  implementation_commit_before: 89671eceb9103039e7e6660e73837827c167a3a1
+  canonical_state_mutation_allowed: true
+findings: []
+required_fixes: []
+```
+
+- Final independent review: clean across behavior, contracts, tests, import
+  topology, compatibility cleanup, validation, reporting, allowed paths,
+  CCFG-26 preservation, and stable-home immutability.
+- Import-topology review: clean. The retained serialized labels and third-party
+  dependencies are intentional; runner state, validation, and command modules
+  are unchanged, and execution/closeout ownership remains with CCFG-26.
+- Dead-surface audit: clean. APR planning and Batch Runway create-spec authority
+  are removed; serialized `select-dispatch` and `create-spec` are classified
+  temporary compatibility labels with CCFG-27 decision and CCFG-29 cleanup
+  ownership; the runner facade is a kept thin entrypoint.
+- Delta-only test-quality review: clean across 103 focused tests and 23
+  subtests, with no material test-design finding.
+- Exact acceptance, installation, validation, and known-red non-regression
+  evidence are recorded in `closeout.md`. No successor was selected or prepared.

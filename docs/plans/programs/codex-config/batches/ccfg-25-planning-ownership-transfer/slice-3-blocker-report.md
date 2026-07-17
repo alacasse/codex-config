@@ -13,10 +13,10 @@ candidate_worktree: clean
 first_amended_runway_sha256: 67a7640e289e185efde8c99a4b62a7389b13503b14e66a13ba61958d9d7d0081
 second_amended_runway_sha256: 832fd594b9093f13933026d6b3bdac1778f17e74fd1f1fe7117b4e67361c601e
 independent_planning_review: clean-on-second-amendment
-installation_run: false
-exact_acceptance_run: false
-final_reviews_run: false
-closeout_created: false
+installation_run: true
+exact_acceptance_run: true
+final_reviews_run: true
+closeout_created: true
 successor_selected: false
 ```
 
@@ -80,8 +80,7 @@ all-changed-Python-files command green.
 
 ## Next Safe Action
 
-Resume the same Slice 3 and run the complete amended required-green suite and
-retained diagnostics. If green, continue directly through fresh and isolated
-installation, stable-home comparison, exact acceptance, final exact-range reviews,
-and required same-batch closeout. Stop after closing CCFG-25 without selecting or
-preparing a successor.
+Resolved. The complete amended required-green suite, retained diagnostics, fresh
+and isolated installations, stable-home comparison, exact acceptance, final
+exact-range reviews, and same-batch closeout all completed. See `closeout.md`.
+Stop without selecting or preparing a successor.

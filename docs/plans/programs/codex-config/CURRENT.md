@@ -7,12 +7,11 @@
   workflow, runner, planning-state, and skill-cleanup work.
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
-- Active Batch Runway spec path:
-  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
+- Active Batch Runway spec path: `None`
 - Queued batch path or ID: `None`
-- Active batch execution status: `Slice 3 second validation amendment reviewed clean; final gates executing`
+- Active batch execution status: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -34,8 +33,8 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-26 through CCFG-29.
-- Pending ledger row: CCFG-25.
-- Closed ledger rows: CCFG-18 through CCFG-24 and CCFG-30 through CCFG-33.
+- Pending ledger row: `None`.
+- Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-33.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
   CCFG-22 closes all nine COR-005 authoring acceptance keys with candidate-only
@@ -51,6 +50,8 @@
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/closeout.md`
 - CCFG-24B closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
+- CCFG-25 closeout evidence:
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
 - Live CCFG-25 planning-quality amendment:
   `docs/plans/programs/codex-config/findings/ccfg-25-planning-quality-amendment.md`
 - Accepted command-owner redesign snapshot:
@@ -67,14 +68,9 @@
 ## Batch State
 
 - Selected dispatch: `None`
-- Active runway:
-  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
+- Active runway: `None`
 - Queued batch: `None`
-- Active batch execution status: `Slice 3 second validation amendment reviewed clean; final gates executing`
-- Source dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
-- Clean planning review:
-  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/review.md`
+- Active batch execution status: `None`
 - Superseded CCFG-24 planning evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/superseded.md`
 - Superseded CCFG-24A blocked attempt:
@@ -83,24 +79,22 @@
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/closeout.md`
 - Completed intake-ownership cutover:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
-- Active planning-ownership transfer:
-  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
-- Latest completed batch: `ccfg-24b-intake-ownership-cutover`
+- Completed planning-ownership transfer:
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
+- Latest completed batch: `ccfg-25-planning-ownership-transfer`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
 
 ## Next Safe Action
 
-Resume the same CCFG-25 Slice 3 under the clean exact second validation-amendment
-review. Run every amended core gate, retained diagnostic, fresh and isolated
-installation, stable-home comparison, exact CCFG-33 acceptance, and required
-exact-range review before same-batch closeout. Do not modify BasedPyright policy
-or chase historical diagnostics. Close CCFG-25 only after all gates pass, then
-stop without selecting or preparing a successor.
+CCFG-25 is closed. Stop without selecting, dispatching, queuing, refreshing, or
+preparing a successor. A later explicit `plan-batch` request may select exactly
+one bounded ledger row; until then CCFG-26 through CCFG-29 remain open and
+unselected.
 
 ## Stop Conditions
 

@@ -4,19 +4,39 @@
 
 ```yaml
 batch: ccfg-25-planning-ownership-transfer
-status: slice-3-blocked-required-green-basedpyright-contract
-completed_slice: 2
-active_slice: 3
+status: completed
+completed_slice: 3
+active_slice: none
 candidate_head: 89671eceb9103039e7e6660e73837827c167a3a1
-stable_planning_head_before_report: 24f5ab9b66bb0e0060df5b8483597cbb5c5146d9
+stable_planning_head_before_closeout: 203320ea0cba1d7525f2dd271e65701ce91aeb77
 candidate_worktree: clean
-candidate_diff_sha256: 815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e
+candidate_diff_sha256: c5dee2c8d0f0fc65ed758360dd8dad51fbf66cf3fe9ed387d218197d8b283ae4
 stable_worktree_scope: same-batch planning evidence only
-independent_implementation_review: static-clean-final-pending
+independent_implementation_review: clean
 successor_selected: false
 ```
 
-## Slice 3 Blocked Validation Receipt
+## Slice 3 Completion Receipt
+
+- Candidate commit: `89671eceb9103039e7e6660e73837827c167a3a1`.
+- Exact cumulative binary diff SHA-256:
+  `c5dee2c8d0f0fc65ed758360dd8dad51fbf66cf3fe9ed387d218197d8b283ae4`.
+- Core validation passed 244 tests and 18 subtests; filtered manifest and
+  deletion/projection gates, all 69 scenarios, both structural skill checks,
+  Ruff, the exact three-script BasedPyright gate, and diff-check were green.
+- Known-red diagnostics remained exact and non-regressing: one CCFG-26 manifest
+  failure, six preclassified deletion-vocabulary failures, and bare
+  BasedPyright at 311 errors and 16 warnings versus baseline 314 and 16.
+- A fresh candidate home and the fixed isolated candidate home converged. Stable
+  home status remained byte-for-byte unchanged.
+- Exact acceptance passed 25 tests in one evidence-pytest process and reported
+  69 scenarios, 31 contracts, 17 families, six evidence keys, and six aliases
+  green. Generated output hashes and timing are recorded in `closeout.md`.
+- Final independent, import-topology, dead-surface, and delta-only test-quality
+  reviews were clean. Same-batch closeout is complete and no successor was
+  selected or prepared.
+
+## Resolved Slice 3 Blocked Validation Receipt
 
 - Static convergence correction: `README.md` now names the independent
   `batch_planner` and `batch_plan_reviewer` roles; exact reviewed diff SHA-256

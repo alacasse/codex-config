@@ -2,20 +2,20 @@
 
 ## Execution Status
 
-- Planning transition: `active; Slice 3 second validation-only amendment pending exact review`
-- Artifact role: active same-batch runway with a reviewed Slice 3 static commit and pending validation release gate
+- Planning transition: `completed; same-batch closeout reconciled`
+- Artifact role: completed Batch Runway retained as execution evidence
 - Selected dispatch: `dispatch.md`
 - Queue currentness authority: Planning State `current` and `validate`
 - Candidate Slice 3 static convergence commit:
   `89671eceb9103039e7e6660e73837827c167a3a1`
-- Current blocker report: `slice-3-blocker-report.md`
+- Resolved blocker report: `slice-3-blocker-report.md`
+- Closeout: `closeout.md`
 
-Slices 1 and 2 are complete. Slice 3 static convergence is focused-green and
-independently reviewed at `89671eceb9103039e7e6660e73837827c167a3a1`.
-Final validation remains paused before installation while the corrected
-configured-project BasedPyright gate receives exact independent planning review.
-The bare repository-wide audit remains a known-red baseline diagnostic. No
-installation, exact acceptance, closeout, or successor was created.
+All three slices are complete. Slice 3 final validation, fresh and isolated
+installation, stable-home comparison, exact acceptance, and all exact-range
+reviews are green at `89671eceb9103039e7e6660e73837827c167a3a1`. The bare
+configured-project audit remains a non-regressing known-red baseline diagnostic.
+CCFG-25 is closed, and no successor was selected or prepared.
 
 ## Purpose
 
@@ -590,7 +590,7 @@ Every test-changing slice receives delta-only `test-quality-review`. Slices 1 an
 |---|---|---|---|---|
 | 1. Implement installed `plan-batch` owner | Completed | `5aa5add1251d1e4b3630a9678fdec244949cf691` | Clean | Installed owner, exact planning-quality gates, DEC-038 recovery, isolated install, import-topology, and delta-only test-quality proof are green. |
 | 2. Remove displaced planning ownership | Completed | `12f70727f7496e2aa2d5fff9b748ee97e19e63a2` | Clean | Exact reviewed binary diff `815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e`; 181 tests and 241 subtests passed, both single-document structural validations passed, specialist reviews and final independent review clean. |
-| 3. Converge installation and final acceptance | Blocked | `89671eceb9103039e7e6660e73837827c167a3a1` | Static clean; amended validation review pending | Core pytest: 244 passed and 18 subtests; filtered gates, 69-scenario catalog, structural checks, Ruff, and diff-check green. Bare configured-project BasedPyright audit: baseline 314 errors and 16 warnings; current 311 errors and 16 warnings. Installation and exact acceptance not run. |
+| 3. Converge installation and final acceptance | Completed | `89671eceb9103039e7e6660e73837827c167a3a1` | Clean | Core pytest: 244 passed and 18 subtests; filtered gates, 69-scenario catalog, structural checks, Ruff, exact three-script BasedPyright, and diff-check green. Fresh and isolated installations converged without stable-home change; exact acceptance and all final exact-range reviews passed. |
 
 ## Execution Startup Evidence
 
@@ -617,7 +617,7 @@ baseline:
   scenario_acceptance: 69 scenarios, 31 contracts, 17 families, one pytest process
 ```
 
-## Active Orchestration Anomalies
+## Orchestration Anomalies
 
 ```yaml
 orchestration_anomalies:
@@ -627,6 +627,22 @@ orchestration_anomalies:
     reconciliation: >-
       Exact authorship and the valid strict lease were reconciled; the retry
       worker stopped on overlap, then resumed only after coordinator approval.
+    lost_or_unknown_changes: false
+  - id: slice-3-repository-wide-typecheck-baseline
+    impact: low
+    evidence: bare configured-project BasedPyright reproduced 311 historical errors and 16 warnings
+    reconciliation: >-
+      Execution stopped before installation; the gate was reclassified through
+      an independently reviewed validation-only amendment without policy or
+      unchanged-owner edits.
+    lost_or_unknown_changes: false
+  - id: slice-3-explicit-file-scope-expansion
+    impact: low
+    evidence: first amendment analyzed out-of-project tests and a fixture and returned 120 errors and 3 warnings
+    reconciliation: >-
+      Independent planning review rejected the command before execution. The
+      second authorized amendment aligned the gate to the three changed scripts
+      in the configured project and received a fresh clean review.
     lost_or_unknown_changes: false
 ```
 
@@ -1179,7 +1195,7 @@ exact changed paths and verified strict context.
 ### Reviewer Brief
 
 The final `runway_reviewer` receives the exact range
-`91179e84c7cfed666be224575db7000ca0ea01b3..<final-candidate-commit>` plus validation,
+`91179e84c7cfed666be224575db7000ca0ea01b3..89671eceb9103039e7e6660e73837827c167a3a1` plus validation,
 installation, acceptance-output, and diagnostic evidence. Verify complete COR-008
 behavior, selected-dispatch lineage, no lexical proxy for topology, complete
 CCFG-26 preservation, stable-home immutability, allowed paths, and proportionality.
