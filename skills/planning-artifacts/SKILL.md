@@ -12,8 +12,9 @@ This skill defines placement, naming, file shape, batch directory conventions,
 archives, run artifact roots, and output roots under that root.
 
 For operational pickup, validation, target policy, and projection routing, use
-`../planning-state/SKILL.md` first when it is available. Planning State consumes
-the layout described here; this skill does not replace its pickup diagnostic.
+Planning State Diagnostic-First Pickup through `../planning-state/SKILL.md`
+first when it is available. Planning State consumes the layout described here;
+this skill does not replace its pickup diagnostic.
 
 Do not hard-code a downstream project name, local path, validation command, or
 personal overlay into reusable skills. If a project has not declared a planning
@@ -374,8 +375,8 @@ After migration, validate by reading the files, not by trusting the move:
 For `legacy-removal`:
 
 - Place a legacy evidence artifact under an existing program root only when
-  project policy or the program owner supplies that evidence target.
-- Keep dispatch handoff material as evidence for the program owner; do not
+  project policy or public `plan-batch` supplies that evidence target.
+- Keep dispatch handoff material as evidence for public `plan-batch`; do not
   create a selected batch directory, selected dispatch packet, queue state,
   lifecycle state, runway, or closeout.
 - Keep evidence inventories compact; put generated outputs outside planning and
@@ -383,18 +384,23 @@ For `legacy-removal`:
 
 For `architecture-program-runway`:
 
-- Own the program ledger, program `CURRENT.md`, batch queue, selected dispatch,
-  and closeout reconciliation under the program root.
-- Prefer one selected batch directory per current batch.
+- Resolve the existing program ledger, `CURRENT.md`, and just-completed batch
+  directory for same-batch closeout reconciliation only.
+- Do not treat layout ownership as grouping, selection, dispatch, runway,
+  queue, lifecycle-planning, or successor authority.
 - Keep runner receipts and JSON state in the run artifact root, not in the
   program ledger.
 
 For `batch-runway`:
 
-- Create concrete specs at
-  `<program-root>/batches/<batch-id>-<batch-slug>/runway.md` when a selected
-  batch directory exists.
+- Resolve the already queued or active runway at
+  `<program-root>/batches/<batch-id>-<batch-slug>/runway.md` for execution.
 - Keep `dispatch.md`, `runway.md`, `closeout.md`, and completed-slice archives
   co-located.
-- Do not create loose runway specs directly under generic `plans/` or
-  `planning/` unless project instructions explicitly allow that layout.
+
+For public `plan-batch`:
+
+- Supply Layout v1 paths and names while `plan-batch` retains every semantic
+  selection, review, approval, dispatch, runway, and queue decision.
+- This layout handoff grants no queue, dispatch, runway, or lifecycle mutation
+  authority.

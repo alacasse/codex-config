@@ -31,7 +31,6 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
     ) -> None:
         surfaces = [
             "skills/batch-runway/SKILL.md",
-            "skills/batch-runway/references/create-spec.md",
             "skills/batch-runway/references/execute-spec.md",
             "skills/batch-runway/references/finalize-batch-v1.md",
         ]
@@ -88,12 +87,10 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         self,
     ) -> None:
         entrypoint = self.read("skills/batch-runway/SKILL.md")
-        create_spec = self.read("skills/batch-runway/references/create-spec.md")
         execute_spec = self.read("skills/batch-runway/references/execute-spec.md")
 
         for surface, text in {
             "entrypoint": entrypoint,
-            "create-spec": create_spec,
             "execute-spec": execute_spec,
         }.items():
             with self.subTest(surface=surface):
@@ -148,37 +145,49 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
                 self.assertRegex(text, r"fallback\s+decision")
                 self.assertIn("command output", text)
 
-    def test_architecture_program_keeps_authority_over_program_state(self) -> None:
+    def test_architecture_program_keeps_closeout_authority_only(self) -> None:
         entrypoint = self.read("skills/architecture-program-runway/SKILL.md")
 
         self.assertIn("Planning State Diagnostic", entrypoint)
         self.assertIn("Diagnostic-First Pickup", entrypoint)
         self.assertIn("current", entrypoint)
         self.assertIn("validate", entrypoint)
-        self.assertIn("must not select batches", entrypoint)
-        self.assertIn("replace program ledgers", entrypoint)
-        self.assertIn("selected dispatch", entrypoint)
-        self.assertIn("close findings", entrypoint)
+        self.assertIn("same-batch closeout reconciliation", entrypoint)
+        self.assertIn("must not group open findings", entrypoint)
+        self.assertIn("prepare a queue transaction", entrypoint)
+        self.assertIn("successor planning", entrypoint)
 
     def test_program_and_runway_handoff_has_one_ledger_owner_per_layer(self) -> None:
         architecture = self.read("skills/architecture-program-runway/SKILL.md")
         batch = self.read("skills/batch-runway/SKILL.md")
+        architecture_boundary = " ".join(
+            self.section_between(
+                architecture,
+                "## Boundary",
+                "## Required First Steps",
+            ).split()
+        )
+        batch_handoff = " ".join(
+            self.section_between(
+                batch,
+                "## Architecture Program Handoff",
+                "## Execute-Spec Summary",
+            ).split()
+        )
 
-        self.assertIn("## Program/Runway Handoff Boundary", architecture)
-        self.assertIn("program-level ledger\nupdates", architecture)
-        self.assertIn("selected dispatch packet", architecture)
-        self.assertIn("closeout reconciliation", architecture)
-        self.assertIn("does not reselect the program batch", architecture)
-        self.assertIn("program findings ledger", architecture)
+        self.assertIn("existing, just-completed batch", architecture_boundary)
+        self.assertIn("reconcile that batch's existing ledger row", architecture_boundary)
+        self.assertIn("must not group open findings", architecture_boundary)
+        self.assertIn("prepare a queue transaction", architecture_boundary)
+        self.assertIn("public `plan-batch`", architecture_boundary)
 
-        self.assertIn("## Architecture Program Handoff", batch)
-        self.assertIn("concrete execution state", batch)
-        self.assertIn("concrete execution-ledger updates", batch)
-        self.assertIn("completed-slice archives", batch)
-        self.assertIn("Architecture Program Runway owns program state", batch)
-        self.assertIn("program-level ledger updates", batch)
-        self.assertIn("closeout reconciliation across batches", batch)
-        self.assertIn("Do not use Batch Runway routine execution to reselect", batch)
+        self.assertIn("Public `plan-batch` supplies", batch_handoff)
+        self.assertIn("concrete execution state", batch_handoff)
+        self.assertIn("execution-ledger updates", batch_handoff)
+        self.assertIn("completed-slice archive", batch_handoff)
+        self.assertIn("Do not use Batch Runway execution to reselect", batch_handoff)
+        self.assertIn("just-completed batch only", batch_handoff)
+        self.assertIn("must not select or prepare a successor", batch_handoff)
 
     def test_architecture_program_feature_depends_on_planning_state(self) -> None:
         manifest = json.loads(
@@ -256,7 +265,6 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
     def test_consumer_pickup_guidance_keeps_planning_state_single_owner(self) -> None:
         surfaces = [
             "skills/batch-runway/SKILL.md",
-            "skills/batch-runway/references/create-spec.md",
             "skills/batch-runway/references/execute-spec.md",
             "skills/architecture-program-runway/SKILL.md",
             "skills/legacy-removal/SKILL.md",
@@ -275,7 +283,7 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
                     )
 
         architecture = self.read("skills/architecture-program-runway/SKILL.md")
-        self.assertIn("semantic program decision", architecture)
+        self.assertIn("same_batch_closeout_disposition", architecture)
         self.assertNotIn(
             "run its read-only `current` and `validate` commands",
             architecture,
@@ -327,13 +335,14 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         self.assertIn("parallel planning\nsystem", legacy)
         self.assertIn("never write selection or queue state", legacy)
         self.assertIn("never queued or selected program state", legacy)
+        self.assertIn("public `plan-batch`", legacy)
         self.assertNotIn("explicitly selected program owner", legacy)
         self.assertNotIn("owning program workflow", legacy)
 
         self.assertIn("evidence producer only", dead_surface)
         self.assertIn("does not create durable program ledgers", dead_surface)
-        self.assertIn("selected-batch\nstate", dead_surface)
-        self.assertIn("evidence\nhandoff material", dead_surface)
+        self.assertIn("selected-batch state", dead_surface)
+        self.assertIn("public\n`plan-batch` handoffs", dead_surface)
 
     def test_legacy_removal_hands_off_evidence_without_selecting_or_creating_runways(
         self,
@@ -342,9 +351,9 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
 
         self.assertIn("## Dispatch handoff evidence", legacy)
         self.assertIn("It is never queued or selected program state", legacy)
-        self.assertIn("The program\nowner decides whether to accept it", legacy)
-        self.assertIn("Do not invoke `batch-runway create-spec`", legacy)
-        self.assertIn("program owner accepts and selects the evidence handoff", legacy)
+        self.assertIn("Only\n`plan-batch` decides whether to accept it", legacy)
+        self.assertIn("Do not invoke Batch Runway planning", legacy)
+        self.assertIn("Use public `plan-batch` after this skill", legacy)
         self.assertNotIn("## Dispatch handoff or selected dispatch packet", legacy)
         self.assertNotIn("Use it as a selected dispatch packet", legacy)
 
@@ -382,7 +391,10 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
 
         self.assertIn("# Legacy Removal Evidence Report", evidence_artifact)
         self.assertIn("Canonical program ledger (read-only)", evidence_artifact)
-        self.assertIn("The program owner applies lifecycle state", evidence_artifact)
+        self.assertIn(
+            "`work-batch` same-batch closeout applies lifecycle state",
+            normalized_artifact,
+        )
         self.assertIn(
             "read-only planning-state or canonical program-ledger context",
             normalized_artifact,
@@ -398,12 +410,20 @@ class PlanningStateConsumerProjectionRoutingTests(unittest.TestCase):
         entrypoint = self.read("skills/test-quality-review/SKILL.md")
         integration = self.read("skills/batch-runway/references/test-quality-review.md")
         execute_spec = self.read("skills/batch-runway/references/execute-spec.md")
+        execute_core = self.read(
+            "skills/batch-runway/references/execute-slice-core-v1.md"
+        )
 
         self.assertIn("agent-facing review support skill", entrypoint)
         self.assertRegex(entrypoint, r"not a primary human planning\s+command")
         self.assertRegex(entrypoint, r"directly\s+requestable for focused audits")
 
-        self.assertIn("tests changed: `test-quality-review`", execute_spec)
+        self.assertIn("triggered specialist-review routing", execute_spec)
+        compact_execute_core = " ".join(execute_core.split())
+        self.assertIn(
+            "`test-quality-review.md` when tests trigger that review",
+            compact_execute_core,
+        )
         self.assertIn("review information only", integration)
         self.assertRegex(
             integration,

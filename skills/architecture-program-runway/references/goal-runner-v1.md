@@ -3,17 +3,20 @@
 Use this reference when `/goal`, an automation, a local runner, or another
 bounded orchestration loop should drive one or more architecture-program batches.
 
-This protocol is a runner wrapper around `architecture-program-runway` and
-`batch-runway`. It does not replace the program ledger, selected dispatch
-packet, Batch Runway spec, validation evidence, review evidence, or commits as
+This compatibility protocol routes one complete planning flight through public
+`plan-batch`, execution through public `work-batch` and Batch Runway execution
+support, and evidence-bound same-batch reconciliation through
+`architecture-program-runway closeout-runway`. It does not replace the program
+ledger, dispatch, runway, validation evidence, review evidence, or commits as
 the source of truth.
 
 ## Required Inputs
 
 - `program_ledger`: path to the durable architecture findings ledger.
 - `max_batches`: positive integer. Default to `1` if not explicitly supplied.
-- `allowed_modes`: default to `select-next-batch`, `create-next-runway`,
-  `closeout-runway`, and `reprioritize`.
+- `allowed_modes`: retain the existing v1 values for receipt compatibility.
+  They are protocol labels only and grant no grouping, selection, dispatch,
+  runway, queue, or lifecycle planning authority.
 - `execute_batches`: whether concrete Batch Runway specs may be executed.
   Default to `false` unless the user explicitly asks for implementation.
 
@@ -28,7 +31,7 @@ not the normal user-facing batch command. Use a short `/goal` prompt that
 points at this file instead of pasting the full protocol into the composer:
 
 ```text
-/goal Use $architecture-program-runway. Follow skills/architecture-program-runway/references/goal-runner-v1.md with program_ledger=<path>, max_batches=1, and execute_batches=<false|true>.
+/goal Run the installed architecture program runner using skills/architecture-program-runway/references/goal-runner-v1.md with program_ledger=<path>, max_batches=1, and execute_batches=<false|true>. Route planning through $plan-batch and execution through $work-batch.
 ```
 
 For exploratory trials, prefer `max_batches=1`. Raise to `2` only after a
@@ -54,33 +57,31 @@ For each batch until `max_batches` is reached:
 4. Read active or recently completed related runway specs only enough to know
    what is already closed, prepared, or open.
 5. Check the worktree and preserve unrelated dirty files.
-6. Use `select-next-batch` to choose exactly one next executable batch or
-   confirm the selected dispatch packet is still ready.
-7. Create or refresh the selected batch dispatch packet if it is missing,
-   stale, contradicted by evidence, or too broad for a fresh spec-creation
-   agent.
-8. Use `create-next-runway` to create exactly one concrete Batch Runway spec
-   from the selected dispatch packet.
-9. If `execute_batches=false`, stop after spec creation, update runner telemetry,
-   and report the next command/prompt to execute the spec.
-10. If `execute_batches=true`, follow `batch-runway` in `execute-spec` mode for
-   the selected spec. Keep implementation delegated to `runway_worker` and
-   review delegated to `runway_reviewer`.
-11. After execution, use `closeout-runway` to reconcile completed evidence into
-    the program ledger.
-12. Write or update one compact goal-run evaluation receipt.
-13. Reassess remaining findings only enough to choose whether a next batch is
-    ready. Do not start the next batch if `max_batches` has been reached.
+6. Invoke public `plan-batch` exactly once. That command owns selection,
+   proportional scope, independent review, dispatch/runway creation, and the
+   DEC-038 queue transaction.
+7. Treat the serialized `create-spec` step as compatibility observation only:
+   confirm the prior planning receipt and queued artifacts without invoking a
+   planner or mutating planning state.
+8. If `execute_batches=false`, stop after that observation, update runner
+   telemetry, and report public `work-batch` as the next command.
+9. If `execute_batches=true`, invoke public `work-batch`; it owns proceed/stop,
+   Batch Runway execution, validation/review acceptance, commits, finalization,
+   closeout, and same-batch reconciliation.
+10. During that same-batch reconciliation only, use
+    `architecture-program-runway closeout-runway` with completed evidence.
+11. Write or update one compact goal-run evaluation receipt.
+12. Stop before successor selection. A later explicit `plan-batch` request is
+    required for another batch.
 
 ## Completion Criteria
 
 The runner goal is complete when one of these is true:
 
-- `max_batches` selected batches have been created and, when `execute_batches`
-  is true, executed and closed out.
-- A concrete stop condition prevents safe selection, spec creation, execution,
-  or closeout.
-- The runner created the requested spec and `execute_batches=false`.
+- `max_batches` public planning flights have completed and, when
+  `execute_batches` is true, their queued runways were executed and closed out.
+- A concrete stop condition prevents safe planning, execution, or closeout.
+- The runner observed the requested queued runway and `execute_batches=false`.
 
 Completion requires a compact final report that names:
 
@@ -144,7 +145,8 @@ The receipt should make later tuning possible without bloating the ledger:
 - Did the runner stay within `max_batches`?
 - Did it use the selected dispatch packet?
 - Did it avoid unbounded raw findings reloads?
-- Did it preserve the `architecture-program-runway` / `batch-runway` boundary?
+- Did it preserve public `plan-batch` planning ownership, Batch Runway execution
+  ownership, and APR same-batch closeout-only support?
 - Did implementation and review delegation remain unchanged?
 - Were program ledger, dispatch packet, spec ledger, validation evidence, review
   evidence, and commit receipts updated consistently?

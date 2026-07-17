@@ -99,8 +99,8 @@
       ]
     },
     "batch-runway": {
-      "version": "1.5.1",
-      "description": "Agent-facing runtime support used by plan-batch and work-batch for multi-slice runway spec mechanics and execution contracts.",
+      "version": "2.0.0",
+      "description": "Agent-facing execution support used by work-batch for slice execution, validation, review, commits, recovery, ledgers, and finalization.",
       "requires": [
         "planning-artifacts",
         "planning-state"
@@ -109,16 +109,12 @@
         {
           "source": "skills/batch-runway",
           "target": "skills/batch-runway"
-        },
-        {
-          "source": "scripts/cross_checkout_context.py",
-          "target": "scripts/cross_checkout_context.py"
         }
       ]
     },
     "architecture-program-runway": {
-      "version": "2.0.0",
-      "description": "Agent-facing program-ledger support used by plan-batch and work-batch for grouping, prioritization, sequencing, selected dispatches, queue state, and closeout reconciliation.",
+      "version": "3.0.0",
+      "description": "Agent-facing same-batch program closeout reconciliation used by work-batch after concrete completion evidence exists.",
       "requires": [
         "planning-artifacts",
         "planning-state"

@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+### Planning ownership cutover
+
+Problem: Architecture Program Runway and Batch Runway still exposed selection,
+dispatch, queue, and runway-creation routes after the installed `plan-batch`
+owner became complete. The local runner also split one planning flight across
+two legacy phases, and active support skills still handed planning to those
+runtime surfaces.
+
+Decision: make public `plan-batch` the sole planning owner. Narrow Architecture
+Program Runway to evidence-bound same-batch closeout reconciliation, narrow
+Batch Runway to execution of an already queued or active runway, and route
+Planning Artifacts, Legacy Removal, Port By Contract, and Dead Surface Audit
+planning handoffs to `plan-batch`. Preserve the runner's four serialized phase
+identities and transition graph; `select-dispatch` performs one complete
+`plan-batch` invocation while `create-spec` is observation-only compatibility.
+
+Expected effect: planning has one independently reviewed DEC-038 path while all
+CCFG-26 execution, recovery, validation, review, commit, ledger, finalization,
+closeout, reconciliation, no-successor, and strict cross-checkout behavior stays
+available.
+
 ### Installed plan-batch command owner
 
 Problem: `plan-batch` was a thin router while program and runway support skills

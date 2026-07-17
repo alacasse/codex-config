@@ -61,9 +61,9 @@ def build_phase_contract(phase: str, *, execute_batches: bool = True) -> PhaseCo
 
 def phase_skill_instruction(phase: str) -> str:
     if phase == "select-dispatch":
-        return "$architecture-program-runway in select-next-batch mode"
+        return "$plan-batch once for the complete planning flight"
     if phase == "create-spec":
-        return "$architecture-program-runway in create-next-runway mode"
+        return "the prior plan-batch receipt in compatibility-observation mode"
     if phase == "execute":
         return "$batch-runway execute-spec"
     if phase == "closeout":
@@ -74,17 +74,17 @@ def phase_skill_instruction(phase: str) -> str:
 def phase_requirements(phase: str, *, execute_batches: bool = True) -> tuple[str, ...]:
     if phase == "select-dispatch":
         return (
-            "- Select exactly one next executable batch.",
-            "- Create or refresh one compact dispatch packet.",
-            "- Do not create a Batch Runway spec.",
+            "- Invoke public plan-batch exactly once for selection, independent review, and DEC-038.",
+            "- Treat its dispatch, runway, and transaction receipt as the complete planning result.",
+            "- Do not repeat selection, proportionality, review, or queue decisions.",
             "- Do not execute code.",
             "- Use next_phase=create-spec when completed.",
         )
     if phase == "create-spec":
         return (
-            "- Read the dispatch packet as primary input.",
-            "- Read only minimum ledger context needed for status and evidence.",
-            "- Create exactly one concrete Batch Runway spec.",
+            "- Read the prior select-dispatch receipt and queued dispatch/runway as primary input.",
+            "- Confirm the complete plan-batch result is present without invoking plan-batch again.",
+            "- Do not create or modify a planning draft, dispatch, runway, or planning decision.",
             "- Do not execute code.",
             f"- Use next_phase={'execute' if execute_batches else 'done'} when completed.",
         )

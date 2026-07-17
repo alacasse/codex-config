@@ -57,13 +57,12 @@ the normal direct commands for the ledger-driven workflow.
   projection routing.
 - `planning-artifacts`: Planning Artifact Layout v1 placement, naming,
   active-state file shape, batch directories, archives, and state vocabulary.
-- `architecture-program-runway`: program selection, selected dispatch, batch
-  queue metadata, selected/queued/active artifact state, finding lifecycle
-  status, and same-batch closeout reconciliation for existing findings. It does
-  not ingest or normally mutate finding content; new follow-up findings route
-  through `add-to-ledger` before program grouping or lifecycle handling.
-- `batch-runway`: concrete runway specs, slice ledgers, validation/review
-  loops, completed-slice archives, and commit receipt mechanics.
+- `architecture-program-runway`: evidence-bound same-batch closeout
+  reconciliation after concrete completion; it has no grouping, selection,
+  dispatch, runway, queue, or successor authority.
+- `batch-runway`: execution-only support for an already queued or active
+  runway, including slice ledgers, validation/review loops, recovery,
+  completed-slice archives, finalization, and commit receipts.
 - `legacy-removal`: evidence-only classification of legacy compatibility,
   canonical models, cleanup residues, batch candidates, and dispatch handoffs;
   it never owns program, queue, dispatch, runway, lifecycle, or closeout state.
@@ -111,6 +110,9 @@ the normal direct commands for the ledger-driven workflow.
 - `plan-batch` normally leaves a queued runway. That queued state is not
   residue; consume it with `work-batch` instead of closing or abandoning it
   without explicit cancellation or documented blocker evidence.
+- Planning support skills must hand every planning decision back to public
+  `plan-batch`; neither APR nor Batch Runway may create another draft or queue
+  path.
 - `work-batch` must not select new work.
 - After `work-batch` completes concrete closeout, same-batch program-state
   reconciliation is part of `work-batch` closeout through

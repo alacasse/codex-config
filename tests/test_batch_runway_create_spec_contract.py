@@ -7,7 +7,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL = REPO_ROOT / "skills/batch-runway/SKILL.md"
-CREATE_SPEC = REPO_ROOT / "skills/batch-runway/references/create-spec.md"
+PLAN_BATCH = REPO_ROOT / "skills/plan-batch/SKILL.md"
 EXECUTE_SPEC = REPO_ROOT / "skills/batch-runway/references/execute-spec.md"
 REFERENCE_FILES = tuple((REPO_ROOT / "skills/batch-runway/references").rglob("*.md"))
 PROGRAM_CURRENT = REPO_ROOT / "docs/plans/programs/codex-config/CURRENT.md"
@@ -54,17 +54,6 @@ DOWNSTREAM_PROJECT_PATTERNS = (
     "project-specific " + "validation",
 )
 
-LEAN_REFERENCE_EXAMPLES = (
-    "skills/batch-runway/references/execute-slice-core-v1.md",
-    "skills/batch-runway/references/execution-contract-v2.md",
-    "skills/batch-runway/references/agent-result-contract-v2.md",
-    "skills/batch-runway/references/reporting-contracts-v1.md",
-    "skills/batch-runway/references/ledger-retention-v1.md",
-)
-
-OLD_ABSOLUTE_BATCH_RUNWAY_REFERENCE_PLACEHOLDER = re.compile(
-    r"`<absolute path to batch-runway>/references/[^`]+`"
-)
 LOCAL_CODEX_CONFIG_SKILL_PREFIX = "/home/alacasse/projects/codex-config/skills/"
 PLANNING_RUNWAY_PATH = re.compile(
     r"docs/plans/programs/[^\s`|]+/batches/[^\s`|]+/runway\.md"
@@ -166,64 +155,6 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
             for pattern in forbidden_patterns:
                 with self.subTest(path=str(path), reference=reference_name):
                     self.assertIsNone(re.search(pattern, text), pattern)
-
-    def test_create_spec_guidance_keeps_session_mode_out_of_overrides(self) -> None:
-        text = CREATE_SPEC.read_text(encoding="utf-8")
-
-        self.assertIn(
-            "Use `Overrides` only for durable execution-contract deviations",
-            text,
-        )
-        self.assertIn("Do not use `Overrides` for session-local", text)
-        self.assertIn(
-            "Place create-spec task context in the current baseline",
-            text,
-        )
-        self.assert_no_session_local_override_claims(CREATE_SPEC)
-
-    def test_lean_create_spec_reference_examples_are_repo_relative(self) -> None:
-        text = CREATE_SPEC.read_text(encoding="utf-8")
-        lean_contract = section_between(
-            text,
-            "For lean specs, do not paste the full standard execution contract.",
-            "Use `Overrides` only for durable execution-contract deviations",
-        )
-
-        self.assertIsNone(
-            OLD_ABSOLUTE_BATCH_RUNWAY_REFERENCE_PLACEHOLDER.search(lean_contract),
-            lean_contract,
-        )
-        for example in LEAN_REFERENCE_EXAMPLES:
-            with self.subTest(example=example):
-                self.assertIn(f"- `{example}`", lean_contract)
-
-    def test_create_spec_guidance_allows_relative_reusable_references(self) -> None:
-        text = CREATE_SPEC.read_text(encoding="utf-8")
-        reference_guidance = section_between(
-            text,
-            "Generated dispatch and runway artifacts should use repo-relative",
-            "Use `Overrides` only for durable execution-contract deviations",
-        )
-        normalized_reference_guidance = normalized(reference_guidance)
-
-        self.assertIn(
-            "`skills/batch-runway/references/execution-contract-v2.md`",
-            reference_guidance,
-        )
-        self.assertIn(
-            "`references/execution-contract-v2.md`",
-            reference_guidance,
-        )
-        self.assertIn(
-            "Do not embed local absolute paths for those reusable repo-owned "
-            "skill references.",
-            normalized_reference_guidance,
-        )
-        self.assertIn(
-            "This rule does not ban absolute paths for user-provided local "
-            "values",
-            normalized_reference_guidance,
-        )
 
     def test_active_runway_artifacts_do_not_embed_local_skill_paths(self) -> None:
         self.assertIn(
@@ -365,12 +296,12 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
                 with self.subTest(path=str(path), pattern=pattern):
                     self.assertNotIn(pattern, text)
 
-    def test_create_spec_validation_commands_require_status_classes(self) -> None:
-        text = CREATE_SPEC.read_text(encoding="utf-8")
+    def test_plan_batch_validation_commands_require_status_classes(self) -> None:
+        text = PLAN_BATCH.read_text(encoding="utf-8")
         validation_contract = section_between(
             text,
             "Every focused validation command in a generated runway",
-            "Each slice must include:",
+            "## Required Installed Boundaries",
         )
         normalized_contract = normalized(validation_contract)
 
@@ -386,12 +317,12 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
                 self.assertIn(f"`{status_class}`", validation_contract)
 
     def test_required_green_requires_evidence_or_slice_owned_remediation(self) -> None:
-        text = CREATE_SPEC.read_text(encoding="utf-8")
+        text = PLAN_BATCH.read_text(encoding="utf-8")
         validation_contract = normalized(
             section_between(
                 text,
                 "Every focused validation command in a generated runway",
-                "Each slice must include:",
+                "## Required Installed Boundaries",
             )
         )
 
@@ -402,23 +333,25 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
         )
         self.assertRegex(
             validation_contract,
-            r"Use this only with a current passing result, or with a named "
+            r"Use this only with (?:a )?current passing (?:result|evidence), "
+            r"or with a named "
             r"slice-owned remediation path and acceptance criteria",
         )
 
     def test_non_green_statuses_require_explicit_gating_context(self) -> None:
-        text = CREATE_SPEC.read_text(encoding="utf-8")
+        text = PLAN_BATCH.read_text(encoding="utf-8")
         validation_contract = normalized(
             section_between(
                 text,
                 "Every focused validation command in a generated runway",
-                "Each slice must include:",
+                "## Required Installed Boundaries",
             )
         )
 
         self.assertRegex(
             validation_contract,
-            r"`known-red-baseline`: .*currently fails.*cannot block execution "
+            r"`known-red-baseline`: .*currently fails.*(?:cannot block|do not "
+            r"let it block) execution "
             r"until a named slice fixes the failure and promotes it with green "
             r"evidence",
         )
@@ -430,18 +363,18 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
         self.assertRegex(
             validation_contract,
             r"`conditional`: .*State the trigger condition precisely enough "
-            r"that an executor can decide whether to run it",
+            r"(?:for|that) an executor (?:to |can )decide whether to run it",
         )
 
     def test_diagnostic_and_future_commands_cannot_be_silent_required_gates(
         self,
     ) -> None:
-        text = CREATE_SPEC.read_text(encoding="utf-8")
+        text = PLAN_BATCH.read_text(encoding="utf-8")
         validation_contract = normalized(
             section_between(
                 text,
                 "Every focused validation command in a generated runway",
-                "Each slice must include:",
+                "## Required Installed Boundaries",
             )
         )
 
@@ -451,37 +384,37 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
             "`required-green`.",
             validation_contract,
         )
-        self.assertIn(
-            "Promotion requires explicit evidence that the command is now "
-            "green, or an explicitly named slice-owned remediation path that "
-            "makes it green before it gates downstream work.",
+        self.assertRegex(
             validation_contract,
+            r"Promotion requires explicit (?:green evidence|evidence that the "
+            r"command is now green) or an explicitly named slice-owned "
+            r"remediation path that makes the command green before it gates "
+            r"downstream work\.",
         )
 
-    def test_generated_spec_checklist_requires_batch_kind(self) -> None:
-        text = CREATE_SPEC.read_text(encoding="utf-8")
+    def test_plan_batch_generated_spec_checklist_requires_batch_kind(self) -> None:
+        text = PLAN_BATCH.read_text(encoding="utf-8")
         checklist = section_between(
             text,
-            "The spec must include:",
-            "Every generated dispatch or runway artifact",
+            "Every generated reviewed plan must include:",
+            "### Batch Kind And Slice Risk Contract",
         )
 
         self.assertIn("- batch kind and slice risk contract", checklist)
 
-    def test_create_spec_guidance_names_batch_kinds_and_slice_risk_classes(
+    def test_plan_batch_names_batch_kinds_and_slice_risk_classes(
         self,
     ) -> None:
-        text = CREATE_SPEC.read_text(encoding="utf-8")
+        text = PLAN_BATCH.read_text(encoding="utf-8")
         batch_kind_contract = section_between(
             text,
-            "Every generated dispatch or runway artifact must declare exactly one "
-            "batch",
+            "Every generated dispatch and runway must declare exactly one batch kind",
             "Every generated slice that can change",
         )
         slice_risk_contract = section_between(
             text,
             "Every generated slice that can change",
-            "Destructive or contract-narrowing slices require",
+            "### Validation Command Status Classes",
         )
 
         for batch_kind in (
@@ -508,12 +441,12 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
     def test_destructive_cleanup_in_evidence_or_characterization_work_is_gated(
         self,
     ) -> None:
-        text = CREATE_SPEC.read_text(encoding="utf-8")
+        text = PLAN_BATCH.read_text(encoding="utf-8")
         risk_gate_contract = normalized(
             section_between(
                 text,
                 "Destructive or contract-narrowing slices require",
-                "For lean specs, do not paste",
+                "### Validation Command Status Classes",
             )
         )
 

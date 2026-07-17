@@ -137,10 +137,13 @@ dead-surface-audit
   owns: evidence about surfaces kept alive by tests, import topology, aliases, facades, wrappers, or old module shape
 
 architecture-program-runway
-  owns: grouping, prioritization, multi-batch program state, selected batch brief
+  owns: evidence-bound same-batch closeout reconciliation only
 
 batch-runway
-  owns: concrete 3-5 slice spec creation and execution workflow
+  owns: execution workflow for an already queued or active runway
+
+plan-batch
+  owns: selection, proportional scope, dispatch, runway, independent planning review, approvals, and queue mutation
 ```
 
 Do not use this skill to implement code, execute slices, make commits, or
@@ -212,15 +215,17 @@ temporary transition period with a removal condition.
    requires evidence that the behavior is obsolete or internal.
 6. Group findings into batch-candidate evidence only far enough to expose
    scope, sequencing, risk, validation class, and likely slice shape. Hand the
-   candidates to the program owner; never write selection or queue state.
+   candidates to public `plan-batch`; never write selection or queue state.
 7. Create dispatch handoff evidence only when one next candidate is clear.
-   Hand it to the program owner without creating or mutating a selected
+   Hand it to public `plan-batch` without creating or mutating a selected
    dispatch packet.
 8. Hand off:
-   - Use `architecture-program-runway` when the evidence report contains
-     multiple findings, seams, risk classes, or possible batch candidates.
-   - Let the program owner invoke `batch-runway create-spec` only after it
-     accepts and selects a bounded handoff.
+   - Use public `plan-batch` for every planning handoff, including evidence
+     reports with multiple findings, seams, risk classes, or candidates.
+   - Preserve this skill's evidence and classification responsibilities; do
+     not acquire planning authority.
+   - This evidence handoff grants no queue, dispatch, runway, or lifecycle
+     mutation authority.
 
 ## Test preservation rules
 
@@ -308,7 +313,7 @@ decision requires it.
 Ambiguous dead-surface results are not automatic deletion. If the audit finds
 possible external compatibility but no clear contract, record it as a
 Compatibility decision, Open question, `human-contract-decision`, or deferred
-finding for `architecture-program-runway`.
+evidence handoff for public `plan-batch`.
 
 ## Evidence Artifact Rules
 
@@ -323,9 +328,9 @@ artifact only at an evidence path supplied by project policy or the existing
 program owner. If neither supplies one, ask for a target or keep the evidence in
 the current report instead of inventing planning topology.
 
-Preserve legacy evidence and dispatch handoff material, then let
-`architecture-program-runway` own program grouping, prioritization, selection,
-queue state, dispatch state, lifecycle state, and closeout reconciliation.
+Preserve legacy evidence and dispatch handoff material, then hand planning to
+public `plan-batch`. This skill retains no program grouping, prioritization,
+selection, queue, dispatch, runway, or lifecycle mutation authority.
 
 Before consuming Layout v1 program context, use
 `planning-state` diagnostics to confirm the current root, program, queued batch,
@@ -432,9 +437,10 @@ old-vocabulary taxonomy, aliases, facades, or temporary scaffolding.
 
 ## Dispatch handoff evidence
 
-Use this section as evidence for the program owner when one next batch
-candidate is clear. It is never queued or selected program state. The program
-owner decides whether to accept it and creates any selected dispatch packet.
+Use this section as evidence for public `plan-batch` when one next batch
+candidate is clear. It is never queued or selected program state. Only
+`plan-batch` decides whether to accept it and creates any selected dispatch or
+runway through its reviewed transaction.
 
 - Batch ID:
 - Source evidence report path:
@@ -455,7 +461,8 @@ owner decides whether to accept it and creates any selected dispatch packet.
 ## Suggested lifecycle disposition evidence
 
 When concrete implementation evidence becomes available, report a suggested
-disposition for each finding. The program owner applies lifecycle state:
+disposition for each finding. `work-batch` same-batch closeout applies lifecycle
+state through evidence-bound reconciliation:
 
 - Closed: removed with validation/review evidence
 - Prepared: tests, seams, or caller evidence improved but legacy remains
@@ -470,16 +477,13 @@ follow-up owner.
 
 ## Relationship To Other Runway Skills
 
-Use `architecture-program-runway` after this skill when the legacy evidence report needs
-program-level grouping, prioritization, sequencing, or multi-batch closeout
-reconciliation. The legacy evidence report is source evidence; the architecture-program
-ledger owns the batch queue and selected dispatch state.
+Use public `plan-batch` after this skill when the evidence report needs bounded
+selection, sequencing, dispatch, runway, approval, or queue decisions. The
+legacy report remains source evidence only.
 
-Do not invoke `batch-runway create-spec` or create a selected dispatch from this
-skill. After the program owner accepts and selects the evidence handoff, that
-owner may invoke Batch Runway. The Batch Runway spec owns execution contracts,
-slice boundaries, validation profile details, delegation, commits, and closeout
-workflow.
+Do not invoke Batch Runway planning or create a selected dispatch from this
+skill. Batch Runway consumes only an already queued or active runway for
+execution contracts, delegation, validation acceptance, commits, and closeout.
 
 Do not duplicate full Architecture Program Runway or Batch Runway contracts in
 the legacy evidence report. Preserve only enough evidence and decision context

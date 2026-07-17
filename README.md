@@ -126,8 +126,8 @@ commands for the main ledger and batch workflow.
 
 | Skill | Purpose | How it is used |
 | --- | --- | --- |
-| `batch-runway` | Provides bounded multi-slice runway spec mechanics, per-slice validation, commits, ledger updates, and implementation/review delegation. | Invoked behind `plan-batch` or `work-batch` when a command-owned batch needs concrete spec creation or execution contracts. |
-| `architecture-program-runway` | Provides program-ledger grouping, prioritization, sequencing, selected dispatch, queue state, and closeout reconciliation for existing findings. | Invoked behind `plan-batch` or `work-batch`; genuinely new follow-up findings go through `add-to-ledger` before program grouping or lifecycle handling. |
+| `batch-runway` | Provides execution-only slice, validation/review, recovery, commit, ledger, and finalization mechanics for an existing runway. | Invoked behind `work-batch` after public `plan-batch` has queued a complete reviewed runway. |
+| `architecture-program-runway` | Reconciles one just-completed batch into existing program state from concrete evidence. | Invoked behind `work-batch` for same-batch closeout only; it does not plan, queue, or select successor work. |
 | `test-quality-review` | Reviews tests for behavioral confidence, regression protection, assertion strength, fixture friction, and design signals. | Invoked by review routes or directly for focused test audits where coverage percentage is not the main question. |
 | `skill-authoring` | Creates, migrates, and audits contract-first hybrid skills through one authoritative authoring contract and its conditional references. | Used by agents at authoring time; it is not a primary human command or a runtime requirement of command-owner and support skills. |
 | `dead-surface-audit` | Finds code surfaces kept alive by tests that assert imports, aliases, topology, or compatibility shape rather than behavior. | Invoked as evidence support when legacy, review, or planning work needs proof about test-retained dead surfaces. |

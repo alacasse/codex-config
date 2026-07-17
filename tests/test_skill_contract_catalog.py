@@ -146,33 +146,31 @@ def test_add_to_ledger_and_architecture_program_contracts_have_one_intake_owner(
     assert "finding_normalization" in architecture["forbids"]
     assert "atomic_planning_finding_mutation" in architecture["forbids"]
     assert set(architecture["owns"]["decisions"]) == {
-        "finding_grouping",
-        "finding_prioritization",
-        "finding_sequencing",
-        "vague_row_disposition",
-        "program_batch_selection",
+        "same_batch_closeout_disposition",
         "program_lifecycle_reconciliation",
     }
     assert set(architecture["owns"]["durable_facts"]) == {
-        "grouped_finding_state",
-        "selected_dispatch",
-        "queue_state",
         "finding_lifecycle_state",
+        "completed_batch_reconciliation",
     }
     assert set(architecture["writes"]) == {
-        "program_grouping_mutation",
-        "selected_dispatch_mutation",
-        "queue_state_mutation",
         "program_lifecycle_mutation",
         "same_batch_closeout_reconciliation",
     }
     assert set(architecture["outputs"]["one_of"]) == {
-        "grouped_program_state",
-        "selected_dispatch_packet",
-        "queue_state_update",
-        "program_lifecycle_update",
         "same_batch_reconciliation_result",
+        "closeout_blocker",
     }
+    assert {
+        "finding_grouping",
+        "finding_prioritization",
+        "finding_sequencing",
+        "batch_selection",
+        "selected_dispatch_mutation",
+        "queue_state_mutation",
+        "runway_creation",
+        "successor_selection",
+    } <= set(architecture["forbids"])
 
 
 def test_legacy_removal_contract_is_evidence_only() -> None:

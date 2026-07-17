@@ -11,10 +11,12 @@ hidden behind tests that keep asserting the old surface exists.
 Core rule: tests are not automatically liveness evidence. A test can be the only thing keeping a shallow Module present.
 
 Role boundary: this skill is an evidence producer only for exceptional residue
-or test-retained surface investigations. It may feed legacy-removal,
-architecture-program-runway, or batch-runway handoffs, but it does not create durable program ledgers, program queue state, selected-batch
-state, dispatch packets, batch runways, commits, closeout records, or a
-human-facing cleanup command.
+or test-retained surface investigations. It may feed `legacy-removal` or public
+`plan-batch` handoffs, but it does not create durable program ledgers, program
+queue state, selected-batch state, dispatch packets, batch runways, lifecycle
+mutations, commits, closeout records, or a human-facing cleanup command.
+This deletion-liveness evidence handoff grants no queue, dispatch, runway, or
+lifecycle mutation authority.
 
 Deletion-test evidence vocabulary owner: this skill owns the canonical
 project-neutral evidence statuses used when reporting deletion-test results:

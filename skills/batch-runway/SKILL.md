@@ -1,68 +1,57 @@
 ---
 name: batch-runway
-description: Agent-facing runtime support used by plan-batch and work-batch for multi-slice runway spec mechanics, execution contracts, per-slice validation, commits, ledger updates, and implementation/review delegation.
+description: Agent-facing execution support used by work-batch for per-slice validation, commits, ledgers, recovery, finalization, and implementation/review delegation.
 ---
 
 # Batch Runway
 
-Agent-facing runtime support for `plan-batch` and `work-batch`. Do not present
-this as the normal human command for ledger-driven planning or execution; use
-the command-owner skill first, then apply this workflow for the controlled
-sequence of small, independently committable slices. Keep the main agent as
-coordinator; delegate implementation and review.
+Agent-facing execution support for `work-batch`. Do not present this as the
+normal human command for ledger-driven execution; use the command owner first,
+then apply this workflow to an already queued or active runway. Keep the main
+agent as coordinator; delegate implementation and review.
 
-## Modes
+Public `plan-batch` owns selection, dispatch and runway creation, planning
+review, proportionality, approvals, validation-profile selection, and the
+DEC-038 queue transaction. Batch Runway must not plan, create, reshape, select,
+or queue a runway.
 
-- `create-spec`: write one runway spec for a future execution session. Do not
-  implement code.
-- `execute-spec`: execute an existing runway spec one slice at a time.
+## Mode
 
-Infer the mode when the user does not name one:
+`execute-spec` executes one existing runway one slice at a time. Planning,
+spec-creation, or next-batch requests must return to public `plan-batch`; they
+must not be inferred as a Batch Runway mode.
 
-- "create", "spec", "plan", "next runway", or "upcoming work" means
-  `create-spec`.
-- "execute", "run", "implement", "work through", or a specific spec path means
-  `execute-spec`.
-
-## Density
+## Existing Runway Density
 
 - `lean-runway`: token-efficient. Specs reference standard contracts,
   validation profiles, and compact subagent briefs.
 - `full-runway`: maximum explicitness. Specs may include full contracts, full
   commands, and full subagent briefs.
 
-Default to `lean-runway` for mechanical refactors, test topology splits, import
-cleanup, docs-local planning, compatibility facade cleanup, and
-behavior-preserving module moves.
-
-Default to `full-runway` only when compact references would be unsafe: production
-behavior changes, installer lifecycle changes, YAML schema changes, sandbox
-execution behavior, public CLI behavior, risky migrations, ambiguous ownership
-boundaries, or unreliable subagent file access.
-
-Prefer lean specs plus explicit risk overrides before pasting whole contracts.
+Consume the density already selected by the queued runway. Do not use execution
+to change slice shape, risk classification, or planning detail.
 
 ## Progressive Disclosure
 
 Read only the reference files needed for the current mode. Do not load every
 reference file by default.
 
-- `references/project-values.md`: read before creating or executing a spec.
+- `references/project-values.md`: read before executing a spec.
 - `../planning-state/SKILL.md`: read before consuming Layout v1 active-state
   files, selected dispatches, queued specs, active runways, blockers, target
   policy, or projection-backed reports. Carry forward only Planning State
-  Diagnostic facts; Batch Runway still owns concrete runway spec creation,
-  execution orchestration, validation selection, subagent routing,
+  Diagnostic facts; Batch Runway still owns execution orchestration,
+  validation acceptance, subagent routing,
   execution-ledger updates, completed-slice archives, and commits.
 - `../planning-state/references/projection-reporting.md`: read before broad
   history/reporting scans; follow Planning State's projection routing.
-- `../planning-artifacts/SKILL.md`: read when resolving a planning location,
-  creating a spec from a selected dispatch packet, reorganizing planning
-  artifacts, or when project instructions name Planning Artifact Layout v1.
+- `../planning-artifacts/SKILL.md`: read when resolving the existing runway,
+  batch directory, closeout, archive, or when project instructions name
+  Planning Artifact Layout v1.
 - `references/execute-slice-core-v1.md`: read for routine `execute-spec` slice
   execution. This is the hot-path projection of the full canonical contracts.
-- `references/execution-contract-v2.md`: read when creating a new spec, executing
-  current full-runway specs, or changing current contract semantics.
+- `references/execution-contract-v2.md`: read when executing current
+  full-runway specs or changing current execution-contract semantics.
 - `references/execution-contract-v1.md`: read only when executing or auditing an
   existing spec that names v1.
 - `references/agent-result-contract-v2.md`: read when changing current agent
@@ -74,10 +63,9 @@ reference file by default.
 - `references/ledger-retention-v1.md`: read before creating a new ledger or
   changing canonical ledger semantics. Routine ledger updates are covered by the
   execution core.
-- `references/validation-profiles.md`: read when selecting a profile during
-  planning or when the selected profile is unknown. During routine execution,
-  read only the selected file under `references/validation-profiles/`.
-- `references/create-spec.md`: read only in `create-spec` mode.
+- `references/validation-profiles.md`: read when the runway's selected profile
+  is unknown. During routine execution, read only the selected file under
+  `references/validation-profiles/`.
 - `references/execute-spec.md`: read for execution routing, compatibility
   questions, or non-routine execution. Routine slices can use the execution core
   directly.
@@ -108,31 +96,39 @@ capsule and the relevant Batch Runway reference path in the subagent prompt.
 ## Required First Steps
 
 1. Read applicable project instructions and local overlays.
-2. Resolve project-specific values from repository instructions, local overlays,
-   the active spec, or explicit user direction. See
+2. Resolve execution values from repository instructions, local overlays, the
+   active spec, or explicit user direction. See
    `references/project-values.md`.
 3. When the work uses a ledger-driven planning root, use `planning-state`
    Diagnostic-First Pickup and projection-reporting guidance for operational
    state facts before broader exploration.
-4. Use `planning-artifacts` for Planning Artifact Layout v1 placement, naming,
-   active-state file shape, batch directory, archive, and run/output-root
-   questions.
+   Treat the Planning State Diagnostic as read-only current/validate evidence.
+4. Use `planning-artifacts` to interpret the existing Layout v1 active-state
+   shape, batch directory, archive, and run/output roots.
 5. Check the worktree and preserve unrelated dirty files.
-6. Choose `create-spec` or `execute-spec`.
-7. Choose `lean-runway` or `full-runway`.
+6. Require an existing queued or active runway and use `execute-spec`.
+7. Consume the runway's recorded density and validation profile unchanged.
+
+For supported execution-history, missing-closeout-evidence, runner-summary, or
+bounded reporting questions, read
+`../planning-state/references/projection-reporting.md`. Use policy-compatible
+`report-projection` command output as the normal route before broad historical
+scans when `projection_usage` and `projection_rebuild_authority` allow it.
+Record an explicit fallback decision before scanning when policy is unavailable
+or incompatible, and do not query SQLite directly.
 
 For explicit pre-creation work, complete
-`references/cross-checkout-precreation-v1.md` before writing a runway or
-delegating a worker or reviewer, then require its transition before switching to
-the strict contract. For work that explicitly names
+`references/cross-checkout-precreation-v1.md` before delegating a worker or
+reviewer, then require its transition before switching to the strict contract.
+For work that explicitly names
 `cross-checkout-context/v1` or explicitly declares separate existing toolchain,
 canonical-planning, and implementation repository roots, complete
 `references/cross-checkout-context-v1.md`. A pre-creation runway does not use
 that strict branch until it has a validated helper-produced transition receipt
 plus green strict context. Ordinary single-root work uses neither bridge.
 
-Stop instead of guessing when a required project value, validation command,
-harness command, output path, summary artifact, planning location, or
+Stop instead of guessing when a required execution value, validation command,
+harness command, output path, summary artifact, existing runway location, or
 instruction priority order is missing.
 
 ## Core Contract
@@ -220,8 +216,8 @@ Keep live orchestration context small enough for long batches.
 - Prefer lean specs and compact subagent briefs when they preserve safety.
 - Do not paste full slice text into subagent prompts unless the subagent cannot
   reliably read the spec, the boundary is subtle, or the work is high risk.
-- Broad coordinator exploration is allowed for `create-spec`, recovery, blocker
-  analysis, finalization, stale or ambiguous specs, subagent-report
+- Broad coordinator exploration is allowed for recovery, blocker analysis,
+  finalization, stale or ambiguous specs, subagent-report
   verification, or uncertainty that prevents safe delegation.
 - Do not retain implementation chronology, command transcripts, repeated
   clean-review prose, repetitive validation detail, or repeated explanations of
@@ -243,49 +239,18 @@ Keep live orchestration context small enough for long batches.
 
 ## Architecture Program Handoff
 
-When a runway is created from an `architecture-program-runway` selected
-dispatch, treat that dispatch as the program-level selection contract. Batch
-Runway consumes the dispatch and minimum program-ledger excerpt needed for
-traceability, then writes one concrete `runway.md` with its own active ledger
-and completed-slice archive.
+Public `plan-batch` supplies the complete selected dispatch, independently
+reviewed runway, validation profile, and queue transaction. Batch Runway
+consumes that already queued or active runway and owns concrete execution
+state: pending slice rows, validation execution and acceptance, review routing,
+commit receipts, orchestration anomalies, execution-ledger updates, and
+completed-slice archive movement.
 
-Batch Runway owns concrete execution state: slice rows, validation selection,
-review routing, commit receipts, orchestration anomalies, and completed-slice
-archive movement. Architecture Program Runway owns program state: finding
-grouping, selected dispatch, batch queue, program-level ledger updates, and
-closeout reconciliation across batches.
-
-Do not use Batch Runway routine execution to reselect the architecture program
-batch, rewrite finding lifecycle statuses, or close program findings directly.
-At finalization, preserve compact evidence from the concrete runway so an
-`architecture-program-runway closeout-runway` pass can reconcile the program
-ledger.
-
-## Create-Spec Summary
-
-In `create-spec` mode:
-
-1. Read `references/create-spec.md`.
-2. For explicit pre-creation work, read and apply
-   `references/cross-checkout-precreation-v1.md` before writing the runway.
-3. For work that explicitly names `cross-checkout-context/v1` or explicitly
-   declares separate existing toolchain, canonical-planning, and implementation
-   repository roots, read and apply `references/cross-checkout-context-v1.md`
-   before writing the runway. Pre-creation work does not use this branch before
-   its validated transition receipt plus green strict context.
-4. If the project uses Planning Artifact Layout v1, use `planning-state`
-   Diagnostic-First Pickup first and consume only its compact facts.
-5. If a selected dispatch, active runway, or queued batch exists, do not select
-   another batch. Report the queued/active path, or create the missing
-   `runway.md` from the selected dispatch when that is the requested action.
-6. If no batch is selected, read the relevant program ledger and only the source
-   packet named by the selected ledger row before writing the spec.
-7. Write one local plan file in the project planning location. If the project
-   uses Planning Artifact Layout v1 and a selected batch directory exists,
-   write the spec to that batch directory as `runway.md`.
-8. Pick 3-5 tightly related slices that can execute sequentially.
-9. Keep each slice independently testable and committable.
-10. Stop before coding.
+Do not use Batch Runway execution to reselect work, reshape the runway, create
+planning artifacts, mutate finding lifecycle state, or close program findings
+directly. At finalization, preserve compact evidence so
+`architecture-program-runway closeout-runway` can reconcile the just-completed
+batch only. That reconciliation must not select or prepare a successor.
 
 ## Execute-Spec Summary
 

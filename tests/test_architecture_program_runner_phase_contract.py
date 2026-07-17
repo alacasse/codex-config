@@ -55,18 +55,18 @@ class ArchitectureProgramRunnerPhaseContractTests(ArchitectureProgramRunnerTestC
     def test_phase_contract_catalogs_phase_specific_obligations_and_next_phase(
         self,
     ) -> None:
-        phase_requirements = {
+        phase_requirements: dict[str, tuple[str, ...]] = {
             "select-dispatch": (
-                "- Select exactly one next executable batch.",
-                "- Create or refresh one compact dispatch packet.",
-                "- Do not create a Batch Runway spec.",
+                "- Invoke public plan-batch exactly once for selection, independent review, and DEC-038.",
+                "- Treat its dispatch, runway, and transaction receipt as the complete planning result.",
+                "- Do not repeat selection, proportionality, review, or queue decisions.",
                 "- Do not execute code.",
                 "- Use next_phase=create-spec when completed.",
             ),
             "create-spec": (
-                "- Read the dispatch packet as primary input.",
-                "- Read only minimum ledger context needed for status and evidence.",
-                "- Create exactly one concrete Batch Runway spec.",
+                "- Read the prior select-dispatch receipt and queued dispatch/runway as primary input.",
+                "- Confirm the complete plan-batch result is present without invoking plan-batch again.",
+                "- Do not create or modify a planning draft, dispatch, runway, or planning decision.",
                 "- Do not execute code.",
                 "- Use next_phase=execute when completed.",
             ),
@@ -181,8 +181,10 @@ class ArchitectureProgramRunnerPhaseContractTests(ArchitectureProgramRunnerTestC
 
     def test_phase_contract_routes_skills_for_all_fixed_phases(self) -> None:
         expected = {
-            "select-dispatch": "$architecture-program-runway in select-next-batch mode",
-            "create-spec": "$architecture-program-runway in create-next-runway mode",
+            "select-dispatch": "$plan-batch once for the complete planning flight",
+            "create-spec": (
+                "the prior plan-batch receipt in compatibility-observation mode"
+            ),
             "execute": "$batch-runway execute-spec",
             "closeout": "$architecture-program-runway closeout-runway",
         }
@@ -197,6 +199,21 @@ class ArchitectureProgramRunnerPhaseContractTests(ArchitectureProgramRunnerTestC
                     command_owner.phase_skill_instruction(phase),
                     skill_instruction,
                 )
+
+    def test_compatibility_planning_phases_have_one_public_planner(self) -> None:
+        selection = phase_contract_owner.build_phase_contract("select-dispatch")
+        observation = phase_contract_owner.build_phase_contract("create-spec")
+
+        self.assertIn("$plan-batch", selection.skill_instruction)
+        self.assertNotIn("architecture-program-runway", selection.skill_instruction)
+        self.assertIn("exactly once", " ".join(selection.phase_requirements))
+        self.assertIn("prior plan-batch receipt", observation.skill_instruction)
+        self.assertIn(
+            "without invoking plan-batch again",
+            " ".join(observation.phase_requirements),
+        )
+        self.assertNotIn("$batch-runway", observation.skill_instruction)
+        self.assertNotIn("create exactly one", " ".join(observation.phase_requirements).lower())
 
     def test_phase_contract_rejects_unknown_phase(self) -> None:
         with self.assertRaisesRegex(runner.RunnerError, "unknown phase: unknown"):

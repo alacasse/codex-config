@@ -3,14 +3,10 @@
 This document defines how agents route human workflow intent to command-owner,
 runtime, and support skills during the command-owner skill migration.
 
-The current command-owner skills own human intent, routing, and stop
-conditions. Older runtime skills own detailed procedures. Support skills
-provide diagnostics, layout rules, review support, evidence classification, or
-validation guidance.
-
-This is a transitional bridge state created by the copy-first migration. It is
-not the final architecture. A later migration may rewrite command-owner skills
-into true end-to-end owners, but that is not the current state.
+Command-owner skills own human intent, semantic workflow decisions, mutations,
+and stop conditions. Runtime and support skills provide execution mechanics,
+diagnostics, layout rules, closeout reconciliation, review support, evidence
+classification, or validation guidance without becoming alternate owners.
 
 ## Owner Split
 
@@ -23,13 +19,16 @@ Keep human-facing command decisions separate from runtime mechanics:
   projection routing.
 - `planning-artifacts` owns Planning Artifact Layout v1 placement, naming,
   active-state file shape, batch directory, archive, and state vocabulary.
-- `architecture-program-runway` owns program selection, selected dispatch,
-  queue metadata, selected/queued/active artifact state, finding lifecycle
-  status, and same-batch closeout reconciliation.
-- `batch-runway` owns concrete runway specs, slice ledgers, validation/review
-  loops, completed-slice archives, and commit receipt mechanics.
+- `plan-batch` owns one-finding selection, proportional scope, independent
+  planning review, dispatch/runway creation, approvals, validation-profile
+  selection, and the DEC-038 queue transaction.
+- `architecture-program-runway` owns evidence-bound same-batch closeout
+  reconciliation only; it has no planning or queue authority.
+- `batch-runway` owns execution of an already queued or active runway: slice
+  ledgers, validation/review loops, recovery, completed-slice archives,
+  finalization, and commit receipt mechanics.
 - `legacy-removal` owns legacy evidence and classification only. Its batch
-  candidates and dispatch handoffs are evidence for a program owner, never
+  candidates and dispatch handoffs are evidence for public `plan-batch`, never
   program, queue, dispatch, runway, lifecycle, execution, or closeout state.
 
 Command-owner skills may reference those runtime/support owners, but should not
@@ -45,8 +44,6 @@ duplicate their procedure details.
   evidence, or validation helper used inside another workflow.
 - **Default workflow obligation**: a rule normal implementation or review work
   must enforce without requiring a separate user command.
-- **Transitional bridge skill**: a command-owner skill that currently routes to
-  runtime skills while the migration is copy-first.
 
 ## Command Input Contract
 
@@ -83,28 +80,28 @@ For this repository, the active program ledger is
 | User command/input | Primary skill | Input source | Output | Runtime/support skills |
 | --- | --- | --- | --- | --- |
 | Capture fresh work/finding text, review results, bugs, cleanup needs, or work requests | `add-to-ledger` | User-provided work/finding text plus project planning state | New or updated ledger finding | `planning-contracts` atomic store mechanism |
-| Plan the next bounded batch/spec from existing ledger work | `plan-batch` | Existing ledger state, selected dispatch, or user preference pointing at existing ledger work | One dispatch/runway; no implementation | `planning-state`, `planning-artifacts`, `architecture-program-runway`, then `batch-runway` in `create-spec` mode |
+| Plan the next bounded batch/spec from existing ledger work | `plan-batch` | Existing ledger state, selected dispatch, or user preference pointing at existing ledger work | One independently reviewed dispatch/runway and DEC-038 queue result; no implementation | `planning-state`, `planning-artifacts`, planning contracts, and registered planning roles |
 | Execute the current queued or active batch runway | `work-batch` | Current queued or active runway state | Executed slices, validation/review evidence, commits, closeout evidence, and same-batch program reconciliation | `planning-state`, `planning-artifacts`, then `batch-runway` in `execute-spec` mode, then `architecture-program-runway` in `closeout-runway` mode for the completed batch only |
-| Extract behavior contracts before a rewrite, migration, or port | `port-by-contract` | Current implementation and durable domain context | Implementation-neutral contract artifacts before any runway | `batch-runway` or `architecture-program-runway` only after contract artifacts exist |
+| Extract behavior contracts before a rewrite, migration, or port | `port-by-contract` | Current implementation and durable domain context | Implementation-neutral contract artifacts and planning evidence | Public `plan-batch` only after contract artifacts exist |
 
 ## Conflict Rule
 
-When a human-facing command-owner skill and an older runtime skill both appear
-applicable, the command-owner skill owns the user request. The runtime skill may
-be used only as the detailed procedure after the command-owner skill routes to
-it.
+When a command-owner skill and a runtime/support skill both appear applicable,
+the command owner retains the semantic decision and mutation. Support may be
+used only for its declared evidence, layout, execution, or closeout boundary.
 
 ## Stop Rule
 
 If the agent cannot name the user intent, primary command-owner skill,
 runtime/support skills, and stopping point, it must stop before editing files.
 
-## Bridge-State Rule
+## Compatibility Label Rule
 
-The current command-owner skills are bridge-state command owners. They are
-allowed to route to runtime skills. They must not be treated as final
-autonomous implementations, and the runtime skills must not be treated as
-deprecated merely because command-owner skills exist.
+The architecture runner temporarily preserves serialized `select-dispatch`
+and `create-spec` labels. They do not restore APR or Batch Runway planning:
+the first invokes public `plan-batch` once, and the second only observes and
+advances the completed result. CCFG-27 owns their migration/removal decision;
+CCFG-29 is the final cleanup deadline if they remain.
 
 ## Anti-Patterns
 

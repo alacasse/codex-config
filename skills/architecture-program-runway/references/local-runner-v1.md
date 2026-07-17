@@ -9,6 +9,10 @@ The phase order is fixed:
 select-dispatch -> create-spec -> execute -> closeout
 ```
 
+These are temporary serialized compatibility labels. Preserve their receipt
+identities and transition graph. CCFG-27 owns their migration or removal
+decision; CCFG-29 is the final physical-cleanup deadline if they remain.
+
 The runner is intentionally dumb. It does not parse or edit the program ledger,
 does not infer domain correctness from diffs, and does not reconcile Git
 history. It advances only from CLI arguments, JSON state, schema-valid phase
@@ -49,9 +53,9 @@ final summary after it stops.
 
 ## How To Use It
 
-Skills are instruction bundles. They do not launch this runner by themselves,
-but the architecture-program-runway support workflow defines the agent behavior
-for local runner requests. The runner is the executable interface:
+Skills are instruction bundles. They do not launch this runner by themselves.
+The runner is the executable interface and routes its phases to the public
+command owners and same-batch closeout support described below:
 
 ```bash
 ~/.codex/scripts/architecture_program_runner.py \
@@ -71,24 +75,11 @@ Run a dry preview first:
 ```
 
 This is an agent-facing runner path, not the normal user-facing batch command.
-When deliberately invoking the specialized local runner support workflow,
-minimal prompts default to all executable batches unless the request gives a
-count:
-
-```text
-Use $architecture-program-runway. Run the local runner on <program-ledger-path>.
-```
-
-```text
-Use $architecture-program-runway and run the local architecture program runner
-on this ledger: <program-ledger-path>
-```
-
 Direct CLI usage remains conservative: without `--all-batches` or an explicit
 `--max-batches`, it runs at most one completed closeout. This is the only
 default difference between direct CLI use and skill-mediated use.
 
-Create the next spec for one batch but do not execute code:
+Run one complete public planning flight but do not execute code:
 
 ```bash
 ~/.codex/scripts/architecture_program_runner.py \
@@ -124,7 +115,7 @@ execute phase:
 
 Treat `--execute-sandbox danger-full-access` as an explicit local workflow
 escalation for commit-capable Batch Runway execution. Do not use it as a
-general default for planning, spec creation, or closeout phases.
+general default for planning, compatibility observation, or closeout phases.
 
 Create, execute, and close out every currently executable batch until no safe
 next batch remains or a stop condition is hit:
@@ -273,10 +264,10 @@ bound before invoking the CLI:
 next batch and the runner has not hit a stop condition. It does not mean force
 all findings to `Closed`.
 
-Use the skill manually instead of the runner when you want to stay in the
-current conversation, inspect the ledger, select one batch, create one spec, or
-close out one already-finished runway without launching nested `codex exec`
-processes.
+Use public `plan-batch` manually when you want one complete planning flight in
+the current conversation. Use public `work-batch` for execution and same-batch
+closeout. Invoke `architecture-program-runway closeout-runway` only for the
+evidence-bound reconciliation step owned by that command.
 
 ## Final Summary Contract
 
@@ -356,17 +347,18 @@ for fields that are not applicable, including `stop_reason`, `batch_id`,
 
 ## Phase Responsibilities
 
-`select-dispatch` uses the architecture-program-runway support workflow to
-select exactly one next executable batch and create or refresh one compact
-dispatch packet. It does not create a Batch Runway spec or execute code.
+`select-dispatch` invokes public `plan-batch` exactly once for the complete
+planning flight: selection, proportional scope, independent planning review,
+approvals, dispatch and runway creation, and DEC-038 queue mutation. It does not
+execute code or duplicate any planning decision inside the runner.
 
-`create-spec` uses the architecture-program-runway support workflow in
-`create-next-runway` mode. It reads the dispatch packet as primary input, reads
-only minimum ledger context, creates exactly one concrete Batch Runway spec, and
-does not execute code.
+`create-spec` is a compatibility observation/advance phase only. It reads the
+prior planning receipt and confirms the queued dispatch/runway already exist.
+It must not invoke `plan-batch` again, call Batch Runway planning, create or
+modify a draft, repeat a planning decision, or act as another planner.
 
-`execute` uses the batch-runway runtime support workflow on exactly the
-generated spec. It preserves normal `runway_worker` and `runway_reviewer`
+`execute` uses Batch Runway execution support on exactly the queued runway. It
+preserves normal `runway_worker` and `runway_reviewer`
 delegation. Execution success does not increment `batches_completed`.
 
 When `execute` stops on validation, receipts should summarize the canonical

@@ -43,7 +43,7 @@ successor decision.
 
 ## Planning And Propagation
 
-`create-spec` must preserve the complete validated payload and canonical
+Public `plan-batch` must preserve the complete validated payload and canonical
 planning root in the generated runway. It must not synthesize project-specific
 absolute paths inside reusable skill text.
 

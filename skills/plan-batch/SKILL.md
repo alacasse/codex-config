@@ -36,6 +36,86 @@ migration, demotion, or contract narrowing without clear owner, risk, and
 acceptance boundaries. `plan-batch` must split, block, or narrow that scope
 before any concrete runway is queued.
 
+When selected work carries deletion-test evidence, consume the canonical
+deletion-test evidence statuses owned by `dead-surface-audit`. Any local
+non-canonical labels must be defined inline as labels only. They must not make
+unsupported terms behave like approval gates, cleanup decisions, migration
+decisions, demotion decisions, or contract-narrowing decisions.
+
+## Generated Plan Contract
+
+### Generated Spec Checklist
+
+Every generated reviewed plan must include:
+
+- title, purpose, baseline, assumptions, and batch non-goals;
+- batch kind and slice risk contract;
+- execution and result contract references;
+- one selected validation profile and focused commands with status classes;
+- execution ledger, semantic slice sections, final validation, and stop
+  conditions; and
+- any explicitly required strict or pre-creation cross-checkout context.
+
+### Batch Kind And Slice Risk Contract
+
+Every generated dispatch and runway must declare exactly one batch kind:
+
+- `characterization`: collect evidence without cleanup, deletion, narrowing,
+  demotion, migration, or ownership changes;
+- `decision`: evaluate and record a decision without performing destructive
+  cleanup in the same slice unless the batch is `mixed-risk`;
+- `migration`: change topology or ownership while preserving the supported
+  public contract;
+- `destructive-cleanup`: delete, disable, demote, or intentionally remove an
+  existing surface; or
+- `mixed-risk`: combine evidence, decision, migration, contract-narrowing, or
+  destructive work while naming risky slices and approval gates.
+
+Every generated slice that can change an existing surface, ownership boundary,
+or supported contract must declare exactly one slice risk class:
+
+- `none`;
+- `evidence-only`;
+- `decision-only`;
+- `migration`;
+- `contract-narrowing`; or
+- `destructive-cleanup`.
+
+Destructive or contract-narrowing slices require an explicit approval gate
+before execution. Name who or what can approve the work and the evidence that
+must exist. A `characterization` batch or an `evidence-only` slice must not
+include destructive cleanup or contract narrowing. If a batch combines
+evidence-only or decision-only work with destructive cleanup, contract
+narrowing, or migration, declare the batch kind as `mixed-risk`, name the risky
+slices, and list the approval gate for each risky slice.
+
+### Validation Command Status Classes
+
+Every focused validation command in a generated runway must declare exactly one
+status class before execution:
+
+- `required-green`: the command is expected to pass now, or the slice explicitly
+  owns the remediation that makes it pass before it can gate later work. Use
+  this only with current passing evidence, or with a named slice-owned
+  remediation path and acceptance criteria that prove the command becomes
+  green.
+- `known-red-baseline`: the command currently fails. Retain it as diagnostic
+  evidence or remediation scope, but do not let it block execution until a
+  named slice fixes the failure and promotes it with green evidence.
+- `implementation-created`: the command targets a test, file, fixture, tool, or
+  artifact that does not exist yet. Name the slice that creates it before the
+  command can become a required gate.
+- `conditional`: run only when named files, artifacts, metadata, or project
+  areas change. State the trigger condition precisely enough for an executor to
+  decide whether to run it.
+- `diagnostic-only`: use for planning, review, or risk evidence; it is not an
+  execution gate unless a later slice explicitly promotes it.
+
+Do not silently promote a known-red command, a missing future-created command,
+or a diagnostic command to `required-green`. Promotion requires explicit green
+evidence or an explicitly named slice-owned remediation path that makes the
+command green before it gates downstream work.
+
 ## Required Installed Boundaries
 
 This command uses only:

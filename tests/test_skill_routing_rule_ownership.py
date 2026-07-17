@@ -199,20 +199,21 @@ class SkillRoutingRuleOwnershipTests(unittest.TestCase):
         planning_artifacts = normalized(PLANNING_ARTIFACTS)
 
         self.assertIn(
-            "This skill manages program-level state: durable ledger, finding grouping, batch queue, selected dispatch packet, and closeout reconciliation.",
+            "same-batch closeout reconciliation",
             architecture_program_runway,
         )
         self.assertIn(
-            "owns the selected dispatch packet and the batch queue state",
+            "must not group open findings, rank work, choose a next batch",
             architecture_program_runway,
         )
         self.assertIn(
-            "If invoked by `work-batch`, this closeout is limited to the just-completed batch",
+            "must return control to `work-batch` after same-batch reconciliation",
             architecture_program_runway,
         )
 
-        self.assertIn("Batch Runway owns concrete execution state", batch_runway)
-        self.assertIn("concrete runway spec creation, execution orchestration", batch_runway)
+        self.assertIn("Batch Runway must not plan", batch_runway)
+        self.assertIn("owns concrete execution state", batch_runway)
+        self.assertIn("validation execution and acceptance", batch_runway)
 
         self.assertIn("Planning State Diagnostic", planning_state)
         self.assertIn(
@@ -225,7 +226,7 @@ class SkillRoutingRuleOwnershipTests(unittest.TestCase):
         self.assertIn("Planning Artifact Layout v1", planning_artifacts)
         self.assertIn("does not replace its pickup diagnostic", planning_artifacts)
 
-    def test_architecture_program_excludes_intake_and_keeps_program_state(
+    def test_architecture_program_excludes_intake_and_keeps_closeout_only(
         self,
     ) -> None:
         architecture = normalized(ARCHITECTURE_PROGRAM_RUNWAY)
@@ -237,10 +238,49 @@ class SkillRoutingRuleOwnershipTests(unittest.TestCase):
         self.assertNotIn("One-shot intake allowed", template)
         self.assertNotIn("$add-to-ledger", agent)
         self.assertIn("`planning-contracts` atomic store mechanism", routing)
-        self.assertIn("selected dispatch packet", architecture)
-        self.assertIn("queue state", architecture)
         self.assertIn("same_batch_closeout_reconciliation", architecture)
-        self.assertIn("route that work through `add-to-ledger`", architecture)
+        self.assertIn("- batch_selection", architecture)
+        self.assertIn("- queue_state_mutation", architecture)
+        self.assertIn("route the finding through `add-to-ledger`", architecture)
+        self.assertIn("public `plan-batch`", template)
+
+    def test_planning_handoffs_have_one_public_owner(self) -> None:
+        architecture = normalized(ARCHITECTURE_PROGRAM_RUNWAY)
+        batch = normalized(BATCH_RUNWAY)
+        support_contracts = {
+            "skills/planning-artifacts/SKILL.md": "This layout handoff",
+            "skills/legacy-removal/SKILL.md": "This evidence handoff",
+            "skills/port-by-contract/SKILL.md": (
+                "This contract-distillation handoff"
+            ),
+            "skills/dead-surface-audit/SKILL.md": (
+                "This deletion-liveness evidence handoff"
+            ),
+        }
+
+        self.assertIn("public `plan-batch`", architecture)
+        self.assertIn("- batch_selection", architecture)
+        self.assertIn("- selected_dispatch_mutation", architecture)
+        self.assertIn("- queue_state_mutation", architecture)
+        self.assertIn("Batch Runway must not plan", batch)
+        self.assertNotIn("`create-spec` mode", batch)
+        self.assertFalse(
+            (REPO_ROOT / "skills/batch-runway/references/create-spec.md").exists()
+        )
+
+        for relative_path, scoped_handoff in support_contracts.items():
+            with self.subTest(path=relative_path):
+                support = normalized(REPO_ROOT / relative_path)
+                self.assertIn("public `plan-batch`", support)
+                self.assertIn(scoped_handoff, support)
+                self.assertIn(
+                    "grants no queue, dispatch, runway, or lifecycle mutation "
+                    "authority",
+                    support,
+                )
+                self.assertNotIn("Use `architecture-program-runway`", support)
+                self.assertNotIn("batch-runway create-spec", support.lower())
+                self.assertNotIn("`create-spec` mode", support)
 
     def test_finding_lifecycle_status_stays_separate_from_batch_artifact_state(
         self,
@@ -248,11 +288,11 @@ class SkillRoutingRuleOwnershipTests(unittest.TestCase):
         architecture_program_runway = ARCHITECTURE_PROGRAM_RUNWAY.read_text(
             encoding="utf-8"
         )
-        ledger_statuses = section(architecture_program_runway, "Ledger Statuses")
+        ledger_statuses = section(architecture_program_runway, "Ledger Dispositions")
         owner_map = section(RUNWAY.read_text(encoding="utf-8"), "Rule Ownership Map")
 
-        self.assertIn("Keep them separate from batch artifact state", ledger_statuses)
-        self.assertIn("selected, queued, or active batch\n  artifacts", ledger_statuses)
+        self.assertIn("Keep finding lifecycle status separate", ledger_statuses)
+        self.assertIn("selected, queued, active, and\ncompleted batch", ledger_statuses)
         self.assertIn("finding lifecycle status", owner_map)
         self.assertIn("selected/queued/active batch artifact state", owner_map)
 

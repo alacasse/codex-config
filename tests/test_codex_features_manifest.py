@@ -194,7 +194,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         ]
         self.assertEqual(
             helper_installations,
-            [("batch-runway", helper_link), ("planning-state", helper_link)],
+            [("planning-state", helper_link)],
         )
         self.assertNotIn("batch-runway", features["plan-batch"]["requires"])
         self.assertIn("planning-state", features["plan-batch"]["requires"])
@@ -243,7 +243,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             {
                 "plan-batch": "2.0.0",
                 "work-batch": "1.0.6",
-                "batch-runway": "1.5.1",
+                "batch-runway": "2.0.0",
                 "custom-agents": "1.5.0",
             },
         )
@@ -260,9 +260,6 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         batch_runway = (REPO_ROOT / "skills/batch-runway/SKILL.md").read_text(
             encoding="utf-8"
         )
-        create_spec = (
-            REPO_ROOT / "skills/batch-runway/references/create-spec.md"
-        ).read_text(encoding="utf-8")
         consumer_contract = (
             REPO_ROOT / "skills/batch-runway/references/cross-checkout-context-v1.md"
         ).read_text(encoding="utf-8")
@@ -303,17 +300,6 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 self.markdown_section(batch_runway, "Required First Steps"),
                 self.markdown_section(batch_runway, "Core Contract"),
             )
-        )
-        create_precreation = self.bounded_text(
-            create_spec,
-            "When the selected dispatch explicitly names\n"
-            "`cross-checkout-precreation/v1`",
-            "When the selected dispatch explicitly names `cross-checkout-context/v1`",
-        )
-        create_strict = self.bounded_text(
-            create_spec,
-            "When the selected dispatch explicitly names `cross-checkout-context/v1`",
-            "The spec must include:",
         )
         execute_precreation = " ".join(
             (
@@ -365,18 +351,6 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                     "pre-creation field remains `null` for strict handoffs",
                     "Both remain `null`",
                     "adds no step for ordinary single-root work",
-                ),
-            ),
-            "create-spec": (
-                create_precreation,
-                (
-                    "cross-checkout-precreation-v1.md",
-                    "installed helper from the active Codex home",
-                    "complete payload and exact intended creation targets while they "
-                    "are absent",
-                    "Planning must not create either target",
-                    "must not appear in ordinary single-root or strict cross-checkout "
-                    "runways",
                 ),
             ),
             "execute-core": (
@@ -508,20 +482,6 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                     "strict branch",
                     "strict field `null` until a validated helper-produced "
                     "transition receipt plus green strict context exists",
-                ),
-            ),
-            "create-spec": (
-                create_strict,
-                (
-                    "explicitly names `cross-checkout-context/v1` or explicitly "
-                    "declares separate existing toolchain, canonical-planning, and "
-                    "implementation repository roots",
-                    "complete payload and canonical planning root with the installed "
-                    "helper",
-                    "`cross-checkout-precreation/v1` does not use this strict branch",
-                    "validated helper-produced transition receipt plus green strict "
-                    "context",
-                    "pre-transition strict verification remains `null`",
                 ),
             ),
             "project-values": (
@@ -691,7 +651,6 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             "skills/work-batch/SKILL.md",
             "skills/batch-runway/SKILL.md",
             "skills/batch-runway/references/agent-result-contract-v2.md",
-            "skills/batch-runway/references/create-spec.md",
             "skills/batch-runway/references/cross-checkout-context-v1.md",
             "skills/batch-runway/references/cross-checkout-precreation-v1.md",
             "skills/batch-runway/references/execute-slice-core-v1.md",
@@ -792,7 +751,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("## Routing Table", routing_contract)
         self.assertIn("## Conflict Rule", routing_contract)
         self.assertIn("## Stop Rule", routing_contract)
-        self.assertIn("## Bridge-State Rule", routing_contract)
+        self.assertIn("## Compatibility Label Rule", routing_contract)
 
     def test_command_owner_input_contracts_are_explicit(self) -> None:
         routing_contract = (REPO_ROOT / "docs/skill-routing-contract.md").read_text(
@@ -871,6 +830,12 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         plan_batch = (REPO_ROOT / "skills/plan-batch/SKILL.md").read_text(
             encoding="utf-8"
         )
+        architecture_program_runway = (
+            REPO_ROOT / "skills/architecture-program-runway/SKILL.md"
+        ).read_text(encoding="utf-8")
+        batch_runway = (REPO_ROOT / "skills/batch-runway/SKILL.md").read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn(
             "User-facing command-owner skill",
@@ -879,51 +844,33 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertEqual(
             plan_batch_feature.get("requires", []),
             [
+                "planning-contracts",
                 "planning-artifacts",
                 "planning-state",
-                "architecture-program-runway",
-                "batch-runway",
+                "custom-agents",
             ],
         )
         self.assertEqual(
             {link["source"] for link in plan_batch_feature["links"]},
-            {"skills/plan-batch"},
+            {"skills/plan-batch", "scripts/plan_batch.py"},
         )
 
-        for runtime_owner in ("architecture-program-runway", "batch-runway"):
-            with self.subTest(runtime_owner=runtime_owner):
-                self.assertIn(
-                    "Agent-facing",
-                    features[runtime_owner]["description"],
-                )
-                self.assertNotIn(
-                    "deprecated",
-                    features[runtime_owner]["description"].lower(),
-                )
+        self.assertIn("complete human-facing planning command", plan_batch)
+        self.assertIn("independent-review evidence packet", plan_batch)
+        self.assertIn("DEC-038", plan_batch)
+        self.assertIn("Do not route planning through a\nsecond workflow owner", plan_batch)
+        self.assertNotIn("architecture-program-runway", plan_batch_feature["requires"])
+        self.assertNotIn("batch-runway", plan_batch_feature["requires"])
 
-        self.assertIn("ledger-source rule", plan_batch)
-        self.assertIn("stop-before-implementation boundary", plan_batch)
-        self.assertIn(
-            "This skill reads executable work only from the current program ledger",
-            plan_batch,
+        self.assertIn("same-batch program closeout reconciliation", features["architecture-program-runway"]["description"])
+        self.assertIn("same_batch_closeout_reconciliation", architecture_program_runway)
+        self.assertIn("- batch_selection", architecture_program_runway)
+        self.assertIn("- queue_state_mutation", architecture_program_runway)
+        self.assertIn("execution support", features["batch-runway"]["description"])
+        self.assertIn("Batch Runway must not plan", batch_runway)
+        self.assertFalse(
+            (REPO_ROOT / "skills/batch-runway/references/create-spec.md").exists()
         )
-        self.assertIn("Do not scan external sources to discover new work", plan_batch)
-        self.assertIn("Select bounded work from the current program ledger", plan_batch)
-        self.assertIn("Do not select different work. Use that dispatch.", plan_batch)
-        self.assertIn("Do not create another spec or replace the queue.", plan_batch)
-        self.assertIn("Do not create another spec or execute it.", plan_batch)
-        self.assertIn("Stop and report that `add-to-ledger` must ingest", plan_batch)
-        self.assertIn("at most one concrete batch runway spec", plan_batch)
-        self.assertIn("Stop before implementation", plan_batch)
-        self.assertIn("## Agent-Facing Support", plan_batch)
-        self.assertIn("`../architecture-program-runway/SKILL.md`", plan_batch)
-        self.assertIn("only for program selection", plan_batch)
-        self.assertIn("dispatch ownership", plan_batch)
-        self.assertIn(
-            "`../batch-runway/SKILL.md` only in `create-spec` mode",
-            plan_batch,
-        )
-        self.assertIn("runtime support", plan_batch)
 
     def test_executable_work_source_boundary_is_explicit(self) -> None:
         routing_contract = (REPO_ROOT / "docs/skill-routing-contract.md").read_text(

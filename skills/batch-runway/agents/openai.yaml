@@ -1,4 +1,4 @@
 interface:
   display_name: "Batch Runway"
   short_description: "Runtime support for batch commands"
-  default_prompt: "For agents: apply batch-runway spec creation or execution contracts behind $plan-batch or $work-batch."
+  default_prompt: "For agents: apply batch-runway execution contracts behind $work-batch to the current queued or active runway."

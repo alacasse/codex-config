@@ -45,8 +45,8 @@ delegation, execution acceptance, closeout, or successor selection.
 
 ## Planning And Propagation
 
-`plan-batch` and Batch Runway `create-spec` may validate and preserve a complete
-pre-creation payload while the candidate roots are absent. Planning must not
+Public `plan-batch` may validate and preserve a complete pre-creation payload
+while the candidate roots are absent. Planning must not
 create either root. The generated runway must preserve the complete payload,
 the absolute installed helper path used to validate it, and explicit
 pre-creation mode without adding these fields to ordinary single-root or strict

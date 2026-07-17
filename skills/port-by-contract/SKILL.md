@@ -66,8 +66,8 @@ link to source evidence instead of pasting raw code or long logs.
   rewrite or port.
 - `design-target`: propose the target architecture that satisfies the
   contracts without mirroring source files.
-- `create-port-runway`: create a compact handoff for `architecture-program-runway`
-  or `batch-runway` after contracts exist.
+- `create-port-runway`: create compact evidence for a public `plan-batch`
+  handoff after contracts exist; do not create or queue the runway here.
 - `closeout-port`: reconcile target implementation evidence against the
   contracts, recording satisfied, changed, deferred, and rejected contract
   items.
@@ -144,17 +144,15 @@ Mark deliberate target divergences explicitly. A divergence is acceptable only
 when it preserves or intentionally updates the contract with rationale and
 validation.
 
-## Handoff To Runway Skills
+## Handoff To Plan Batch
 
-After contract distillation, use the smallest workflow that fits:
-
-- Use `batch-runway` when one bounded 3-5 slice port plan is enough.
-- Use `architecture-program-runway` when multiple workstreams, staged ledgers,
-  or repeated batches are needed.
-
-Before creating the handoff, read and follow the selected runway skill. Keep the
-handoff bounded to the next useful batch or program step, and point it at the
-contract artifact paths instead of reopening all raw source.
+After contract distillation, hand planning to public `plan-batch`. Keep the
+evidence bounded to the next useful batch and point at contract artifact paths
+instead of reopening all raw source. This skill does not select work, create a
+dispatch or runway, choose a validation profile, mutate a queue, or acquire
+lifecycle authority.
+This contract-distillation handoff grants no queue, dispatch, runway, or
+lifecycle mutation authority.
 
 The handoff should include:
 
@@ -191,7 +189,8 @@ When reviewing or closing a port:
 1. Compare target behavior to each contract ID.
 2. Record `satisfied`, `changed`, `deferred`, or `rejected` with evidence.
 3. Require target-side validation for behavior claims.
-4. Update the runway or program ledger with compact evidence only.
+4. Produce compact closeout evidence for the current command owner; do not
+   mutate a runway, program ledger, queue, dispatch, or lifecycle state.
 5. Preserve unresolved contract gaps as follow-up items, not hidden notes.
 
 ## Non-Goals
