@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Installed plan-batch command owner
+
+Problem: `plan-batch` was a thin router while program and runway support skills
+still made selection and concrete planning decisions, leaving no installed
+boundary that could require independent exact-draft review before queue writes.
+
+Decision: make `plan-batch` own one-finding selection, proportional scope,
+semantic slices, approvals, direct registered planner/reviewer orchestration,
+and stop-before-implementation behavior. Install a deterministic
+`plan-batch/v1` script that validates currentness, draft and dispatch hashes,
+role independence, approval scope, and lineage before applying the existing
+DEC-038 transaction. Bind planning scenarios to that installed owner and make
+Planning State expose the unchanged cross-checkout helper during migration.
+
+Expected effect: cohesive one-slice and justified multi-slice plans can queue
+through one reviewed, replay-safe path; stale, filler, expanded, unresolved,
+unapproved, or mismatched drafts remain non-executable without queue mutation.
+
 ### Legacy Removal evidence-only boundary
 
 Problem: `legacy-removal` still contained an exception that let it become a

@@ -54,7 +54,24 @@ CANONICAL_REPOSITORY_ROOT = Path(
     )
 )
 INSTALLED_INTAKE_OWNER = CANDIDATE_CODEX_HOME / "scripts/add_to_ledger.py"
+INSTALLED_PLANNING_OWNER = CANDIDATE_CODEX_HOME / "scripts/plan_batch.py"
 INSTALLED_PLANNING_CONTRACT = CANDIDATE_CODEX_HOME / "scripts/planning_contract.py"
+PLANNING_OWNER_PROCESS_INVOCATIONS: list[Path] = []
+PLANNING_SELECTION_FAULT_POINTS = (
+    "after_transaction_record_append",
+    "before_dispatch_write",
+    "after_dispatch_write_before_validation",
+    "after_dispatch_validation",
+    "before_idle_to_selected_cas",
+    "after_idle_to_selected_cas_before_receipt",
+    "after_selected_transition_receipt",
+    "before_runway_write",
+    "after_runway_write_before_validation",
+    "after_runway_validation",
+    "before_selected_to_queued_cas",
+    "after_selected_to_queued_cas_before_receipt",
+    "after_queued_transition_receipt",
+)
 
 FixtureCallable = Callable[[Mapping[str, object]], Mapping[str, object] | None]
 
@@ -648,62 +665,84 @@ def _run_planning(
     repo_root = _repo_root(fixture_root)
     request = _selection_workspace(workspace, repo_root, case)
     mode = cast(str, case["mode"])
-    if mode == "guard":
+    if mode == "guard" and case.get("existing_state") is not None:
         _seed_existing_state(request, case, repo_root)
-        before = _snapshot(workspace)
-        stop_reason = _planning_stop_reason(case, request, repo_root)
-        if stop_reason is None:
-            raise AssertionError("guard case did not produce a stop decision")
-        return (
-            "planning:blocked",
-            _changed_paths(before, workspace),
-            stop_reason,
-            ["planning.guard.green", "planning.no-queue-mutation.green"],
-        )
     before = _snapshot(workspace)
+    boundary: PlanningBoundaryResult | None = None
     if mode == "roles":
         collaborators = planning_collaborators or _planning_collaborators(case)
         boundary = _evaluate_planning_boundary(case, collaborators)
-        if not boundary.accepted:
-            return (
-                "planning:blocked",
-                _changed_paths(before, workspace),
-                boundary.stop_reason,
-                ["planning.guard.green", "planning.no-queue-mutation.green"],
+        if boundary.accepted:
+            assert boundary.review is not None
+            _write_json(workspace / "planner-result.json", boundary.plan)
+            _write_json(workspace / "reviewer-result.json", boundary.review)
+            _write_json(
+                workspace / "role-invocations.json", list(boundary.invocations)
             )
-        assert boundary.review is not None
-        _write_json(workspace / "planner-result.json", boundary.plan)
-        _write_json(workspace / "reviewer-result.json", boundary.review)
-        _write_json(
-            workspace / "role-invocations.json", list(boundary.invocations)
-        )
     if cast(bool, case.get("residual_complexity", False)):
-        approval = cast(Mapping[str, object], case["approval"])
-        _write_json(workspace / "approval-decision.json", dict(approval))
+        approval = case.get("approval")
+        if isinstance(approval, Mapping):
+            _write_json(
+                workspace / "approval-decision.json",
+                dict(cast(Mapping[str, object], approval)),
+            )
+    owner_request = _planning_owner_request(
+        request,
+        case,
+        repo_root,
+        boundary=boundary,
+    )
     if mode == "recover":
         try:
-            simulate_selection_transaction(
-                request,
-                toolchain_root=repo_root,
+            _invoke_installed_planning_owner(
+                owner_request,
+                repo_root,
                 fault="after_idle_to_selected_cas_before_receipt",
             )
         except RuntimeError:
             pass
         else:
             raise AssertionError("selection fault was not injected")
-        result = simulate_selection_transaction(request, toolchain_root=repo_root)
-        replay = simulate_selection_transaction(request, toolchain_root=repo_root)
-        assert result.outcome == "completed"
-        assert replay.outcome == "exact_replay"
+        _refresh_planning_owner_state(owner_request, request, repo_root)
+        result = _invoke_installed_planning_owner(owner_request, repo_root)
+        _refresh_planning_owner_state(owner_request, request, repo_root)
+        replay = _invoke_installed_planning_owner(owner_request, repo_root)
+        assert result["outcome"] == "queued"
+        replay_transaction = cast(Mapping[str, object], replay["transaction"])
+        assert replay_transaction["outcome"] == "exact_replay"
         validation = [
             "planning.transaction.green",
             "planning.recovery.green",
             "planning.idempotence.green",
+            "planning.installed-owner.green",
         ]
     else:
-        result = simulate_selection_transaction(request, toolchain_root=repo_root)
-        assert result.outcome == "completed"
-        validation = ["planning.transaction.green", "planning.quality.green"]
+        result = _invoke_installed_planning_owner(owner_request, repo_root)
+        if result["outcome"] == "blocked":
+            stop_reason = (
+                boundary.stop_reason
+                if boundary is not None and not boundary.accepted
+                else _planning_stop_reason(case, request, repo_root)
+            )
+            if stop_reason is None:
+                blockers = cast(list[Mapping[str, object]], result["blockers"])
+                stop_reason = cast(str, blockers[0]["message"])
+            return (
+                "planning:blocked",
+                _changed_paths(before, workspace),
+                stop_reason,
+                [
+                    "planning.guard.green",
+                    "planning.no-queue-mutation.green",
+                    "planning.installed-owner.green",
+                ],
+            )
+        assert result["outcome"] == "queued"
+        validation = [
+            "planning.transaction.green",
+            "planning.quality.green",
+            "planning.installed-owner.green",
+        ]
         if mode == "roles":
             validation.append("planning.fixture-role-boundary.green")
         if cast(bool, case.get("residual_complexity", False)):
@@ -717,6 +756,476 @@ def _run_planning(
         "planning stops before implementation",
         validation,
     )
+
+
+def exercise_repeated_planning_correction(
+    workspace: Path, fixture_root: Path
+) -> Mapping[str, object]:
+    """Exercise the installed owner's unchanged-draft correction-loop stop."""
+
+    workspace.mkdir(parents=True, exist_ok=True)
+    repo_root = _repo_root(fixture_root)
+    transaction = _selection_workspace(
+        workspace,
+        repo_root,
+        {"slice_boundaries": ["owner-seam"]},
+    )
+    owner_request = _planning_owner_request(
+        transaction,
+        {"slice_boundaries": ["owner-seam"]},
+        repo_root,
+        boundary=None,
+    )
+    correction = "narrow the owner seam"
+    reviewer_result = cast(dict[str, object], owner_request["reviewer_result"])
+    reviewer_result["verdict"] = "correction_required"
+    reviewer_result["corrections"] = [correction]
+    draft = cast(
+        Mapping[str, object],
+        cast(Mapping[str, object], owner_request["planner_result"])["draft"],
+    )
+    owner_request["correction_history"] = [
+        {
+            "draft_sha256": _mapping_digest(draft),
+            "correction": correction,
+            "material": True,
+        }
+    ]
+    _refresh_planning_review_evidence(owner_request)
+    before = _snapshot(workspace)
+    result = _invoke_installed_planning_owner(owner_request, repo_root)
+    return {
+        "result": result,
+        "writes": _changed_paths(before, workspace),
+        "planner_invocation": _thaw(owner_request["planner_invocation"]),
+        "reviewer_invocation": _thaw(owner_request["reviewer_invocation"]),
+    }
+
+
+def exercise_planning_recovery_fault(
+    workspace: Path,
+    fixture_root: Path,
+    fault: str,
+) -> Mapping[str, object]:
+    """Exercise one installed-owner recovery without manufacturing a rereview."""
+
+    if fault not in PLANNING_SELECTION_FAULT_POINTS:
+        raise AssertionError(f"unsupported planning selection fault: {fault}")
+    workspace.mkdir(parents=True, exist_ok=True)
+    repo_root = _repo_root(fixture_root)
+    transaction = _selection_workspace(
+        workspace,
+        repo_root,
+        {"slice_boundaries": ["recovery"]},
+    )
+    owner_request = _planning_owner_request(
+        transaction,
+        {"slice_boundaries": ["recovery"]},
+        repo_root,
+        boundary=None,
+    )
+    original_lineage = _planning_review_lineage_snapshot(owner_request)
+
+    try:
+        _invoke_installed_planning_owner(owner_request, repo_root, fault=fault)
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("selection fault was not injected")
+    assert _planning_review_lineage_snapshot(owner_request) == original_lineage
+
+    _refresh_planning_owner_state(owner_request, transaction, repo_root)
+    assert _planning_review_lineage_snapshot(owner_request) == original_lineage
+    resumed = _invoke_installed_planning_owner(owner_request, repo_root)
+    assert _planning_review_lineage_snapshot(owner_request) == original_lineage
+    completed = _snapshot(workspace)
+
+    _refresh_planning_owner_state(owner_request, transaction, repo_root)
+    assert _planning_review_lineage_snapshot(owner_request) == original_lineage
+    replayed = _invoke_installed_planning_owner(owner_request, repo_root)
+    assert _planning_review_lineage_snapshot(owner_request) == original_lineage
+    assert _snapshot(workspace) == completed
+
+    resumed_transaction = cast(Mapping[str, object], resumed["transaction"])
+    replayed_transaction = cast(Mapping[str, object], replayed["transaction"])
+    return {
+        "resumed_outcome": resumed["outcome"],
+        "resumed_transaction_outcome": resumed_transaction["outcome"],
+        "replayed_outcome": replayed["outcome"],
+        "replayed_transaction_outcome": replayed_transaction["outcome"],
+        "review_lineage_sha256": hashlib.sha256(original_lineage).hexdigest(),
+        "review_lineage_immutable": True,
+    }
+
+
+def _planning_review_lineage_snapshot(owner_request: Mapping[str, object]) -> bytes:
+    return json.dumps(
+        {
+            "review_evidence": owner_request["review_evidence"],
+            "reviewer_invocation": owner_request["reviewer_invocation"],
+            "reviewer_result": owner_request["reviewer_result"],
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+
+
+def _require_installed_planning_owner(repo_root: Path) -> Path:
+    expected = (repo_root / "scripts/plan_batch.py").resolve(strict=True)
+    if not INSTALLED_PLANNING_OWNER.is_symlink():
+        raise AssertionError(
+            f"installed planning owner is not a link: {INSTALLED_PLANNING_OWNER}"
+        )
+    if INSTALLED_PLANNING_OWNER.resolve(strict=True) != expected:
+        raise AssertionError("installed planning owner does not resolve to candidate source")
+    if not INSTALLED_PLANNING_CONTRACT.is_symlink():
+        raise AssertionError("installed planning contract is not a link")
+    if INSTALLED_PLANNING_CONTRACT.resolve(strict=True) != (
+        repo_root / "scripts/planning_contract.py"
+    ).resolve(strict=True):
+        raise AssertionError("installed planning contract has foreign provenance")
+    return INSTALLED_PLANNING_OWNER
+
+
+def _canonical_planning_owner_module(repo_root: Path) -> Any:
+    expected = _require_installed_planning_owner(repo_root).resolve(strict=True)
+    module = importlib.import_module("scripts.plan_batch")
+    if Path(cast(str, module.__file__)).resolve(strict=True) != expected:
+        raise ImportError("canonical planning owner module has foreign provenance")
+    store = importlib.import_module("scripts.planning_contract")
+    expected_store = INSTALLED_PLANNING_CONTRACT.resolve(strict=True)
+    if Path(cast(str, store.__file__)).resolve(strict=True) != expected_store:
+        raise ImportError("canonical planning store module has foreign provenance")
+    if module.simulate_selection_transaction is not store.simulate_selection_transaction:
+        raise ImportError("canonical planning owner does not use canonical planning store")
+    return module
+
+
+def _invoke_installed_planning_owner(
+    request: Mapping[str, object],
+    repo_root: Path,
+    *,
+    fault: str | None = None,
+) -> dict[str, object]:
+    if fault is None:
+        owner_path = _require_installed_planning_owner(repo_root)
+        PLANNING_OWNER_PROCESS_INVOCATIONS.append(owner_path)
+        process = subprocess.run(
+            [sys.executable, "-P", str(owner_path)],
+            input=json.dumps(request),
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if process.returncode != 0 or process.stderr:
+            raise AssertionError(
+                "installed planning owner process failed: "
+                f"returncode={process.returncode}; stderr={process.stderr!r}"
+            )
+        result = json.loads(process.stdout)
+        if not isinstance(result, dict):
+            raise AssertionError("installed planning owner returned non-object JSON")
+        return cast(dict[str, object], result)
+    owner = _canonical_planning_owner_module(repo_root)
+    return cast(dict[str, object], owner.execute_plan_batch(request, fault=fault))
+
+
+def _planning_owner_request(
+    request: SelectionTransactionRequest,
+    case: Mapping[str, object],
+    repo_root: Path,
+    *,
+    boundary: PlanningBoundaryResult | None,
+) -> dict[str, object]:
+    current = read_current_document(request.current_path, toolchain_root=repo_root)
+    commit = subprocess.check_output(
+        ["git", "-C", str(repo_root), "rev-parse", "HEAD"], text=True
+    ).strip()
+    canonical_commit = subprocess.check_output(
+        ["git", "-C", str(CANONICAL_REPOSITORY_ROOT), "rev-parse", "HEAD"],
+        text=True,
+    ).strip()
+    draft = _planning_draft(request, case, boundary=boundary)
+    planner_status = "ready" if boundary is None or boundary.accepted else "blocked"
+    planner_blockers = (
+        []
+        if planner_status == "ready"
+        else [cast(str, boundary.stop_reason)]
+    )
+    approvals = []
+    approval = case.get("approval")
+    if isinstance(approval, Mapping):
+        approvals.append(dict(cast(Mapping[str, object], approval)))
+    owner_request: dict[str, object] = {
+        "interface": "plan-batch/v1",
+        "context": {
+            "toolchain_generation": "candidate",
+            "toolchain_commit": commit,
+            "toolchain_root": str(repo_root),
+            "canonical_planning_repository_root": str(CANONICAL_REPOSITORY_ROOT),
+            "canonical_planning_commit": canonical_commit,
+            "planning_root": str(request.lineage.planning_root),
+            "operation_root_kind": "fixture",
+            "canonical_state_mutation_allowed": False,
+        },
+        "planning_state": _planning_state_payload(current),
+        "planner_invocation": {
+            "role": "batch_planner",
+            "caller": "plan-batch",
+            "direct": True,
+            "invocation_id": "fixture-planner",
+        },
+        "planner_result": {
+            "interface": "batch-plan-draft/v1",
+            "status": planner_status,
+            "draft": draft if planner_status == "ready" else None,
+            "blockers": planner_blockers,
+        },
+        "reviewer_invocation": {
+            "role": "batch_plan_reviewer",
+            "caller": "plan-batch",
+            "direct": True,
+            "invocation_id": "fixture-reviewer",
+        },
+        "reviewer_result": {
+            "interface": "batch-plan-review/v1",
+            "verdict": "clean",
+            "review_basis": {
+                "selected_dispatch_sha256": "0" * 64,
+                "draft_sha256": "0" * 64,
+                "approvals_sha256": "0" * 64,
+                "evidence_packet_sha256": "0" * 64,
+            },
+            "checks": {
+                "currentness": "pass",
+                "selection": "pass",
+                "scope": "pass",
+                "proportionality": "pass",
+                "lineage": "pass",
+                "approval_scope": "pass",
+                "semantic_slices": "pass",
+                "stop_boundary": "pass",
+            },
+            "corrections": [],
+            "blockers": [],
+            "implementation_started": False,
+        },
+        "approvals": approvals,
+        "review_evidence": {},
+        "validation_catalog": ["project-harness-production"],
+        "correction_history": [],
+        "transaction": _selection_transaction_payload(request),
+    }
+    if planner_status == "ready":
+        _refresh_planning_review_evidence(owner_request)
+    return owner_request
+
+
+def _planning_draft(
+    request: SelectionTransactionRequest,
+    case: Mapping[str, object],
+    *,
+    boundary: PlanningBoundaryResult | None,
+) -> dict[str, object]:
+    slices = cast(list[Mapping[str, object]], request.runway_contract["slices"])
+    reasons = (
+        cast(list[str], boundary.plan["semantic_reasons"])
+        if boundary is not None and boundary.accepted
+        else [f"separate {item['id']} responsibility" for item in slices]
+    )
+    rationales = [
+        {
+            "slice_id": cast(str, item["id"]),
+            "kind": "cohesive" if len(slices) == 1 else "producer-consumer",
+            "reason": reason,
+        }
+        for item, reason in zip(slices, reasons, strict=True)
+    ]
+    if case.get("semantic_boundaries") is False:
+        rationales[0]["kind"] = "filler"
+    quality: dict[str, object] = {
+        "minimum_viable_scope": case.get("scope_quality") != "vague",
+        "scope_expansions": (
+            [] if case.get("scope_expansion") is None else [case["scope_expansion"]]
+        ),
+        "proportionality": {
+            "observed_failure": "planning behavior lacks one installed owner proof",
+            "invariants": [
+                "queue one reviewed finding",
+                "stop before implementation",
+            ],
+            "minimum_viable_change": "validate and queue one reviewed draft",
+            "proposed_change": "validate and queue one reviewed draft",
+            "additions_beyond_minimum": [],
+            "simpler_alternatives_rejected": [
+                {
+                    "alternative": "retain fixture-only planning",
+                    "reason": "it does not prove the installed owner boundary",
+                }
+            ],
+            "verdict": "proportionate",
+        },
+        "slice_rationales": rationales,
+        "unresolved_decisions": (
+            ["fixture user decision"] if case.get("draft_state") == "undecided" else []
+        ),
+        "residual_complexity": (
+            [
+                {
+                    "id": "fixture-complexity",
+                    "scope": "fixture-batch:dependency-and-validation-seams",
+                }
+            ]
+            if cast(bool, case.get("residual_complexity", False))
+            else []
+        ),
+        "destructive_actions": (
+            [{"id": "fixture-destruction", "scope": "fixture-batch:destructive"}]
+            if cast(bool, case.get("destructive", False))
+            else []
+        ),
+        "implementation_started": False,
+    }
+    return {
+        "dispatch": _thaw(request.dispatch_contract),
+        "runway": _thaw(request.runway_contract),
+        "basis": {
+            "current_revision": request.expected_initial_state_revision,
+            "current_file_hash": request.expected_initial_state_file_hash,
+            "ledger_path": str(request.lineage.ledger_path),
+            "ledger_file_hash": (
+                "0" * 64
+                if case.get("draft_state") == "stale"
+                else _hash(request.lineage.ledger_path)
+            ),
+            "finding_id": request.lineage.included_finding_ids[0],
+            "finding_revision": 1,
+        },
+        "quality": quality,
+        "validation_profile": "project-harness-production",
+    }
+
+
+def _planning_state_payload(current: Any) -> dict[str, object]:
+    selected = current.contract["selected_dispatch"]
+    queued = current.contract["queued_runway"]
+    active = current.contract["active_runway"]
+    semantic = "active" if active else "queued" if queued else "selected" if selected else "idle"
+    return {
+        "current_status": "valid",
+        "validate_status": "valid",
+        "semantic_state": semantic,
+        "current_revision": current.logical_revision,
+        "current_file_hash": current.file_hash,
+        "selected_dispatch": selected,
+        "queued_runway": queued,
+        "active_runway": active,
+    }
+
+
+def _refresh_planning_owner_state(
+    owner_request: dict[str, object],
+    request: SelectionTransactionRequest,
+    repo_root: Path,
+) -> None:
+    owner_request["planning_state"] = _planning_state_payload(
+        read_current_document(request.current_path, toolchain_root=repo_root)
+    )
+
+
+def _refresh_planning_review_evidence(owner_request: dict[str, object]) -> None:
+    planner_result = cast(dict[str, object], owner_request["planner_result"])
+    draft = cast(dict[str, object], planner_result["draft"])
+    quality = cast(dict[str, object], draft["quality"])
+    source_content = "Authoritative scenario source evidence for CCFG-1."
+    planning_state = cast(dict[str, object], owner_request["planning_state"])
+    packet = {
+        "source_evidence": [
+            {
+                "source_id": "SRC-1",
+                "source_commit": "1" * 40,
+                "source_section": "source.md#one",
+                "content": source_content,
+                "sha256": hashlib.sha256(source_content.encode()).hexdigest(),
+            }
+        ],
+        "user_constraints": ["stop before implementation"],
+        "planning_state_diagnostics": {
+            "current_sha256": _value_digest(
+                {"command": "current", "planning_state": planning_state}
+            ),
+            "validate_sha256": _value_digest(
+                {"command": "validate", "planning_state": planning_state}
+            ),
+        },
+        "proportionality": _thaw(quality["proportionality"]),
+        "approvals": _thaw(owner_request["approvals"]),
+        "draft": _thaw(draft),
+        "selected_dispatch": _thaw(draft["dispatch"]),
+        "invocation_lineage": {
+            "planner": _thaw(owner_request["planner_invocation"]),
+            "reviewer": _thaw(owner_request["reviewer_invocation"]),
+        },
+    }
+    packet_sha256 = _mapping_digest(packet)
+    owner_request["review_evidence"] = {
+        "packet": packet,
+        "packet_sha256": packet_sha256,
+    }
+    reviewer_result = cast(dict[str, object], owner_request["reviewer_result"])
+    reviewer_result["review_basis"] = {
+        "selected_dispatch_sha256": _mapping_digest(
+            cast(Mapping[str, object], draft["dispatch"])
+        ),
+        "draft_sha256": _mapping_digest(draft),
+        "approvals_sha256": _value_digest(owner_request["approvals"]),
+        "evidence_packet_sha256": packet_sha256,
+    }
+
+
+def _selection_transaction_payload(
+    request: SelectionTransactionRequest,
+) -> dict[str, object]:
+    lineage = request.lineage
+
+    def producer(value: ProducerIdentity) -> dict[str, str]:
+        return {
+            "toolchain_generation": value.toolchain_generation,
+            "toolchain_commit": value.toolchain_commit,
+            "schema_version": value.schema_version,
+        }
+    return {
+        "transaction_id": request.transaction_id,
+        "transaction_path": str(request.transaction_path),
+        "current_path": str(request.current_path),
+        "expected_initial_state_revision": request.expected_initial_state_revision,
+        "expected_initial_state_file_hash": request.expected_initial_state_file_hash,
+        "initial_current_contract": _thaw(request.initial_current_contract),
+        "lineage": {
+            "planning_root": str(lineage.planning_root),
+            "program": lineage.program,
+            "batch_id": lineage.batch_id,
+            "included_finding_ids": list(lineage.included_finding_ids),
+            "deferred_finding_ids": list(lineage.deferred_finding_ids),
+            "batch_kind": lineage.batch_kind,
+            "ledger_path": str(lineage.ledger_path),
+            "ledger_revision": lineage.ledger_revision,
+            "dispatch_path": str(lineage.dispatch_path),
+            "dispatch_revision": lineage.dispatch_revision,
+            "runway_path": str(lineage.runway_path),
+            "closeout_path": str(lineage.closeout_path),
+            "toolchain_source_root": str(lineage.toolchain_source_root),
+            "canonical_planning_repository_root": str(
+                lineage.canonical_planning_repository_root
+            ),
+            "implementation_target_root": str(lineage.implementation_target_root),
+            "dispatch_producer": producer(lineage.dispatch_producer),
+            "runway_producer": producer(lineage.runway_producer),
+            "closeout_producer": producer(lineage.closeout_producer),
+        },
+        "command_owner_version": request.command_owner_version,
+        "producer": producer(request.producer),
+    }
 
 
 def _run_execution(
@@ -964,6 +1473,11 @@ def _run_closeout(
     contracts = _artifact_contracts(repo_root)
     closeout = contracts["planning-closeout/v1"]
     closeout["artifact"]["batch_id"] = request.lineage.batch_id
+    closeout["producer"] = {
+        "toolchain_generation": request.lineage.closeout_producer.toolchain_generation,
+        "toolchain_commit": request.lineage.closeout_producer.toolchain_commit,
+        "schema_version": request.lineage.closeout_producer.schema_version,
+    }
     closeout["execution_context"] = {
         "canonical_planning_repository_root": str(workspace.parent),
         "implementation_target_root": str(workspace / "candidate"),
@@ -1059,6 +1573,9 @@ def _selection_workspace(
         ledger_path,
     )
     initial = read_current_document(current_path, toolchain_root=repo_root)
+    commit = subprocess.check_output(
+        ["git", "-C", str(repo_root), "rev-parse", "HEAD"], text=True
+    ).strip()
     contracts = _artifact_contracts(repo_root)
     dispatch = contracts["planning-dispatch/v1"]
     runway = contracts["planning-runway/v1"]
@@ -1066,12 +1583,22 @@ def _selection_workspace(
     dispatch["source"]["finding_ids"] = ["CCFG-1"]
     dispatch["scope"]["included_finding_ids"] = ["CCFG-1"]
     dispatch["execution_context"] = {
-        "toolchain_source_root": str(workspace / "stable"),
+        "toolchain_source_root": str(repo_root),
         "canonical_planning_repository_root": str(workspace.parent),
         "implementation_target_root": str(workspace / "candidate"),
     }
+    dispatch["producer"] = {
+        "toolchain_generation": "candidate",
+        "toolchain_commit": commit,
+        "schema_version": "planning-dispatch/v1",
+    }
     runway["artifact"]["id"] = "fixture-batch"
     runway["execution"]["implementation_target_root"] = str(workspace / "candidate")
+    runway["producer"] = {
+        "toolchain_generation": "candidate",
+        "toolchain_commit": commit,
+        "schema_version": "planning-runway/v1",
+    }
     boundaries = cast(list[str], case.get("slice_boundaries", ["workflow-seam"]))
     runway["slices"] = [
         {
@@ -1097,12 +1624,18 @@ def _selection_workspace(
         dispatch_revision="a" * 64,
         runway_path=workspace / "runway.md",
         closeout_path=workspace / "closeout.md",
-        toolchain_source_root=workspace / "stable",
+        toolchain_source_root=repo_root,
         canonical_planning_repository_root=workspace.parent,
         implementation_target_root=workspace / "candidate",
-        dispatch_producer=ProducerIdentity("stable", COMMIT, "planning-dispatch/v1"),
-        runway_producer=ProducerIdentity("stable", COMMIT, "planning-runway/v1"),
-        closeout_producer=ProducerIdentity("stable", COMMIT, "planning-closeout/v1"),
+        dispatch_producer=ProducerIdentity(
+            "candidate", commit, "planning-dispatch/v1"
+        ),
+        runway_producer=ProducerIdentity(
+            "candidate", commit, "planning-runway/v1"
+        ),
+        closeout_producer=ProducerIdentity(
+            "candidate", commit, "planning-closeout/v1"
+        ),
     )
     return SelectionTransactionRequest(
         transaction_id="fixture-selection",
@@ -1116,7 +1649,7 @@ def _selection_workspace(
         runway_contract=runway,
         command_owner_version="fixture-command-owner-v1",
         producer=ProducerIdentity(
-            "stable", COMMIT, "planning-selection-transaction/v1"
+            "candidate", commit, "planning-selection-transaction/v1"
         ),
     )
 
@@ -1310,6 +1843,10 @@ def _fixture_plan_reviewer(
 
 
 def _mapping_digest(value: Mapping[str, object]) -> str:
+    return _value_digest(value)
+
+
+def _value_digest(value: object) -> str:
     encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
 

@@ -86,6 +86,7 @@ scenarios:
       - planning.transaction.green
       - planning.recovery.green
       - planning.idempotence.green
+      - planning.installed-owner.green
     binding: &planning_binding
       status: bound
       adapter: workflow_adapters.py:observe_planning
@@ -204,6 +205,7 @@ scenarios:
     validation: &planning_validation
       - planning.transaction.green
       - planning.quality.green
+      - planning.installed-owner.green
     binding: *planning_binding
   - id: planning-semantic-multi-slice-queued
     family: planning
@@ -232,6 +234,7 @@ scenarios:
     validation: &planning_guard_validation
       - planning.guard.green
       - planning.no-queue-mutation.green
+      - planning.installed-owner.green
     binding: *planning_binding
   - id: planning-existing-queued-blocked
     family: planning
@@ -369,6 +372,7 @@ scenarios:
     validation:
       - planning.transaction.green
       - planning.quality.green
+      - planning.installed-owner.green
       - planning.approval-scoped.green
     binding: *planning_binding
   - id: quality-residual-complexity-unapproved
@@ -405,6 +409,7 @@ scenarios:
     validation:
       - planning.transaction.green
       - planning.quality.green
+      - planning.installed-owner.green
       - planning.fixture-role-boundary.green
     binding: *planning_binding
   - id: quality-planner-reviewer-coupling-blocked

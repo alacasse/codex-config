@@ -288,6 +288,103 @@ def test_fixture_plan_boundary_rejects_semantic_coupling_and_review_regressions(
 
 
 @pytest.mark.command_owner_evidence
+def test_planning_success_and_refusal_execute_installed_owner_entrypoint(
+    tmp_path: Path,
+) -> None:
+    module = _adapter_module()
+    installed_owner = module.INSTALLED_PLANNING_OWNER
+    assert installed_owner.is_symlink()
+    assert installed_owner.resolve(strict=True) == REPO_ROOT / "scripts/plan_batch.py"
+
+    queued_workspace = tmp_path / "queued"
+    blocked_workspace = tmp_path / "blocked"
+    queued = module.run_scenario(
+        _scenario("planning-single-slice-queued"),
+        FIXTURES,
+        queued_workspace,
+    )
+    blocked = module.run_scenario(
+        _scenario("planning-existing-selected-blocked"),
+        FIXTURES,
+        blocked_workspace,
+    )
+
+    assert module.PLANNING_OWNER_PROCESS_INVOCATIONS == [
+        installed_owner,
+        installed_owner,
+    ]
+    assert queued["transition"] == "planning:queued"
+    assert queued["writes"] == [
+        "workspace/CURRENT.md",
+        "workspace/dispatch.md",
+        "workspace/runway.md",
+        "workspace/selection.md",
+    ]
+    assert (queued_workspace / "CURRENT.md").is_file()
+    assert (queued_workspace / "dispatch.md").is_file()
+    assert (queued_workspace / "runway.md").is_file()
+    assert (queued_workspace / "selection.md").is_file()
+    assert blocked["transition"] == "planning:blocked"
+    assert blocked["writes"] == []
+    assert not (blocked_workspace / "dispatch.md").exists()
+    assert not (blocked_workspace / "runway.md").exists()
+    assert not (blocked_workspace / "selection.md").exists()
+
+
+@pytest.mark.command_owner_evidence
+def test_repeated_material_planning_correction_stops_installed_owner_loop(
+    tmp_path: Path,
+) -> None:
+    module = _adapter_module()
+
+    observation = module.exercise_repeated_planning_correction(
+        tmp_path / "workspace", FIXTURES
+    )
+    result = observation["result"]
+
+    assert result["outcome"] == "blocked"
+    assert result["blockers"][0]["code"] == "review.repeated_correction"
+    assert result["next_action"] == "stop"
+    assert observation["writes"] == []
+    assert observation["planner_invocation"] == {
+        "role": "batch_planner",
+        "caller": "plan-batch",
+        "direct": True,
+        "invocation_id": "fixture-planner",
+    }
+    assert observation["reviewer_invocation"] == {
+        "role": "batch_plan_reviewer",
+        "caller": "plan-batch",
+        "direct": True,
+        "invocation_id": "fixture-reviewer",
+    }
+
+
+@pytest.mark.command_owner_evidence
+def test_installed_recovery_preserves_original_review_lineage_across_all_faults(
+    tmp_path: Path,
+) -> None:
+    module = _adapter_module()
+
+    for fault in module.PLANNING_SELECTION_FAULT_POINTS:
+        observation = module.exercise_planning_recovery_fault(
+            tmp_path / fault,
+            FIXTURES,
+            fault,
+        )
+
+        assert observation["resumed_outcome"] == "queued"
+        assert observation["resumed_transaction_outcome"] in {
+            "completed",
+            "exact_replay",
+        }
+        assert observation["replayed_outcome"] == "queued"
+        assert observation["replayed_transaction_outcome"] == "exact_replay"
+        assert observation["review_lineage_immutable"] is True
+        assert len(observation["review_lineage_sha256"]) == 64
+
+
+@pytest.mark.command_owner_evidence
 def test_scenario_command_is_a_semantic_label_not_an_executable_dispatch(
     tmp_path: Path,
 ) -> None:
@@ -379,6 +476,7 @@ def test_public_store_scenarios_expose_atomic_recovery_and_no_successor_effects(
         "planning.transaction.green",
         "planning.recovery.green",
         "planning.idempotence.green",
+        "planning.installed-owner.green",
     ]
     assert observations["closeout-partial-write-resumes"]["stop_reason"] == (
         "same-batch closeout stops without successor selection"

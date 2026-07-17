@@ -161,7 +161,11 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("planning-artifacts", planning_state.get("requires", []))
         self.assertEqual(
             {link["source"] for link in planning_state["links"]},
-            {"skills/planning-state", "scripts/planning_state.py"},
+            {
+                "skills/planning-state",
+                "scripts/planning_state.py",
+                "scripts/cross_checkout_context.py",
+            },
         )
 
         args = Namespace(feature=["planning-state"], all_features=False)
@@ -169,7 +173,9 @@ class CodexFeaturesManifestTests(unittest.TestCase):
 
         self.assertEqual(selected, ["planning-artifacts", "planning-state"])
 
-    def test_cross_checkout_helper_is_installed_only_by_batch_runway(self) -> None:
+    def test_cross_checkout_helper_is_available_from_planning_state_during_transfer(
+        self,
+    ) -> None:
         manifest = self.load_manifest()
         features = manifest["features"]
         helper_link = {
@@ -188,11 +194,11 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         ]
         self.assertEqual(
             helper_installations,
-            [("batch-runway", helper_link)],
+            [("batch-runway", helper_link), ("planning-state", helper_link)],
         )
-        for consumer in ("plan-batch", "work-batch"):
-            with self.subTest(consumer=consumer):
-                self.assertIn("batch-runway", features[consumer]["requires"])
+        self.assertNotIn("batch-runway", features["plan-batch"]["requires"])
+        self.assertIn("planning-state", features["plan-batch"]["requires"])
+        self.assertIn("batch-runway", features["work-batch"]["requires"])
         installed_agent_sources = {
             link["source"] for link in features["custom-agents"]["links"]
         }
@@ -214,6 +220,16 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                     "verified_cross_checkout_context: null",
                     instructions,
                 )
+        for agent_source in (
+            "agents/batch_planner.toml",
+            "agents/batch_plan_reviewer.toml",
+        ):
+            with self.subTest(agent_source=agent_source):
+                self.assertIn(agent_source, installed_agent_sources)
+                instructions = tomllib.loads(
+                    (REPO_ROOT / agent_source).read_text(encoding="utf-8")
+                )["developer_instructions"]
+                self.assertIn("Do not", instructions)
         self.assertEqual(
             {
                 name: features[name]["version"]
@@ -225,10 +241,10 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 )
             },
             {
-                "plan-batch": "1.0.5",
+                "plan-batch": "2.0.0",
                 "work-batch": "1.0.6",
                 "batch-runway": "1.5.1",
-                "custom-agents": "1.4.1",
+                "custom-agents": "1.5.0",
             },
         )
 
@@ -311,12 +327,13 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             "plan-batch": (
                 plan_precreation,
                 (
-                    "cross-checkout-precreation-v1.md",
+                    "cross-checkout-precreation/v1",
                     "installed helper from the active Codex home",
                     "validate the complete payload and exact intended creation "
                     "targets while they are absent",
                     "must not create either candidate root",
-                    "no step for ordinary single-root or strict cross-checkout batches",
+                    "adds no step for ordinary single-root or strict cross-checkout "
+                    "batches",
                 ),
             ),
             "work-batch": (
@@ -388,8 +405,8 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             "plan-batch": (
                 plan_strict,
                 (
-                    "../batch-runway/references/cross-checkout-context-v1.md",
-                    "Require the complete context payload and canonical planning "
+                    "cross-checkout-context/v1",
+                    "require the complete context payload and canonical planning "
                     "root, validate them with the installed helper",
                     "preserve both verbatim in that runway",
                     "absent-target payload cannot satisfy this strict "
@@ -614,8 +631,60 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             normalized_precreation,
         )
 
+    def test_plan_batch_roles_are_registered_with_disjoint_exact_results(self) -> None:
+        features = self.load_manifest()["features"]
+        installed = {
+            link["source"] for link in features["custom-agents"]["links"]
+        }
+        planner = tomllib.loads(
+            (REPO_ROOT / "agents/batch_planner.toml").read_text(encoding="utf-8")
+        )
+        reviewer = tomllib.loads(
+            (REPO_ROOT / "agents/batch_plan_reviewer.toml").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        self.assertIn("agents/batch_planner.toml", installed)
+        self.assertIn("agents/batch_plan_reviewer.toml", installed)
+        self.assertEqual(planner["name"], "batch_planner")
+        self.assertEqual(reviewer["name"], "batch_plan_reviewer")
+
+        planner_contract = planner["developer_instructions"]
+        reviewer_contract = reviewer["developer_instructions"]
+        for fragment in (
+            "interface: batch-plan-draft/v1",
+            "status: ready | blocked",
+            "draft: null | object",
+            "blockers: []",
+            "validation_profile: exactly one opaque profile id",
+            "Do not resolve it as a path, import another\n  workflow",
+            "observed_failure, invariants",
+            "additions_beyond_minimum",
+            "simpler_alternatives_rejected",
+            "Do not review or approve the draft",
+            "Do not review or approve the draft, choose review evidence, invoke or message\n  batch_plan_reviewer",
+        ):
+            with self.subTest(role="planner", fragment=fragment):
+                self.assertIn(fragment, planner_contract)
+        for fragment in (
+            "interface: batch-plan-review/v1",
+            "verdict: clean | correction_required | blocked",
+            "selected_dispatch_sha256: string",
+            "draft_sha256: string",
+            "approvals_sha256: string",
+            "evidence_packet_sha256: string",
+            "canonical independent-review evidence packet",
+            "implementation_started: false",
+            "Do not modify or produce a replacement draft",
+        ):
+            with self.subTest(role="reviewer", fragment=fragment):
+                self.assertIn(fragment, reviewer_contract)
+
     def test_cross_checkout_generic_surfaces_remain_project_neutral(self) -> None:
         generic_surfaces = (
+            "agents/batch_planner.toml",
+            "agents/batch_plan_reviewer.toml",
             "agents/runway_worker.toml",
             "agents/runway_reviewer.toml",
             "skills/plan-batch/SKILL.md",
@@ -653,10 +722,10 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         expected = {
             "add-to-ledger": ["planning-contracts"],
             "plan-batch": [
+                "planning-contracts",
                 "planning-artifacts",
                 "planning-state",
-                "architecture-program-runway",
-                "batch-runway",
+                "custom-agents",
             ],
             "work-batch": [
                 "planning-artifacts",
@@ -672,6 +741,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             },
             "plan-batch": {
                 ("skills/plan-batch", "skills/plan-batch"),
+                ("scripts/plan_batch.py", "scripts/plan_batch.py"),
             },
             "work-batch": {
                 ("skills/work-batch", "skills/work-batch"),

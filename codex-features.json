@@ -63,18 +63,22 @@
       ]
     },
     "plan-batch": {
-      "version": "1.0.5",
-      "description": "User-facing command-owner skill for selecting bounded ledger work or reporting selected batch state before writing at most one concrete batch spec.",
+      "version": "2.0.0",
+      "description": "User-facing command-owner skill for selecting one bounded ledger finding and queuing one independently reviewed batch plan.",
       "requires": [
+        "planning-contracts",
         "planning-artifacts",
         "planning-state",
-        "architecture-program-runway",
-        "batch-runway"
+        "custom-agents"
       ],
       "links": [
         {
           "source": "skills/plan-batch",
           "target": "skills/plan-batch"
+        },
+        {
+          "source": "scripts/plan_batch.py",
+          "target": "scripts/plan_batch.py"
         }
       ]
     },
@@ -169,7 +173,7 @@
       ]
     },
     "custom-agents": {
-      "version": "1.4.1",
+      "version": "1.5.0",
       "description": "Reusable custom Codex agents.",
       "links": [
         {
@@ -187,6 +191,14 @@
         {
           "source": "agents/runway_worker.toml",
           "target": "agents/runway_worker.toml"
+        },
+        {
+          "source": "agents/batch_planner.toml",
+          "target": "agents/batch_planner.toml"
+        },
+        {
+          "source": "agents/batch_plan_reviewer.toml",
+          "target": "agents/batch_plan_reviewer.toml"
         },
         {
           "source": "agents/spark.toml",
@@ -239,7 +251,7 @@
       ]
     },
     "planning-state": {
-      "version": "1.0.1",
+      "version": "1.1.0",
       "description": "Agent-facing operational planning-state diagnostics, generated state fixtures, and policy-gated projection reporting.",
       "requires": [
         "planning-artifacts"
@@ -252,6 +264,10 @@
         {
           "source": "scripts/planning_state.py",
           "target": "scripts/planning_state.py"
+        },
+        {
+          "source": "scripts/cross_checkout_context.py",
+          "target": "scripts/cross_checkout_context.py"
         }
       ]
     },

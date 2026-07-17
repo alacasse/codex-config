@@ -186,10 +186,11 @@ class SkillRoutingRuleOwnershipTests(unittest.TestCase):
             plan_batch,
         )
         self.assertIn(
-            "route through `architecture-program-runway` to split, block, or "
-            "narrow the scope before any concrete runway spec is created.",
+            "`plan-batch` must split, block, or narrow that scope before any "
+            "concrete runway is queued.",
             plan_batch,
         )
+        self.assertNotIn("route through `architecture-program-runway`", plan_batch)
 
     def test_runtime_and_support_skills_keep_procedure_ownership(self) -> None:
         architecture_program_runway = normalized(ARCHITECTURE_PROGRAM_RUNWAY)

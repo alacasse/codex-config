@@ -1,111 +1,187 @@
 ---
 name: plan-batch
-description: Select bounded ledger work when needed and write one concrete batch runway spec without executing it.
+description: Select one bounded ledger finding and queue one independently reviewed batch plan without executing it.
 ---
 
 # Plan Batch
 
-Use this skill when the user asks to create the next specs batch, plan a batch,
-turn selected ledger work into a runway, or prepare implementation slices.
+Use this skill when the user asks to plan the next batch, turn existing ledger
+state/work into a runway, or prepare implementation slices. This command
+consumes existing ledger state/work. `plan-batch` owns the
+complete human-facing planning command: state branching, one-finding selection,
+scope shaping, dispatch, runway, risks, approvals, validation profile, exact
+review, and queue mutation. It always stops before implementation.
+It must not silently create new ledger findings from fresh request text.
 
-This skill consumes existing ledger state/work. It may accept a user preference
-pointing at an existing finding, selected dispatch, queued batch, or active
-runway, but it must not silently create new ledger findings from fresh user work
-text. If no suitable ledger finding exists, stop and report that
-`add-to-ledger` must run first.
+Executable work comes only from the canonical program ledger or the exact
+selected/queued/active state reported by Planning State. External sources are
+evidence only when an
+existing ledger row points to them. Do not scan external sources to discover new work.
+If no suitable existing
+finding exists, stop and tell the user to use `add-to-ledger`.
 
-This skill reads executable work only from the current program ledger or current
-selected/queued/active batch state. External sources are evidence only when an
-existing ledger row points to them. Do not scan external sources to discover new
-work. If useful work exists outside the ledger, stop and report that
-`add-to-ledger` must ingest it first.
+When routing ambiguity exists, follow `../../docs/skill-routing-contract.md`.
 
-This skill owns the planning decision for one batch: use current state, respect
-selected/queued/active work, and produce at most one concrete runway spec.
+## Command Contract
+
+The command result is one existing-state report, one reviewed queued runway, or
+one blocked result. Its stop-before-implementation boundary is unconditional.
+If useful work exists outside the ledger, stop and require `add-to-ledger` to
+ingest it first.
 
 Requested ledger rows are suitable for direct planning only when the row is
 precise enough for one bounded selected dispatch. A row is not suitable when it
 mixes evidence gathering, classification, decisions, destructive cleanup,
 migration, demotion, or contract narrowing without clear owner, risk, and
-acceptance boundaries. In that case, route through
-`architecture-program-runway` to split, block, or narrow the scope before any
-concrete runway spec is created.
+acceptance boundaries. `plan-batch` must split, block, or narrow that scope
+before any concrete runway is queued.
 
-## Command Contract
+## Required Installed Boundaries
 
-`plan-batch` is the human-facing command contract for "create the next specs
-batch". It owns the caller-visible decisions, ledger-source rule, one-spec
-output rule, and stop-before-implementation boundary. Runtime mechanics remain
-behind the support skills named below.
+This command uses only:
 
-Use this state table when answering the command:
+- `../planning-state/SKILL.md` for semantic currentness through `current` and
+  `validate`;
+- `../planning-artifacts/SKILL.md` for Layout v1 paths and artifact names;
+- the existing installed planning contracts and DEC-038 transaction store;
+- the registered `batch_planner` and `batch_plan_reviewer` roles; and
+- the installed `scripts/plan_batch.py` deterministic validation/apply boundary.
 
-| Current state | `plan-batch` decision | Output |
-|---|---|---|
-| No selected work exists | Select bounded work from the current program ledger through `architecture-program-runway`. | One selected dispatch, then one concrete runway spec. |
-| Selected dispatch exists | Do not select different work. Use that dispatch. | One concrete runway spec for the selected dispatch. |
-| Queued runway exists | Do not create another spec or replace the queue. | Report the queued runway and stop before implementation. |
-| Active runway exists | Do not create another spec or execute it. | Report the active runway and stop before implementation. |
-| User requests an existing ledger row | Use the requested row only when it exists in the current program ledger and is suitable for bounded planning. | One selected dispatch, then one concrete runway spec. |
-| No suitable ledger row exists | Do not infer work from external text or sources. | Stop and report that `add-to-ledger` must ingest the work first. |
-
-The command result is at most one concrete batch runway spec. It never begins
-slice implementation, never creates new findings from fresh request text, and
-never treats external sources as executable work unless the current program
-ledger points to them.
-
-This skill owns the user's request to plan one bounded batch. Use
-`../planning-state/SKILL.md` for current/validate diagnostics,
-`../planning-artifacts/SKILL.md` for Layout v1 locations and vocabulary,
-`../architecture-program-runway/SKILL.md` for program selection and dispatch
-ownership, and `../batch-runway/SKILL.md` only in `create-spec` mode for the
-concrete spec procedure. Stop before implementation. When routing ambiguity
-exists, follow `../../docs/skill-routing-contract.md`.
+The command owner directly invokes both roles. Neither role invokes the other,
+mutates planning state, or implements work. Do not route planning through a
+second workflow owner.
 
 ## Explicit Cross-Checkout Pre-Creation Planning
 
-When the selected dispatch explicitly names
-`cross-checkout-precreation/v1`, read
-`../batch-runway/references/cross-checkout-precreation-v1.md`. Resolve the
-installed helper from the active Codex home, validate the complete payload and
-exact intended creation targets while they are absent, and preserve the
-complete payload plus installed helper path in the concrete runway. Stop on
-missing or mismatched facts. Planning must not create either candidate root.
-
-This conditional bridge changes neither selection nor the one-spec and
-stop-before-implementation boundaries. It adds no step for ordinary
+When the selected finding explicitly names `cross-checkout-precreation/v1`,
+resolve the installed helper from the active Codex home. Use it to validate the
+complete payload and exact intended creation targets while they are absent.
+Planning must not create either candidate root. Preserve the validated payload
+in the proposed runway. This conditional bridge adds no step for ordinary
 single-root or strict cross-checkout batches.
 
 ## Explicit Strict Cross-Checkout Planning
 
-When the selected dispatch or required execution environment explicitly names
-`cross-checkout-context/v1` or explicitly declares separate existing toolchain,
-canonical-planning, and implementation repository roots, read
-`../batch-runway/references/cross-checkout-context-v1.md`. Require the complete
-context payload and canonical planning root, validate them with the installed
-helper before writing the concrete runway, and preserve both verbatim in that
-runway. Stop on missing or mismatched context; do not infer roots from cwd or
-create candidate paths while planning.
+When the selected finding explicitly names `cross-checkout-context/v1` or
+separate existing roots, require the complete context payload and canonical
+planning root, validate them with the installed helper, and preserve both
+verbatim in that runway. An absent-target payload cannot satisfy this strict
+post-creation contract. This conditional bridge adds no step for ordinary
+single-root batches.
 
-When the dispatch names `cross-checkout-precreation/v1`, use the separate
-pre-creation contract above; an absent-target payload cannot satisfy this
-strict post-creation contract.
+## Procedure
 
-This conditional bridge does not change `plan-batch` selection, one-spec, or
-stop-before-implementation ownership. It adds no step for ordinary single-root
-batches.
+1. Resolve the explicit planning root through Planning Artifacts. Run Planning
+   State `current` and `validate` against that same root. Stop on any fatal,
+   stale, ambiguous, or mismatched diagnostic.
+2. Branch on the semantic state before drafting:
+   - Active runway: report it and stop without planning or execution.
+   - Queued runway: report it and stop without replacement or execution.
+   - Selected dispatch: report it and stop unless an exact durable DEC-038
+     transaction proves this is recovery of that same selection.
+   - Idle: continue with selection.
+3. Read the current canonical ledger. Honor an explicit requested finding only
+   when it exists, is open, and is precise enough for one bounded batch.
+   Otherwise choose exactly one eligible finding. Do not group multiple
+   findings. Stop on a missing, repeated, closed, vague, mixed-risk, or
+   dependency-blocked finding.
+4. Capture the exact current revision/hash, ledger path/hash, finding revision,
+   roots, producer identities, and authorized paths for `CURRENT.md`, one
+   dispatch, one runway, and one transaction record. Existing dispatch or
+   runway paths must not be silently replaced. Canonical planning roots require
+   stable generation and explicit canonical mutation authority; temporary and
+   fixture roots carry no canonical mutation authority and must resolve outside
+   the canonical planning repository.
+5. If the selected work explicitly carries cross-checkout context, resolve
+   `scripts/cross_checkout_context.py` from the active Codex home, require it to
+   resolve below the declared toolchain root, validate the complete versioned
+   payload and canonical planning root, and preserve the exact validated
+   context in the draft. For pre-creation context, validate the exact absent
+   creation targets without creating them. Stop on any mismatch. This
+   mechanical step grants no selection, queue, creation, install, generation,
+   implementation, or closeout authority.
+6. Directly invoke registered `batch_planner` with the exact Planning State and
+   ledger basis, selected finding and source evidence, user constraints,
+   planning-contract schemas, root/generation context, and validation catalogs.
+   Treat that catalog as opaque identifiers: do not resolve an identifier as a
+   source path or import another workflow. Require exactly one selected profile
+   identifier from that catalog and the complete
+   proportionality record: observed failure, invariants, minimum viable change,
+   proposed change, justified additions beyond minimum, rejected simpler
+   alternatives, and verdict. Require `batch-plan-draft/v1`. A blocked or
+   malformed result stops without queue mutation.
+7. Check the draft before review:
+   - one complete dispatch and one complete runway bind the same single finding,
+     batch, roots, producers, and immutable source revisions;
+   - the proposed change is the minimum viable change and proportional;
+   - a cohesive plan may have one slice; multiple slices each need a concrete
+     producer/consumer, risk, validation, migration, or contract boundary;
+   - filler decomposition and unrelated expansion block;
+   - approvals match, in declared order and without extras, the union of
+     dispatch `approval_gates`, residual-complexity scopes, and destructive-
+     action scopes; unresolved decisions and missing approvals remain blocked;
+   - implementation has not started and successor selection is forbidden.
+8. Assemble one canonical independent-review evidence packet in the command
+   request. Include exact source contents and digests, explicit user constraints,
+   Planning State current/validate diagnostic identities, proportionality,
+   ordered approvals, the complete draft, selected dispatch, and both direct
+   invocation records. Compute canonical SHA-256 digests of that packet, the
+   dispatch, complete draft, and approval record. Supply the packet directly to
+   registered `batch_plan_reviewer`; the planner must not select or frame it.
+9. Require `batch-plan-review/v1` with all four exact digests. Any added,
+   removed, reordered, or changed approval after review requires a fresh
+   independent review before queue mutation. On
+   `correction_required`, return only the corrections to `batch_planner`, keep
+   the same finding and evidence basis, compute new digests, and invoke the
+   reviewer independently again. Record material correction history in the
+   ephemeral command request. Stop if the same correction repeats against
+   an unchanged draft, scope expands, currentness moves, or evidence remains
+   unresolved. `blocked` and any non-clean check remain non-executable.
+10. Only after a clean exact-draft review and every exact approval gate passes,
+    invoke installed `scripts/plan_batch.py` with `plan-batch/v1`. Pass the two
+    direct invocation receipts, role results, approvals, immutable Planning
+    State and ledger basis, authorized transaction paths, and existing
+    planning-contract payloads. The script validates these gates and applies the
+    existing four-stage DEC-038 transaction. Do not call the store directly.
+11. If DEC-038 was interrupted, resume only the same transaction ID after every
+    immutable binding and live Planning State fact matches. Preserve partial
+    evidence. Exact completed replay must produce no duplicate effects.
+12. Report the selected finding, dispatch, runway, and transaction result. Stop
+    before worker delegation, validation execution, commits, implementation,
+    closeout, or successor selection.
+
+## Deterministic Boundary Contract
+
+`scripts/plan_batch.py` accepts exactly `interface`, `context`,
+`planning_state`, both direct role invocation records and results, `approvals`,
+the independent `review_evidence` packet, caller-supplied opaque-ID
+`validation_catalog`,
+ephemeral `correction_history`, and `transaction`. It writes only the authorized
+current, dispatch, runway, and transaction paths after all gates pass. Blocked
+or stale drafts write nothing and are not visible as queued or active work.
+
+The planner result is exactly `batch-plan-draft/v1`; the reviewer result is
+exactly `batch-plan-review/v1`. The script verifies selected-dispatch, full
+draft, exact approval-record, and independent-evidence-packet hashes,
+one-finding lineage, the selected catalogued validation profile, semantic slice
+rationales, the complete proportionality record, exact approval gates, stop
+boundaries, correction history, and transaction inputs before DEC-038 can write.
+Agent invocation remains in this skill; the script never invokes roles.
 
 ## Stops
 
-- Do not implement any slice.
-- Do not create more than one batch spec.
-- Do not create new ledger findings from fresh user work text.
-- Do not bypass an existing selected dispatch, queued batch, or active runway.
-- Do not run project-level integration harnesses unless the spec explicitly
-  assigns them.
+- Do not create ledger findings or discover external backlog work.
+- Do not select more than one finding or produce more than one runnable batch.
+- Do not bypass selected, queued, or active Planning State.
+- Do not queue a stale, unresolved, unapproved, unreviewed, corrected-but-not-
+  rereviewed, or non-proportional draft.
+- Do not add a schema, lifecycle state, persistent draft store, transaction,
+  retry token, source adapter, compatibility wrapper, or alternate queue path.
+- Do not implement, delegate implementation, commit, close out, reconcile, or
+  select successor work.
 
 ## Agent-Facing Support
 
-Use `../architecture-program-runway/SKILL.md` for selected-dispatch and queue
-mechanics. Use `../batch-runway/SKILL.md` in create-spec mode only as runtime
-support for writing exactly one concrete runway behind this command.
+Planning State, Planning Artifacts, the two registered planning roles, existing
+planning contracts, and the deterministic installed script support this command.
+The command owner retains every planning and stop decision.
