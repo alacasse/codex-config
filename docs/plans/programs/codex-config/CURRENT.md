@@ -10,7 +10,7 @@
 - Active Batch Runway spec path:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch path or ID: `None`
-- Active batch execution status: `Slice 2 blocked by required-green skill-contract command semantics`
+- Active batch execution status: `Slice 2 completed; Slice 3 pending`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Run artifact location: `None selected`
@@ -70,7 +70,7 @@
 - Active runway:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch: `None`
-- Active batch execution status: `Slice 2 blocked by required-green skill-contract command semantics`
+- Active batch execution status: `Slice 2 completed; Slice 3 pending`
 - Source dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
 - Clean planning review:
@@ -95,14 +95,10 @@
 
 ## Next Safe Action
 
-Await explicit authorization for the command-only correction recorded in the
-CCFG-25 `blocker-report.md`. The Change Allowance correction is independently
-verified, but the exact combined skill-contract required-green command fails
-because two inputs activate catalog relationship validation without an external
-mechanism policy. Preserve candidate diff
-`815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e`
-uncommitted. Do not change the validator or skill dependencies, create closeout,
-or select a successor.
+Stop at the completed Slice 2 receipt. Candidate commit
+`12f70727f7496e2aa2d5fff9b748ee97e19e63a2` contains the exact independently
+reviewed diff; Slice 3 remains pending in the same active CCFG-25 runway. Do not
+execute Slice 3, create closeout, or select a successor in this flight.
 
 ## Stop Conditions
 

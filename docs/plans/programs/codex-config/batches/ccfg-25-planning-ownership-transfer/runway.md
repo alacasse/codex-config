@@ -2,21 +2,20 @@
 
 ## Execution Status
 
-- Planning transition: `active; Slice 2 blocked by required-green command contract`
-- Artifact role: active same-batch runway with an uncommitted validated candidate diff
+- Planning transition: `active; Slice 2 completed; Slice 3 pending`
+- Artifact role: active same-batch runway with two committed slices
 - Selected dispatch: `dispatch.md`
 - Queue currentness authority: Planning State `current` and `validate`
-- Candidate Slice 2 resume base:
-  `5aa5add1251d1e4b3630a9678fdec244949cf691`
-- Focused blocker report: `blocker-report.md`
+- Candidate Slice 2 commit:
+  `12f70727f7496e2aa2d5fff9b748ee97e19e63a2`
+- Resolved blocker history: `blocker-report.md`
 
-Slice 1 is complete. The second bounded amendment passed exact planning review,
-and the Change Allowance correction is focused-green and independently verified.
-Slice 2 remains uncommitted because the exact combined skill-contract
-required-green command fails under the CLI's multi-document catalog semantics.
-Preserve the existing candidate diff and stop pending explicit command-only
-amendment authority. This remains the same batch and slice; it creates no queue
-transition, new batch, closeout, or successor selection.
+Slices 1 and 2 are complete. The bounded amendments and command-only amendment
+passed exact independent planning review; the Change Allowance correction,
+separate structural skill validations, full required-green matrix, specialist
+reviews, and final independent implementation review are clean. Slice 2 is
+committed as `12f70727f7496e2aa2d5fff9b748ee97e19e63a2`. Slice 3 remains pending
+in this same active batch; no closeout or successor was created.
 
 ## Purpose
 
@@ -589,7 +588,7 @@ Every test-changing slice receives delta-only `test-quality-review`. Slices 1 an
 | Slice | Status | Commit | Review | Notes |
 |---|---|---|---|---|
 | 1. Implement installed `plan-batch` owner | Completed | `5aa5add1251d1e4b3630a9678fdec244949cf691` | Clean | Installed owner, exact planning-quality gates, DEC-038 recovery, isolated install, import-topology, and delta-only test-quality proof are green. |
-| 2. Remove displaced planning ownership | Blocked | None | Findings | The Change Allowance correction is independently verified on exact candidate diff `815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e`, but the exact combined skill-contract required-green command exits `1`. Preserve the diff uncommitted; `blocker-report.md` records the command-only decision needed. |
+| 2. Remove displaced planning ownership | Completed | `12f70727f7496e2aa2d5fff9b748ee97e19e63a2` | Clean | Exact reviewed binary diff `815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e`; 181 tests and 241 subtests passed, both single-document structural validations passed, specialist reviews and final independent review clean. |
 | 3. Converge installation and final acceptance | Pending | None | Pending | Clean install, exact acceptance, diagnostics, and final reviews. |
 
 ## Execution Startup Evidence

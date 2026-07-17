@@ -5,19 +5,25 @@
 ```yaml
 batch: ccfg-25-planning-ownership-transfer
 slice: 2
-status: blocked
+status: resolved
 blocker_class: required-green-validation-command-contract
 stable_planning_commit: 24f5ab9b66bb0e0060df5b8483597cbb5c5146d9
-candidate_head: 5aa5add1251d1e4b3630a9678fdec244949cf691
+candidate_head: 12f70727f7496e2aa2d5fff9b748ee97e19e63a2
 candidate_diff_sha256: 815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e
-candidate_commit_created: false
+candidate_commit_created: true
 independent_planning_review: clean
-independent_implementation_review: blocked-one-required-green-gate
+independent_implementation_review: clean
 closeout_created: false
 successor_selected: false
 ```
 
 ## Executive Summary
+
+This report is retained as historical blocker evidence. The user authorized the
+command-only amendment, exact independent planning review was clean, both
+single-document structural commands passed, and the preserved diff was committed
+unchanged as `12f70727f7496e2aa2d5fff9b748ee97e19e63a2`. Slice 2 is complete;
+Slice 3 remains pending, with no closeout or successor selected.
 
 The second bounded amendment resolved the runner safety blocker inside the exact
 authorized two-file ceiling. The compatibility `create-spec` allowance now
@@ -120,6 +126,6 @@ implementation path, no validator change, and no scope widening. Before resuming
 the same preserved Slice 2 diff, update the exact runway command and obtain a
 fresh independent planning review.
 
-Until then, CCFG-25 remains active and blocked. Slice 1 stays closed, the
-candidate diff stays uncommitted, CCFG-26 responsibilities remain preserved, and
-no closeout or successor is created.
+That authorization has now been applied. CCFG-25 remains active with Slice 2
+complete and Slice 3 pending. Slice 1 stays closed, CCFG-26 responsibilities
+remain preserved, and no closeout or successor was created.

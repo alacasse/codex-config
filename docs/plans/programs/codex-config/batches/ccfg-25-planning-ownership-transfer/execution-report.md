@@ -4,32 +4,49 @@
 
 ```yaml
 batch: ccfg-25-planning-ownership-transfer
-status: slice-2-blocked-required-green-command-contract
-completed_slice: 1
-active_slice: 2
-candidate_head: 5aa5add1251d1e4b3630a9678fdec244949cf691
+status: slice-2-completed-slice-3-pending
+completed_slice: 2
+active_slice: null
+candidate_head: 12f70727f7496e2aa2d5fff9b748ee97e19e63a2
 stable_planning_head_before_report: 24f5ab9b66bb0e0060df5b8483597cbb5c5146d9
-candidate_worktree: uncommitted-slice-2-diff
+candidate_worktree: clean
 candidate_diff_sha256: 815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e
 stable_worktree_scope: same-batch planning evidence only
-independent_implementation_review: blocked-one-required-green-gate
+independent_implementation_review: clean
 successor_selected: false
 ```
 
-The user authorized a bounded same-slice amendment. The exact amended dispatch
-hash is `0e07a56a6f7cc1ff81f3f0851d329f95277a2574c1bbe97cd26e72d635a7bd2a`;
-the exact amended runway hash is
-`ddc37370a7e6f1ba0661d8ab9b64b9975c3ff779aad9c11166776ec755ca38f8`.
-The independent planning review is clean. No new batch, queue transition,
+The bounded same-slice amendments culminated in unchanged dispatch SHA-256
+`8fabe265e62b91251370c2733e771291605761caad3844f523c3be8f3990b5c1`
+and command-amended runway SHA-256
+`23c33eee6f637d177b6f897bbe832d1fe5639249340b542c3e4493d9d51ed02c`.
+The exact independent planning review is clean. No new batch, queue transition,
 closeout, or successor was created.
 
-Slice 2 implementation and specialist review completed within the amended
-ceiling, but the final independent implementation review found a live runner
-safety owner outside that ceiling. The candidate diff remains uncommitted and
-the explicit stop condition is active.
+The earlier bounded-amendment blockers are retained below as historical evidence.
+The command-only amendment replaced the combined skill-contract gate with two
+single-document structural validations, received exact clean planning review,
+and resumed the preserved Slice 2 diff without changing candidate content.
 
 Focused blocker analysis and the minimum decision needed to resume are recorded
 in `blocker-report.md`.
+
+## Slice 2 Completion Receipt
+
+- Candidate commit: `12f70727f7496e2aa2d5fff9b748ee97e19e63a2`.
+- Reviewed pre-commit binary diff SHA-256:
+  `815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e`.
+- Required matrix: `181 passed, 241 subtests passed`; filtered manifest,
+  filtered deletion/projection, 69-scenario catalog, separate structural skill
+  validations, five quick validations, Ruff, BasedPyright, and diff checks green.
+- Known-red diagnostics: the declared CCFG-26 manifest wording failure and six
+  preclassified deletion/projection subtest failures reproduced unchanged.
+- Reviews: import topology, dead-surface, delta-only test quality, and final
+  independent implementation review clean with no required fixes.
+- Strict receipt identity: stable `e31993f5cbc3e6c99576419b5b87564ef396cbc5`,
+  candidate base `5aa5add1251d1e4b3630a9678fdec244949cf691`, exact read-only
+  review scopes empty; post-review candidate commit is the hash above.
+- Next state: Slice 3 pending in this active batch. No closeout or successor.
 
 ## Completed Evidence
 
