@@ -62,3 +62,39 @@ required_fixes: []
 - Queue decision: this exact CCFG-25 runway is approved for the sole queue
   transition; implementation and successor selection remain forbidden in the
   `plan-batch` flight.
+
+## Slice 2 Bounded Amendment Review
+
+The first amendment review found one stale initial queue-gate sentence in
+`dispatch.md`. That sentence was corrected, which invalidated the first amendment
+hash and required this fresh review.
+
+```yaml
+status: clean
+review_basis: >-
+  Verified exact dispatch SHA-256
+  0e07a56a6f7cc1ff81f3f0851d329f95277a2574c1bbe97cd26e72d635a7bd2a
+  and exact runway SHA-256
+  ddc37370a7e6f1ba0661d8ab9b64b9975c3ff779aad9c11166776ec755ca38f8.
+  Reviewed CCFG-25, the explicit bounded amendment authorization, current and
+  validate diagnostics, proportionality, execution-report.md, COR-008, the
+  CCFG-25 amendments, CCFG-21/23/24B closeouts, complete CCFG-26 preservation,
+  and CCFG-27/29 compatibility ownership. The repaired dispatch treats DEC-038
+  as historical and releases the same active Slice 2 only after this exact clean
+  review and a fresh strict lease at candidate commit
+  5aa5add1251d1e4b3630a9678fdec244949cf691.
+minimum_viable_alternative: >-
+  The amended plan is already the minimum viable bounded change: start with the
+  phase-contract owner and four named handoff callers, touch conditional runner
+  siblings only on focused proof, preserve all serialized phases and CCFG-26
+  behavior, and stop on any owner or caller outside the ceiling.
+unjustified_additions: []
+slice_shape_findings: []
+scope_leaks: []
+user_decisions: []
+required_fixes: []
+```
+
+- Review role: independent, read-only planning reviewer.
+- Amendment decision: clean; resume the same CCFG-25 Slice 2 only.
+- New batch, queue transition, closeout, or successor: forbidden.

@@ -2,15 +2,18 @@
 
 ## Execution Status
 
-- Planning transition: `queue-candidate`
-- Artifact role: byte-stable runway candidate controlled by the gate below
+- Planning transition: `active; Slice 2 amendment-review gate`
+- Artifact role: active same-batch runway with an exact amended-review gate
 - Selected dispatch: `dispatch.md`
 - Queue currentness authority: Planning State `current` and `validate`
+- Candidate Slice 2 resume base:
+  `5aa5add1251d1e4b3630a9678fdec244949cf691`
 
-This file is non-executable until `review.md` records a clean independent review
-of its exact content hash and Planning State reports this exact runway as queued.
-After those gates pass, this same byte-stable file is the queued runway; do not edit
-it merely to mirror the external queue transition.
+Slice 1 is complete. Slice 2 is non-executable until `review.md` records a new
+clean independent review of this exact amended content and Planning State still
+reports this runway as the sole active batch. This amendment resumes the same
+batch and slice; it does not create a queue transition, new batch, closeout, or
+successor selection.
 
 ## Purpose
 
@@ -115,9 +118,9 @@ failure blocks instead of widening scope.
 - Test-quality review: `delta-only` for every test-changing slice and the final
   exact candidate range.
 
-## Plan Repair And Queue Gate
+## Initial Plan Repair And Queue Gate
 
-This exact runway may become queued only when one local `plan-batch` pass proves
+The initial runway could become queued only when one local `plan-batch` pass proved
 all of the following in order:
 
 1. resolve `/home/alacasse/.codex/scripts/cross_checkout_context.py` from the active
@@ -132,9 +135,9 @@ all of the following in order:
    complexity; and
 5. apply DEC-038 to transition this exact selected scope to one queued runway.
 
-Any missing or mismatched fact preserves the selected dispatch and this draft but
-stops before queue mutation. A current live execution preflight does not replace
-this plan-time validation record.
+This gate is retained as historical queue evidence. The live Slice 2 amendment
+does not repeat DEC-038 or queue mutation. A current live execution preflight does
+not replace this plan-time validation record.
 
 ## Planning Snapshot
 
@@ -228,6 +231,58 @@ After valid queue mutation, `work-batch` must still run a fresh ready/blocked
 preflight at execution startup and prepare a fresh live lease before every worker
 and reviewer handoff. Every strict agent result must carry matching non-null
 `verified_cross_checkout_context` evidence.
+
+## Slice 2 Bounded Amendment
+
+The user authorized one bounded amendment to the active CCFG-25 Slice 2 after the
+owner/caller audit recorded in `execution-report.md`. The original ceiling allowed
+the runner facade but omitted the sibling module that owns its planning phase
+contract and four active support-skill planning handoffs. This amendment changes no
+batch identity, slice shape, planning protocol, store, transaction, state version,
+wrapper, command owner, or CCFG-26 responsibility.
+
+The additional candidate ceiling is exactly:
+
+- `scripts/architecture_program_runner_phase_contract.py`
+- `scripts/architecture_program_runner_state.py`
+- `scripts/architecture_program_runner_validation.py`
+- `scripts/architecture_program_runner_command.py`
+- `skills/planning-artifacts/SKILL.md`
+- `skills/legacy-removal/SKILL.md`
+- `skills/port-by-contract/SKILL.md`
+- `skills/dead-surface-audit/SKILL.md`
+- existing focused tests directly covering those modules and skill-routing
+  contracts
+
+This is an upper path ceiling, not a mandatory edit list. Start with
+`architecture_program_runner_phase_contract.py`, which current evidence identifies
+as the expected semantic change. Edit `state.py`, `validation.py`, or `command.py`
+only when a focused failing test or direct invariant proves the change is required.
+Do not introduce a new harness or generalized runner abstraction.
+
+Preserve the serialized phase identities `select-dispatch`, `create-spec`,
+`execute`, and `closeout`, their receipts, and the current transition graph.
+`select-dispatch` and `create-spec` are temporary compatibility labels during
+CCFG-25. One complete public `plan-batch` invocation owns selection, independent
+planning review, and DEC-038. `create-spec` may only observe that completed result
+and advance compatibility state; it must not invoke Batch Runway planning, create
+another draft, repeat planning decisions, or act as a second planner.
+
+CCFG-27 owns the migration or removal decision for those two serialized labels as
+part of its accepted runner-public-protocol and old-mode-removal scope. If CCFG-27
+retains them, final physical cleanup is required no later than CCFG-29.
+
+The four support skills route planning handoffs to public `plan-batch` while
+retaining their current evidence, layout, classification, and contract-distillation
+responsibilities. They receive no queue, dispatch, runway, or lifecycle mutation
+authority.
+
+A new independent planning review must bind the exact amended dispatch and runway
+hashes, this authorization, current Planning State facts, and the proportionality
+record. After a clean review, resume Slice 2 under a freshly prepared strict lease
+whose implementation revision is exactly
+`5aa5add1251d1e4b3630a9678fdec244949cf691`. Stop if another live planning caller
+or runner semantic owner exists outside this amended ceiling; do not widen it.
 
 ## Target Ownership Boundary
 
@@ -330,6 +385,14 @@ Allowed candidate areas across the batch, restricted further by each slice:
 - `skills/architecture-program-runway/**`
 - `skills/batch-runway/**`
 - `scripts/architecture_program_runner.py`
+- `scripts/architecture_program_runner_phase_contract.py`
+- `scripts/architecture_program_runner_state.py`
+- `scripts/architecture_program_runner_validation.py`
+- `scripts/architecture_program_runner_command.py`
+- `skills/planning-artifacts/SKILL.md`
+- `skills/legacy-removal/SKILL.md`
+- `skills/port-by-contract/SKILL.md`
+- `skills/dead-surface-audit/SKILL.md`
 - `scripts/cross_checkout_context.py` only for unchanged-link ownership evidence;
   semantic edits require replanning
 - `codex-features.json`
@@ -475,7 +538,7 @@ Every test-changing slice receives delta-only `test-quality-review`. Slices 1 an
 | Slice | Status | Commit | Review | Notes |
 |---|---|---|---|---|
 | 1. Implement installed `plan-batch` owner | Completed | `5aa5add1251d1e4b3630a9678fdec244949cf691` | Clean | Installed owner, exact planning-quality gates, DEC-038 recovery, isolated install, import-topology, and delta-only test-quality proof are green. |
-| 2. Remove displaced planning ownership | Blocked | None | Pending | Owner/caller and dead-surface evidence found required runner modules and active support-skill callers outside the allowed path ceiling; amend and independently review scope before deletion. |
+| 2. Remove displaced planning ownership | Pending | None | Pending | Bounded amendment authorized for the exact runner-owner and support-caller ceiling; execute only after the amended dispatch/runway review is clean and a fresh strict lease proves candidate `5aa5add1251d1e4b3630a9678fdec244949cf691`. |
 | 3. Converge installation and final acceptance | Pending | None | Pending | Clean install, exact acceptance, diagnostics, and final reviews. |
 
 ## Execution Startup Evidence
@@ -654,6 +717,9 @@ Commit: `feat: make plan-batch the planning command owner`
 ### Approval Gate
 
 Slice 1 is committed, candidate-installed, green, and independently reviewed.
+The exact bounded amendment above must also have a clean independent review before
+the Slice 2 worker handoff. The first fresh strict lease must name candidate commit
+`5aa5add1251d1e4b3630a9678fdec244949cf691`.
 Before narrowing any surface, the coordinator records a current owner/caller matrix
 proving:
 
@@ -678,6 +744,15 @@ Primary allowed areas:
 - `skills/architecture-program-runway/**`
 - `skills/batch-runway/**`
 - `scripts/architecture_program_runner.py`
+- `scripts/architecture_program_runner_phase_contract.py` as the expected semantic
+  edit
+- `scripts/architecture_program_runner_state.py`,
+  `scripts/architecture_program_runner_validation.py`, and
+  `scripts/architecture_program_runner_command.py` only after a focused failing
+  test or direct invariant proves an edit is required
+- `skills/planning-artifacts/SKILL.md`, `skills/legacy-removal/SKILL.md`,
+  `skills/port-by-contract/SKILL.md`, and `skills/dead-surface-audit/SKILL.md` only
+  for their planning-handoff routes
 - `skills/plan-batch/**` only for replacement-consumer corrections
 - focused manifest, lock, routing, workflow, runner, skill-contract, migration,
   projection-routing, scenario, and deletion-evidence tests
@@ -702,6 +777,13 @@ The new owner implementation, planning contracts/schemas, Planning State semanti
 - Rewire the architecture program runner's existing planning phase to the public
   `plan-batch` command contract without a new protocol or embedded planner. Leave
   execution and closeout behavior unchanged.
+- Preserve all four serialized phase identities, receipts, and transitions. Make
+  the existing planning path one complete `plan-batch` invocation. Keep
+  `create-spec` only as a compatibility observation/advance step with no Batch
+  Runway planning invocation, draft creation, repeated decision, or planner role.
+- Rewire the four named support skills to public `plan-batch` without changing
+  their evidence, layout, classification, contract-distillation, or mutation
+  boundaries.
 - Remove the remaining `plan-batch` manifest dependencies on APR and Batch Runway
   only if not already removed in Slice 1, and remove the helper link from Batch
   Runway only after the unchanged link is installed through Planning State.
@@ -720,6 +802,14 @@ The new owner implementation, planning contracts/schemas, Planning State semanti
   CCFG-26 Preservation Contract; no mixed surface is narrowed by inference.
 - The architecture runner uses `plan-batch` and contains no duplicate planning
   decision rules.
+- `select-dispatch`, `create-spec`, `execute`, and `closeout` remain the exact
+  serialized phase identities with receipt and transition compatibility intact;
+  the first two are temporary labels owned for migration/removal by CCFG-27 and
+  final cleanup by CCFG-29 at the latest.
+- One complete `plan-batch` invocation owns selection, independent planning
+  review, and DEC-038; `create-spec` owns no planning behavior.
+- The four support skills hand planning to public `plan-batch` and retain no
+  queue, dispatch, runway, or lifecycle mutation authority.
 - No production or scenario caller reaches a removed planning surface.
 - Target behavior is topology-independent; legacy terms may remain only in
   historical, negative, migration, or removal assertions that do not bind behavior.
@@ -745,8 +835,8 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
   -k 'legacy_removal or legacy_evidence_no_state_writes or parallel_planning_systems'
 .venv/bin/python scripts/command_owner_scenarios.py validate tests/fixtures/command-owner-scenarios
 .venv/bin/python scripts/skill_contract.py validate --root .
-.venv/bin/ruff check --no-cache scripts/architecture_program_runner.py scripts/plan_batch.py tests
-.venv/bin/basedpyright scripts/architecture_program_runner.py scripts/plan_batch.py
+.venv/bin/ruff check --no-cache scripts/architecture_program_runner.py scripts/architecture_program_runner_phase_contract.py scripts/architecture_program_runner_state.py scripts/architecture_program_runner_validation.py scripts/architecture_program_runner_command.py scripts/plan_batch.py tests
+.venv/bin/basedpyright scripts/architecture_program_runner.py scripts/architecture_program_runner_phase_contract.py scripts/architecture_program_runner_state.py scripts/architecture_program_runner_validation.py scripts/architecture_program_runner_command.py scripts/plan_batch.py
 git diff --check
 ```
 
@@ -769,7 +859,10 @@ candidate checkout and do not spawn, delegate to, or wait on other agents. Use t
 coordinator-supplied caller inventory. Remove only planning-owned surfaces; retain
 every CCFG-26 surface and stop on mixed or ambiguous ownership. Do not change the
 new owner, Planning State semantics, `work-batch`, execution agents/contracts, or
-helper behavior. Return exact changed paths and verified strict context.
+helper behavior. Start with the phase-contract module; treat the other three runner
+modules as conditional. Preserve the serialized phase identities and transition
+graph, and stop on any owner/caller outside the exact amended ceiling. Return exact
+changed paths and verified strict context.
 
 ### Reviewer Brief
 
@@ -792,6 +885,10 @@ Commit: `refactor: remove legacy planning ownership`
   strict execution-safety behavior would be removed or altered.
 - Stop if the runner needs a new public protocol, bridge, or duplicate planner.
 - Stop if helper behavior or Planning State semantic authority changes.
+- Stop if `select-dispatch`, `create-spec`, `execute`, or `closeout`, their receipts,
+  or their transition graph would be renamed, removed, versioned, or migrated.
+- Stop if another live planning caller or runner semantic owner is discovered
+  outside the exact amended ceiling.
 - Stop on a test that can turn green only by preserving obsolete topology or by
   banning legitimate historical/negative vocabulary.
 
@@ -857,6 +954,10 @@ Additional final conditions:
 - Target scenarios and production callers do not invoke or depend on displaced
   planning owners, paths, modes, or fixture-only behavior. Historical and negative
   assertions may still name them.
+- The serialized `select-dispatch` and `create-spec` labels remain compatibility
+  observations only and do not count as displaced planning owners while their
+  migration/removal decision remains assigned to CCFG-27 and cleanup deadline to
+  CCFG-29.
 - APR and Batch Runway retained surfaces satisfy the complete CCFG-26 Preservation
   Contract with named callers and deletion conditions.
 - Candidate code cannot mutate canonical planning state during fixture or isolated

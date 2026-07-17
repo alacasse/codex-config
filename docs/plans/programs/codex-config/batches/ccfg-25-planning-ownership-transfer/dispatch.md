@@ -3,18 +3,20 @@
 ## Selection
 
 - Batch ID: `ccfg-25-planning-ownership-transfer`
-- Batch state: `selected`
-- Planning gate: `blocked-before-queue`
+- Batch state: `active`
+- Planning gate: `slice-2-amendment-review`
 - Covered finding: CCFG-25, Transfer Planning Ownership to `plan-batch`
 - Finding state entering the batch: `Open`
 - Source program ledger: `../../LEDGER.md`
 - Expected runway path: `runway.md`
-- Current runway status: non-executable amended draft
+- Current runway status: Slice 1 completed; Slice 2 amendment authorized and
+  non-executable until exact amended review is clean
 
-CCFG-24 is closed and the explicit user request selects exactly CCFG-25. CCFG-26
-through CCFG-29 remain deferred by dependency. Queue mutation is blocked until the
-strict planning context is validated with the installed helper and an independent
-planning reviewer returns `clean` against the exact amended draft.
+CCFG-24 is closed and the explicit user request selected exactly CCFG-25. Slice 1
+is committed at `5aa5add1251d1e4b3630a9678fdec244949cf691`. The explicit
+Slice 2 amendment authorization resumes this same batch and slice only after an
+independent reviewer returns `clean` against the exact amended dispatch and
+runway. CCFG-26 through CCFG-29 remain deferred and unselected.
 
 ## Authoritative Sources
 
@@ -73,7 +75,13 @@ proportionality:
     - topology-independent behavioral proof
     - same-work removal of replaced planning owners
     - preservation of all CCFG-26 execution and closeout behavior
+    - unchanged serialized phase identities and transition graph during CCFG-25
     - stop before implementation and successor selection
+  amendment_observed_failure: >-
+    Slice 1 installed the replacement owner, but the original Slice 2 path ceiling
+    omitted the runner phase-contract owner and four active planning-handoff
+    callers. Editing only the runner facade or leaving those callers unchanged
+    cannot prove the accepted sole-owner boundary.
   minimum_viable_change: >-
     Add one installed plan-batch command boundary that consumes current ledger and
     Planning State facts, directly invokes the two registered planning roles,
@@ -83,7 +91,10 @@ proportionality:
   proposed_change: >-
     Implement that owner boundary, migrate planning scenarios and existing callers
     to it, remove only displaced planning ownership, and converge candidate
-    installation and COR-008 acceptance.
+    installation and COR-008 acceptance. For Slice 2, first change the runner phase
+    contract and the four named support-skill handoffs; touch the other three
+    authorized runner modules only when a focused failing test or direct invariant
+    proves the edit is required.
   additions_beyond_minimum:
     - addition: two registered agent TOMLs
       prevents: planner self-review and ambiguous role authority
@@ -106,6 +117,20 @@ proportionality:
       why_minimum_is_insufficient: >-
         Removing APR prose alone leaves a live caller bypass. Reusing the existing
         public command path removes that bypass without adding a protocol or planner.
+    - addition: bounded access to the four existing runner ownership modules
+      prevents: facade-only rewiring that leaves legacy planning semantics in the phase contract
+      why_minimum_is_insufficient: >-
+        Current caller evidence locates the semantic change in
+        architecture_program_runner_phase_contract.py. The sibling state,
+        validation, and command modules are an upper ceiling only so a focused
+        invariant can be repaired without another silent scope expansion.
+    - addition: rewire four active support-skill planning handoffs
+      prevents: reusable workflow callers bypassing the public plan-batch owner
+      why_minimum_is_insufficient: >-
+        Planning Artifacts, Legacy Removal, Port By Contract, and Dead Surface Audit
+        retain their evidence and classification jobs but currently point planning
+        handoffs at displaced owners. Routing those handoffs to plan-batch is needed
+        for the sole-owner condition and grants them no mutation authority.
   simpler_alternatives_rejected:
     - Prose-only edits cannot prove installed ownership, stale-draft refusal, fault recovery, or queue gating.
     - Keeping APR or Batch Runway as a hidden planning service violates the zero-legacy-owner acceptance boundary.
@@ -129,6 +154,16 @@ runner/helper redesign is outside this verdict and blocks for replanning.
   and queue-preparation ownership.
 - Removal of Batch Runway `create-spec` mode and semantic planning ownership.
 - Existing architecture program runner planning-phase rewiring to `plan-batch`.
+- Bounded Slice 2 ownership ceiling for
+  `scripts/architecture_program_runner_phase_contract.py`,
+  `scripts/architecture_program_runner_state.py`,
+  `scripts/architecture_program_runner_validation.py`, and
+  `scripts/architecture_program_runner_command.py`; only the phase-contract module
+  is expected to require a semantic edit.
+- Planning-handoff rewiring in `skills/planning-artifacts/SKILL.md`,
+  `skills/legacy-removal/SKILL.md`, `skills/port-by-contract/SKILL.md`, and
+  `skills/dead-surface-audit/SKILL.md`, without changing their evidence, layout,
+  classification, contract-distillation, or mutation boundaries.
 - One unchanged helper-link ownership transfer to Planning State, with no helper
   semantic change.
 - Candidate feature/agent installation and complete COR-008 acceptance.
@@ -152,6 +187,10 @@ Also deferred:
 
 - CCFG-27 through CCFG-29, default-generation switching, candidate merge, cutover
   rehearsal, and bridge deletion;
+- the migration or removal decision for serialized `select-dispatch` and
+  `create-spec` compatibility labels, owned by CCFG-27 as part of runner public
+  protocols and old-mode removal, with final physical cleanup required no later
+  than CCFG-29;
 - planning schema, DEC-038, `ledger-store/v1`, Planning State semantic, intake, or
   projection changes;
 - any new command, lifecycle state, persistent draft store, retry identity,
@@ -173,9 +212,9 @@ rollback point before contract narrowing.
 `2 -> 3`: Slice 2 creates the final semantic topology; Slice 3 validates a clean
 installation and exact final commit through a distinct environment/review gate.
 
-## Queue Gate
+## Initial Queue Gate
 
-Queue mutation is forbidden until all of the following are true:
+The initial queue mutation was forbidden until all of the following were true:
 
 1. the installed `/home/alacasse/.codex/scripts/cross_checkout_context.py` helper
    validates the complete strict payload and canonical planning root recorded in
@@ -185,11 +224,13 @@ Queue mutation is forbidden until all of the following are true:
    evidence, user constraints, Planning State facts, proportionality record, and
    exact amended draft and returns `clean`;
 4. no unresolved user decision or unapproved residual complexity remains; and
-5. DEC-038 atomically transitions the same selected scope to exactly one queued
+5. DEC-038 atomically transitioned the same selected scope to exactly one queued
    runway.
 
-The current `runway.md` is draft evidence only. It is not executable by
-`work-batch` while this gate is blocked.
+That gate is retained as historical selection evidence and is not repeated by
+this amendment. Slice 2 may resume only after a new independent review is clean
+against the exact amended dispatch and runway and a fresh strict lease proves the
+authorized candidate resume base.
 
 ## Stop Conditions
 
@@ -206,3 +247,5 @@ The current `runway.md` is draft evidence only. It is not executable by
   movement, or unclassified dirty-file conflict.
 - Stop if CCFG-25 cannot close without selecting or entering CCFG-26 through
   CCFG-29.
+- Stop if another live planning caller or runner semantic owner is found outside
+  the exact amended Slice 2 ceiling.

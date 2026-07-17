@@ -10,7 +10,7 @@
 - Active Batch Runway spec path:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch path or ID: `None`
-- Active batch execution status: `Blocked before Slice 2 deletion; scope amendment required`
+- Active batch execution status: `Slice 2 amendment independently reviewed; strict lease required`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Run artifact location: `None selected`
@@ -70,7 +70,7 @@
 - Active runway:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch: `None`
-- Active batch execution status: `Blocked before Slice 2 deletion; scope amendment required`
+- Active batch execution status: `Slice 2 amendment independently reviewed; strict lease required`
 - Source dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
 - Clean planning review:
@@ -95,12 +95,12 @@
 
 ## Next Safe Action
 
-Amend and independently review the active CCFG-25 Slice 2 scope before any
-deletion. The required runner planning behavior lives in sibling runner modules
-outside the current path ceiling, and active support-skill callers outside the
-current scope still route through displaced planning owners. Preserve the
-serialized four-phase runner names until their compatibility owner is decided,
-preserve all CCFG-26 execution/closeout responsibilities, and select no successor.
+Prepare a fresh strict lease whose candidate revision is exactly
+`5aa5add1251d1e4b3630a9678fdec244949cf691`, then resume the same CCFG-25 Slice 2
+under its clean bounded amendment review. Start with the runner phase-contract
+owner and four named support-skill handoffs; the caller audit found no required
+edit outside the ceiling. Preserve the serialized four-phase identities and all
+CCFG-26 execution/closeout responsibilities, and select no successor.
 
 ## Stop Conditions
 
@@ -148,4 +148,9 @@ preserve all CCFG-26 execution/closeout responsibilities, and select no successo
 - Stop if CCFG-25 removes or narrows any proceed/stop, delegation, recovery,
   validation, review, commit, receipt, finalization, closeout, reconciliation, or
   strict execution-safety responsibility reserved for CCFG-26.
+- Stop if another live planning caller or runner semantic owner requiring an edit
+  is discovered outside the exact amended Slice 2 ceiling.
+- Preserve `select-dispatch`, `create-spec`, `execute`, and `closeout` as serialized
+  compatibility identities through CCFG-25. CCFG-27 owns their migration/removal
+  decision; final physical cleanup is due no later than CCFG-29.
 - Stop if CCFG-25 closeout selects, dispatches, queues, or prepares CCFG-26.

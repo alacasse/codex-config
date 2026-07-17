@@ -4,15 +4,22 @@
 
 ```yaml
 batch: ccfg-25-planning-ownership-transfer
-status: blocked
+status: slice-2-amendment-reviewed
 completed_slice: 1
-blocked_slice: 2
+active_slice: 2
 candidate_head: 5aa5add1251d1e4b3630a9678fdec244949cf691
 stable_planning_head_before_report: 0119de2f346e61eb389ca07a2dd0b48f87ff22fc
 candidate_worktree: clean
 stable_worktree_scope: same-batch planning evidence only
 successor_selected: false
 ```
+
+The user authorized a bounded same-slice amendment. The exact amended dispatch
+hash is `0e07a56a6f7cc1ff81f3f0851d329f95277a2574c1bbe97cd26e72d635a7bd2a`;
+the exact amended runway hash is
+`ddc37370a7e6f1ba0661d8ab9b64b9975c3ff779aad9c11166776ec755ca38f8`.
+The independent planning review is clean. No new batch, queue transition,
+closeout, or successor was created.
 
 ## Completed Evidence
 
@@ -25,7 +32,11 @@ successor_selected: false
   delta-only test-quality, and independent review were clean.
 - Full manifest retained only the declared Slice 2 and CCFG-26 failures.
 
-## Slice 2 Blockers
+## Resolved Slice 2 Blockers
+
+The amendment adds the exact owner/caller paths below as an upper ceiling. A fresh
+read-only caller audit at candidate commit
+`5aa5add1251d1e4b3630a9678fdec244949cf691` found no required edit outside it.
 
 ### Runner planning behavior is outside the current path ceiling
 
@@ -73,13 +84,16 @@ boundary. Editing them without an amendment would broaden the slice.
   cross-checkout execution safety.
 - Keep through CCFG-29: temporary cross-checkout helper behavior.
 
-## Next Safe Decision
+## Amendment Outcome
 
-Recommended: amend the existing CCFG-25 Slice 2 scope to include the exact runner
-owner modules and active support-skill callers above, preserve the serialized
-four-phase names as temporary compatibility owned by CCFG-27, independently
-review the amended runway, then resume Slice 2 under a fresh strict lease.
-
-The alternative is to retain those live callers temporarily, but that requires
-an explicit acceptance amendment and removal owner because it weakens CCFG-25's
-zero-live-planning-caller condition.
+- Independent planning review: clean against the exact hashes above.
+- Caller/owner audit: clean; no required edit outside the amended ceiling.
+- Expected runner semantic edit:
+  `scripts/architecture_program_runner_phase_contract.py` only.
+- Conditional runner modules: `state.py`, `validation.py`, and `command.py` need
+  no edit under current focused evidence.
+- Next safe action: prepare a fresh strict lease at exact candidate commit
+  `5aa5add1251d1e4b3630a9678fdec244949cf691`, validate the exact write scope,
+  and delegate the smallest Slice 2 implementation.
+- Stop if another live planning caller or runner semantic owner requiring an edit
+  appears outside the amended ceiling.
