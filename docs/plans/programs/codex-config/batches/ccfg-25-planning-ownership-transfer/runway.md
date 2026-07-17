@@ -474,9 +474,34 @@ Every test-changing slice receives delta-only `test-quality-review`. Slices 1 an
 
 | Slice | Status | Commit | Review | Notes |
 |---|---|---|---|---|
-| 1. Implement installed `plan-batch` owner | Blocked | None | Pending | Execution cannot begin until Plan Repair Gate queues this exact amended draft. |
-| 2. Remove displaced planning ownership | Pending | None | Pending | Narrow planning-only surfaces after replacement and caller evidence. |
+| 1. Implement installed `plan-batch` owner | Completed | `5aa5add1251d1e4b3630a9678fdec244949cf691` | Clean | Installed owner, exact planning-quality gates, DEC-038 recovery, isolated install, import-topology, and delta-only test-quality proof are green. |
+| 2. Remove displaced planning ownership | Pending | None | Pending | Build the current owner/caller matrix, then narrow planning-only surfaces while preserving the full CCFG-26 inventory. |
 | 3. Converge installation and final acceptance | Pending | None | Pending | Clean install, exact acceptance, diagnostics, and final reviews. |
+
+## Execution Startup Evidence
+
+```yaml
+runway: docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md
+planning_state: passed
+strict_preflight:
+  status: ready
+  reason: current repository facts satisfy first-handoff integrity
+  live_context:
+    interface: cross-checkout-context/v1
+    generation_role: stable
+    toolchain_source_root: /home/alacasse/projects/codex-config
+    toolchain_commit: 29853cc291c4a3e2c900c0e6e1aa6e7a96203cb2
+    canonical_planning_repository_root: /home/alacasse/projects/codex-config
+    canonical_planning_commit_before: 29853cc291c4a3e2c900c0e6e1aa6e7a96203cb2
+    implementation_target_root: /home/alacasse/projects/codex-config-command-owner-redesign
+    implementation_commit_before: 91179e84c7cfed666be224575db7000ca0ea01b3
+    codex_home: /home/alacasse/.codex
+    canonical_state_mutation_allowed: true
+baseline:
+  candidate_commit: 91179e84c7cfed666be224575db7000ca0ea01b3
+  manifest: 18 passed, exactly 3 assigned failures
+  scenario_acceptance: 69 scenarios, 31 contracts, 17 families, one pytest process
+```
 
 ## Active Orchestration Anomalies
 

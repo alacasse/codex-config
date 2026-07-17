@@ -7,10 +7,10 @@
   workflow, runner, planning-state, and skill-cleanup work.
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
-- Active Batch Runway spec path: `None`
-- Queued batch path or ID:
+- Active Batch Runway spec path:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
-- Queued batch execution status: `Queued; strict preflight required before execution`
+- Queued batch path or ID: `None`
+- Active batch execution status: `Slice 1 committed; Slice 2 is next`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Run artifact location: `None selected`
@@ -67,11 +67,11 @@
 ## Batch State
 
 - Selected dispatch: `None`
-- Active runway: `None`
-- Queued batch:
+- Active runway:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
-- Queued batch execution status: `Queued; strict preflight required before execution`
-- Queued dispatch:
+- Queued batch: `None`
+- Active batch execution status: `Slice 1 committed; Slice 2 is next`
+- Source dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
 - Clean planning review:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/review.md`
@@ -83,7 +83,7 @@
   `docs/plans/programs/codex-config/batches/ccfg-24a-intake-owner-preparation/closeout.md`
 - Completed intake-ownership cutover:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
-- Queued planning-ownership transfer:
+- Active planning-ownership transfer:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Latest completed batch: `ccfg-24b-intake-ownership-cutover`
 - Latest completed dispatch:
@@ -95,11 +95,11 @@
 
 ## Next Safe Action
 
-Execute the queued CCFG-25 runway through an explicit `work-batch` request. Before
-any delegation, require a fresh ready `cross-checkout-context/v1` preflight against
-the immutable planning snapshot and current Planning State. Implement only the
-active slice, preserve CCFG-26 execution/closeout responsibilities, and stop after
-same-batch CCFG-25 closeout without selecting a successor.
+Continue the active CCFG-25 runway at Slice 2. Before every later delegation,
+prepare a fresh `cross-checkout-context/v1` live lease from the immutable planning
+snapshot and validate the exact handoff scope separately. Preserve all CCFG-26
+execution/closeout responsibilities and stop after same-batch CCFG-25 closeout
+without selecting a successor.
 
 ## Stop Conditions
 
