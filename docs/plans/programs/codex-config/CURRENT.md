@@ -9,7 +9,7 @@
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-26-execution-closeout-ownership-transfer/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/runway.md`
 - Active batch execution status: `queued`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
@@ -34,7 +34,10 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
-- Pending ledger row: CCFG-26, controlled by the queued dispatch and runway.
+- Pending ledger row: CCFG-34, reviewed and queued for a later explicit
+  `work-batch` invocation.
+- Blocked ledger row: CCFG-26, waiting for CCFG-34 closeout and fresh
+  replanning.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-33.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -53,6 +56,8 @@
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - CCFG-25 closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
+- Live CCFG-34 intake and CCFG-26 replanning amendment:
+  `docs/plans/programs/codex-config/findings/github-issue-62-stable-runway-dogfooding-bootstrap.md`
 - Live CCFG-25 planning-quality amendment:
   `docs/plans/programs/codex-config/findings/ccfg-25-planning-quality-amendment.md`
 - Accepted command-owner redesign snapshot:
@@ -71,8 +76,12 @@
 - Selected dispatch: `None`
 - Active runway: `None`
 - Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-26-execution-closeout-ownership-transfer/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/runway.md`
 - Active batch execution status: `queued`
+- Queued CCFG-34 dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/dispatch.md`
+- Queued CCFG-34 independent planning review:
+  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/review.md`
 - Superseded CCFG-24 planning evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/superseded.md`
 - Superseded CCFG-24A blocked attempt:
@@ -83,6 +92,8 @@
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Completed planning-ownership transfer:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
+- Superseded CCFG-26 planning evidence:
+  `docs/plans/programs/codex-config/batches/ccfg-26-execution-closeout-ownership-transfer/superseded.md`
 - Latest completed batch: `ccfg-25-planning-ownership-transfer`
 - Latest completed dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
@@ -93,10 +104,12 @@
 
 ## Next Safe Action
 
-CCFG-26 is the sole queued batch. Stop before implementation. A later explicit
-`work-batch` invocation may execute exactly
-`docs/plans/programs/codex-config/batches/ccfg-26-execution-closeout-ownership-transfer/runway.md`.
-Do not select, dispatch, queue, refresh, or prepare CCFG-27 through CCFG-29.
+CCFG-34 is the sole reviewed, queued batch. A later explicit `work-batch`
+invocation may execute exactly
+`batches/ccfg-34-stable-runway-dogfooding-bootstrap/runway.md`. CCFG-26 remains
+blocked until CCFG-34 closeout, then must be replanned from fresh canonical
+state. Do not select, dispatch, queue, refresh, or prepare CCFG-26 through
+CCFG-29 during this queue transition.
 
 ## Stop Conditions
 
@@ -135,8 +148,12 @@ Do not select, dispatch, queue, refresh, or prepare CCFG-27 through CCFG-29.
   escape hatch, or stable-home ownership from the candidate generation.
 - Stop if CCFG-24 through CCFG-29 retain replaced CCFG-23 fixtures or tests
   without a named caller, reason, owner, and removal condition.
-- Stop if another dispatch or runway is selected, queued, activated, or created
-  while CCFG-26 is queued or active.
+- Stop if the superseded CCFG-26 dispatch, review, or runway is treated as
+  selected, queued, active, resumable, or executable.
+- Stop if planning bypasses CCFG-34 or selects CCFG-26 before CCFG-34 closeout
+  and a fresh CCFG-26 replan.
+- Stop if any other batch becomes selected, queued, or active while CCFG-34 is
+  queued, or if this planning flight begins CCFG-34 implementation.
 - Stop if CCFG-25 introduces a new planning schema, store, queue transaction,
   lifecycle state, public command, persistent draft store, helper behavior,
   runner protocol, or compatibility layer.
@@ -150,14 +167,16 @@ Do not select, dispatch, queue, refresh, or prepare CCFG-27 through CCFG-29.
   compatibility identities through CCFG-25. CCFG-27 owns their migration/removal
   decision; final physical cleanup is due no later than CCFG-29.
 - Stop if CCFG-25 closeout selects, dispatches, queues, or prepares CCFG-26.
-- Stop if pickup bypasses the queued CCFG-26 runway or treats its reviewed
-  planning snapshot as a live execution lease.
+- Stop if pickup infers queue state from the superseded CCFG-26 runway or treats
+  its reviewed planning snapshot as a live execution lease.
 - Stop if CCFG-26 restores Git, ancestry, path sets, fingerprints, or dirty files
   as semantic batch-lifecycle or queue authority.
 - Stop if CCFG-26 changes or removes the serialized `select-dispatch`,
   `create-spec`, `execute`, or `closeout` identities reserved for CCFG-27,
   physically deletes legacy-owner directories reserved for CCFG-28, or changes
   the temporary bridge reserved for CCFG-29.
-- Stop if CCFG-26 introduces a new command, script, helper, schema, store,
-  transaction, lifecycle state, persistent execution store, compatibility
-  layer, or runner protocol.
+- Stop if CCFG-26 is replanned without the permanent candidate behavior from
+  GitHub issues #59, #60, and #61, or if that replan changes COR-009 identity.
+- Stop if CCFG-34 builds a second complete runway framework, permanent public
+  protocol, persistent execution store, or lifecycle framework instead of the
+  bounded temporary bootstrap authorized by issue #62.
