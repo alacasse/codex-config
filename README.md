@@ -316,6 +316,11 @@ Registered custom agents. Each TOML owns the stable role boundary and result
 contract; workflows own invocation and lifecycle.
 
 * `codebase_investigator`: bounded read-only technical investigation
+* `batch_planner`: read-only planning author for one selected finding; produces
+  a non-executable draft without review, mutation, queue, or implementation
+  authority
+* `batch_plan_reviewer`: independent read-only planning-quality gate for one
+  exact draft and evidence basis; cannot plan, mutate, queue, or implement
 * `runway_worker`: slice-scoped Batch Runway implementation
 * `runway_reviewer`: independent final Batch Runway review gate
 * `import_topology_reviewer`: triggered project-local import specialist
