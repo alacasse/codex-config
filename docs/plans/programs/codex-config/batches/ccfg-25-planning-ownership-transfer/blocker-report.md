@@ -6,127 +6,120 @@
 batch: ccfg-25-planning-ownership-transfer
 slice: 2
 status: blocked
-blocker_class: outside-ceiling-runner-safety-owner
+blocker_class: required-green-validation-command-contract
+stable_planning_commit: 24f5ab9b66bb0e0060df5b8483597cbb5c5146d9
 candidate_head: 5aa5add1251d1e4b3630a9678fdec244949cf691
-candidate_diff_sha256: a2f1b2d443767f41729634a54448bdadfcf7342035be70f282dd8f779cc1d15b
+candidate_diff_sha256: 815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e
 candidate_commit_created: false
-independent_implementation_review: findings
+independent_planning_review: clean
+independent_implementation_review: blocked-one-required-green-gate
 closeout_created: false
 successor_selected: false
 ```
 
 ## Executive Summary
 
-Slice 2 is stopped because the complete `plan-batch` transaction and the
-architecture program runner disagree about which dirty planning artifacts are
-safe when the runner advances from serialized `select-dispatch` to serialized
-`create-spec`.
+The second bounded amendment resolved the runner safety blocker inside the exact
+authorized two-file ceiling. The compatibility `create-spec` allowance now
+accepts only canonical artifacts bound to the immediately preceding completed
+`plan-batch` transaction, and independent review confirms the forged-transaction
+case is rejected.
 
-The amended Slice 2 ceiling does not include the module that owns this safety
-decision:
+Slice 2 is still stopped because the exact user-mandated required-green command
+is not a structural two-file validation. With two inputs, `skill_contract.py`
+automatically validates them as a relationship catalog. Both contracts truthfully
+require `planning-artifacts` and `planning-state`, but those mechanisms are not
+members of the two-path catalog and the CLI exposes no external-mechanism policy.
+The command therefore exits `1` with four
+`catalog.unknown_required_mechanism` diagnostics.
 
-```text
-scripts/architecture_program_runner_change_allowance.py
-```
-
-The explicit runway stop condition requires execution to stop when another live
-runner owner outside the amended ceiling is discovered. The candidate diff is
-therefore uncommitted even though its focused validation and specialist reviews
-are clean.
-
-## Blocking Runtime Sequence
-
-1. The amended phase contract makes `select-dispatch` invoke public
-   `plan-batch` once for the complete planning flight.
-2. The deterministic `plan-batch` boundary writes the authorized `CURRENT.md`,
-   dispatch, runway, and DEC-038 transaction paths after planning and independent
-   review succeed.
-3. The serialized phase identity advances to compatibility `create-spec`, which
-   is intended to observe the completed planning result and advance without
-   planning again.
-4. Before invoking that phase, `architecture_program_runner.py` calls
-   `check_worktree(...)` using the active `create-spec` phase.
-5. `architecture_program_runner_change_allowance.py` currently permits runner
-   artifacts plus `dispatch_path` and `spec_path` for `create-spec`. It does not
-   permit the prior transaction's `CURRENT.md` or selection-transaction path.
-6. Those paths are classified as unexpected, so the runner raises
-   `RunnerError` before the compatibility observation phase can run.
-
-This is a direct runtime invariant, not a documentation-only concern. The
-existing change-allowance tests cover expected state/artifact paths and rejection
-of unrelated project files, but they do not cover a complete `plan-batch` flight
-followed by `create-spec` preflight.
-
-## Why Work Cannot Continue Under The Current Amendment
-
-- The live safety owner is outside the exact user-authorized path ceiling.
-- Silently adding it would violate the explicit stop condition.
-- Broadly allowing the planning root would weaken dirty-worktree safety and is
-  not an acceptable repair.
-- The change needs focused regression proof that only artifacts produced by the
-  completed planning transaction survive the `create-spec` preflight.
-- Any amended runway content must receive a fresh independent planning review
-  before the same slice resumes.
-
-The already authorized conditional runner modules remain unchanged. Current
-evidence does not require edits to
-`architecture_program_runner_state.py`,
-`architecture_program_runner_validation.py`, or
-`architecture_program_runner_command.py`.
-
-## Separate Acceptance Blocker
-
-The Slice 2 runway names this command as `required-green`:
+## Exact Failing Gate
 
 ```sh
-.venv/bin/python scripts/skill_contract.py validate --root .
+.venv/bin/python scripts/skill_contract.py validate \
+  --toolchain-root . \
+  skills/architecture-program-runway/SKILL.md \
+  skills/legacy-removal/SKILL.md
 ```
 
-The current CLI requires `--toolchain-root` and explicit paths, so the named
-command exits with a usage error. Focused skill-contract catalog/migration tests,
-the contract-bearing changed-skill validation, and skill quick-validation are
-green, but they do not make the exact runway command pass. A newly reviewed
-amendment must correct the command or explicitly reclassify and replace the gate.
+Observed diagnostics:
 
-## Evidence That Is Not Blocking
+- `architecture-program-runway` requires external mechanisms
+  `planning-artifacts` and `planning-state`;
+- `legacy-removal` requires the same two external mechanisms; and
+- neither mechanism is present in the explicit two-document catalog or allowed
+  by a CLI policy.
 
-- Focused Slice 2 suite: 169 tests and 238 subtests passed.
-- Migrated Batch Runway planning-contract tests: 13 tests and 200 subtests
-  passed.
-- Command-owner scenario catalog: 69 scenarios valid.
-- Filtered manifest: 21 tests and 210 subtests passed; the full manifest retains
-  only the named CCFG-26 failure.
-- Broad projection/deletion diagnostics: all six current failures are a subset
-  of the 12 failures at the exact candidate baseline; Slice 2 introduced no new
-  broad failure.
-- Ruff, whitespace, and changed-runner BasedPyright checks passed.
-- Dead-surface, import-topology, and delta-only test-quality reviews are clean on
-  the exact candidate diff.
-- The full-ceiling BasedPyright findings reproduce unchanged in baseline
-  `state.py` and `validation.py`; they do not justify editing those conditional
-  modules in this slice.
+Each skill validates cleanly when invoked alone. The existing catalog and
+migration tests also pass and retain relationship-level proof. The failure is
+therefore the combined command's catalog semantics, not a malformed contract.
 
-## Smallest Decision Needed To Resume
+## Why The Candidate Must Remain Uncommitted
 
-Resume requires explicit authorization for another bounded amendment to the
-same CCFG-25 Slice 2. The minimum amendment would:
+- This command is explicitly classified as required-green in the reviewed
+  runway.
+- Removing the two truthful `requires.mechanisms` lists would falsify the skill
+  contracts and violate their preserved layout/Planning State responsibilities.
+- `scripts/skill_contract.py` is outside the exact Slice 2 ceiling, and changing
+  it would be a validator behavior expansion rather than this command-only fix.
+- Replacing or reclassifying the exact command contradicts the current explicit
+  authorization and requires a newly reviewed amendment.
 
-1. add `scripts/architecture_program_runner_change_allowance.py` to the exact
-   implementation ceiling;
-2. permit its existing focused test,
-   `tests/test_architecture_program_runner_change_allowance.py`;
-3. require a focused regression for the complete `plan-batch` transaction to
-   compatibility `create-spec` transition without weakening unrelated dirty-file
-   rejection;
-4. correct or explicitly reclassify the stale skill-contract validation command;
-   and
-5. obtain a fresh independent planning review before resuming the same slice.
+## Resolved Runner Safety Correction
 
-The amendment must preserve all existing constraints: no new harness, generalized
-runner abstraction, protocol, bridge, state version, compatibility wrapper,
-planning store, or owner; no serialized phase rename or migration; no CCFG-26
-ownership change; no closeout; and no successor selection.
+The newly authorized Change Allowance implementation and focused test are
+complete but uncommitted. They now:
 
-Until that direction is explicit, the safe state is the current one: CCFG-25
-remains active and blocked, Slice 1 remains closed, the Slice 2 candidate diff
-remains uncommitted, and later batches remain unselected.
+- use canonical planning-contract validators and readers;
+- bind the completed transaction producer, canonical sibling `CURRENT.md`,
+  configured ledger, batch, dispatch, runway, queued state, and observed
+  revisions and SHA-256 hashes;
+- accept only exact transaction-owned `CURRENT.md`, dispatch, runway, and
+  selection-transaction paths;
+- reject parent planning directories, arbitrary evidence paths, arbitrary
+  Markdown, unrelated planning files, and unrelated project files; and
+- leave execute and closeout allowances unchanged.
+
+The positive regression executes a real complete `plan-batch` transaction. The
+negative regression proves that a schema-valid transaction attempting to
+substitute `README.md` as `CURRENT.md` does not expand the allowance.
+
+## Validation Evidence
+
+- Exact Slice 2 matrix: `181 passed, 241 subtests passed`.
+- Filtered manifest: `21 passed, 1 deselected, 210 subtests passed`.
+- Filtered legacy/projection gate: `7 passed, 18 deselected, 20 subtests passed`.
+- Scenario catalog: `69 scenarios` valid.
+- Five required skill quick-validations: clean.
+- Ruff: clean.
+- BasedPyright: `0 errors, 0 warnings`.
+- `git diff --check`: clean.
+- Full manifest retains only the named CCFG-26 failure.
+- The six broad legacy diagnostic failures remain a subset of the 12 failures at
+  the exact candidate baseline.
+- Independent Change Allowance re-review: prior safety finding resolved.
+- Exact combined skill-contract command: failed with the four diagnostics above.
+
+## Smallest Authorization Needed To Resume
+
+Authorize a validation-command-only amendment that replaces the combined
+invocation with two required-green structural invocations:
+
+```sh
+.venv/bin/python scripts/skill_contract.py validate \
+  --toolchain-root . \
+  skills/architecture-program-runway/SKILL.md
+.venv/bin/python scripts/skill_contract.py validate \
+  --toolchain-root . \
+  skills/legacy-removal/SKILL.md
+```
+
+Keep the existing catalog, migration, routing, and quick-validation gates for
+relationship proof. This correction requires no candidate code change, no new
+implementation path, no validator change, and no scope widening. Before resuming
+the same preserved Slice 2 diff, update the exact runway command and obtain a
+fresh independent planning review.
+
+Until then, CCFG-25 remains active and blocked. Slice 1 stays closed, the
+candidate diff stays uncommitted, CCFG-26 responsibilities remain preserved, and
+no closeout or successor is created.

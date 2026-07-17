@@ -131,3 +131,32 @@ required_fixes: []
   candidate diff under a fresh strict lease.
 - State version, transition graph, receipt schema, queue, batch identity,
   closeout, and successor selection: unchanged.
+
+## Slice 2 Second Amendment Implementation Review
+
+```yaml
+status: blocked
+candidate_head: 5aa5add1251d1e4b3630a9678fdec244949cf691
+candidate_diff_sha256: 815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e
+resolved_findings:
+  - >-
+    The Change Allowance correction now uses canonical planning-contract
+    validation and binds the exact completed transaction, producer, CURRENT,
+    ledger, batch, dispatch, runway, queued state, revisions, and hashes. A real
+    plan-batch transaction passes and a schema-valid README.md substitution is
+    rejected.
+remaining_findings:
+  - >-
+    The exact combined required-green skill-contract command exits 1 with four
+    catalog.unknown_required_mechanism diagnostics. Multiple inputs activate
+    relationship validation, while the CLI supplies no external-mechanism
+    policy. Both skills' dependency lists are truthful and must not be removed.
+candidate_commit_created: false
+```
+
+- Implementation review role: independent, read-only runway reviewer.
+- Acceptance decision: blocked; preserve the candidate diff uncommitted.
+- Smallest next decision: authorize two single-document required-green
+  invocations in place of the combined command, retain relationship proof in the
+  existing catalog/migration/routing gates, and obtain a fresh exact planning
+  review before resuming.

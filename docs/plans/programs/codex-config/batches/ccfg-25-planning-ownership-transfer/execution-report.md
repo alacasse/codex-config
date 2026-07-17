@@ -4,15 +4,15 @@
 
 ```yaml
 batch: ccfg-25-planning-ownership-transfer
-status: slice-2-blocked-outside-ceiling-runner-owner
+status: slice-2-blocked-required-green-command-contract
 completed_slice: 1
 active_slice: 2
 candidate_head: 5aa5add1251d1e4b3630a9678fdec244949cf691
-stable_planning_head_before_report: 3919a2288870b8b50737fb722db29387ea252859
+stable_planning_head_before_report: 24f5ab9b66bb0e0060df5b8483597cbb5c5146d9
 candidate_worktree: uncommitted-slice-2-diff
-candidate_diff_sha256: a2f1b2d443767f41729634a54448bdadfcf7342035be70f282dd8f779cc1d15b
+candidate_diff_sha256: 815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e
 stable_worktree_scope: same-batch planning evidence only
-independent_implementation_review: findings
+independent_implementation_review: blocked-one-required-green-gate
 successor_selected: false
 ```
 
@@ -124,3 +124,26 @@ boundary. Editing them without an amendment would broaden the slice.
 
 No candidate commit, Slice 1 reopening, closeout, or successor selection was
 performed.
+
+## Second Bounded Amendment Resume Outcome
+
+The second bounded amendment passed exact independent planning review and was
+executed under a fresh strict lease from candidate commit
+`5aa5add1251d1e4b3630a9678fdec244949cf691`. Only
+`scripts/architecture_program_runner_change_allowance.py` and its focused test
+were added to the prior candidate diff.
+
+Independent implementation review initially rejected a hand-written transaction
+parser. The in-ceiling repair replaced it with canonical planning-contract
+validation/readers, real complete `plan-batch` transaction coverage, exact
+producer/current/ledger/batch/artifact/revision/hash binding, and a regression
+that rejects a schema-valid transaction attempting to nominate `README.md` as
+`CURRENT.md`. Fresh review marks that finding resolved.
+
+The candidate remains uncommitted only because the exact combined
+skill-contract required-green command exits `1` with four unknown-external-
+mechanism diagnostics. Each named contract validates alone, and catalog,
+migration, routing, quick-validation, scenarios, focused tests, Ruff,
+BasedPyright, and diff checks are green. `blocker-report.md` records the smallest
+command-only amendment needed to resume without changing candidate code or
+widening implementation scope.

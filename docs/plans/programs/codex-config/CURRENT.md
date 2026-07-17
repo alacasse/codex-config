@@ -10,7 +10,7 @@
 - Active Batch Runway spec path:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch path or ID: `None`
-- Active batch execution status: `Slice 2 second amendment independently reviewed; fresh strict lease required`
+- Active batch execution status: `Slice 2 blocked by required-green skill-contract command semantics`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Run artifact location: `None selected`
@@ -70,7 +70,7 @@
 - Active runway:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch: `None`
-- Active batch execution status: `Slice 2 second amendment independently reviewed; fresh strict lease required`
+- Active batch execution status: `Slice 2 blocked by required-green skill-contract command semantics`
 - Source dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
 - Clean planning review:
@@ -95,12 +95,14 @@
 
 ## Next Safe Action
 
-The exact second-amended CCFG-25 dispatch and runway passed independent planning
-review. Preserve and resume the existing Slice 2 candidate diff only under a
-fresh strict lease from `5aa5add1251d1e4b3630a9678fdec244949cf691`. The newly
-authorized ceiling adds only the Change Allowance owner and its focused test.
-Preserve the serialized four-phase identities and all CCFG-26 execution/closeout
-responsibilities, and select no successor.
+Await explicit authorization for the command-only correction recorded in the
+CCFG-25 `blocker-report.md`. The Change Allowance correction is independently
+verified, but the exact combined skill-contract required-green command fails
+because two inputs activate catalog relationship validation without an external
+mechanism policy. Preserve candidate diff
+`815c4ad7b15e9143cb95e3f5790440021416ccb28bd8120731ac92314c8b023e`
+uncommitted. Do not change the validator or skill dependencies, create closeout,
+or select a successor.
 
 ## Stop Conditions
 
