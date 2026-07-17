@@ -98,3 +98,36 @@ required_fixes: []
 - Review role: independent, read-only planning reviewer.
 - Amendment decision: clean; resume the same CCFG-25 Slice 2 only.
 - New batch, queue transition, closeout, or successor: forbidden.
+
+## Slice 2 Second Bounded Amendment Review
+
+```yaml
+status: clean
+review_basis: >-
+  Independently verified exact dispatch SHA-256
+  8fabe265e62b91251370c2733e771291605761caad3844f523c3be8f3990b5c1
+  and exact runway SHA-256
+  9f5dc305d0c51fc719e1cac6fc3f8bca4ed3da2b4562929cd68ae628abfd39cc.
+  Planning State current and validate passed, CCFG-25 remains the sole active
+  runway with no selected or queued batch, candidate HEAD remains
+  5aa5add1251d1e4b3630a9678fdec244949cf691, and the preserved candidate diff
+  remains SHA-256
+  a2f1b2d443767f41729634a54448bdadfcf7342035be70f282dd8f779cc1d15b.
+  The second amendment adds only the Change Allowance owner and its focused
+  test, keeps state, validation, and command runner modules read-only, limits
+  the compatibility allowance to exact completed-transaction-owned artifacts,
+  and rejects broad planning-root, evidence-path, Markdown, and unrelated-file
+  allowances. The required regression, corrected validation commands, fixed
+  serialized identities and compatibility contracts, CCFG-26 preservation,
+  and no-new-protocol, wrapper, store, closeout, or successor constraints are
+  explicit and internally consistent.
+blocker_findings: []
+advisory_findings: []
+required_fixes: []
+```
+
+- Review role: independent, read-only planning reviewer.
+- Second amendment decision: clean; resume only the preserved CCFG-25 Slice 2
+  candidate diff under a fresh strict lease.
+- State version, transition graph, receipt schema, queue, batch identity,
+  closeout, and successor selection: unchanged.

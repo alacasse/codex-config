@@ -10,7 +10,7 @@
 - Active Batch Runway spec path:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch path or ID: `None`
-- Active batch execution status: `Slice 2 blocked by outside-ceiling runner safety owner`
+- Active batch execution status: `Slice 2 second amendment independently reviewed; fresh strict lease required`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - Run artifact location: `None selected`
@@ -70,7 +70,7 @@
 - Active runway:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
 - Queued batch: `None`
-- Active batch execution status: `Slice 2 blocked by outside-ceiling runner safety owner`
+- Active batch execution status: `Slice 2 second amendment independently reviewed; fresh strict lease required`
 - Source dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
 - Clean planning review:
@@ -95,13 +95,10 @@
 
 ## Next Safe Action
 
-Await explicit user direction on the CCFG-25 Slice 2 stop condition. Independent
-implementation review proved that
-`scripts/architecture_program_runner_change_allowance.py` is a live runner safety
-owner outside the exact amended ceiling: its compatibility `create-spec`
-allowance rejects artifacts written by the complete `plan-batch` transaction.
-Do not widen scope or commit the candidate diff. Any further bounded amendment
-must receive a new independent planning review before the same slice resumes.
+The exact second-amended CCFG-25 dispatch and runway passed independent planning
+review. Preserve and resume the existing Slice 2 candidate diff only under a
+fresh strict lease from `5aa5add1251d1e4b3630a9678fdec244949cf691`. The newly
+authorized ceiling adds only the Change Allowance owner and its focused test.
 Preserve the serialized four-phase identities and all CCFG-26 execution/closeout
 responsibilities, and select no successor.
 

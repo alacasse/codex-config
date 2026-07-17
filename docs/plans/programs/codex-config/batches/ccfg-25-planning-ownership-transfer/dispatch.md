@@ -4,19 +4,20 @@
 
 - Batch ID: `ccfg-25-planning-ownership-transfer`
 - Batch state: `active`
-- Planning gate: `slice-2-amendment-review`
+- Planning gate: `slice-2-second-amendment-review`
 - Covered finding: CCFG-25, Transfer Planning Ownership to `plan-batch`
 - Finding state entering the batch: `Open`
 - Source program ledger: `../../LEDGER.md`
 - Expected runway path: `runway.md`
-- Current runway status: Slice 1 completed; Slice 2 amendment authorized and
-  non-executable until exact amended review is clean
+- Current runway status: Slice 1 completed; second bounded Slice 2 amendment
+  authorized and non-executable until exact amended review is clean
 
 CCFG-24 is closed and the explicit user request selected exactly CCFG-25. Slice 1
-is committed at `5aa5add1251d1e4b3630a9678fdec244949cf691`. The explicit
-Slice 2 amendment authorization resumes this same batch and slice only after an
-independent reviewer returns `clean` against the exact amended dispatch and
-runway. CCFG-26 through CCFG-29 remain deferred and unselected.
+is committed at `5aa5add1251d1e4b3630a9678fdec244949cf691`. The explicit second
+bounded Slice 2 amendment authorization resumes this same batch and slice only
+after an independent reviewer returns `clean` against the exact amended dispatch
+and runway. The existing candidate diff must be preserved. CCFG-26 through CCFG-29
+remain deferred and unselected.
 
 ## Authoritative Sources
 
@@ -82,6 +83,13 @@ proportionality:
     omitted the runner phase-contract owner and four active planning-handoff
     callers. Editing only the runner facade or leaving those callers unchanged
     cannot prove the accepted sole-owner boundary.
+  second_amendment_observed_failure: >-
+    The first amended Slice 2 diff correctly moved the complete planning flight to
+    plan-batch, but the compatibility create-spec preflight still rejects the
+    immediately preceding transaction-owned CURRENT.md and selection-transaction
+    paths. The live Change Allowance concept owner sits in
+    architecture_program_runner_change_allowance.py, outside the first amended
+    ceiling, so the runner stops before the observation-only compatibility phase.
   minimum_viable_change: >-
     Add one installed plan-batch command boundary that consumes current ledger and
     Planning State facts, directly invokes the two registered planning roles,
@@ -92,9 +100,10 @@ proportionality:
     Implement that owner boundary, migrate planning scenarios and existing callers
     to it, remove only displaced planning ownership, and converge candidate
     installation and COR-008 acceptance. For Slice 2, first change the runner phase
-    contract and the four named support-skill handoffs; touch the other three
-    authorized runner modules only when a focused failing test or direct invariant
-    proves the edit is required.
+    contract and the four named support-skill handoffs; add the discovered Change
+    Allowance owner only for the exact transaction-owned create-spec preflight
+    correction. The state, validation, and command modules are read-only; stop if
+    a focused failing test or direct invariant proves one would need an edit.
   additions_beyond_minimum:
     - addition: two registered agent TOMLs
       prevents: planner self-review and ambiguous role authority
@@ -117,13 +126,14 @@ proportionality:
       why_minimum_is_insufficient: >-
         Removing APR prose alone leaves a live caller bypass. Reusing the existing
         public command path removes that bypass without adding a protocol or planner.
-    - addition: bounded access to the four existing runner ownership modules
+    - addition: historical first-amendment access to four runner ownership modules
       prevents: facade-only rewiring that leaves legacy planning semantics in the phase contract
       why_minimum_is_insufficient: >-
-        Current caller evidence locates the semantic change in
-        architecture_program_runner_phase_contract.py. The sibling state,
-        validation, and command modules are an upper ceiling only so a focused
-        invariant can be repaired without another silent scope expansion.
+        The first amendment located the semantic change in
+        architecture_program_runner_phase_contract.py and treated the sibling
+        state, validation, and command modules as an upper ceiling. The second
+        amendment supersedes that conditional access: those three siblings are
+        read-only, and a demonstrated need to edit one is now a stop condition.
     - addition: rewire four active support-skill planning handoffs
       prevents: reusable workflow callers bypassing the public plan-batch owner
       why_minimum_is_insufficient: >-
@@ -131,11 +141,23 @@ proportionality:
         retain their evidence and classification jobs but currently point planning
         handoffs at displaced owners. Routing those handoffs to plan-batch is needed
         for the sole-owner condition and grants them no mutation authority.
+    - addition: bounded correction in architecture_program_runner_change_allowance.py
+      prevents: >-
+        the observation-only create-spec phase rejecting canonical artifacts left
+        dirty by the immediately preceding successful complete plan-batch transaction
+      why_minimum_is_insufficient: >-
+        The Change Allowance owner currently admits dispatch and runway/spec paths
+        but not the transaction-owned CURRENT.md and exact selection-transaction
+        artifact. A path-specific correction and focused regression are required;
+        allowing the whole planning root would weaken unrelated-dirty-file safety.
   simpler_alternatives_rejected:
     - Prose-only edits cannot prove installed ownership, stale-draft refusal, fault recovery, or queue gating.
     - Keeping APR or Batch Runway as a hidden planning service violates the zero-legacy-owner acceptance boundary.
     - Duplicating the helper link or adding a shared bridge feature creates more installation ownership than moving the unchanged link once.
     - A separate planner/reviewer scaffolding slice has no independently supported outcome.
+    - Allowing the complete planning root, arbitrary prior evidence paths, arbitrary
+      Markdown files, or unrelated project files would hide ownership mistakes and
+      weaken the runner's Change Allowance contract.
   verdict: proportionate
 ```
 
@@ -155,11 +177,13 @@ runner/helper redesign is outside this verdict and blocks for replanning.
 - Removal of Batch Runway `create-spec` mode and semantic planning ownership.
 - Existing architecture program runner planning-phase rewiring to `plan-batch`.
 - Bounded Slice 2 ownership ceiling for
-  `scripts/architecture_program_runner_phase_contract.py`,
-  `scripts/architecture_program_runner_state.py`,
-  `scripts/architecture_program_runner_validation.py`, and
-  `scripts/architecture_program_runner_command.py`; only the phase-contract module
-  is expected to require a semantic edit.
+  `scripts/architecture_program_runner_phase_contract.py` and the discovered
+  Change Allowance owner below. The runner state, validation, and command modules
+  are read-only; a proven need to edit one is a stop condition.
+- Required path-specific runner-safety correction in
+  `scripts/architecture_program_runner_change_allowance.py`, with focused coverage
+  in `tests/test_architecture_program_runner_change_allowance.py`; this grants no
+  general planning-root or arbitrary evidence-path allowance.
 - Planning-handoff rewiring in `skills/planning-artifacts/SKILL.md`,
   `skills/legacy-removal/SKILL.md`, `skills/port-by-contract/SKILL.md`, and
   `skills/dead-surface-audit/SKILL.md`, without changing their evidence, layout,
@@ -248,4 +272,4 @@ authorized candidate resume base.
 - Stop if CCFG-25 cannot close without selecting or entering CCFG-26 through
   CCFG-29.
 - Stop if another live planning caller or runner semantic owner is found outside
-  the exact amended Slice 2 ceiling.
+  the exact second-amended Slice 2 ceiling.

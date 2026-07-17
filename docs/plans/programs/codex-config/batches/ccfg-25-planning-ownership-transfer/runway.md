@@ -2,21 +2,20 @@
 
 ## Execution Status
 
-- Planning transition: `active; Slice 2 blocked by outside-ceiling runner owner`
-- Artifact role: active same-batch runway with a bounded execution blocker
+- Planning transition: `active; Slice 2 second amendment-review gate`
+- Artifact role: active same-batch runway with an exact second-amendment gate
 - Selected dispatch: `dispatch.md`
 - Queue currentness authority: Planning State `current` and `validate`
 - Candidate Slice 2 resume base:
   `5aa5add1251d1e4b3630a9678fdec244949cf691`
 - Focused blocker report: `blocker-report.md`
 
-Slice 1 is complete and the amended planning review is clean. Slice 2 execution
-stopped at independent implementation review because
-`scripts/architecture_program_runner_change_allowance.py` is a live runner safety
-owner outside the exact amended ceiling. Do not widen the ceiling or commit the
-candidate diff without explicit user direction and a newly reviewed amendment.
-This remains the same batch and slice; it creates no queue transition, new batch,
-closeout, or successor selection.
+Slice 1 is complete. The user authorized a second bounded amendment for the
+discovered Change Allowance owner. Slice 2 remains non-executable until a new
+independent planning review is clean against the exact amended dispatch and
+runway. Preserve the existing uncommitted candidate diff. This remains the same
+batch and slice; it creates no queue transition, new batch, closeout, or successor
+selection.
 
 ## Purpose
 
@@ -244,7 +243,7 @@ contract and four active support-skill planning handoffs. This amendment changes
 batch identity, slice shape, planning protocol, store, transaction, state version,
 wrapper, command owner, or CCFG-26 responsibility.
 
-The additional candidate ceiling is exactly:
+The first amendment's additional candidate ceiling was exactly:
 
 - `scripts/architecture_program_runner_phase_contract.py`
 - `scripts/architecture_program_runner_state.py`
@@ -257,10 +256,10 @@ The additional candidate ceiling is exactly:
 - existing focused tests directly covering those modules and skill-routing
   contracts
 
-This is an upper path ceiling, not a mandatory edit list. Start with
-`architecture_program_runner_phase_contract.py`, which current evidence identifies
-as the expected semantic change. Edit `state.py`, `validation.py`, or `command.py`
-only when a focused failing test or direct invariant proves the change is required.
+This was an upper path ceiling, not a mandatory edit list. The second bounded
+amendment retains `architecture_program_runner_phase_contract.py` as the completed
+semantic change but makes `state.py`, `validation.py`, and `command.py` read-only.
+Stop if a focused failing test or direct invariant proves one would need an edit.
 Do not introduce a new harness or generalized runner abstraction.
 
 Preserve the serialized phase identities `select-dispatch`, `create-spec`,
@@ -286,6 +285,50 @@ record. After a clean review, resume Slice 2 under a freshly prepared strict lea
 whose implementation revision is exactly
 `5aa5add1251d1e4b3630a9678fdec244949cf691`. Stop if another live planning caller
 or runner semantic owner exists outside this amended ceiling; do not widen it.
+
+## Slice 2 Second Bounded Amendment
+
+The user authorized a second bounded amendment after final implementation review
+proved that `scripts/architecture_program_runner_change_allowance.py` is the live
+Change Allowance owner for the compatibility `create-spec` preflight. This is a
+required runner-safety correction, not a general runner expansion. The additional
+candidate ceiling is exactly:
+
+- `scripts/architecture_program_runner_change_allowance.py`; and
+- `tests/test_architecture_program_runner_change_allowance.py`.
+
+The correction must permit `create-spec` preflight to accept only the canonical
+planning artifacts owned by the immediately preceding successful complete
+`plan-batch` transaction: its `CURRENT.md`, exact dispatch, exact runway/spec, and
+exact selection-transaction artifact as applicable. Derive or validate those
+paths from authoritative Run State and the exact completed planning transaction or
+receipt.
+
+Do not permit the complete planning root, arbitrary prior-phase `evidence_paths`,
+arbitrary Markdown files, or unrelated project files. Focused regression coverage
+must prove the successful serialized `select-dispatch` to compatibility
+`create-spec` transition, acceptance of the exact transaction-owned paths,
+rejection of unrelated planning and project files, and unchanged execution and
+closeout allowances.
+
+Preserve `select-dispatch`, `create-spec`, `execute`, and `closeout` as the exact
+serialized identities. Do not change the Run State version, transition graph,
+receipt schema, or resume compatibility. Do not edit
+`architecture_program_runner_state.py`,
+`architecture_program_runner_validation.py`, or
+`architecture_program_runner_command.py`; stop if a focused test proves one is
+required.
+
+The required-green skill-contract command is corrected to the current CLI with
+the exact contract-bearing changed skills. Existing catalog, migration, routing,
+and quick-validation checks remain required for the other changed skills.
+
+After a new independent review is clean against the exact second-amended dispatch
+and runway, resume the preserved candidate diff under a fresh strict lease whose
+implementation revision is exactly
+`5aa5add1251d1e4b3630a9678fdec244949cf691`. All CCFG-26 preservation and existing
+no-new-protocol, no-new-wrapper, no-new-store, no-closeout, and no-successor
+constraints remain unchanged.
 
 ## Target Ownership Boundary
 
@@ -389,9 +432,7 @@ Allowed candidate areas across the batch, restricted further by each slice:
 - `skills/batch-runway/**`
 - `scripts/architecture_program_runner.py`
 - `scripts/architecture_program_runner_phase_contract.py`
-- `scripts/architecture_program_runner_state.py`
-- `scripts/architecture_program_runner_validation.py`
-- `scripts/architecture_program_runner_command.py`
+- `scripts/architecture_program_runner_change_allowance.py`
 - `skills/planning-artifacts/SKILL.md`
 - `skills/legacy-removal/SKILL.md`
 - `skills/port-by-contract/SKILL.md`
@@ -406,6 +447,7 @@ Allowed candidate areas across the batch, restricted further by each slice:
 - `CHANGELOG.md`
 - `tests/test_plan_batch.py`
 - `tests/test_architecture_program_runner.py`
+- `tests/test_architecture_program_runner_change_allowance.py`
 - `tests/test_codex_features_manifest.py`
 - `tests/test_skill_routing_rule_ownership.py`
 - `tests/test_skill_contract_catalog.py`
@@ -421,6 +463,10 @@ Allowed candidate areas across the batch, restricted further by each slice:
 
 Read-only except for execution-owned use:
 
+- `scripts/architecture_program_runner_state.py`,
+  `scripts/architecture_program_runner_validation.py`, and
+  `scripts/architecture_program_runner_command.py`; a required semantic edit is a
+  stop condition
 - `scripts/planning_contract.py`
 - `schemas/planning-*.schema.json`
 - planning contract tests
@@ -541,7 +587,7 @@ Every test-changing slice receives delta-only `test-quality-review`. Slices 1 an
 | Slice | Status | Commit | Review | Notes |
 |---|---|---|---|---|
 | 1. Implement installed `plan-batch` owner | Completed | `5aa5add1251d1e4b3630a9678fdec244949cf691` | Clean | Installed owner, exact planning-quality gates, DEC-038 recovery, isolated install, import-topology, and delta-only test-quality proof are green. |
-| 2. Remove displaced planning ownership | Blocked | None | Findings | Exact candidate diff `a2f1b2d443767f41729634a54448bdadfcf7342035be70f282dd8f779cc1d15b` is uncommitted. Independent review proved that the complete `plan-batch` transaction is rejected before compatibility `create-spec` because `scripts/architecture_program_runner_change_allowance.py` is outside the amended ceiling. Await explicit user direction; do not widen scope. |
+| 2. Remove displaced planning ownership | Pending | None | Pending | Second bounded amendment authorizes only the Change Allowance owner and focused test. Preserve exact candidate diff `a2f1b2d443767f41729634a54448bdadfcf7342035be70f282dd8f779cc1d15b`; resume only after exact clean planning review and a fresh strict lease at candidate `5aa5add1251d1e4b3630a9678fdec244949cf691`. |
 | 3. Converge installation and final acceptance | Pending | None | Pending | Clean install, exact acceptance, diagnostics, and final reviews. |
 
 ## Execution Startup Evidence
@@ -756,17 +802,25 @@ Primary allowed areas:
 - `scripts/architecture_program_runner.py`
 - `scripts/architecture_program_runner_phase_contract.py` as the expected semantic
   edit
-- `scripts/architecture_program_runner_state.py`,
-  `scripts/architecture_program_runner_validation.py`, and
-  `scripts/architecture_program_runner_command.py` only after a focused failing
-  test or direct invariant proves an edit is required
+- `scripts/architecture_program_runner_change_allowance.py` only for the exact
+  transaction-owned compatibility `create-spec` allowance correction
 - `skills/planning-artifacts/SKILL.md`, `skills/legacy-removal/SKILL.md`,
   `skills/port-by-contract/SKILL.md`, and `skills/dead-surface-audit/SKILL.md` only
   for their planning-handoff routes
 - `skills/plan-batch/**` only for replacement-consumer corrections
 - focused manifest, lock, routing, workflow, runner, skill-contract, migration,
   projection-routing, scenario, and deletion-evidence tests
+- `tests/test_architecture_program_runner_change_allowance.py` for the required
+  path-specific regression; no new harness
 - `codex-features.json`, `skills-lock.json`, and `CHANGELOG.md`
+
+Read-only runner modules:
+
+- `scripts/architecture_program_runner_state.py`
+- `scripts/architecture_program_runner_validation.py`
+- `scripts/architecture_program_runner_command.py`
+
+Stop if a focused failing test or direct invariant proves one requires an edit.
 
 The new owner implementation, planning contracts/schemas, Planning State semantics,
 `work-batch`, execution agents, and helper behavior are read-only.
@@ -787,6 +841,10 @@ The new owner implementation, planning contracts/schemas, Planning State semanti
 - Rewire the architecture program runner's existing planning phase to the public
   `plan-batch` command contract without a new protocol or embedded planner. Leave
   execution and closeout behavior unchanged.
+- Permit compatibility `create-spec` preflight to accept only the exact canonical
+  `CURRENT.md`, dispatch, runway/spec, and selection-transaction paths owned by
+  the immediately preceding successful complete `plan-batch` transaction. Keep
+  unrelated planning and project paths rejected.
 - Preserve all four serialized phase identities, receipts, and transitions. Make
   the existing planning path one complete `plan-batch` invocation. Keep
   `create-spec` only as a compatibility observation/advance step with no Batch
@@ -812,6 +870,9 @@ The new owner implementation, planning contracts/schemas, Planning State semanti
   CCFG-26 Preservation Contract; no mixed surface is narrowed by inference.
 - The architecture runner uses `plan-batch` and contains no duplicate planning
   decision rules.
+- The compatibility `create-spec` Change Allowance accepts the exact completed
+  transaction-owned planning paths and no planning-root, arbitrary evidence-path,
+  Markdown, or unrelated-project wildcard.
 - `select-dispatch`, `create-spec`, `execute`, and `closeout` remain the exact
   serialized phase identities with receipt and transition compatibility intact;
   the first two are temporary labels owned for migration/removal by CCFG-27 and
@@ -831,6 +892,9 @@ The new owner implementation, planning contracts/schemas, Planning State semanti
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
   tests/test_plan_batch.py \
   tests/test_architecture_program_runner.py \
+  tests/test_architecture_program_runner_phase_contract.py \
+  tests/test_architecture_program_runner_change_allowance.py \
+  tests/test_batch_runway_create_spec_contract.py \
   tests/test_command_owner_behavioral_scenarios.py \
   tests/test_command_owner_scenario_catalog.py \
   tests/test_skill_routing_rule_ownership.py \
@@ -844,9 +908,17 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
   tests/test_deletion_test_vocabulary_ownership.py \
   -k 'legacy_removal or legacy_evidence_no_state_writes or parallel_planning_systems'
 .venv/bin/python scripts/command_owner_scenarios.py validate tests/fixtures/command-owner-scenarios
-.venv/bin/python scripts/skill_contract.py validate --root .
+.venv/bin/python scripts/skill_contract.py validate \
+  --toolchain-root . \
+  skills/architecture-program-runway/SKILL.md \
+  skills/legacy-removal/SKILL.md
+python /home/alacasse/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/batch-runway
+python /home/alacasse/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/plan-batch
+python /home/alacasse/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/planning-artifacts
+python /home/alacasse/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/port-by-contract
+python /home/alacasse/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/dead-surface-audit
 .venv/bin/ruff check --no-cache scripts/architecture_program_runner.py scripts/architecture_program_runner_phase_contract.py scripts/architecture_program_runner_state.py scripts/architecture_program_runner_validation.py scripts/architecture_program_runner_command.py scripts/plan_batch.py tests
-.venv/bin/basedpyright scripts/architecture_program_runner.py scripts/architecture_program_runner_phase_contract.py scripts/architecture_program_runner_state.py scripts/architecture_program_runner_validation.py scripts/architecture_program_runner_command.py scripts/plan_batch.py
+.venv/bin/basedpyright scripts/architecture_program_runner.py scripts/architecture_program_runner_phase_contract.py scripts/architecture_program_runner_change_allowance.py scripts/plan_batch.py
 git diff --check
 ```
 
@@ -864,15 +936,16 @@ CCFG-25-owned failure is accepted.
 
 ### Worker Brief
 
-The spawned `runway_worker` is the coding subagent. Implement only Slice 2 in the
+The spawned `runway_worker` is the coding subagent. Resume only Slice 2 in the
 candidate checkout and do not spawn, delegate to, or wait on other agents. Use the
 coordinator-supplied caller inventory. Remove only planning-owned surfaces; retain
 every CCFG-26 surface and stop on mixed or ambiguous ownership. Do not change the
 new owner, Planning State semantics, `work-batch`, execution agents/contracts, or
-helper behavior. Start with the phase-contract module; treat the other three runner
-modules as conditional. Preserve the serialized phase identities and transition
-graph, and stop on any owner/caller outside the exact amended ceiling. Return exact
-changed paths and verified strict context.
+helper behavior. Preserve the existing candidate diff and make only the focused
+Change Allowance correction and regression authorized by the second amendment.
+Do not edit state, validation, or command modules. Preserve the serialized phase
+identities and transition graph, and stop on any owner/caller outside the exact
+second-amended ceiling. Return exact changed paths and verified strict context.
 
 ### Reviewer Brief
 
@@ -898,7 +971,11 @@ Commit: `refactor: remove legacy planning ownership`
 - Stop if `select-dispatch`, `create-spec`, `execute`, or `closeout`, their receipts,
   or their transition graph would be renamed, removed, versioned, or migrated.
 - Stop if another live planning caller or runner semantic owner is discovered
-  outside the exact amended ceiling.
+  outside the exact second-amended ceiling.
+- Stop if the Change Allowance repair admits the whole planning root, arbitrary
+  evidence paths, arbitrary Markdown, or unrelated project files.
+- Stop if a focused test proves that state, validation, or command modules require
+  edits.
 - Stop on a test that can turn green only by preserving obsolete topology or by
   banning legitimate historical/negative vocabulary.
 
@@ -997,7 +1074,10 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider \
   tests/test_deletion_test_vocabulary_ownership.py \
   -k 'legacy_removal or legacy_evidence_no_state_writes or parallel_planning_systems'
 .venv/bin/python scripts/command_owner_scenarios.py validate tests/fixtures/command-owner-scenarios
-.venv/bin/python scripts/skill_contract.py validate --root .
+.venv/bin/python scripts/skill_contract.py validate \
+  --toolchain-root . \
+  skills/architecture-program-runway/SKILL.md \
+  skills/legacy-removal/SKILL.md
 .venv/bin/ruff check --no-cache .
 .venv/bin/basedpyright
 git diff --check 91179e84c7cfed666be224575db7000ca0ea01b3
