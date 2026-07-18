@@ -27,6 +27,13 @@ inside that spawned agent.
 
 Repo-owned skills are reusable workflow code. Do not hard-code a single project's name, paths, validation commands, cache locations, issue policy, or local planning layout into a generic skill. If a workflow needs project-specific behavior, put those values in that project's instructions, local overlay, active spec, or a repo-owned reference document, then make the skill resolve them or stop when they are missing.
 
+## Temporary stable-runway dogfooding policy
+
+Before planning or executing CCFG-26 through CCFG-29, read and apply the
+[temporary stable-runway dogfooding policy](docs/plans/programs/codex-config/notes/stable-runway-dogfooding-policy.md).
+This repository-local hook is temporary and CCFG-29 removes it only after the
+integrated candidate proves the policy's required behavior.
+
 ## Codex config ownership
 
 When editing a path under `~/.codex`, first check whether it is linked from `/home/alacasse/src/codex-config`:

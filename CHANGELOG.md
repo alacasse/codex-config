@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Minimal stable-runway dogfooding policy
+
+Problem: CCFG-26 through CCFG-29 will run on the stable generation, but their
+vertical-planning, one-slice execution, and bounded mechanical-recovery rules
+were spread across issue prose and runway-specific reminders.
+
+Decision: add one temporary repository-local policy and load it through the
+project instructions. Require explicit vertical ownership and migration
+residue, exactly one incomplete implementation slice per `work-batch`
+invocation, and at most one advisory consultation of the unchanged read-only
+investigator before an avoidable mechanical escalation. Accept manual relaunch,
+preserve existing finalization and closeout behavior, and make CCFG-29 remove
+the policy only after equivalent candidate scenarios pass.
+
+Expected effect: stable planning and execution for the remaining redesign
+batches use one focused temporary contract without adding runner architecture,
+automatic continuation, or new agent authority.
+
 ### Planning-State queue currentness
 
 Problem: the temporary cross-checkout startup helper still reconstructed queue
