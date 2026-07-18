@@ -1,6 +1,6 @@
 # CCFG-26 Slice-Shape Policy Correction Runway
 
-Status: `implementation and final validation complete; closeout pending`
+Status: `completed and reconciled`
 
 ## Purpose
 
