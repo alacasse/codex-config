@@ -1,6 +1,6 @@
 # CCFG-26 Slice-Shape Policy Correction Runway
 
-Status: `queued after clean independent planning review`
+Status: `implementation and final validation complete; closeout pending`
 
 ## Purpose
 
@@ -406,23 +406,59 @@ smaller_alternative_analysis:
 The slice count is a semantic output. No numeric threshold is a hard limit and
 no filler slice may be added.
 
-## Active Ledger
+## Execution Ledger
 
-| Slice | Status | Commit | Validation | Review | Next proof | Notes |
-|---|---|---|---|---|---|---|
-| 1. Resolve and enforce the project slice-shape policy end to end | pending | | | | focused policy, contract, agent, and scenario proof | one vertical contract-narrowing slice; no successor selection |
+No pending or active implementation slices remain. Slice 1 is archived in
+`completed-slices.md` with its exact candidate and canonical commits, strict
+execution receipts, validation, installation, acceptance, and review evidence.
+
+## Slice 1 Commit Receipt
+
+```yaml
+slice: 1
+candidate_commit: 8a9331947ffc8b0b28b8c75ecf6fc60f8b3c2fcd
+candidate_subject: "feat(plan-batch): decouple slice shape from risk"
+canonical_policy_commit: f5cb753b86f64c2a5ee351c68473540ead82da01
+canonical_policy_subject: "docs(ccfg-26): add slice-shape policy config"
+status: committed
+implementation_range: a0835f146857612dcd5a95053d67c53f32449012..8a9331947ffc8b0b28b8c75ecf6fc60f8b3c2fcd
+candidate_diff_sha256: c87ed3577880e564d668f11995a00b8e89bc23b298b1b9e87b52a1985ae75915
+canonical_diff_sha256: 5147efa0b292eebf600cc8478177f0b56bb0ff5e7cc5104f27959349a2a77a24
+files_changed:
+  candidate: 20
+  canonical: 2
+line_delta:
+  candidate: "+1237/-209"
+  canonical: "+5/-0"
+validation: "191 focused tests and 183 subtests; manifest 2 tests and 28 subtests; 82-scenario catalog; Ruff, production BasedPyright, Planning State, and range diff checks green; exact two known-red CCFG-26 assertions unchanged"
+review: "final exact-range delta-only test-quality and runway reviews clean"
+installation: "fresh temporary and isolated candidate homes converged; stable-home status SHA-256 unchanged"
+acceptance: "one pytest process; 25 tests; 82 scenarios; 31 required contracts; 17 families green"
+convergence:
+  phase: closure
+  scope_trend: shrinking
+  new_unknowns: []
+  blockers: []
+  next_proof: same-batch CCFG-26 closeout reconciliation
+```
 
 ## Orchestration Anomalies
 
 ```yaml
-orchestration_anomalies: []
+orchestration_anomalies:
+  - slice: 1
+    severity: medium
+    category: premature_reviewer_lease_handoff
+    observed: The coordinator sent one delta-only re-review handoff before calling the mandatory later-handoff lease refresh.
+    impact: The reviewer was interrupted before its result was accepted; no files, commits, or repository revisions moved.
+    action_taken: The reviewer was stopped, the strict lease and empty read-only scope were refreshed and validated, and the review was restarted from the unchanged diff.
+    follow_up: Resolved in this batch; all accepted later reviews carry freshly prepared exact leases.
 ```
 
 ## Completed Slice Archive
 
-Move the completed row to `completed-slices.md` after its clean focused
-candidate commit and paired canonical policy/reference evidence. The active
-ledger retains only pending or active work.
+Slice 1 is archived in `completed-slices.md`. The execution ledger retains no
+completed implementation chronology and no pending or active row.
 
 ## Slice 1 — Resolve And Enforce The Project Slice-Shape Policy End To End
 
