@@ -22,11 +22,14 @@ slices:
     title: Establish schemas and read-only validation
     risk: migration
     status: pending
+    shape:
+      selected: vertical
+      override_reason: null
     allowed_paths:
       - schemas/**
     validation:
       - pytest tests/test_planning_contract_schema.py
-    vertical_slice:
+    migration_evidence:
       starting_scenario: planning artifacts lack schema validation
       durable_result: planning artifacts validate through one schema owner
       owner_before: prose-only planning contracts

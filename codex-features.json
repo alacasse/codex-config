@@ -29,7 +29,7 @@
       ]
     },
     "planning-contracts": {
-      "version": "1.1.0",
+      "version": "1.2.0",
       "description": "Agent-facing planning contract schemas, validation, and atomic stores.",
       "links": [
         {
@@ -63,7 +63,7 @@
       ]
     },
     "plan-batch": {
-      "version": "2.1.0",
+      "version": "2.2.0",
       "description": "User-facing command-owner skill for selecting one bounded ledger finding and queuing one independently reviewed batch plan.",
       "requires": [
         "planning-contracts",
@@ -79,6 +79,10 @@
         {
           "source": "scripts/plan_batch.py",
           "target": "scripts/plan_batch.py"
+        },
+        {
+          "source": "schemas/slice-shape-policy-v1.schema.json",
+          "target": "schemas/slice-shape-policy-v1.schema.json"
         }
       ]
     },
@@ -169,7 +173,7 @@
       ]
     },
     "custom-agents": {
-      "version": "1.6.0",
+      "version": "1.7.0",
       "description": "Reusable custom Codex agents.",
       "links": [
         {

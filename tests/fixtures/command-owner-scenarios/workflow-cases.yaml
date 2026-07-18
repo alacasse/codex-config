@@ -98,41 +98,82 @@ quality-undecided-draft-non-executable:
   mode: guard
   draft_state: undecided
 
-vertical-migration-none-queued:
+slice-shape-default-vertical-queued:
   operation: planning
   mode: select
-  slice_boundaries: [vertical-owner-migration]
-  vertical_case: none
-vertical-migration-temporary-queued:
+  slice_boundaries: [default-vertical]
+  slice_shape_case: default-vertical
+slice-shape-default-horizontal-queued:
+  operation: planning
+  mode: select
+  slice_boundaries: [default-horizontal]
+  default_shape: horizontal
+  selected_shape: horizontal
+  slice_shape_case: default-horizontal
+slice-shape-required-override-queued:
+  operation: planning
+  mode: select
+  slice_boundaries: [required-override]
+  selected_shape: horizontal
+  override_reason: one durable scenario needs a horizontal boundary
+  slice_shape_case: required-override
+slice-shape-optional-override-queued:
+  operation: planning
+  mode: select
+  slice_boundaries: [optional-override]
+  selected_shape: horizontal
+  require_override_reason: false
+  slice_shape_case: optional-override
+slice-shape-disabled-override-blocked:
+  operation: planning
+  mode: guard
+  slice_boundaries: [disabled-override]
+  selected_shape: horizontal
+  override_reason: a reason cannot enable a disabled override
+  allow_override: false
+  slice_shape_case: disabled-override
+slice-shape-identity-mismatch-blocked:
+  operation: planning
+  mode: guard
+  slice_boundaries: [identity-mismatch]
+  policy_identity: mismatch
+  slice_shape_case: identity-mismatch
+
+migration-evidence-none-queued:
+  operation: planning
+  mode: select
+  slice_boundaries: [owner-migration]
+  migration_case: none
+migration-evidence-temporary-queued:
   operation: planning
   mode: select
   slice_boundaries: [temporary-owner-migration]
-  vertical_case: temporary
-vertical-migration-missing-blocked:
+  migration_case: temporary
+migration-evidence-missing-blocked:
   operation: planning
   mode: guard
-  slice_boundaries: [missing-vertical-contract]
-  vertical_case: missing
-vertical-migration-temporary-incomplete-blocked:
+  slice_boundaries: [missing-migration-evidence]
+  migration_case: missing
+migration-evidence-temporary-incomplete-blocked:
   operation: planning
   mode: guard
   slice_boundaries: [incomplete-migration-matrix]
-  vertical_case: temporary-incomplete
-vertical-migration-none-with-rows-blocked:
+  migration_case: temporary-incomplete
+migration-evidence-none-with-rows-blocked:
   operation: planning
   mode: guard
   slice_boundaries: [retained-migration-matrix]
-  vertical_case: none-with-rows
-vertical-non-migration-without-contract-queued:
+  migration_case: none-with-rows
+non-migration-without-evidence-queued:
   operation: planning
   mode: select
   slice_boundaries: [evidence-only]
-  vertical_case: non-migration
-vertical-mixed-risk-exact-predicate-queued:
+  migration_case: non-migration
+migration-evidence-mixed-risk-exact-predicate-queued:
   operation: planning
   mode: select
-  slice_boundaries: [evidence, vertical-owner-migration]
-  vertical_case: mixed-risk
+  slice_boundaries: [evidence, owner-migration]
+  migration_case: mixed-risk
   batch_kind: mixed-risk
 
 execution-validated-reviewed-committed:

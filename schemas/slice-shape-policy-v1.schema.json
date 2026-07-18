@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/alacasse/codex-config/schemas/slice-shape-policy-v1.schema.json",
+  "title": "Slice Shape Policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "default_shape",
+    "allow_override",
+    "require_override_reason"
+  ],
+  "properties": {
+    "schema": {"const": "slice-shape-policy/v1"},
+    "default_shape": {"enum": ["vertical", "horizontal"]},
+    "allow_override": {"type": "boolean"},
+    "require_override_reason": {"type": "boolean"}
+  }
+}

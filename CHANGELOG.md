@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Project-owned slice-shape planning policy
+
+Problem: candidate planning coupled verticality to `risk: migration`, so
+project defaults, permitted horizontal slices, and migration protection could
+not evolve independently.
+
+Decision: resolve one active-program YAML `slice-shape-policy/v1` through its
+exact `CURRENT.md` reference and bind the source and canonical-payload digests
+through planner, reviewer, evidence packet, deterministic queue gate, and
+artifact validation. Persist policy-consistent shape on every slice, and rename
+the risk-gated extension to `migration_evidence` without weakening its complete
+caller matrix. Replace the current runway schema directly without a historical
+compatibility reader.
+
+Expected effect: vertical and horizontal defaults, required or optional
+override reasons, and disabled overrides fail closed before queue mutation,
+while migration evidence remains independent of shape. Planning contracts are
+now 1.2.0, `plan-batch` is 2.2.0, and custom agents are 1.7.0.
+
 ### Permanent vertical migration planning
 
 Problem: candidate `plan-batch` could queue migration and ownership-transfer

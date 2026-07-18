@@ -118,13 +118,19 @@ def test_planning_quality_scenarios_cover_semantic_scope_approval_and_drafts() -
         "quality-planner-reviewer-coupling-blocked",
         "quality-stale-draft-non-executable",
         "quality-undecided-draft-non-executable",
-        "vertical-migration-none-queued",
-        "vertical-migration-temporary-queued",
-        "vertical-migration-missing-blocked",
-        "vertical-migration-temporary-incomplete-blocked",
-        "vertical-migration-none-with-rows-blocked",
-        "vertical-non-migration-without-contract-queued",
-        "vertical-mixed-risk-exact-predicate-queued",
+        "slice-shape-default-vertical-queued",
+        "slice-shape-default-horizontal-queued",
+        "slice-shape-required-override-queued",
+        "slice-shape-optional-override-queued",
+        "slice-shape-disabled-override-blocked",
+        "slice-shape-identity-mismatch-blocked",
+        "migration-evidence-none-queued",
+        "migration-evidence-temporary-queued",
+        "migration-evidence-missing-blocked",
+        "migration-evidence-temporary-incomplete-blocked",
+        "migration-evidence-none-with-rows-blocked",
+        "non-migration-without-evidence-queued",
+        "migration-evidence-mixed-risk-exact-predicate-queued",
     }
     family_ids = {
         item["id"]
@@ -147,8 +153,10 @@ def test_planning_quality_scenarios_cover_semantic_scope_approval_and_drafts() -
     assert _scenario("quality-undecided-draft-non-executable")[
         "expected_writes"
     ] == []
-    assert _scenario("vertical-migration-missing-blocked")["expected_writes"] == []
-    assert _scenario("vertical-mixed-risk-exact-predicate-queued")[
+    assert _scenario("migration-evidence-missing-blocked")["expected_writes"] == []
+    assert _scenario("slice-shape-disabled-override-blocked")["expected_writes"] == []
+    assert _scenario("slice-shape-identity-mismatch-blocked")["expected_writes"] == []
+    assert _scenario("migration-evidence-mixed-risk-exact-predicate-queued")[
         "expected_writes"
     ] == [
         "workspace/CURRENT.md",

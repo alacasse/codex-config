@@ -22,11 +22,14 @@ slices:
   title: Add artifact lineage writes
   risk: migration
   status: pending
+  shape:
+    selected: vertical
+    override_reason: null
   allowed_paths:
   - scripts/planning_contract.py
   validation:
   - pytest tests/test_planning_contract_artifacts.py
-  vertical_slice:
+  migration_evidence:
     starting_scenario: planning artifacts need revisioned lineage writes
     durable_result: artifact lineage writes bind the selected dispatch and runway
     owner_before: unversioned planning artifact writes

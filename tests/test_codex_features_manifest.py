@@ -234,6 +234,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             {
                 name: features[name]["version"]
                 for name in (
+                    "planning-contracts",
                     "plan-batch",
                     "work-batch",
                     "batch-runway",
@@ -241,10 +242,11 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 )
             },
             {
-                "plan-batch": "2.1.0",
+                "planning-contracts": "1.2.0",
+                "plan-batch": "2.2.0",
                 "work-batch": "1.0.6",
                 "batch-runway": "2.0.0",
-                "custom-agents": "1.6.0",
+                "custom-agents": "1.7.0",
             },
         )
 
@@ -622,7 +624,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             "observed_failure, invariants",
             "additions_beyond_minimum",
             "simpler_alternatives_rejected",
-            "exact\n  machine-readable value `risk: migration`",
+            "exact machine-readable\n  value `risk: migration`",
             "ownership_coexistence: temporary",
             "ownership_coexistence: none",
             "smaller alternative and its rejection reason",
@@ -640,7 +642,8 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             "evidence_packet_sha256: string",
             "canonical independent-review evidence packet",
             "exact\n  machine-readable value `risk: migration`",
-            "vertical_contract: pass | fail",
+            "slice_shape_policy: pass | fail",
+            "migration_evidence: pass | fail",
             "Reject horizontal phase decomposition",
             "implementation_started: false",
             "Do not modify or produce a replacement draft",
@@ -708,6 +711,10 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             "plan-batch": {
                 ("skills/plan-batch", "skills/plan-batch"),
                 ("scripts/plan_batch.py", "scripts/plan_batch.py"),
+                (
+                    "schemas/slice-shape-policy-v1.schema.json",
+                    "schemas/slice-shape-policy-v1.schema.json",
+                ),
             },
             "work-batch": {
                 ("skills/work-batch", "skills/work-batch"),
@@ -859,7 +866,11 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         )
         self.assertEqual(
             {link["source"] for link in plan_batch_feature["links"]},
-            {"skills/plan-batch", "scripts/plan_batch.py"},
+            {
+                "skills/plan-batch",
+                "scripts/plan_batch.py",
+                "schemas/slice-shape-policy-v1.schema.json",
+            },
         )
 
         self.assertIn("complete human-facing planning command", plan_batch)

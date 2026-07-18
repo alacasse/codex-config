@@ -11,13 +11,20 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 import sys
-from collections.abc import Mapping, Sequence
+from collections.abc import Hashable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Literal, cast
+from typing import Any, Literal, cast
+
+import yaml
+from jsonschema import Draft7Validator
+from jsonschema.exceptions import SchemaError
+from yaml.constructor import ConstructorError
+from yaml.nodes import MappingNode
 
 
 _INVOCATION_ROOT = Path(__file__).parent.parent.absolute()
@@ -147,8 +154,15 @@ _QUALITY_FIELDS = frozenset(
     }
 )
 _RATIONALE_FIELDS = frozenset({"slice_id", "kind", "reason"})
-_VERTICAL_CONTRACT_SLICE_RISK = "migration"
-_VERTICAL_SLICE_FIELDS = frozenset(
+_SLICE_SHAPE_POLICY_FIELDS = frozenset(
+    {"path", "source_sha256", "payload_sha256", "payload"}
+)
+_SLICE_SHAPE_POLICY_PAYLOAD_FIELDS = frozenset(
+    {"schema", "default_shape", "allow_override", "require_override_reason"}
+)
+_SLICE_SHAPE_FIELDS = frozenset({"selected", "override_reason"})
+_MIGRATION_EVIDENCE_SLICE_RISK = "migration"
+_MIGRATION_EVIDENCE_FIELDS = frozenset(
     {
         "starting_scenario",
         "durable_result",
@@ -199,6 +213,7 @@ _EVIDENCE_PACKET_FIELDS = frozenset(
         "draft",
         "selected_dispatch",
         "invocation_lineage",
+        "slice_shape_policy",
     }
 )
 _SOURCE_EVIDENCE_FIELDS = frozenset(
@@ -236,7 +251,8 @@ _REVIEW_CHECK_FIELDS = frozenset(
         "lineage",
         "approval_scope",
         "semantic_slices",
-        "vertical_contract",
+        "slice_shape_policy",
+        "migration_evidence",
         "stop_boundary",
     }
 )
@@ -286,6 +302,198 @@ class PlanBatchBlocked(ValueError):
         super().__init__(message)
         self.code = code
         self.next_action = next_action
+
+
+class _UniqueKeySafeLoader(yaml.SafeLoader):
+    """Safe YAML loader that rejects duplicate mapping keys."""
+
+    def construct_mapping(
+        self,
+        node: MappingNode,
+        deep: bool = False,
+    ) -> dict[Hashable, object]:
+        seen: set[Hashable] = set()
+        loader = cast(Any, self)
+        for key_node, _ in node.value:
+            key = cast(object, loader.construct_object(key_node, deep=deep))
+            if not isinstance(key, Hashable):
+                raise ConstructorError(
+                    "while constructing a mapping",
+                    node.start_mark,
+                    "found an unhashable key",
+                    key_node.start_mark,
+                )
+            if key in seen:
+                raise ConstructorError(
+                    "while constructing a mapping",
+                    node.start_mark,
+                    f"found duplicate key {key!r}",
+                    key_node.start_mark,
+                )
+            seen.add(key)
+        return super().construct_mapping(node, deep=deep)
+
+
+_UniqueKeySafeLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    _UniqueKeySafeLoader.construct_mapping,
+)
+
+
+_SLICE_SHAPE_POLICY_REFERENCE = re.compile(
+    r"^- Slice-shape policy path:[ \t]*(?P<path>.*?)[ \t]*$",
+    re.MULTILINE,
+)
+
+
+def resolve_slice_shape_policy(
+    *,
+    current_path: str | Path,
+    program_root: str | Path,
+    toolchain_root: str | Path,
+) -> JsonObject:
+    """Resolve one active-program slice-shape policy before role invocation."""
+
+    current = Path(current_path)
+    root = Path(program_root)
+    toolchain = Path(toolchain_root)
+    try:
+        resolved_root = root.resolve(strict=True)
+        resolved_current = current.resolve(strict=True)
+    except OSError as error:
+        raise PlanBatchBlocked("policy.current", str(error)) from error
+    if resolved_current.parent != resolved_root or not resolved_current.is_file():
+        raise PlanBatchBlocked(
+            "policy.current",
+            "CURRENT.md must be one regular file directly below the active program root",
+        )
+    try:
+        current_text = resolved_current.read_bytes().decode("utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        raise PlanBatchBlocked("policy.current", str(error)) from error
+    references = [match.group("path") for match in _SLICE_SHAPE_POLICY_REFERENCE.finditer(current_text)]
+    if not references:
+        raise PlanBatchBlocked(
+            "policy.reference_missing",
+            "CURRENT.md must declare exactly one Slice-shape policy path",
+        )
+    if len(references) != 1:
+        raise PlanBatchBlocked(
+            "policy.reference_duplicate",
+            "CURRENT.md declares more than one Slice-shape policy path",
+        )
+    relative_text = references[0].strip()
+    relative = Path(relative_text)
+    if (
+        not relative_text
+        or relative.is_absolute()
+        or ".." in relative.parts
+        or "\x00" in relative_text
+    ):
+        raise PlanBatchBlocked(
+            "policy.reference_path",
+            "Slice-shape policy path must be one non-empty repo-relative path without '..'",
+        )
+    source_path = resolved_root / relative
+    try:
+        resolved_source = source_path.resolve(strict=True)
+    except OSError as error:
+        raise PlanBatchBlocked("policy.source_missing", str(error)) from error
+    if not _path_is_within(resolved_source, resolved_root):
+        raise PlanBatchBlocked(
+            "policy.reference_path",
+            "Slice-shape policy path escapes the active program root",
+        )
+    if not resolved_source.is_file():
+        raise PlanBatchBlocked(
+            "policy.source_regular",
+            "Slice-shape policy path must resolve to a regular file",
+        )
+    try:
+        source_bytes = resolved_source.read_bytes()
+        source_text = source_bytes.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise PlanBatchBlocked("policy.source_encoding", str(error)) from error
+    except OSError as error:
+        raise PlanBatchBlocked("policy.source_read", str(error)) from error
+    try:
+        loaded = yaml.load(source_text, Loader=_UniqueKeySafeLoader)
+    except yaml.YAMLError as error:
+        raise PlanBatchBlocked("policy.source_yaml", str(error)) from error
+    if not isinstance(loaded, Mapping):
+        raise PlanBatchBlocked(
+            "policy.source_mapping", "Slice-shape policy YAML must contain one mapping"
+        )
+    payload = cast(Mapping[str, object], loaded)
+    if set(payload) != set(_SLICE_SHAPE_POLICY_PAYLOAD_FIELDS):
+        raise PlanBatchBlocked(
+            "policy.source_fields",
+            "Slice-shape policy must contain exactly schema, default_shape, allow_override, and require_override_reason",
+        )
+    schema_path = toolchain / "schemas/slice-shape-policy-v1.schema.json"
+    try:
+        raw_schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        if not isinstance(raw_schema, Mapping):
+            raise TypeError("policy schema root is not an object")
+        schema = cast(Mapping[str, object], raw_schema)
+        Draft7Validator.check_schema(schema)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, SchemaError, TypeError) as error:
+        raise PlanBatchBlocked("policy.schema_unavailable", str(error)) from error
+    validator = cast(Any, Draft7Validator(schema))
+    errors = sorted(
+        cast(list[Any], list(validator.iter_errors(payload))),
+        key=lambda item: list(item.path),
+    )
+    if errors:
+        raise PlanBatchBlocked("policy.source_schema", errors[0].message)
+    canonical_payload = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
+    return cast(
+        JsonObject,
+        {
+            "path": relative.as_posix(),
+            "source_sha256": hashlib.sha256(source_bytes).hexdigest(),
+            "payload_sha256": hashlib.sha256(canonical_payload).hexdigest(),
+            "payload": _json_copy(payload),
+        },
+    )
+
+
+def _validate_slice_shape_policy_request(
+    raw: Mapping[str, object],
+    *,
+    transaction: SelectionTransactionRequest,
+    context: _BoundContext,
+) -> Mapping[str, object]:
+    _require_exact_fields(raw, _SLICE_SHAPE_POLICY_FIELDS, "slice_shape_policy")
+    for field in ("path", "source_sha256", "payload_sha256"):
+        if field == "path":
+            _require_string(raw, field, "slice_shape_policy")
+        else:
+            _require_hash(
+                raw,
+                field,
+                "slice_shape_policy",
+                length=_HEX_64_LENGTH,
+            )
+    payload = _require_mapping(raw, "payload", "slice_shape_policy")
+    _require_exact_fields(
+        payload,
+        _SLICE_SHAPE_POLICY_PAYLOAD_FIELDS,
+        "slice_shape_policy.payload",
+    )
+    expected = resolve_slice_shape_policy(
+        current_path=transaction.current_path,
+        program_root=transaction.current_path.parent,
+        toolchain_root=context.toolchain_root,
+    )
+    if _thaw_json(raw) != _thaw_json(expected):
+        raise PlanBatchBlocked(
+            "policy.identity_mismatch",
+            "slice-shape policy path, source digest, payload digest, or payload mismatches the active program source",
+        )
+    return raw
 
 
 def execute_plan_batch(
@@ -352,6 +560,7 @@ def _prepare_plan(request: Mapping[str, object]) -> _PreparedPlan:
             "reviewer_result",
             "approvals",
             "review_evidence",
+            "slice_shape_policy",
             "validation_catalog",
             "correction_history",
             "transaction",
@@ -366,6 +575,11 @@ def _prepare_plan(request: Mapping[str, object]) -> _PreparedPlan:
     transaction = _bind_transaction(transaction_raw, context)
     planning_state = _require_mapping(request, "planning_state", "request")
     _validate_planning_state(planning_state, transaction, context)
+    slice_shape_policy = _validate_slice_shape_policy_request(
+        _require_mapping(request, "slice_shape_policy", "request"),
+        transaction=transaction,
+        context=context,
+    )
 
     planner_invocation = _require_mapping(request, "planner_invocation", "request")
     _validate_invocation(
@@ -384,7 +598,7 @@ def _prepare_plan(request: Mapping[str, object]) -> _PreparedPlan:
         _validate_selection_and_basis(draft, transaction, context)
     )
     approvals = _require_sequence(request, "approvals", "request")
-    _validate_quality(draft, approvals)
+    _validate_quality(draft, approvals, slice_shape_policy=slice_shape_policy)
     _validate_validation_profile(
         draft,
         _require_sequence(request, "validation_catalog", "request"),
@@ -404,6 +618,7 @@ def _prepare_plan(request: Mapping[str, object]) -> _PreparedPlan:
         selected_source_id=source_id,
         selected_source_commit=source_commit,
         selected_source_section=source_section,
+        slice_shape_policy=slice_shape_policy,
     )
     _validate_review(
         _require_mapping(request, "reviewer_result", "request"),
@@ -847,7 +1062,10 @@ def _validate_selection_and_basis(
 
 
 def _validate_quality(
-    draft: Mapping[str, object], raw_approvals: Sequence[object]
+    draft: Mapping[str, object],
+    raw_approvals: Sequence[object],
+    *,
+    slice_shape_policy: Mapping[str, object],
 ) -> None:
     quality = _require_mapping(draft, "quality", "planner_result.draft")
     _require_exact_fields(quality, _QUALITY_FIELDS, "planner_result.draft.quality")
@@ -894,7 +1112,11 @@ def _validate_quality(
     slice_ids: list[str] = []
     for index, value in enumerate(slices):
         slice_item = _mapping_item(value, index, "planner_result.draft.runway.slices")
-        _validate_vertical_contract(slice_item, index=index)
+        _validate_slice_contract(
+            slice_item,
+            index=index,
+            slice_shape_policy=slice_shape_policy,
+        )
         slice_ids.append(_require_string(slice_item, "id", f"runway.slices[{index}]"))
     rationale_ids: list[str] = []
     for index, value in enumerate(raw_rationales):
@@ -961,33 +1183,80 @@ def _validate_quality(
         )
 
 
-def _validate_vertical_contract(
-    slice_item: Mapping[str, object], *, index: int
+def _validate_slice_contract(
+    slice_item: Mapping[str, object],
+    *,
+    index: int,
+    slice_shape_policy: Mapping[str, object],
 ) -> None:
-    """Enforce the permanent vertical contract only for exact migration risk."""
-
-    if slice_item.get("risk") != _VERTICAL_CONTRACT_SLICE_RISK:
-        return
+    """Enforce policy-selected shape and independent migration evidence."""
 
     label = f"runway.slices[{index}]"
-    raw_vertical = slice_item.get("vertical_slice")
-    raw_matrix = slice_item.get("migration_matrix")
-    if not isinstance(raw_vertical, Mapping):
+    raw_shape = slice_item.get("shape")
+    if not isinstance(raw_shape, Mapping):
         raise PlanBatchBlocked(
-            "quality.vertical_contract",
-            f"{label} with risk migration requires vertical_slice",
+            "quality.slice_shape", f"{label} requires policy-selected shape"
+        )
+    shape = cast(Mapping[str, object], raw_shape)
+    if set(shape) != set(_SLICE_SHAPE_FIELDS):
+        raise PlanBatchBlocked(
+            "quality.slice_shape",
+            f"{label}.shape must contain exactly selected and override_reason",
+        )
+    payload = _require_mapping(slice_shape_policy, "payload", "slice_shape_policy")
+    selected = shape.get("selected")
+    default = payload.get("default_shape")
+    reason = shape.get("override_reason")
+    if selected not in {"vertical", "horizontal"}:
+        raise PlanBatchBlocked(
+            "quality.slice_shape", f"{label}.shape.selected is unsupported"
+        )
+    if selected == default:
+        if reason is not None:
+            raise PlanBatchBlocked(
+                "quality.slice_shape",
+                f"{label}.shape.override_reason must be null when selected follows the configured default",
+            )
+    else:
+        if payload.get("allow_override") is not True:
+            raise PlanBatchBlocked(
+                "quality.slice_shape",
+                f"{label}.shape.selected differs from the configured default while overrides are disabled",
+            )
+        if payload.get("require_override_reason") is True and (
+            not isinstance(reason, str) or not reason.strip()
+        ):
+            raise PlanBatchBlocked(
+                "quality.slice_shape",
+                f"{label}.shape.override_reason must be non-empty for this override",
+            )
+        if reason is not None and (not isinstance(reason, str) or not reason.strip()):
+            raise PlanBatchBlocked(
+                "quality.slice_shape",
+                f"{label}.shape.override_reason must be null or a non-empty string",
+            )
+
+    if slice_item.get("risk") != _MIGRATION_EVIDENCE_SLICE_RISK:
+        return
+
+    raw_evidence = slice_item.get("migration_evidence")
+    raw_matrix = slice_item.get("migration_matrix")
+    if not isinstance(raw_evidence, Mapping):
+        raise PlanBatchBlocked(
+            "quality.migration_evidence",
+            f"{label} with risk migration requires migration_evidence",
         )
     if not isinstance(raw_matrix, Mapping):
         raise PlanBatchBlocked(
-            "quality.vertical_contract",
+            "quality.migration_evidence",
             f"{label} with risk migration requires migration_matrix",
         )
-    vertical = cast(Mapping[str, object], raw_vertical)
+    evidence = cast(Mapping[str, object], raw_evidence)
     matrix = cast(Mapping[str, object], raw_matrix)
-    if set(vertical) != set(_VERTICAL_SLICE_FIELDS):
+    if set(evidence) != set(_MIGRATION_EVIDENCE_FIELDS):
         raise PlanBatchBlocked(
-            "quality.vertical_contract",
-            f"{label}.vertical_slice must contain every exact vertical field",
+            "quality.migration_evidence",
+            f"{label}.migration_evidence must contain every exact migration field",
         )
 
     for field in (
@@ -998,55 +1267,55 @@ def _validate_vertical_contract(
         "independently_usable_state",
         "rollback_boundary",
     ):
-        value = vertical.get(field)
+        value = evidence.get(field)
         if not isinstance(value, str) or not value.strip():
             raise PlanBatchBlocked(
-                "quality.vertical_contract",
-                f"{label}.vertical_slice.{field} must be non-empty",
+                "quality.migration_evidence",
+                f"{label}.migration_evidence.{field} must be non-empty",
             )
     for field, allow_empty in (
         ("migrated_callers", False),
         ("focused_validation", False),
         ("temporary_residue", True),
     ):
-        _validate_vertical_string_list(
-            vertical.get(field),
-            label=f"{label}.vertical_slice.{field}",
+        _validate_migration_string_list(
+            evidence.get(field),
+            label=f"{label}.migration_evidence.{field}",
             allow_empty=allow_empty,
         )
 
-    coexistence = vertical.get("ownership_coexistence")
+    coexistence = evidence.get("ownership_coexistence")
     if coexistence not in {"none", "temporary"}:
         raise PlanBatchBlocked(
-            "quality.vertical_contract",
-            f"{label}.vertical_slice.ownership_coexistence must be none or temporary",
+            "quality.migration_evidence",
+            f"{label}.migration_evidence.ownership_coexistence must be none or temporary",
         )
     if coexistence == "none" and matrix:
         raise PlanBatchBlocked(
-            "quality.vertical_contract",
+            "quality.migration_evidence",
             f"{label} with ownership_coexistence none requires an empty migration_matrix",
         )
     if coexistence == "temporary" and not matrix:
         raise PlanBatchBlocked(
-            "quality.vertical_contract",
+            "quality.migration_evidence",
             f"{label} with temporary ownership coexistence requires a non-empty migration_matrix",
         )
 
     for scenario, raw_row in matrix.items():
         if not scenario.strip():
             raise PlanBatchBlocked(
-                "quality.vertical_contract",
+                "quality.migration_evidence",
                 f"{label}.migration_matrix scenario keys must be non-empty",
             )
         if not isinstance(raw_row, Mapping):
             raise PlanBatchBlocked(
-                "quality.vertical_contract",
+                "quality.migration_evidence",
                 f"{label}.migration_matrix.{scenario} must contain every exact ownership field",
             )
         row = cast(Mapping[str, object], raw_row)
         if set(row) != set(_MIGRATION_MATRIX_ROW_FIELDS):
             raise PlanBatchBlocked(
-                "quality.vertical_contract",
+                "quality.migration_evidence",
                 f"{label}.migration_matrix.{scenario} must contain every exact ownership field",
             )
         for field in (
@@ -1058,33 +1327,33 @@ def _validate_vertical_contract(
             value = row.get(field)
             if not isinstance(value, str) or not value.strip():
                 raise PlanBatchBlocked(
-                    "quality.vertical_contract",
+                    "quality.migration_evidence",
                     f"{label}.migration_matrix.{scenario}.{field} must be non-empty",
                 )
         if row.get("status") not in {"pending", "migrated"}:
             raise PlanBatchBlocked(
-                "quality.vertical_contract",
+                "quality.migration_evidence",
                 f"{label}.migration_matrix.{scenario}.status must be pending or migrated",
             )
 
 
-def _validate_vertical_string_list(
+def _validate_migration_string_list(
     value: object, *, label: str, allow_empty: bool
 ) -> None:
     if not isinstance(value, list) or (not allow_empty and not value):
         requirement = "a list" if allow_empty else "a non-empty list"
         raise PlanBatchBlocked(
-            "quality.vertical_contract", f"{label} must be {requirement}"
+            "quality.migration_evidence", f"{label} must be {requirement}"
         )
     values = cast(list[object], value)
     if any(not isinstance(item, str) or not item.strip() for item in values):
         raise PlanBatchBlocked(
-            "quality.vertical_contract", f"{label} values must be non-empty strings"
+            "quality.migration_evidence", f"{label} values must be non-empty strings"
         )
     strings = cast(list[str], values)
     if len(strings) != len(set(strings)):
         raise PlanBatchBlocked(
-            "quality.vertical_contract", f"{label} values must be unique"
+            "quality.migration_evidence", f"{label} values must be unique"
         )
 
 
@@ -1274,6 +1543,7 @@ def _validate_review_evidence(
     selected_source_id: str,
     selected_source_commit: str,
     selected_source_section: str,
+    slice_shape_policy: Mapping[str, object],
 ) -> str:
     _require_exact_fields(raw, _REVIEW_EVIDENCE_FIELDS, "review_evidence")
     packet = _require_mapping(raw, "packet", "review_evidence")
@@ -1363,6 +1633,11 @@ def _validate_review_evidence(
     exact_bindings: tuple[tuple[str, object, object], ...] = (
         ("proportionality", packet.get("proportionality"), proportionality),
         ("approvals", packet.get("approvals"), approvals),
+        (
+            "slice_shape_policy",
+            packet.get("slice_shape_policy"),
+            slice_shape_policy,
+        ),
         ("draft", packet.get("draft"), draft),
         (
             "selected_dispatch",

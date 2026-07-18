@@ -10,6 +10,7 @@ from typing import Any
 
 import pytest
 import yaml
+from jsonschema import Draft7Validator
 
 from scripts.planning_contract import (
     ProducerIdentity,
@@ -99,6 +100,40 @@ def test_all_five_schemas_are_draft_07_and_recursively_closed_world() -> None:
         ]["const"] == name
         _assert_objects_are_closed_world(schema)
 
+    policy_schema = json.loads(
+        _schema_path("slice-shape-policy/v1").read_text(encoding="utf-8")
+    )
+    assert policy_schema["$schema"] == "http://json-schema.org/draft-07/schema#"
+    assert policy_schema["properties"]["schema"]["const"] == "slice-shape-policy/v1"
+    _assert_objects_are_closed_world(policy_schema)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {
+            "schema": "slice-shape-policy/v1",
+            "default_shape": "vertical",
+            "allow_override": True,
+            "require_override_reason": True,
+        },
+        {
+            "schema": "slice-shape-policy/v1",
+            "default_shape": "horizontal",
+            "allow_override": True,
+            "require_override_reason": False,
+        },
+    ],
+)
+def test_slice_shape_policy_schema_accepts_all_supported_values(
+    payload: dict[str, object],
+) -> None:
+    schema = json.loads(
+        _schema_path("slice-shape-policy/v1").read_text(encoding="utf-8")
+    )
+
+    assert list(Draft7Validator(schema).iter_errors(payload)) == []
+
 
 def test_valid_fixture_catalog_parses_through_one_public_interface() -> None:
     result = validate_planning_contracts([VALID], toolchain_root=REPO_ROOT)
@@ -108,7 +143,7 @@ def test_valid_fixture_catalog_parses_through_one_public_interface() -> None:
     assert {item.contract["schema"] for item in result.contracts} == set(SCHEMA_NAMES)
 
 
-def test_accepts_migration_with_complete_vertical_contract_and_no_coexistence(
+def test_accepts_migration_with_complete_evidence_and_no_coexistence(
     tmp_path: Path,
 ) -> None:
     result = _validate_runway_contract(tmp_path, _contract_from_fixture("runway"))
@@ -121,7 +156,7 @@ def test_accepts_migration_with_temporary_coexistence_and_complete_matrix(
 ) -> None:
     contract = _contract_from_fixture("runway")
     slice_item = contract["slices"][0]
-    slice_item["vertical_slice"]["ownership_coexistence"] = "temporary"
+    slice_item["migration_evidence"]["ownership_coexistence"] = "temporary"
     slice_item["migration_matrix"] = {"fixture caller": _migration_matrix_row()}
 
     result = _validate_runway_contract(tmp_path, contract)
@@ -129,9 +164,9 @@ def test_accepts_migration_with_temporary_coexistence_and_complete_matrix(
     assert result.is_valid  # type: ignore[attr-defined]
 
 
-def test_rejects_migration_missing_vertical_slice(tmp_path: Path) -> None:
+def test_rejects_migration_missing_evidence(tmp_path: Path) -> None:
     contract = _contract_from_fixture("runway")
-    del contract["slices"][0]["vertical_slice"]
+    del contract["slices"][0]["migration_evidence"]
 
     result = _validate_runway_contract(tmp_path, contract)
 
@@ -152,7 +187,7 @@ def test_rejects_empty_required_vertical_string_lists(
     tmp_path: Path, field: str
 ) -> None:
     contract = _contract_from_fixture("runway")
-    contract["slices"][0]["vertical_slice"][field] = []
+    contract["slices"][0]["migration_evidence"][field] = []
 
     result = _validate_runway_contract(tmp_path, contract)
 
@@ -165,7 +200,7 @@ def test_rejects_temporary_coexistence_with_empty_or_incomplete_matrix(
 ) -> None:
     contract = _contract_from_fixture("runway")
     slice_item = contract["slices"][0]
-    slice_item["vertical_slice"]["ownership_coexistence"] = "temporary"
+    slice_item["migration_evidence"]["ownership_coexistence"] = "temporary"
     matrix = {"fixture caller": _migration_matrix_row()}
     if matrix_case == "empty":
         matrix = {}
@@ -189,11 +224,11 @@ def test_rejects_no_coexistence_with_retained_matrix_rows(tmp_path: Path) -> Non
     assert not result.is_valid  # type: ignore[attr-defined]
 
 
-def test_accepts_non_migration_without_vertical_contract(tmp_path: Path) -> None:
+def test_accepts_non_migration_without_migration_evidence(tmp_path: Path) -> None:
     contract = _contract_from_fixture("runway")
     slice_item = contract["slices"][0]
     slice_item["risk"] = "evidence-only"
-    del slice_item["vertical_slice"]
+    del slice_item["migration_evidence"]
     del slice_item["migration_matrix"]
 
     result = _validate_runway_contract(tmp_path, contract)
@@ -209,7 +244,7 @@ def test_applies_mixed_risk_contract_only_to_migration_slices(
     evidence_slice = copy.deepcopy(migration_slice)
     evidence_slice["id"] = "evidence"
     evidence_slice["risk"] = "evidence-only"
-    del evidence_slice["vertical_slice"]
+    del evidence_slice["migration_evidence"]
     del evidence_slice["migration_matrix"]
     contract["batch"]["kind"] = "mixed-risk"
     contract["slices"] = [evidence_slice, migration_slice]

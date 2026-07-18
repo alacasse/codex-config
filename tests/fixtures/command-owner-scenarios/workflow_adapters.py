@@ -36,6 +36,7 @@ from scripts.planning_contract import (  # noqa: E402
     validate_planning_contracts,
     write_closeout_artifact,
 )
+from scripts.plan_batch import resolve_slice_shape_policy  # noqa: E402
 
 
 COMMIT = "0123456789abcdef0123456789abcdef01234567"
@@ -732,8 +733,10 @@ def _run_planning(
                 "planning.no-queue-mutation.green",
                 "planning.installed-owner.green",
             ]
-            if case.get("vertical_case") is not None:
-                blocked_validation.append("planning.vertical-contract.green")
+            if case.get("slice_shape_case") is not None:
+                blocked_validation.append("planning.slice-shape-policy.green")
+            if case.get("migration_case") is not None:
+                blocked_validation.append("planning.migration-evidence.green")
             return (
                 "planning:blocked",
                 _changed_paths(before, workspace),
@@ -750,8 +753,10 @@ def _run_planning(
             validation.append("planning.fixture-role-boundary.green")
         if cast(bool, case.get("residual_complexity", False)):
             validation.append("planning.approval-scoped.green")
-        if case.get("vertical_case") is not None:
-            validation.append("planning.vertical-contract.green")
+        if case.get("slice_shape_case") is not None:
+            validation.append("planning.slice-shape-policy.green")
+        if case.get("migration_case") is not None:
+            validation.append("planning.migration-evidence.green")
     current = read_current_document(request.current_path, toolchain_root=repo_root)
     assert current.contract["queued_runway"] == "runway.md"
     assert current.contract["selected_dispatch"] is None
@@ -961,6 +966,13 @@ def _planning_owner_request(
     approval = case.get("approval")
     if isinstance(approval, Mapping):
         approvals.append(dict(cast(Mapping[str, object], approval)))
+    slice_shape_policy = resolve_slice_shape_policy(
+        current_path=request.current_path,
+        program_root=request.current_path.parent,
+        toolchain_root=repo_root,
+    )
+    if case.get("policy_identity") == "mismatch":
+        slice_shape_policy["payload_sha256"] = "0" * 64
     owner_request: dict[str, object] = {
         "interface": "plan-batch/v1",
         "context": {
@@ -974,6 +986,7 @@ def _planning_owner_request(
             "canonical_state_mutation_allowed": False,
         },
         "planning_state": _planning_state_payload(current),
+        "slice_shape_policy": slice_shape_policy,
         "planner_invocation": {
             "role": "batch_planner",
             "caller": "plan-batch",
@@ -1009,7 +1022,8 @@ def _planning_owner_request(
                 "lineage": "pass",
                 "approval_scope": "pass",
                 "semantic_slices": "pass",
-                "vertical_contract": "pass",
+                "slice_shape_policy": "pass",
+                "migration_evidence": "pass",
                 "stop_boundary": "pass",
             },
             "corrections": [],
@@ -1166,6 +1180,7 @@ def _refresh_planning_review_evidence(owner_request: dict[str, object]) -> None:
         },
         "proportionality": _thaw(quality["proportionality"]),
         "approvals": _thaw(owner_request["approvals"]),
+        "slice_shape_policy": _thaw(owner_request["slice_shape_policy"]),
         "draft": _thaw(draft),
         "selected_dispatch": _thaw(draft["dispatch"]),
         "invocation_lineage": {
@@ -1578,6 +1593,23 @@ def _selection_workspace(
         repo_root / "tests/fixtures/planning-contracts/ledger/per-finding-valid/LEDGER.md",
         ledger_path,
     )
+    current_path.write_text(
+        current_path.read_text(encoding="utf-8")
+        + "\n- Slice-shape policy path: notes/slice-shape-policy.yaml\n",
+        encoding="utf-8",
+    )
+    notes = workspace / "notes"
+    notes.mkdir()
+    default_shape = cast(str, case.get("default_shape", "vertical"))
+    allow_override = cast(bool, case.get("allow_override", True))
+    require_override_reason = cast(bool, case.get("require_override_reason", True))
+    (notes / "slice-shape-policy.yaml").write_text(
+        "schema: slice-shape-policy/v1\n"
+        f"default_shape: {default_shape}\n"
+        f"allow_override: {str(allow_override).lower()}\n"
+        f"require_override_reason: {str(require_override_reason).lower()}\n",
+        encoding="utf-8",
+    )
     initial = read_current_document(current_path, toolchain_root=repo_root)
     commit = subprocess.check_output(
         ["git", "-C", str(repo_root), "rev-parse", "HEAD"], text=True
@@ -1612,12 +1644,16 @@ def _selection_workspace(
             "title": boundary.replace("-", " ").title(),
             "risk": "evidence-only",
             "status": "pending",
+            "shape": {
+                "selected": cast(str, case.get("selected_shape", default_shape)),
+                "override_reason": case.get("override_reason"),
+            },
             "allowed_paths": [f"fixture/{boundary}"],
             "validation": [f"fixture.{boundary}.green"],
         }
         for index, boundary in enumerate(boundaries, start=1)
     ]
-    _apply_vertical_scenario(runway, case)
+    _apply_migration_scenario(runway, case)
     batch_kind = cast(str, case.get("batch_kind", "migration"))
     cast(dict[str, object], runway["batch"])["kind"] = batch_kind
     cast(dict[str, object], dispatch["scope"])["batch_kind"] = batch_kind
@@ -1664,10 +1700,10 @@ def _selection_workspace(
     )
 
 
-def _apply_vertical_scenario(
+def _apply_migration_scenario(
     runway: dict[str, object], case: Mapping[str, object]
 ) -> None:
-    scenario = case.get("vertical_case")
+    scenario = case.get("migration_case")
     if scenario is None or scenario == "non-migration":
         return
 
@@ -1686,26 +1722,26 @@ def _apply_vertical_scenario(
         }
         else "none"
     )
-    vertical, matrix = _vertical_scenario_contract(coexistence)
+    evidence, matrix = _migration_scenario_evidence(coexistence)
     if scenario == "temporary-incomplete":
         row = cast(dict[str, object], matrix["fixture planning caller"])
         del row["removal_slice_or_condition"]
     elif scenario == "none-with-rows":
-        _, matrix = _vertical_scenario_contract("temporary")
-    target["vertical_slice"] = vertical
+        _, matrix = _migration_scenario_evidence("temporary")
+    target["migration_evidence"] = evidence
     target["migration_matrix"] = matrix
 
 
-def _vertical_scenario_contract(
+def _migration_scenario_evidence(
     coexistence: str,
 ) -> tuple[dict[str, object], dict[str, object]]:
-    vertical: dict[str, object] = {
+    evidence: dict[str, object] = {
         "starting_scenario": "one caller still uses the previous planning owner",
         "durable_result": "that caller uses the permanent planning owner",
         "owner_before": "previous planning owner",
         "owner_after": "permanent plan-batch owner",
         "migrated_callers": ["fixture planning caller"],
-        "focused_validation": ["planning.vertical-contract.green"],
+        "focused_validation": ["planning.migration-evidence.green"],
         "independently_usable_state": "the migrated caller queues reviewed plans",
         "rollback_boundary": "revert the caller migration",
         "temporary_residue": [],
@@ -1720,7 +1756,7 @@ def _vertical_scenario_contract(
             "status": "pending",
             "removal_slice_or_condition": "focused vertical tests are green",
         }
-    return vertical, matrix
+    return evidence, matrix
 
 
 def _seed_existing_state(

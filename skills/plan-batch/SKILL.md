@@ -89,14 +89,54 @@ evidence-only or decision-only work with destructive cleanup, contract
 narrowing, or migration, declare the batch kind as `mixed-risk`, name the risky
 slices, and list the approval gate for each risky slice.
 
-### Vertical Migration Contract
+### Project Slice-Shape Policy
 
-Apply this contract only when a slice carries the exact machine-readable value
-`risk: migration`; never infer applicability from prose. Ownership-transfer
-implementation slices must use that risk. Every migration slice must include:
+Before invoking either planning role, resolve exactly one active-program
+reference from `CURRENT.md`:
+
+```text
+- Slice-shape policy path: one/repo-relative/path.yaml
+```
+
+Load the installed `scripts/plan_batch.py` from the active Codex home and call
+its private planning mechanism `resolve_slice_shape_policy` with the exact
+`CURRENT.md`, active program root, and toolchain root. Stop before role
+invocation or queue mutation on a missing or duplicate reference, absolute or
+escaping path, symlink escape, missing or non-regular file, unreadable UTF-8,
+invalid or non-mapping YAML, or schema-invalid payload. Do not use an implicit
+or hard-coded fallback and do not hard-code a project path in this reusable
+skill.
+
+The resolver returns the repo-relative path, SHA-256 of exact YAML source
+bytes, SHA-256 of canonical JSON payload bytes, and the complete parsed policy.
+Pass that same exact identity to `batch_planner`, `batch_plan_reviewer`, the
+independent-review evidence packet, and the deterministic `plan-batch/v1`
+request. Any missing or mismatched identity blocks before queue mutation.
+
+Every slice persists:
 
 ```yaml
-vertical_slice:
+shape:
+  selected: vertical | horizontal
+  override_reason: null | non-empty string
+```
+
+Following `default_shape` is not an override and requires a null reason. A
+different shape is rejected when `allow_override` is false. When overrides are
+allowed, `require_override_reason: true` requires a non-empty reason; false
+allows null. Deterministic validation checks these mechanical conditions.
+Independent review alone judges whether a supplied reason is architecturally
+persuasive.
+
+### Migration Evidence Contract
+
+Apply migration evidence only when a slice carries the exact machine-readable
+value `risk: migration`; never infer applicability from prose or selected
+shape. Ownership-transfer implementation slices must use that risk. Every
+migration slice must include:
+
+```yaml
+migration_evidence:
   starting_scenario: string
   durable_result: string
   owner_before: string
@@ -116,15 +156,18 @@ scenario row must contain exactly `current_owner`, `future_owner`, `reason`,
 `ownership_coexistence: none` requires an explicit empty matrix. Never leave a
 caller ambiguous or add a silent fallback.
 
-Start from one scenario and the durable state produced for it. Derive slice
-count from independently useful ownership, behavior, validation, and rollback
-boundaries. Prefer a vertical sequence over horizontal implementation phases.
+This evidence preserves current migration protections; it is not the final
+general definition of vertical or horizontal slices. Start from one scenario
+and the durable state produced for it. Derive slice count from independently
+useful ownership, behavior, validation, and rollback boundaries. Prefer a
+vertical sequence over horizontal implementation phases when the project
+policy selects vertical shape.
 When a boundary is clearly oversized, record a smaller alternative and its
 rejection reason in the proportionality evidence. File counts and line deltas
 are advisory review evidence, not hard limits. Keep focused validation scoped to
 the slice scenario and keep final-range validation separate. A cohesive
 one-slice migration remains valid. Non-migration slices remain valid without
-vertical migration fields, including in a `mixed-risk` batch.
+migration evidence fields, including in a `mixed-risk` batch.
 
 ### Validation Command Status Classes
 
@@ -217,7 +260,11 @@ single-root batches.
    creation targets without creating them. Stop on any mismatch. This
    mechanical step grants no selection, queue, creation, install, generation,
    implementation, or closeout authority.
-6. Directly invoke registered `batch_planner` with the exact Planning State and
+6. Resolve the active program's project slice-shape policy through the installed
+   `scripts/plan_batch.py` mechanism above. Preserve its exact path, source
+   digest, canonical-payload digest, and parsed payload. Stop before planner
+   invocation on any resolution or validation failure.
+7. Directly invoke registered `batch_planner` with the exact Planning State and
    ledger basis, selected finding and source evidence, user constraints,
    planning-contract schemas, root/generation context, and validation catalogs.
    Treat that catalog as opaque identifiers: do not resolve an identifier as a
@@ -225,16 +272,20 @@ single-root batches.
    identifier from that catalog and the complete
    proportionality record: observed failure, invariants, minimum viable change,
    proposed change, justified additions beyond minimum, rejected simpler
-   alternatives, and verdict. For every exact `risk: migration` slice, require
-   the complete vertical migration contract and coexistence-consistent matrix
-   above. Require `batch-plan-draft/v1`. A blocked or malformed result stops
+   alternatives, and verdict. Supply the exact resolved slice-shape policy and
+   require every slice to persist its selected shape. For every exact
+   `risk: migration` slice, require complete migration evidence and a
+   coexistence-consistent matrix above. Require `batch-plan-draft/v1`. A
+   blocked or malformed result stops
    without queue mutation.
-7. Check the draft before review:
+8. Check the draft before review:
    - one complete dispatch and one complete runway bind the same single finding,
      batch, roots, producers, and immutable source revisions;
    - the proposed change is the minimum viable change and proportional;
    - a cohesive plan may have one slice; multiple slices each need a concrete
      producer/consumer, risk, validation, migration, or contract boundary;
+   - every slice shape is mechanically consistent with the resolved policy;
+     horizontal override persuasiveness remains an independent-review judgment;
    - every exact migration-risk slice starts from one scenario, produces one
      durable independently usable state, names ownership movement and residue,
      and carries the required matrix; non-migration slices are not inferred to
@@ -246,14 +297,14 @@ single-root batches.
      dispatch `approval_gates`, residual-complexity scopes, and destructive-
      action scopes; unresolved decisions and missing approvals remain blocked;
    - implementation has not started and successor selection is forbidden.
-8. Assemble one canonical independent-review evidence packet in the command
+9. Assemble one canonical independent-review evidence packet in the command
    request. Include exact source contents and digests, explicit user constraints,
    Planning State current/validate diagnostic identities, proportionality,
-   ordered approvals, the complete draft, selected dispatch, and both direct
-   invocation records. Compute canonical SHA-256 digests of that packet, the
+   ordered approvals, exact resolved slice-shape policy identity, the complete
+   draft, selected dispatch, and both direct invocation records. Compute canonical SHA-256 digests of that packet, the
    dispatch, complete draft, and approval record. Supply the packet directly to
    registered `batch_plan_reviewer`; the planner must not select or frame it.
-9. Require `batch-plan-review/v1` with all four exact digests. Any added,
+10. Require `batch-plan-review/v1` with all four exact digests. Any added,
    removed, reordered, or changed approval after review requires a fresh
    independent review before queue mutation. On
    `correction_required`, return only the corrections to `batch_planner`, keep
@@ -262,23 +313,24 @@ single-root batches.
    ephemeral command request. Stop if the same correction repeats against
    an unchanged draft, scope expands, currentness moves, or evidence remains
    unresolved. `blocked` and any non-clean check remain non-executable.
-10. Only after a clean exact-draft review and every exact approval gate passes,
+11. Only after a clean exact-draft review and every exact approval gate passes,
     invoke installed `scripts/plan_batch.py` with `plan-batch/v1`. Pass the two
-    direct invocation receipts, role results, approvals, immutable Planning
+    direct invocation receipts, role results, approvals, exact slice-shape
+    policy identity, immutable Planning
     State and ledger basis, authorized transaction paths, and existing
     planning-contract payloads. The script validates these gates and applies the
     existing four-stage DEC-038 transaction. Do not call the store directly.
-11. If DEC-038 was interrupted, resume only the same transaction ID after every
+12. If DEC-038 was interrupted, resume only the same transaction ID after every
     immutable binding and live Planning State fact matches. Preserve partial
     evidence. Exact completed replay must produce no duplicate effects.
-12. Report the selected finding, dispatch, runway, and transaction result. Stop
+13. Report the selected finding, dispatch, runway, and transaction result. Stop
     before worker delegation, validation execution, commits, implementation,
     closeout, or successor selection.
 
 ## Deterministic Boundary Contract
 
 `scripts/plan_batch.py` accepts exactly `interface`, `context`,
-`planning_state`, both direct role invocation records and results, `approvals`,
+`planning_state`, `slice_shape_policy`, both direct role invocation records and results, `approvals`,
 the independent `review_evidence` packet, caller-supplied opaque-ID
 `validation_catalog`,
 ephemeral `correction_history`, and `transaction`. It writes only the authorized
@@ -289,7 +341,8 @@ The planner result is exactly `batch-plan-draft/v1`; the reviewer result is
 exactly `batch-plan-review/v1`. The script verifies selected-dispatch, full
 draft, exact approval-record, and independent-evidence-packet hashes,
 one-finding lineage, the selected catalogued validation profile, semantic slice
-rationales, exact-risk vertical migration fields and caller matrices, the
+rationales, policy-consistent per-slice shape, exact-risk migration evidence
+and caller matrices, the
 complete proportionality record, exact approval gates, stop boundaries,
 correction history, and transaction inputs before DEC-038 can write.
 Agent invocation remains in this skill; the script never invokes roles.

@@ -27,29 +27,30 @@
     "slices": {
       "type": "array",
       "items": {
-        "type": "object", "additionalProperties": false, "required": ["id", "title", "risk", "status", "allowed_paths", "validation"],
+        "type": "object", "additionalProperties": false, "required": ["id", "title", "risk", "status", "shape", "allowed_paths", "validation"],
         "properties": {
           "id": {"$ref": "#/definitions/nonEmptyString"}, "title": {"$ref": "#/definitions/nonEmptyString"},
           "risk": {"$ref": "#/definitions/nonEmptyString"}, "status": {"enum": ["pending", "active", "blocked", "completed"]},
+          "shape": {"$ref": "#/definitions/sliceShape"},
           "allowed_paths": {"$ref": "#/definitions/stringList"}, "validation": {"$ref": "#/definitions/stringList"},
-          "vertical_slice": {"$ref": "#/definitions/verticalSlice"},
+          "migration_evidence": {"$ref": "#/definitions/migrationEvidence"},
           "migration_matrix": {"$ref": "#/definitions/migrationMatrix"}
         },
         "allOf": [
           {
             "if": {"properties": {"risk": {"const": "migration"}}, "required": ["risk"]},
             "then": {
-              "required": ["vertical_slice", "migration_matrix"],
+              "required": ["migration_evidence", "migration_matrix"],
               "oneOf": [
                 {
                   "properties": {
-                    "vertical_slice": {"properties": {"ownership_coexistence": {"const": "temporary"}}},
+                    "migration_evidence": {"properties": {"ownership_coexistence": {"const": "temporary"}}},
                     "migration_matrix": {"minProperties": 1}
                   }
                 },
                 {
                   "properties": {
-                    "vertical_slice": {"properties": {"ownership_coexistence": {"const": "none"}}},
+                    "migration_evidence": {"properties": {"ownership_coexistence": {"const": "none"}}},
                     "migration_matrix": {"maxProperties": 0}
                   }
                 }
@@ -72,7 +73,21 @@
   "definitions": {
     "nonEmptyString": {"type": "string", "minLength": 1, "pattern": ".*\\S.*"},
     "stringList": {"type": "array", "items": {"$ref": "#/definitions/nonEmptyString"}, "uniqueItems": true},
-    "verticalSlice": {
+    "sliceShape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selected", "override_reason"],
+      "properties": {
+        "selected": {"enum": ["vertical", "horizontal"]},
+        "override_reason": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/definitions/nonEmptyString"}
+          ]
+        }
+      }
+    },
+    "migrationEvidence": {
       "type": "object",
       "additionalProperties": false,
       "required": ["starting_scenario", "durable_result", "owner_before", "owner_after", "migrated_callers", "focused_validation", "independently_usable_state", "rollback_boundary", "temporary_residue", "ownership_coexistence"],

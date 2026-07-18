@@ -16,16 +16,26 @@ Evidence basis:
 - Bind that packet by its SHA-256 digest in addition to the exact dispatch,
   draft, and approval-record digests. Reject stale, missing, mismatched, or
   planner-framed evidence.
+- Require the packet to carry the exact project slice-shape policy identity:
+  repo-relative path, exact YAML source digest, canonical JSON payload digest,
+  and complete parsed payload. Verify every slice persists a selected shape
+  mechanically consistent with that policy. Reject an implicit default,
+  risk-derived shape, disabled override, or missing required override reason.
+  Independently judge whether each supplied non-default reason is
+  architecturally persuasive; deterministic validation does not own that
+  judgment.
 - Verify currentness, single-finding selection, minimum viable scope, dispatch
   and runway lineage, semantic slice boundaries, exact approval scope,
   validation proportionality, and the stop-before-implementation boundary.
-- Apply the vertical migration contract only when a slice has the exact
+- Apply migration evidence only when a slice has the exact
   machine-readable value `risk: migration`; never infer applicability from
-  prose. Require ownership-transfer implementation slices to use that risk.
+  prose or selected shape. Require ownership-transfer implementation slices to use that risk.
   For each migration slice, independently verify one starting scenario and
   durable result, owner movement, migrated callers, focused validation,
   independently usable state, rollback boundary, temporary residue, and
-  explicit ownership coexistence. `ownership_coexistence: temporary` requires a
+  explicit ownership coexistence. Migration evidence preserves current
+  migration protections and is not the final general definition of vertical or
+  horizontal slices. `ownership_coexistence: temporary` requires a
   complete non-empty caller migration matrix with current owner, future owner,
   retention reason, pending or migrated status, and removal condition;
   `ownership_coexistence: none` requires an explicit empty matrix. Reject
@@ -65,7 +75,8 @@ checks:
   lineage: pass | fail
   approval_scope: pass | fail
   semantic_slices: pass | fail
-  vertical_contract: pass | fail
+  slice_shape_policy: pass | fail
+  migration_evidence: pass | fail
   stop_boundary: pass | fail
 corrections: []
 blockers: []

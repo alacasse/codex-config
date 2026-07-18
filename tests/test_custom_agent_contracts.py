@@ -483,14 +483,22 @@ class CustomAgentContractTests(unittest.TestCase):
         self.assertNotIn("12 lines or fewer", active_text)
         self.assertNotIn("10 lines or fewer", active_text)
 
-    def test_planning_roles_share_the_exact_vertical_migration_predicate(self) -> None:
+    def test_planning_roles_share_slice_shape_policy_and_migration_evidence(self) -> None:
         planner = self.instructions("batch_planner")
         reviewer = self.instructions("batch_plan_reviewer")
 
         for role, instructions in (("planner", planner), ("reviewer", reviewer)):
+            for identity_component in (
+                "repo-relative path",
+                "exact YAML source digest",
+                "canonical JSON payload digest",
+                "complete parsed payload",
+            ):
+                with self.subTest(role=role, identity_component=identity_component):
+                    self.assertIn(identity_component, instructions)
             for required in (
                 "exact machine-readable value `risk: migration`",
-                "never infer applicability from prose",
+                "never infer applicability from prose or selected shape",
                 "ownership-transfer implementation slices",
                 "ownership_coexistence: temporary",
                 "ownership_coexistence: none",
@@ -499,11 +507,18 @@ class CustomAgentContractTests(unittest.TestCase):
                 "horizontal",
                 "hard numeric limits",
                 "final-range validation separate",
+                "migration evidence",
             ):
                 with self.subTest(role=role, requirement=required):
                     self.assertIn(required, instructions)
 
-        self.assertIn("vertical_contract: pass | fail", reviewer)
+        self.assertIn("slice_shape_policy: pass | fail", reviewer)
+        self.assertIn("migration_evidence: pass | fail", reviewer)
+        self.assertIn("Do not resolve another policy", planner)
+        self.assertIn(
+            "Require the packet to carry the exact project slice-shape policy identity",
+            reviewer,
+        )
 
 
 if __name__ == "__main__":

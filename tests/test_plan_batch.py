@@ -14,11 +14,16 @@ from typing import Any
 
 import pytest
 
-from scripts.plan_batch import execute_plan_batch
+from scripts.plan_batch import (
+    PlanBatchBlocked,
+    execute_plan_batch,
+    resolve_slice_shape_policy,
+)
 from scripts.planning_contract import (
     ProducerIdentity,
     apply_current_document,
     apply_ledger_decision,
+    read_artifact_document,
     read_current_document,
     read_ledger_document,
     validate_planning_contracts,
@@ -96,16 +101,16 @@ def _producer(schema: str, commit: str) -> dict[str, str]:
     }
 
 
-def _vertical_contract(
+def _migration_evidence(
     coexistence: str = "none",
 ) -> tuple[dict[str, object], dict[str, object]]:
-    vertical: dict[str, object] = {
+    evidence: dict[str, object] = {
         "starting_scenario": "one caller still uses the previous planning owner",
         "durable_result": "that caller uses the permanent planning owner",
         "owner_before": "previous planning owner",
         "owner_after": "permanent plan-batch owner",
         "migrated_callers": ["fixture planning caller"],
-        "focused_validation": ["fixture.vertical.green"],
+        "focused_validation": ["fixture.migration.green"],
         "independently_usable_state": "the migrated caller queues reviewed plans",
         "rollback_boundary": "revert the caller migration",
         "temporary_residue": [],
@@ -120,7 +125,33 @@ def _vertical_contract(
             "status": "pending",
             "removal_slice_or_condition": "focused vertical tests are green",
         }
-    return vertical, matrix
+    return evidence, matrix
+
+
+def _write_policy(
+    program_root: Path,
+    *,
+    default_shape: str = "vertical",
+    allow_override: bool = True,
+    require_override_reason: bool = True,
+) -> None:
+    notes = program_root / "notes"
+    notes.mkdir(parents=True, exist_ok=True)
+    (notes / "slice-shape-policy.yaml").write_text(
+        "schema: slice-shape-policy/v1\n"
+        f"default_shape: {default_shape}\n"
+        f"allow_override: {str(allow_override).lower()}\n"
+        f"require_override_reason: {str(require_override_reason).lower()}\n",
+        encoding="utf-8",
+    )
+
+
+def _attach_policy_reference(current_path: Path) -> None:
+    current_path.write_text(
+        current_path.read_text(encoding="utf-8")
+        + "\n- Slice-shape policy path: notes/slice-shape-policy.yaml\n",
+        encoding="utf-8",
+    )
 
 
 def _state(current_path: Path) -> dict[str, object]:
@@ -148,6 +179,8 @@ def _request(tmp_path: Path, *, boundaries: tuple[str, ...] = ("owner-seam",)) -
     ledger_path = planning_root / "LEDGER.md"
     shutil.copy2(CURRENT_FIXTURE, current_path)
     shutil.copy2(LEDGER_FIXTURE, ledger_path)
+    _attach_policy_reference(current_path)
+    _write_policy(planning_root)
     current = read_current_document(current_path, toolchain_root=REPO_ROOT)
     commit = _head()
     contracts = _contracts()
@@ -177,6 +210,7 @@ def _request(tmp_path: Path, *, boundaries: tuple[str, ...] = ("owner-seam",)) -
             "title": boundary.replace("-", " ").title(),
             "risk": "evidence-only",
             "status": "pending",
+            "shape": {"selected": "vertical", "override_reason": None},
             "allowed_paths": [f"fixture/{boundary}"],
             "validation": [f"fixture.{boundary}.green"],
         }
@@ -245,6 +279,11 @@ def _request(tmp_path: Path, *, boundaries: tuple[str, ...] = ("owner-seam",)) -
             "canonical_state_mutation_allowed": False,
         },
         "planning_state": _state(current_path),
+        "slice_shape_policy": resolve_slice_shape_policy(
+            current_path=current_path,
+            program_root=planning_root,
+            toolchain_root=REPO_ROOT,
+        ),
         "planner_invocation": {
             "role": "batch_planner",
             "caller": "plan-batch",
@@ -280,7 +319,8 @@ def _request(tmp_path: Path, *, boundaries: tuple[str, ...] = ("owner-seam",)) -
                 "lineage": "pass",
                 "approval_scope": "pass",
                 "semantic_slices": "pass",
-                "vertical_contract": "pass",
+                "slice_shape_policy": "pass",
+                "migration_evidence": "pass",
                 "stop_boundary": "pass",
             },
             "corrections": [],
@@ -354,6 +394,7 @@ def _redraft(request: dict[str, Any]) -> None:
         },
         "proportionality": copy.deepcopy(draft["quality"]["proportionality"]),
         "approvals": copy.deepcopy(request["approvals"]),
+        "slice_shape_policy": copy.deepcopy(request["slice_shape_policy"]),
         "draft": copy.deepcopy(draft),
         "selected_dispatch": copy.deepcopy(draft["dispatch"]),
         "invocation_lineage": {
@@ -396,6 +437,32 @@ def _review_lineage_snapshot(request: dict[str, Any]) -> bytes:
         sort_keys=True,
         separators=(",", ":"),
     ).encode()
+
+
+def _persisted_slice(request: dict[str, Any]) -> dict[str, object]:
+    lineage = request["transaction"]["lineage"]
+    raw_producer = lineage["runway_producer"]
+    snapshot = read_artifact_document(
+        lineage["runway_path"],
+        toolchain_root=REPO_ROOT,
+        expected_schema="planning-runway/v1",
+        expected_producer_identity=ProducerIdentity(
+            raw_producer["toolchain_generation"],
+            raw_producer["toolchain_commit"],
+            raw_producer["schema_version"],
+        ),
+    )
+    slices = snapshot.contract["slices"]
+    assert isinstance(slices, tuple)
+    slice_item = slices[0]
+    assert isinstance(slice_item, Mapping)
+    return _thaw(slice_item)
+
+
+def _persisted_shape(request: dict[str, Any]) -> dict[str, object]:
+    shape = _persisted_slice(request)["shape"]
+    assert isinstance(shape, Mapping)
+    return _thaw(shape)
 
 
 def test_queues_one_reviewed_batch_and_exact_replay_is_idempotent(tmp_path: Path) -> None:
@@ -577,18 +644,315 @@ def test_cohesive_single_slice_and_justified_multi_slice_both_queue(tmp_path: Pa
     assert execute_plan_batch(multiple)["outcome"] == "queued"
 
 
-def test_accepts_migration_with_complete_vertical_contract_and_no_coexistence(
+def _refresh_request_policy(
+    request: dict[str, Any],
+    *,
+    default_shape: str,
+    allow_override: bool,
+    require_override_reason: bool,
+) -> None:
+    current_path = Path(request["transaction"]["current_path"])
+    _write_policy(
+        current_path.parent,
+        default_shape=default_shape,
+        allow_override=allow_override,
+        require_override_reason=require_override_reason,
+    )
+    request["slice_shape_policy"] = resolve_slice_shape_policy(
+        current_path=current_path,
+        program_root=current_path.parent,
+        toolchain_root=REPO_ROOT,
+    )
+
+
+def test_accepts_vertical_configured_default_and_persists_shape(tmp_path: Path) -> None:
+    request = _request(tmp_path)
+
+    result = execute_plan_batch(request)
+
+    assert result["outcome"] == "queued"
+    assert _persisted_shape(request) == {
+        "selected": "vertical",
+        "override_reason": None,
+    }
+
+
+def test_accepts_horizontal_configured_default_with_null_reason(tmp_path: Path) -> None:
+    request = _request(tmp_path)
+    _refresh_request_policy(
+        request,
+        default_shape="horizontal",
+        allow_override=True,
+        require_override_reason=True,
+    )
+    request["planner_result"]["draft"]["runway"]["slices"][0]["shape"] = {
+        "selected": "horizontal",
+        "override_reason": None,
+    }
+    _redraft(request)
+
+    result = execute_plan_batch(request)
+
+    assert result["outcome"] == "queued"
+    assert _persisted_shape(request) == {
+        "selected": "horizontal",
+        "override_reason": None,
+    }
+
+
+def test_accepts_permitted_horizontal_override_with_required_reason(
+    tmp_path: Path,
+) -> None:
+    request = _request(tmp_path)
+    request["planner_result"]["draft"]["runway"]["slices"][0]["shape"] = {
+        "selected": "horizontal",
+        "override_reason": "the durable scenario crosses one horizontal boundary",
+    }
+    _redraft(request)
+
+    result = execute_plan_batch(request)
+
+    assert result["outcome"] == "queued"
+    assert _persisted_shape(request) == {
+        "selected": "horizontal",
+        "override_reason": "the durable scenario crosses one horizontal boundary",
+    }
+
+
+def test_accepts_override_without_reason_when_policy_makes_it_optional(
+    tmp_path: Path,
+) -> None:
+    request = _request(tmp_path)
+    _refresh_request_policy(
+        request,
+        default_shape="vertical",
+        allow_override=True,
+        require_override_reason=False,
+    )
+    request["planner_result"]["draft"]["runway"]["slices"][0]["shape"] = {
+        "selected": "horizontal",
+        "override_reason": None,
+    }
+    _redraft(request)
+
+    result = execute_plan_batch(request)
+
+    assert result["outcome"] == "queued"
+    assert _persisted_shape(request) == {
+        "selected": "horizontal",
+        "override_reason": None,
+    }
+
+
+@pytest.mark.parametrize("default_shape", ["vertical", "horizontal"])
+def test_rejects_override_reason_when_selected_shape_follows_default(
+    tmp_path: Path, default_shape: str
+) -> None:
+    request = _request(tmp_path)
+    _refresh_request_policy(
+        request,
+        default_shape=default_shape,
+        allow_override=True,
+        require_override_reason=True,
+    )
+    request["planner_result"]["draft"]["runway"]["slices"][0]["shape"] = {
+        "selected": default_shape,
+        "override_reason": "following the default is not an override",
+    }
+    _redraft(request)
+
+    result = execute_plan_batch(request)
+
+    assert result["outcome"] == "blocked"
+    assert result["blockers"][0]["code"] == "quality.slice_shape"
+    assert not Path(request["transaction"]["transaction_path"]).exists()
+
+
+@pytest.mark.parametrize("reason", [None, "", "   "])
+def test_rejects_required_override_reason_before_queue_mutation(
+    tmp_path: Path, reason: str | None
+) -> None:
+    request = _request(tmp_path)
+    request["planner_result"]["draft"]["runway"]["slices"][0]["shape"] = {
+        "selected": "horizontal",
+        "override_reason": reason,
+    }
+    _redraft(request)
+
+    result = execute_plan_batch(request)
+
+    assert result["blockers"][0]["code"] == "quality.slice_shape"
+    assert not Path(request["transaction"]["transaction_path"]).exists()
+
+
+def test_rejects_override_when_policy_disables_it(tmp_path: Path) -> None:
+    request = _request(tmp_path)
+    _refresh_request_policy(
+        request,
+        default_shape="vertical",
+        allow_override=False,
+        require_override_reason=True,
+    )
+    request["planner_result"]["draft"]["runway"]["slices"][0]["shape"] = {
+        "selected": "horizontal",
+        "override_reason": "a reason cannot enable a disabled override",
+    }
+    _redraft(request)
+
+    result = execute_plan_batch(request)
+
+    assert result["blockers"][0]["code"] == "quality.slice_shape"
+    assert not Path(request["transaction"]["transaction_path"]).exists()
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["path", "source_sha256", "payload_sha256", "payload"],
+)
+def test_policy_identity_mismatch_blocks_before_queue_mutation(
+    tmp_path: Path, field: str
+) -> None:
+    request = _request(tmp_path)
+    if field == "payload":
+        request["slice_shape_policy"]["payload"]["default_shape"] = "horizontal"
+    elif field == "path":
+        request["slice_shape_policy"][field] = "notes/other.yaml"
+    else:
+        request["slice_shape_policy"][field] = "0" * 64
+    before = _file_snapshot(tmp_path / "plans")
+
+    result = execute_plan_batch(request)
+
+    assert result["blockers"][0]["code"] == "policy.identity_mismatch"
+    assert _file_snapshot(tmp_path / "plans") == before
+
+
+@pytest.mark.parametrize(
+    ("case", "expected_code"),
+    [
+        ("missing-reference", "policy.reference_missing"),
+        ("duplicate-reference", "policy.reference_duplicate"),
+        ("absolute-path", "policy.reference_path"),
+        ("escaping-path", "policy.reference_path"),
+        ("missing-file", "policy.source_missing"),
+        ("non-regular", "policy.source_regular"),
+        ("symlink-escape", "policy.reference_path"),
+        ("invalid-utf8", "policy.source_encoding"),
+        ("invalid-yaml", "policy.source_yaml"),
+        ("duplicate-policy-key", "policy.source_yaml"),
+        ("non-mapping", "policy.source_mapping"),
+        ("unknown-field", "policy.source_fields"),
+        ("missing-field", "policy.source_fields"),
+        ("mistyped-field", "policy.source_schema"),
+        ("unsupported-schema", "policy.source_schema"),
+        ("unsupported-default", "policy.source_schema"),
+    ],
+)
+def test_resolution_failure_blocks_before_role_invocation(
+    tmp_path: Path, case: str, expected_code: str
+) -> None:
+    program_root = tmp_path / "program"
+    notes = program_root / "notes"
+    notes.mkdir(parents=True)
+    current_path = program_root / "CURRENT.md"
+    reference = "notes/slice-shape-policy.yaml"
+    if case == "absolute-path":
+        reference = "/tmp/slice-shape-policy.yaml"
+    elif case == "escaping-path":
+        reference = "../slice-shape-policy.yaml"
+    current_text = "# Current\n"
+    if case != "missing-reference":
+        current_text += f"- Slice-shape policy path: {reference}\n"
+    if case == "duplicate-reference":
+        current_text += f"- Slice-shape policy path: {reference}\n"
+    current_path.write_text(current_text, encoding="utf-8")
+    policy_path = notes / "slice-shape-policy.yaml"
+    valid = (
+        "schema: slice-shape-policy/v1\n"
+        "default_shape: vertical\n"
+        "allow_override: true\n"
+        "require_override_reason: true\n"
+    )
+    if case == "non-regular":
+        policy_path.mkdir()
+    elif case == "symlink-escape":
+        outside = tmp_path / "outside.yaml"
+        outside.write_text(valid, encoding="utf-8")
+        policy_path.symlink_to(outside)
+    elif case == "invalid-utf8":
+        policy_path.write_bytes(b"\xff")
+    elif case == "invalid-yaml":
+        policy_path.write_text("[", encoding="utf-8")
+    elif case == "duplicate-policy-key":
+        policy_path.write_text(
+            valid + "default_shape: horizontal\n",
+            encoding="utf-8",
+        )
+    elif case == "non-mapping":
+        policy_path.write_text("- vertical\n", encoding="utf-8")
+    elif case == "unknown-field":
+        policy_path.write_text(valid + "unknown: true\n", encoding="utf-8")
+    elif case == "missing-field":
+        policy_path.write_text(valid.replace("allow_override: true\n", ""), encoding="utf-8")
+    elif case == "mistyped-field":
+        policy_path.write_text(valid.replace("allow_override: true", "allow_override: yes-please"), encoding="utf-8")
+    elif case == "unsupported-schema":
+        policy_path.write_text(valid.replace("slice-shape-policy/v1", "slice-shape-policy/v2"), encoding="utf-8")
+    elif case == "unsupported-default":
+        policy_path.write_text(valid.replace("default_shape: vertical", "default_shape: diagonal"), encoding="utf-8")
+    elif case not in {"missing-file", "absolute-path", "escaping-path", "missing-reference", "duplicate-reference"}:
+        policy_path.write_text(valid, encoding="utf-8")
+
+    with pytest.raises(PlanBatchBlocked) as raised:
+        resolve_slice_shape_policy(
+            current_path=current_path,
+            program_root=program_root,
+            toolchain_root=REPO_ROOT,
+        )
+
+    assert raised.value.code == expected_code
+    assert not (program_root / "selection.md").exists()
+
+
+def test_accepts_migration_with_complete_evidence_and_no_coexistence(
     tmp_path: Path,
 ) -> None:
     request = _request(tmp_path)
     slice_item = request["planner_result"]["draft"]["runway"]["slices"][0]
-    vertical, matrix = _vertical_contract()
+    evidence, matrix = _migration_evidence()
     slice_item.update(
-        risk="migration", vertical_slice=vertical, migration_matrix=matrix
+        risk="migration", migration_evidence=evidence, migration_matrix=matrix
     )
     _redraft(request)
 
     assert execute_plan_batch(request)["outcome"] == "queued"
+
+
+def test_migration_risk_and_horizontal_shape_override_are_independent(
+    tmp_path: Path,
+) -> None:
+    request = _request(tmp_path)
+    slice_item = request["planner_result"]["draft"]["runway"]["slices"][0]
+    evidence, matrix = _migration_evidence("temporary")
+    shape = {
+        "selected": "horizontal",
+        "override_reason": "the migration crosses one horizontal owner boundary",
+    }
+    slice_item.update(
+        risk="migration",
+        shape=shape,
+        migration_evidence=evidence,
+        migration_matrix=matrix,
+    )
+    _redraft(request)
+
+    result = execute_plan_batch(request)
+    persisted = _persisted_slice(request)
+
+    assert result["outcome"] == "queued"
+    assert persisted["shape"] == shape
+    assert persisted["migration_evidence"] == evidence
+    assert persisted["migration_matrix"] == matrix
 
 
 def test_accepts_migration_with_temporary_coexistence_and_complete_matrix(
@@ -596,16 +960,16 @@ def test_accepts_migration_with_temporary_coexistence_and_complete_matrix(
 ) -> None:
     request = _request(tmp_path)
     slice_item = request["planner_result"]["draft"]["runway"]["slices"][0]
-    vertical, matrix = _vertical_contract("temporary")
+    evidence, matrix = _migration_evidence("temporary")
     slice_item.update(
-        risk="migration", vertical_slice=vertical, migration_matrix=matrix
+        risk="migration", migration_evidence=evidence, migration_matrix=matrix
     )
     _redraft(request)
 
     assert execute_plan_batch(request)["outcome"] == "queued"
 
 
-def test_rejects_migration_missing_vertical_slice(tmp_path: Path) -> None:
+def test_rejects_migration_missing_evidence(tmp_path: Path) -> None:
     request = _request(tmp_path)
     request["planner_result"]["draft"]["runway"]["slices"][0]["risk"] = "migration"
     _redraft(request)
@@ -613,7 +977,7 @@ def test_rejects_migration_missing_vertical_slice(tmp_path: Path) -> None:
     result = execute_plan_batch(request)
 
     assert result["outcome"] == "blocked"
-    assert result["blockers"][0]["code"] == "quality.vertical_contract"
+    assert result["blockers"][0]["code"] == "quality.migration_evidence"
     assert not Path(request["transaction"]["transaction_path"]).exists()
 
 
@@ -622,9 +986,9 @@ def test_rejects_migration_missing_matrix_without_queue_mutation(
 ) -> None:
     request = _request(tmp_path)
     slice_item = request["planner_result"]["draft"]["runway"]["slices"][0]
-    vertical, matrix = _vertical_contract()
+    evidence, matrix = _migration_evidence()
     slice_item.update(
-        risk="migration", vertical_slice=vertical, migration_matrix=matrix
+        risk="migration", migration_evidence=evidence, migration_matrix=matrix
     )
     del slice_item["migration_matrix"]
     _redraft(request)
@@ -635,7 +999,7 @@ def test_rejects_migration_missing_matrix_without_queue_mutation(
     result = execute_plan_batch(request)
 
     assert result["outcome"] == "blocked"
-    assert result["blockers"][0]["code"] == "quality.vertical_contract"
+    assert result["blockers"][0]["code"] == "quality.migration_evidence"
     assert _state(Path(request["transaction"]["current_path"])) == state_before
     assert _file_snapshot(planning_root) == files_before
     assert not Path(request["transaction"]["transaction_path"]).exists()
@@ -647,41 +1011,41 @@ def test_rejects_temporary_coexistence_with_empty_or_incomplete_matrix(
 ) -> None:
     request = _request(tmp_path)
     slice_item = request["planner_result"]["draft"]["runway"]["slices"][0]
-    vertical, matrix = _vertical_contract("temporary")
+    evidence, matrix = _migration_evidence("temporary")
     if matrix_case == "empty":
         matrix = {}
     else:
         del matrix["fixture planning caller"]["removal_slice_or_condition"]
     slice_item.update(
-        risk="migration", vertical_slice=vertical, migration_matrix=matrix
+        risk="migration", migration_evidence=evidence, migration_matrix=matrix
     )
     _redraft(request)
 
     result = execute_plan_batch(request)
 
     assert result["outcome"] == "blocked"
-    assert result["blockers"][0]["code"] == "quality.vertical_contract"
+    assert result["blockers"][0]["code"] == "quality.migration_evidence"
     assert not Path(request["transaction"]["transaction_path"]).exists()
 
 
 def test_rejects_no_coexistence_with_retained_matrix_rows(tmp_path: Path) -> None:
     request = _request(tmp_path)
     slice_item = request["planner_result"]["draft"]["runway"]["slices"][0]
-    vertical, matrix = _vertical_contract("temporary")
-    vertical["ownership_coexistence"] = "none"
+    evidence, matrix = _migration_evidence("temporary")
+    evidence["ownership_coexistence"] = "none"
     slice_item.update(
-        risk="migration", vertical_slice=vertical, migration_matrix=matrix
+        risk="migration", migration_evidence=evidence, migration_matrix=matrix
     )
     _redraft(request)
 
     result = execute_plan_batch(request)
 
     assert result["outcome"] == "blocked"
-    assert result["blockers"][0]["code"] == "quality.vertical_contract"
+    assert result["blockers"][0]["code"] == "quality.migration_evidence"
     assert not Path(request["transaction"]["transaction_path"]).exists()
 
 
-def test_accepts_non_migration_without_vertical_contract(tmp_path: Path) -> None:
+def test_accepts_non_migration_without_migration_evidence(tmp_path: Path) -> None:
     request = _request(tmp_path)
 
     assert execute_plan_batch(request)["outcome"] == "queued"
@@ -696,9 +1060,9 @@ def test_applies_mixed_risk_contract_only_to_migration_slices(
     draft["runway"]["batch"]["kind"] = "mixed-risk"
     request["transaction"]["lineage"]["batch_kind"] = "mixed-risk"
     migration_slice = draft["runway"]["slices"][1]
-    vertical, matrix = _vertical_contract()
+    evidence, matrix = _migration_evidence()
     migration_slice.update(
-        risk="migration", vertical_slice=vertical, migration_matrix=matrix
+        risk="migration", migration_evidence=evidence, migration_matrix=matrix
     )
     _redraft(request)
 
@@ -913,21 +1277,32 @@ def test_roles_are_direct_and_reviewer_correction_routes_to_planner(tmp_path: Pa
     assert correction_result["next_action"] == "return_to_batch_planner"
 
 
-@pytest.mark.parametrize("review_state", ["missing", "failed"])
-def test_independent_review_must_check_the_exact_vertical_contract(
-    tmp_path: Path, review_state: str
+@pytest.mark.parametrize(
+    ("check_name", "review_state", "expected_code"),
+    [
+        ("slice_shape_policy", "missing", "request.fields"),
+        ("slice_shape_policy", "failed", "review.checks"),
+        ("migration_evidence", "missing", "request.fields"),
+        ("migration_evidence", "failed", "review.checks"),
+    ],
+)
+def test_independent_review_must_check_shape_policy_and_migration_evidence(
+    tmp_path: Path,
+    check_name: str,
+    review_state: str,
+    expected_code: str,
 ) -> None:
     request = _request(tmp_path)
     checks = request["reviewer_result"]["checks"]
     if review_state == "missing":
-        del checks["vertical_contract"]
+        del checks[check_name]
     else:
-        checks["vertical_contract"] = "fail"
+        checks[check_name] = "fail"
 
     result = execute_plan_batch(request)
 
     assert result["outcome"] == "blocked"
-    assert result["blockers"][0]["code"] in {"request.fields", "review.checks"}
+    assert result["blockers"][0]["code"] == expected_code
     assert not Path(request["transaction"]["transaction_path"]).exists()
 
 
