@@ -8,11 +8,10 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`
-- Active batch execution status: `queued`
+- Queued batch path or ID: `None`
+- Active batch execution status: `None`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -34,7 +33,7 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
-- Pending ledger row: CCFG-26 through queued preparation batch CCFG-26A.
+- Prepared ledger row: CCFG-26 after completed preparation batch CCFG-26A.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -57,12 +56,16 @@
   `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
 - Live CCFG-34 intake and CCFG-26 replanning amendment:
   `docs/plans/programs/codex-config/findings/github-issue-62-stable-runway-dogfooding-bootstrap.md`
-- Queued CCFG-26A dispatch:
+- Completed CCFG-26A dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/dispatch.md`
-- Queued CCFG-26A runway:
+- Completed CCFG-26A runway:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`
 - CCFG-26A planning review and bounded amendment evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/review.md`
+- CCFG-26A completed-slice evidence:
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/completed-slices.md`
+- CCFG-26A closeout evidence:
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/closeout.md`
 - Live CCFG-25 planning-quality amendment:
   `docs/plans/programs/codex-config/findings/ccfg-25-planning-quality-amendment.md`
 - Accepted command-owner redesign snapshot:
@@ -80,13 +83,16 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`
-- Active batch execution status: `queued`
-- Queued CCFG-26A dispatch:
+- Queued batch: `None`
+- Active batch execution status: `None`
+- Completed CCFG-26A dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/dispatch.md`
-- Queued CCFG-26A review:
+- Completed CCFG-26A review:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/review.md`
+- Completed CCFG-26A runway:
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`
+- Completed CCFG-26A closeout:
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/closeout.md`
 - Completed CCFG-34 dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/dispatch.md`
 - Completed CCFG-34 review evidence:
@@ -105,28 +111,22 @@
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
 - Superseded CCFG-26 planning evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-closeout-ownership-transfer/superseded.md`
-- Latest completed batch: `ccfg-34-stable-runway-dogfooding-bootstrap`
+- Latest completed batch: `ccfg-26a-permanent-vertical-runway-contract`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/closeout.md`
 
 ## Next Safe Action
 
-Use `work-batch` to execute exactly the queued
-`batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`. Under the
-temporary stable-runway dogfooding policy, one invocation executes at most its
-single pending implementation slice and leaves all durable evidence before
-stopping. CCFG-26A implements and proves integration-ready candidate behavior;
-it does not make candidate generation the canonical planner. Stable
-`plan-batch` plus the temporary CCFG-34 policy remain the canonical planning
-path for CCFG-26B through CCFG-26E until CCFG-29. CCFG-26B depends on CCFG-26A
-as a sequencing and parity boundary and requires a later explicit stable
-`plan-batch` invocation. CCFG-26B through CCFG-26E and CCFG-27 through CCFG-29
-remain unselected. Do not select or prepare a successor during CCFG-26A
-execution or same-batch closeout.
+No batch is selected, queued, or active. CCFG-26A is completed and parent
+CCFG-26 is `Prepared`. A later explicit stable `plan-batch` invocation may
+select CCFG-26B; this closeout did not select, dispatch, queue, refresh, or
+prepare it. CCFG-26B through CCFG-26E and CCFG-27 through CCFG-29 remain
+unselected. Stable `plan-batch` plus the temporary CCFG-34 policy remain the
+canonical planning path until CCFG-29.
 
 ## Stop Conditions
 
