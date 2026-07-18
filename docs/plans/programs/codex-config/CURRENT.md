@@ -11,7 +11,7 @@
 - Queued batch path or ID:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
 - Active batch execution status:
-  `queued; clean two-slice amendment and progression-authority correction accepted; implementation not started; fresh strict preflight required`
+  `queued; clean two-slice amendment, progression-authority correction, and unresolved-attempt barrier accepted; implementation not started; fresh strict preflight required`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - Run artifact location: `None selected`
@@ -38,9 +38,9 @@
   CCFG-27 through CCFG-29.
 - Pending ledger row: CCFG-26, controlled by the queued CCFG-26B runway plus
   its clean bounded two-slice amendment and clean progression-authority
-  correction after completed CCFG-26A and the closed issue #66 slice-shape
-  policy correction plus its post-closeout semantic-authority correction.
-  CCFG-26C through CCFG-26E remain unselected.
+  correction plus its clean unresolved-attempt barrier after completed CCFG-26A
+  and the closed issue #66 slice-shape policy correction plus its post-closeout
+  semantic-authority correction. CCFG-26C through CCFG-26E remain unselected.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -99,6 +99,12 @@
 - Clean CCFG-26B progression-authority review, exact SHA-256
   `7044c8afd1119919902e26cd22e1974a8b52b6549f347c1c85942fa99775dfce`:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/progression-authority-review.md`
+- Accepted CCFG-26B unresolved-attempt barrier correction, exact SHA-256
+  `94388b089bd1da22d570576735c567f08bb994cf7ddba809f0c2f013f445a3ad`:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/progression-attempt-barrier-correction.md`
+- Clean CCFG-26B unresolved-attempt barrier review, exact SHA-256
+  `386694d7c06db5c6bb1f55018dc623be2d0bfcf40d733972ab826ac6ba5ac433`:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/progression-attempt-barrier-review.md`
 - Queued CCFG-26B runway:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
 - CCFG-26 slice-shape policy direction from GitHub issue #66:
@@ -123,7 +129,7 @@
 - Queued batch:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
 - Active batch execution status:
-  `queued; clean two-slice amendment and progression-authority correction accepted; implementation not started; fresh strict preflight required`
+  `queued; clean two-slice amendment, progression-authority correction, and unresolved-attempt barrier accepted; implementation not started; fresh strict preflight required`
 - Queued dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/dispatch.md`
 - Queued planning review:
@@ -136,6 +142,10 @@
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/progression-authority-correction.md`
 - Queued progression-authority review:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/progression-authority-review.md`
+- Queued unresolved-attempt barrier correction:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/progression-attempt-barrier-correction.md`
+- Queued unresolved-attempt barrier review:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/progression-attempt-barrier-review.md`
 - Completed CCFG-26 slice-shape correction dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/dispatch.md`
 - Completed CCFG-26 slice-shape correction review:
@@ -182,17 +192,20 @@
 
 ## Next Safe Action
 
-Execute the queued CCFG-26B runway together with its exact clean amendment and
-progression-authority correction basis only through a later explicit stable
-`work-batch` request. Before delegation, Planning State must confirm this same
-queued scope and a fresh strict preflight must succeed against the immutable
-planning snapshot. `work-batch` must validate `completed-slices.md` as a
-contiguous prefix of the immutable amendment order and execute only the first
-absent slice ID. Initially that derives Slice 1; after its accepted archive
-entry it derives Slice 2; after both entries it derives the final same-batch
-gate rather than another implementation slice. Each implementation invocation
-stops under the temporary CCFG-34 policy. CCFG-26C through CCFG-26E and CCFG-27
-through CCFG-29 remain unselected; no implementation has started.
+Execute the queued CCFG-26B runway together with its exact clean amendment,
+progression-authority correction, and unresolved-attempt barrier only through a
+later explicit stable `work-batch` request. Before delegation, Planning State
+must confirm this same queued scope, a fresh strict preflight must succeed, and
+every later runner process must resume the exact existing CCFG-26B
+`run-state.json` via explicit `--state`; a new run or bare latest-run `--resume`
+blocks. `work-batch` must validate `completed-slices.md` as a contiguous prefix,
+then the runner must prove every existing batch-manifest `execute_flights`
+attempt is referenced exactly once by that valid prefix. Any unresolved attempt
+returns `require_user` before derivation or delegation. Only an empty unresolved
+set permits the first absent slice ID: Slice 1, then Slice 2, then the final
+same-batch gate. Each implementation invocation stops under the temporary
+CCFG-34 policy. CCFG-26C through CCFG-26E and CCFG-27 through CCFG-29 remain
+unselected; no implementation has started.
 
 ## Stop Conditions
 
@@ -214,6 +227,9 @@ through CCFG-29 remain unselected; no implementation has started.
 - Stop if work would copy archived history into the active ledger row-by-row.
 - Stop if a generic reusable skill receives project-specific paths, commands,
   caches, or planning layouts.
+- Stop if a CCFG-26B flight uses a new run or bare latest-run `--resume`, loses
+  the existing manifest's immutable `execute_flights` entries, or delegates
+  while any attempt lacks exactly one valid completed-slice reference.
 - Stop if work treats closed CCFG-21, CCFG-22, CCFG-23, CCFG-30, CCFG-31,
   CCFG-32, CCFG-33, or CCFG-34 as active work.
 - Stop if CCFG-32 execution semantics, Git-derived queue currentness, or broad
