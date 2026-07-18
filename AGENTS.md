@@ -48,6 +48,44 @@ are not required inputs and must not be treated as authority.
 Use Planning State diagnostics, targeted repository reads and searches, and the
 existing `codebase_investigator` when bounded read-only support is needed.
 
+## Command-owner redesign checkout topology
+
+For CCFG-18 through CCFG-29 and any review, planning, implementation, or
+investigation of the command-owner redesign, resolve the stable and candidate
+identities before drawing conclusions about current behavior or remaining work.
+The current expected topology is:
+
+- canonical planning and stable controller checkout:
+  `/home/alacasse/projects/codex-config`, branch `master`;
+- candidate implementation checkout:
+  `/home/alacasse/projects/codex-config-command-owner-redesign`, branch
+  `implementation/command-owner-redesign`;
+- stable Codex home: `/home/alacasse/.codex`;
+- candidate Codex home: `/home/alacasse/.codex-command-owner-redesign`.
+
+Treat the CCFG-18 candidate-generation receipts and the latest strict
+cross-checkout context as the authoritative source for the exact roots, branches,
+and revisions. Verify them rather than relying only on the expected paths above.
+Stop when the documented and observed identities are missing, ambiguous, or
+contradictory.
+
+Apply these source rules:
+
+1. Read canonical `CURRENT.md`, `LEDGER.md`, dispatches, runways, amendments, and
+   other live planning state from the stable checkout.
+2. Inspect code already produced by the redesign in the candidate checkout and
+   candidate branch. Never use default-branch source alone to conclude that a
+   target capability is absent or unimplemented.
+3. For ownership-transfer work, inspect both generations: the stable source for
+   the current controller and compatibility boundary, and the candidate source
+   for the target owner and accumulated implementation.
+4. Resolve and report the exact stable and candidate revisions used for the
+   analysis before recommending architecture, replanning, implementation, or
+   deletion.
+5. Do not infer candidate behavior from stable planning prose when the candidate
+   code can be inspected directly. Do not infer canonical planning state from
+   candidate-local copies.
+
 ## Temporary stable-runway dogfooding policy
 
 Before planning or executing CCFG-26 through CCFG-29, read and apply the
