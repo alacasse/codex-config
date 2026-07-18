@@ -11,7 +11,7 @@
 - Queued batch path or ID:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
 - Active batch execution status:
-  `queued; implementation not started; fresh strict preflight required`
+  `queued; clean two-slice amendment accepted; implementation not started; fresh strict preflight required`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - Run artifact location: `None selected`
@@ -36,10 +36,10 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
-- Pending ledger row: CCFG-26, controlled by the queued CCFG-26B runway after
-  completed CCFG-26A and the closed issue #66 slice-shape policy correction plus
-  its post-closeout semantic-authority correction. CCFG-26C through CCFG-26E
-  remain unselected.
+- Pending ledger row: CCFG-26, controlled by the queued CCFG-26B runway plus
+  its clean bounded two-slice amendment after completed CCFG-26A and the closed
+  issue #66 slice-shape policy correction plus its post-closeout
+  semantic-authority correction. CCFG-26C through CCFG-26E remain unselected.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -88,6 +88,10 @@
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/dispatch.md`
 - Clean CCFG-26B planning review:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/review.md`
+- Accepted CCFG-26B bounded amendment:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/amendment.md`
+- Clean CCFG-26B amendment review:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/amendment-review.md`
 - Queued CCFG-26B runway:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
 - CCFG-26 slice-shape policy direction from GitHub issue #66:
@@ -112,11 +116,15 @@
 - Queued batch:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
 - Active batch execution status:
-  `queued; implementation not started; fresh strict preflight required`
+  `queued; clean two-slice amendment accepted; implementation not started; fresh strict preflight required`
 - Queued dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/dispatch.md`
 - Queued planning review:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/review.md`
+- Queued bounded amendment:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/amendment.md`
+- Queued amendment review:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/amendment-review.md`
 - Completed CCFG-26 slice-shape correction dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/dispatch.md`
 - Completed CCFG-26 slice-shape correction review:
@@ -163,13 +171,16 @@
 
 ## Next Safe Action
 
-Execute the queued CCFG-26B runway only through a later explicit stable
-`work-batch` request. Before delegation, Planning State must confirm this same
-queued scope and a fresh strict preflight must succeed against the immutable
-planning snapshot. The invocation may execute only Slice 1 and must stop after
-its commit, receipt, execution-ledger update, and completed-slice archive under
-the temporary CCFG-34 policy. CCFG-26C through CCFG-26E and CCFG-27 through
-CCFG-29 remain unselected; no implementation has started.
+Execute the queued CCFG-26B runway together with its exact clean amendment basis
+only through a later explicit stable `work-batch` request. Before delegation,
+Planning State must confirm this same queued scope and a fresh strict preflight
+must succeed against the immutable planning snapshot. The first invocation may
+execute only amended Slice 1 and must stop after its commit, durable flight
+evidence, execution-ledger update, and completed-slice archive. A later explicit
+stable `work-batch` may execute only amended Slice 2 and stop under the same
+temporary CCFG-34 policy; final batch gates remain separate. CCFG-26C through
+CCFG-26E and CCFG-27 through CCFG-29 remain unselected; no implementation has
+started.
 
 ## Stop Conditions
 
