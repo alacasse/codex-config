@@ -5,7 +5,10 @@
 - GitHub issue: https://github.com/alacasse/codex-config/issues/62
 - Ledger identity: `CCFG-34`
 - Related issues: #59, #60, #61
-- Source status: open
+- Source status: closed as completed
+- Implementation commit: `ba1e941`
+- Closeout:
+  `../batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
 
 ## Decision
 
@@ -72,7 +75,7 @@ or insufficient evidence still require the user or a reviewed amendment.
 
 Primary expected surfaces:
 
-- `.codex/AGENTS.md`;
+- root `AGENTS.md` as the repository instruction hook;
 - one temporary project-owned policy document;
 - one focused contract test;
 - `CHANGELOG.md`;
@@ -97,12 +100,13 @@ machinery to automate that boundary.
 
 ## CCFG-26 And CCFG-29 Relationship
 
-CCFG-26 remains blocked until CCFG-34 closes, then must be replanned from fresh
-canonical state with the permanent candidate requirements from #59, #60, and #61.
+CCFG-34 is closed. CCFG-26 is open and unselected and requires a fresh
+`plan-batch` invocation with the permanent candidate requirements from #59, #60,
+and #61.
 
-CCFG-29 owns removal of the CCFG-34 policy and hook only after the integrated
-candidate proves equivalent planning, slice execution, recovery escalation, and
-no-successor behavior.
+CCFG-29 owns removal of the CCFG-34 policy and root `AGENTS.md` hook only after
+the integrated candidate proves equivalent planning, slice execution, recovery
+escalation, and no-successor behavior.
 
 ## Acceptance
 
@@ -113,6 +117,18 @@ no-successor behavior.
 - at most one existing-investigator consultation before eligible escalation;
 - no runner architecture or advisor-contract changes;
 - explicit CCFG-29 removal and candidate-parity gate.
+
+## Implementation Resolution
+
+Final implementation review proved that `.codex/AGENTS.md` was outside the
+normal repository-root instruction-discovery chain. A bounded reviewed amendment
+replaced only that ineffective hook with root `AGENTS.md` and retargeted the
+focused contract test.
+
+Implementation commit `ba1e941` added exactly the root instruction hook, the
+temporary policy, the focused contract test, and the changelog entry. Focused
+pytest, Ruff, whitespace validation, test-quality review, and final independent
+review were clean. CCFG-34 then closed without selecting a successor.
 
 ## Supersession
 
