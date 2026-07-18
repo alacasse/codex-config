@@ -19,6 +19,7 @@
 ## Project State Policy
 
 - Planning root: `docs/plans/`
+- Slice-shape policy path: notes/slice-shape-policy.yaml
 - Run artifact root: `None`
 - Output root: `None`
 - State file policy: `generated-only`
