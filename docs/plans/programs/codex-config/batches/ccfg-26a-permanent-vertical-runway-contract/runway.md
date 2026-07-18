@@ -385,12 +385,35 @@ no filler slice may be added to satisfy one.
 
 ## Execution Ledger
 
-| Slice | Status | Commit | Review | Notes |
-|---|---|---|---|---|
-| 1. Queue one permanently vertical migration plan | Pending | None | Pending | One planning scenario; no execution-owner change. |
+No pending or active implementation slices remain. Slice 1 is archived in
+`completed-slices.md` with its exact candidate commit, validation, review,
+installation, and acceptance evidence.
 
 Move the completed row to `completed-slices.md` after its clean focused
 candidate commit. The active ledger keeps only pending or active work.
+
+## Slice 1 Commit Receipt
+
+```yaml
+slice: 1
+commit: a0835f146857612dcd5a95053d67c53f32449012
+subject: "feat(plan-batch): require vertical migration runways"
+status: committed
+implementation_range: 89671eceb9103039e7e6660e73837827c167a3a1..a0835f146857612dcd5a95053d67c53f32449012
+diff_sha256: 6c4c4f7c4459b0943c5c801748ad517e146042034a39cc0ea601d7dadf930b02
+files_changed: 19
+line_delta: "+934/-17"
+validation: "141 focused tests and 173 subtests; manifest boundary 2 tests and 27 subtests; 76-scenario catalog; Ruff and production BasedPyright green; exact two known-red CCFG-26 assertions unchanged"
+review: "delta-only test-quality and final exact-commit runway reviews clean"
+installation: "fresh temporary home and isolated candidate home converged; stable-home status SHA-256 unchanged"
+acceptance: "one pytest process; 25 tests; 76 scenarios; 31 contracts; 17 families green"
+convergence:
+  phase: closure
+  scope_trend: shrinking
+  new_unknowns: []
+  blockers: []
+  next_proof: same-batch CCFG-26A closeout reconciliation
+```
 
 ## Slice 1 — Queue One Permanently Vertical Migration Plan
 
