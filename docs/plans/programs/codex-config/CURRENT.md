@@ -8,8 +8,10 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
-- Active batch execution status: `idle; no batch selected, queued, or active`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
+- Active batch execution status:
+  `queued; implementation not started; fresh strict preflight required`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - Run artifact location: `None selected`
@@ -34,9 +36,10 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
-- Prepared ledger row: CCFG-26, after completed CCFG-26A and the closed issue
-  #66 slice-shape policy correction plus its post-closeout semantic-authority
-  correction. CCFG-26B through CCFG-26E remain unselected.
+- Pending ledger row: CCFG-26, controlled by the queued CCFG-26B runway after
+  completed CCFG-26A and the closed issue #66 slice-shape policy correction plus
+  its post-closeout semantic-authority correction. CCFG-26C through CCFG-26E
+  remain unselected.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -81,6 +84,12 @@
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - CCFG-26 slice-shape correction post-closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/post-closeout-correction.md`
+- Queued CCFG-26B dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/dispatch.md`
+- Clean CCFG-26B planning review:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/review.md`
+- Queued CCFG-26B runway:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
 - CCFG-26 slice-shape policy direction from GitHub issue #66:
   `docs/plans/programs/codex-config/findings/slice-shape-policy-direction.md`
 - Live CCFG-25 planning-quality amendment:
@@ -100,8 +109,14 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Active batch execution status: `idle; no batch selected, queued, or active`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
+- Active batch execution status:
+  `queued; implementation not started; fresh strict preflight required`
+- Queued dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/dispatch.md`
+- Queued planning review:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/review.md`
 - Completed CCFG-26 slice-shape correction dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/dispatch.md`
 - Completed CCFG-26 slice-shape correction review:
@@ -148,12 +163,13 @@
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. CCFG-26 remains `Prepared` after the
-closed issue #66 slice-shape correction and its post-closeout semantic-authority
-evidence. A later explicit stable `plan-batch` invocation may select exactly one
-bounded batch from the canonical ledger; this correction did not select,
-dispatch, queue, refresh, create, or prepare CCFG-26B or any successor. Stable
-`plan-batch` plus the temporary CCFG-34 policy remain canonical until CCFG-29.
+Execute the queued CCFG-26B runway only through a later explicit stable
+`work-batch` request. Before delegation, Planning State must confirm this same
+queued scope and a fresh strict preflight must succeed against the immutable
+planning snapshot. The invocation may execute only Slice 1 and must stop after
+its commit, receipt, execution-ledger update, and completed-slice archive under
+the temporary CCFG-34 policy. CCFG-26C through CCFG-26E and CCFG-27 through
+CCFG-29 remain unselected; no implementation has started.
 
 ## Stop Conditions
 
@@ -223,9 +239,10 @@ dispatch, queue, refresh, create, or prepare CCFG-26B or any successor. Stable
 - Stop if CCFG-26B through CCFG-26E are replanned without the permanent
   candidate behavior from GitHub issues #59, #60, and #61, or if that planning
   changes COR-009 identity.
-- Stop if CCFG-26B is selected without consuming the completed GitHub issue #66
-  slice-shape policy correction and a later explicit stable `plan-batch`, or if
-  future work reopens CCFG-26A or adds historical runway compatibility.
+- Stop if queued CCFG-26B is activated without consuming the completed GitHub
+  issue #66 slice-shape policy correction, this clean independent review, and a
+  fresh strict preflight, or if future work reopens CCFG-26A or adds historical
+  runway compatibility.
 - Stop if work treats the completed `ccfg-26-slice-shape-policy-correction`
   runway as selected, queued, active, resumable, or executable.
 - Stop if CCFG-26A is widened beyond permanent candidate vertical-planning
