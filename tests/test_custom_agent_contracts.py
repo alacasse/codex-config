@@ -520,6 +520,54 @@ class CustomAgentContractTests(unittest.TestCase):
             reviewer,
         )
 
+    def test_resolved_policy_is_the_only_prompt_shape_authority(self) -> None:
+        """Prompt proof stops at the role contract, not future model wording."""
+        planner = self.instructions("batch_planner")
+        reviewer = self.instructions("batch_plan_reviewer")
+
+        for role, instructions in (("planner", planner), ("reviewer", reviewer)):
+            for required in (
+                "resolved project slice-shape policy is the sole authority for slice-shape preference",
+                "default_shape: vertical",
+                "default_shape: horizontal",
+                "A non-default shape is an override",
+                "semantic boundaries",
+                "independently useful",
+                "proportionality",
+                "filler",
+            ):
+                with self.subTest(role=role, requirement=required):
+                    self.assertIn(required, instructions)
+
+        for forbidden in (
+            "Prefer vertical slices",
+            "Reject horizontal phase decomposition",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, planner)
+                self.assertNotIn(forbidden, reviewer)
+
+        self.assertIn(
+            "When vertical is the configured default, prefer complete end-to-end "
+            "scenarios over horizontal construction phases",
+            planner,
+        )
+        self.assertIn(
+            "When horizontal is the configured default, do not replace that bias "
+            "with an independent vertical preference",
+            planner,
+        )
+        self.assertIn(
+            "When vertical is the configured default, challenge a horizontal "
+            "override through its supplied reason",
+            reviewer,
+        )
+        self.assertIn(
+            "When horizontal is the configured default, do not reject horizontal "
+            "decomposition solely because a viable vertical alternative exists",
+            reviewer,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

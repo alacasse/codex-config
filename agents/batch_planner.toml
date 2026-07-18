@@ -17,11 +17,21 @@ Inputs and evidence:
   contract boundaries. Never split work to create filler or hit a numeric target.
 - Consume the exact project slice-shape policy identity supplied directly by
   plan-batch: repo-relative path, exact YAML source digest, canonical JSON
-  payload digest, and complete parsed payload. Do not resolve another policy,
-  infer one from prose or risk, or use an implicit default. Every slice must
-  persist `shape.selected` and `shape.override_reason` consistently with that
-  policy. Following the default uses a null reason. An allowed non-default
-  shape uses a non-empty reason when the policy requires one.
+  payload digest, and complete parsed payload. The resolved project slice-shape
+  policy is the sole authority for slice-shape preference. Do not resolve
+  another policy, infer one from prose or risk, use an implicit default, or add
+  an independent shape preference. Treat `payload.default_shape` as the initial
+  decomposition bias: `default_shape: vertical` selects vertical and
+  `default_shape: horizontal` selects horizontal unless a policy-permitted
+  override is justified. When vertical is the configured default, prefer
+  complete end-to-end scenarios over horizontal construction phases. When
+  horizontal is the configured default, do not replace that bias with an
+  independent vertical preference. A non-default shape is an override. Select
+  it only when `allow_override` is true, and require a non-empty reason when
+  `require_override_reason` is true. When overrides are allowed and that flag
+  is false, either a null or non-empty reason is policy-valid. Following the
+  default always uses a null reason. Every slice must persist `shape.selected`
+  and `shape.override_reason` consistently with those rules.
 - Apply migration evidence only when a slice has the exact machine-readable
   value `risk: migration`; never infer applicability from prose or selected
   shape. Classify ownership-transfer implementation slices as migration. Start
@@ -34,14 +44,16 @@ Inputs and evidence:
   retention reason, pending or migrated status, and removal condition.
   `ownership_coexistence: none` requires an explicit empty matrix. Never add a
   silent fallback.
-- Prefer vertical slices that leave independently useful ownership and
-  validation states over horizontal implementation phases. Derive slice count
-  from those boundaries. When a boundary is clearly oversized, include a
-  smaller alternative and its rejection reason in the proportionality record;
-  advisory size observations are evidence, never hard numeric limits. Keep
-  final-range validation separate from slice-focused validation. Migration
-  evidence preserves current migration protections; it does not define the
-  general semantics of vertical or horizontal slices.
+- Derive slice count from semantic boundaries that leave independently useful
+  ownership, behavior, validation, or rollback states. Apply proportionality,
+  no-filler, advisory-size, and smaller-alternative reasoning regardless of the
+  selected shape; none of those generic checks chooses vertical or horizontal
+  independently of the resolved policy. When a boundary is clearly oversized,
+  include a smaller alternative and its rejection reason in the
+  proportionality record. Advisory size observations are evidence, never hard
+  numeric limits. Keep final-range validation separate from slice-focused
+  validation. Migration evidence preserves current migration protections; it
+  does not define the general semantics of vertical or horizontal slices.
 - Preserve selected-finding, dispatch, runway, producer, root, and revision
   lineage exactly. Record any unresolved decision, destructive action, or
   residual material complexity instead of assuming approval.
@@ -96,7 +108,7 @@ Every runway slice persists policy-consistent `shape.selected` and
 `shape.override_reason`. Every runway slice whose exact risk is migration has
 complete `migration_evidence` and the coexistence-consistent `migration_matrix`
 described above; non-migration slices remain valid without either migration
-field, including in mixed-risk batches.
+field and must omit both, including in mixed-risk batches.
 implementation_started is always false. For status blocked, draft is null and
 blockers contains every blocking reason. Add no fields or prose outside YAML.
 """

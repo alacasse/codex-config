@@ -677,12 +677,14 @@ def test_accepts_vertical_configured_default_and_persists_shape(tmp_path: Path) 
     }
 
 
-def test_accepts_horizontal_configured_default_with_null_reason(tmp_path: Path) -> None:
+def test_accepts_horizontal_configured_default_when_overrides_disabled(
+    tmp_path: Path,
+) -> None:
     request = _request(tmp_path)
     _refresh_request_policy(
         request,
         default_shape="horizontal",
-        allow_override=True,
+        allow_override=False,
         require_override_reason=True,
     )
     request["planner_result"]["draft"]["runway"]["slices"][0]["shape"] = {
@@ -694,6 +696,12 @@ def test_accepts_horizontal_configured_default_with_null_reason(tmp_path: Path) 
     result = execute_plan_batch(request)
 
     assert result["outcome"] == "queued"
+    assert request["slice_shape_policy"]["payload"] == {
+        "schema": "slice-shape-policy/v1",
+        "default_shape": "horizontal",
+        "allow_override": False,
+        "require_override_reason": True,
+    }
     assert _persisted_shape(request) == {
         "selected": "horizontal",
         "override_reason": None,
@@ -1049,6 +1057,43 @@ def test_accepts_non_migration_without_migration_evidence(tmp_path: Path) -> Non
     request = _request(tmp_path)
 
     assert execute_plan_batch(request)["outcome"] == "queued"
+
+
+@pytest.mark.parametrize(
+    "migration_fields",
+    [
+        ("migration_evidence",),
+        ("migration_matrix",),
+        ("migration_evidence", "migration_matrix"),
+    ],
+    ids=("evidence-only", "matrix-only", "both"),
+)
+def test_rejects_migration_fields_on_non_migration_slice_without_queue_mutation(
+    tmp_path: Path,
+    migration_fields: tuple[str, ...],
+) -> None:
+    request = _request(tmp_path)
+    slice_item = request["planner_result"]["draft"]["runway"]["slices"][0]
+    evidence, matrix = _migration_evidence()
+    available_fields = {
+        "migration_evidence": evidence,
+        "migration_matrix": matrix,
+    }
+    slice_item.update(
+        {field: available_fields[field] for field in migration_fields}
+    )
+    _redraft(request)
+    planning_root = tmp_path / "plans"
+    state_before = _state(Path(request["transaction"]["current_path"]))
+    files_before = _file_snapshot(planning_root)
+
+    result = execute_plan_batch(request)
+
+    assert result["outcome"] == "blocked"
+    assert result["blockers"][0]["code"] == "quality.migration_evidence"
+    assert _state(Path(request["transaction"]["current_path"])) == state_before
+    assert _file_snapshot(planning_root) == files_before
+    assert not Path(request["transaction"]["transaction_path"]).exists()
 
 
 def test_applies_mixed_risk_contract_only_to_migration_slices(

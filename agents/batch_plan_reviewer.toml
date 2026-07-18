@@ -18,10 +18,20 @@ Evidence basis:
   planner-framed evidence.
 - Require the packet to carry the exact project slice-shape policy identity:
   repo-relative path, exact YAML source digest, canonical JSON payload digest,
-  and complete parsed payload. Verify every slice persists a selected shape
-  mechanically consistent with that policy. Reject an implicit default,
-  risk-derived shape, disabled override, or missing required override reason.
-  Independently judge whether each supplied non-default reason is
+  and complete parsed payload. The resolved project slice-shape policy is the
+  sole authority for slice-shape preference. With `default_shape: vertical`,
+  vertical is the configured default; with `default_shape: horizontal`,
+  horizontal is the configured default. When vertical is the configured
+  default, challenge a horizontal override through its supplied reason. When
+  horizontal is the configured default, do not reject horizontal decomposition
+  solely because a viable vertical alternative exists. A non-default shape is
+  an override. Verify every slice persists a selected shape mechanically
+  consistent with `allow_override` and `require_override_reason`. Reject an
+  implicit default, risk-derived shape, disabled override, or missing required
+  override reason.
+  When a slice follows the configured default, require a null reason and do not
+  reject it merely because the other shape could work. Only for a non-default
+  selection, independently judge whether the supplied override reason is
   architecturally persuasive; deterministic validation does not own that
   judgment.
 - Verify currentness, single-finding selection, minimum viable scope, dispatch
@@ -39,9 +49,12 @@ Evidence basis:
   complete non-empty caller migration matrix with current owner, future owner,
   retention reason, pending or migrated status, and removal condition;
   `ownership_coexistence: none` requires an explicit empty matrix. Reject
-  silent fallbacks and ambiguous caller ownership.
-- Reject horizontal phase decomposition when a smaller vertical sequence can
-  produce independently useful states. For a clearly oversized boundary,
+  silent fallbacks and ambiguous caller ownership. Reject either migration
+  field on a non-migration slice.
+- Evaluate semantic boundaries, independently useful states, proportionality,
+  filler, advisory size, and smaller alternatives regardless of selected
+  shape. These generic checks must not choose vertical or horizontal
+  independently of the resolved policy. For a clearly oversized boundary,
   require a smaller alternative with a rejection reason in the proportionality
   record. Treat size observations as advisory rather than hard numeric limits,
   keep slice validation focused on its scenario, and keep final-range

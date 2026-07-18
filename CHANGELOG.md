@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Slice-shape policy semantic authority correction
+
+Problem: the resolved slice-shape policy reached the planner, reviewer, queue
+gate, and persisted runway, but both reusable planning roles still carried an
+independent preference for vertical decomposition. A policy-valid horizontal
+default could therefore pass deterministic validation without being the sole
+semantic authority used during planning.
+
+Decision: make the resolved policy the only source of slice-shape preference in
+the planner, reviewer, and `plan-batch` workflow. Keep semantic boundaries,
+independently useful states, proportionality, filler rejection, and advisory
+size checks shape-neutral. Treat every non-default selection as an override
+under the exact policy flags. Also make `migration_evidence` and
+`migration_matrix` exclusive to exact `risk: migration` slices in both the
+runway schema and deterministic queue gate.
+
+Expected effect: vertical and horizontal defaults receive symmetric authority;
+the configured default cannot be rejected merely because the other shape is
+possible, and non-migration slices carrying either migration field fail before
+queue mutation. Planning contracts are now 1.3.0, `plan-batch` is 2.3.0, and
+custom agents are 1.8.0.
+
 ### Project-owned slice-shape planning policy
 
 Problem: candidate planning coupled verticality to `risk: migration`, so

@@ -29,7 +29,7 @@
       ]
     },
     "planning-contracts": {
-      "version": "1.2.0",
+      "version": "1.3.0",
       "description": "Agent-facing planning contract schemas, validation, and atomic stores.",
       "links": [
         {
@@ -63,7 +63,7 @@
       ]
     },
     "plan-batch": {
-      "version": "2.2.0",
+      "version": "2.3.0",
       "description": "User-facing command-owner skill for selecting one bounded ledger finding and queuing one independently reviewed batch plan.",
       "requires": [
         "planning-contracts",
@@ -173,7 +173,7 @@
       ]
     },
     "custom-agents": {
-      "version": "1.7.0",
+      "version": "1.8.0",
       "description": "Reusable custom Codex agents.",
       "links": [
         {

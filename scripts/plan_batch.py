@@ -1237,6 +1237,17 @@ def _validate_slice_contract(
             )
 
     if slice_item.get("risk") != _MIGRATION_EVIDENCE_SLICE_RISK:
+        unexpected_fields = [
+            field
+            for field in ("migration_evidence", "migration_matrix")
+            if field in slice_item
+        ]
+        if unexpected_fields:
+            raise PlanBatchBlocked(
+                "quality.migration_evidence",
+                f"{label} with non-migration risk forbids "
+                + " and ".join(unexpected_fields),
+            )
         return
 
     raw_evidence = slice_item.get("migration_evidence")

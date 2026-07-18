@@ -242,11 +242,11 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 )
             },
             {
-                "planning-contracts": "1.2.0",
-                "plan-batch": "2.2.0",
+                "planning-contracts": "1.3.0",
+                "plan-batch": "2.3.0",
                 "work-batch": "1.0.6",
                 "batch-runway": "2.0.0",
-                "custom-agents": "1.7.0",
+                "custom-agents": "1.8.0",
             },
         )
 
@@ -644,7 +644,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             "exact\n  machine-readable value `risk: migration`",
             "slice_shape_policy: pass | fail",
             "migration_evidence: pass | fail",
-            "Reject horizontal phase decomposition",
+            "sole authority for slice-shape preference",
             "implementation_started: false",
             "Do not modify or produce a replacement draft",
         ):
@@ -876,6 +876,20 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("complete human-facing planning command", plan_batch)
         self.assertIn("independent-review evidence packet", plan_batch)
         self.assertIn("DEC-038", plan_batch)
+        self.assertIn(
+            "The resolved policy is the\nsole authority for shape preference",
+            plan_batch,
+        )
+        self.assertIn(
+            "vertical sequence over horizontal implementation phases only when "
+            "the project\npolicy selects vertical as its default",
+            plan_batch,
+        )
+        self.assertIn(
+            "prefer horizontal over vertical only\nwhen the policy selects "
+            "horizontal as its default",
+            plan_batch,
+        )
         self.assertIn("Do not route planning through a\nsecond workflow owner", plan_batch)
         self.assertNotIn("architecture-program-runway", plan_batch_feature["requires"])
         self.assertNotIn("batch-runway", plan_batch_feature["requires"])

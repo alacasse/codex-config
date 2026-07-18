@@ -55,6 +55,14 @@
                   }
                 }
               ]
+            },
+            "else": {
+              "not": {
+                "anyOf": [
+                  {"required": ["migration_evidence"]},
+                  {"required": ["migration_matrix"]}
+                ]
+              }
             }
           }
         ]

@@ -160,14 +160,18 @@ This evidence preserves current migration protections; it is not the final
 general definition of vertical or horizontal slices. Start from one scenario
 and the durable state produced for it. Derive slice count from independently
 useful ownership, behavior, validation, and rollback boundaries. Prefer a
-vertical sequence over horizontal implementation phases when the project
-policy selects vertical shape.
+vertical sequence over horizontal implementation phases only when the project
+policy selects vertical as its default; prefer horizontal over vertical only
+when the policy selects horizontal as its default. The resolved policy is the
+sole authority for shape preference: treat any non-default shape only as a
+policy-permitted override.
 When a boundary is clearly oversized, record a smaller alternative and its
 rejection reason in the proportionality evidence. File counts and line deltas
 are advisory review evidence, not hard limits. Keep focused validation scoped to
 the slice scenario and keep final-range validation separate. A cohesive
 one-slice migration remains valid. Non-migration slices remain valid without
-migration evidence fields, including in a `mixed-risk` batch.
+migration evidence fields and must omit both fields, including in a
+`mixed-risk` batch.
 
 ### Validation Command Status Classes
 
@@ -285,13 +289,13 @@ single-root batches.
    - a cohesive plan may have one slice; multiple slices each need a concrete
      producer/consumer, risk, validation, migration, or contract boundary;
    - every slice shape is mechanically consistent with the resolved policy;
-     horizontal override persuasiveness remains an independent-review judgment;
+     non-default override persuasiveness remains an independent-review judgment;
    - every exact migration-risk slice starts from one scenario, produces one
      durable independently usable state, names ownership movement and residue,
      and carries the required matrix; non-migration slices are not inferred to
      be applicable from prose;
-   - horizontal phases and clearly oversized boundaries without a reviewed
-     smaller-alternative analysis block;
+   - shape choices inconsistent with the resolved policy and clearly oversized
+     boundaries without a reviewed smaller-alternative analysis block;
    - filler decomposition and unrelated expansion block;
    - approvals match, in declared order and without extras, the union of
      dispatch `approval_gates`, residual-complexity scopes, and destructive-

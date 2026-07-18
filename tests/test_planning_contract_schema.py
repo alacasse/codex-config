@@ -236,6 +236,34 @@ def test_accepts_non_migration_without_migration_evidence(tmp_path: Path) -> Non
     assert result.is_valid  # type: ignore[attr-defined]
 
 
+@pytest.mark.parametrize(
+    "migration_fields",
+    [
+        ("migration_evidence",),
+        ("migration_matrix",),
+        ("migration_evidence", "migration_matrix"),
+    ],
+    ids=("evidence-only", "matrix-only", "both"),
+)
+def test_rejects_migration_fields_on_non_migration_slice(
+    tmp_path: Path,
+    migration_fields: tuple[str, ...],
+) -> None:
+    contract = _contract_from_fixture("runway")
+    slice_item = contract["slices"][0]
+    available_fields = {
+        field: copy.deepcopy(slice_item[field]) for field in migration_fields
+    }
+    slice_item["risk"] = "evidence-only"
+    slice_item.pop("migration_evidence")
+    slice_item.pop("migration_matrix")
+    slice_item.update(available_fields)
+
+    result = _validate_runway_contract(tmp_path, contract)
+
+    assert _codes(result) == {"schema.not"}
+
+
 def test_applies_mixed_risk_contract_only_to_migration_slices(
     tmp_path: Path,
 ) -> None:
