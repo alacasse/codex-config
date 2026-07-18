@@ -35,8 +35,8 @@
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
 - Prepared ledger row: CCFG-26, after completed CCFG-26A and the closed issue
-  #66 slice-shape policy correction. CCFG-26B through CCFG-26E remain
-  unselected.
+  #66 slice-shape policy correction plus its post-closeout semantic-authority
+  correction. CCFG-26B through CCFG-26E remain unselected.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -79,7 +79,9 @@
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/completed-slices.md`
 - CCFG-26 slice-shape correction closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
-- Live CCFG-26 slice-shape policy direction from GitHub issue #66:
+- CCFG-26 slice-shape correction post-closeout evidence:
+  `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/post-closeout-correction.md`
+- CCFG-26 slice-shape policy direction from GitHub issue #66:
   `docs/plans/programs/codex-config/findings/slice-shape-policy-direction.md`
 - Live CCFG-25 planning-quality amendment:
   `docs/plans/programs/codex-config/findings/ccfg-25-planning-quality-amendment.md`
@@ -108,6 +110,8 @@
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/runway.md`
 - Completed CCFG-26 slice-shape correction closeout:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
+- CCFG-26 slice-shape correction post-closeout evidence:
+  `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/post-closeout-correction.md`
 - Completed CCFG-26A dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/dispatch.md`
 - Completed CCFG-26A review:
@@ -145,11 +149,11 @@
 ## Next Safe Action
 
 No batch is selected, queued, or active. CCFG-26 remains `Prepared` after the
-closed issue #66 slice-shape correction. A later explicit stable `plan-batch`
-invocation may select exactly one bounded batch from the canonical ledger;
-this closeout did not select, dispatch, queue, refresh, create, or prepare
-CCFG-26B or any successor. Stable `plan-batch` plus the temporary CCFG-34
-policy remain canonical until CCFG-29.
+closed issue #66 slice-shape correction and its post-closeout semantic-authority
+evidence. A later explicit stable `plan-batch` invocation may select exactly one
+bounded batch from the canonical ledger; this correction did not select,
+dispatch, queue, refresh, create, or prepare CCFG-26B or any successor. Stable
+`plan-batch` plus the temporary CCFG-34 policy remain canonical until CCFG-29.
 
 ## Stop Conditions
 
