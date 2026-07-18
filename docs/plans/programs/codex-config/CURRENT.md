@@ -8,8 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
-- Active batch execution status: `idle`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`
+- Active batch execution status: `queued`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
 - Run artifact location: `None selected`
@@ -32,7 +33,8 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-26 through CCFG-29.
+  CCFG-27 through CCFG-29.
+- Pending ledger row: CCFG-26 through queued preparation batch CCFG-26A.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -55,6 +57,12 @@
   `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
 - Live CCFG-34 intake and CCFG-26 replanning amendment:
   `docs/plans/programs/codex-config/findings/github-issue-62-stable-runway-dogfooding-bootstrap.md`
+- Queued CCFG-26A dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/dispatch.md`
+- Queued CCFG-26A runway:
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`
+- Clean CCFG-26A planning review:
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/review.md`
 - Live CCFG-25 planning-quality amendment:
   `docs/plans/programs/codex-config/findings/ccfg-25-planning-quality-amendment.md`
 - Accepted command-owner redesign snapshot:
@@ -72,8 +80,13 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Active batch execution status: `idle`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`
+- Active batch execution status: `queued`
+- Queued CCFG-26A dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/dispatch.md`
+- Queued CCFG-26A review:
+  `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/review.md`
 - Completed CCFG-34 dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/dispatch.md`
 - Completed CCFG-34 review evidence:
@@ -102,13 +115,13 @@
 
 ## Next Safe Action
 
-CCFG-34 is closed by
-`batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`. Selected
-dispatch, queued batch, and active runway are `None`. CCFG-26 is open and
-unselected; a later explicit `plan-batch` invocation may replan exactly CCFG-26
-from fresh canonical state with the permanent requirements from issues #59,
-#60, and #61. This closeout did not select, dispatch, queue, refresh, or prepare
-CCFG-26 through CCFG-29.
+Use `work-batch` to execute exactly the queued
+`batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`. Under the
+temporary stable-runway dogfooding policy, one invocation executes at most its
+single pending implementation slice and leaves all durable evidence before
+stopping. CCFG-26B through CCFG-26E and CCFG-27 through CCFG-29 remain
+unselected. Do not select or prepare a successor during CCFG-26A execution or
+same-batch closeout.
 
 ## Stop Conditions
 
@@ -176,6 +189,11 @@ CCFG-26 through CCFG-29.
   the temporary bridge reserved for CCFG-29.
 - Stop if CCFG-26 is replanned without the permanent candidate behavior from
   GitHub issues #59, #60, and #61, or if that replan changes COR-009 identity.
+- Stop if CCFG-26A is widened beyond permanent candidate vertical-planning
+  behavior from issue #60 or pulls issue #59/#61 execution behavior into its
+  single slice.
+- Stop if CCFG-26A execution selects, dispatches, queues, refreshes, or prepares
+  CCFG-26B through CCFG-26E or any later finding.
 - Stop if CCFG-34 builds a second complete runway framework, permanent public
   protocol, persistent execution store, or lifecycle framework instead of the
   bounded temporary bootstrap authorized by issue #62.
