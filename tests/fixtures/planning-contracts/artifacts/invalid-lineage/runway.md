@@ -26,6 +26,20 @@ slices:
   - scripts/planning_contract.py
   validation:
   - pytest tests/test_planning_contract_artifacts.py
+  vertical_slice:
+    starting_scenario: planning artifacts need revisioned lineage writes
+    durable_result: artifact lineage writes bind the selected dispatch and runway
+    owner_before: unversioned planning artifact writes
+    owner_after: revisioned artifact lineage store
+    migrated_callers:
+    - planning selection transaction
+    focused_validation:
+    - pytest tests/test_planning_contract_artifacts.py
+    independently_usable_state: revisioned lineage writes work before closeout reconciliation
+    rollback_boundary: revert the artifact-lineage slice
+    temporary_residue: []
+    ownership_coexistence: none
+  migration_matrix: {}
 review:
   final_gate: registered-reviewer
 closeout:

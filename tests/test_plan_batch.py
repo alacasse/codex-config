@@ -96,6 +96,33 @@ def _producer(schema: str, commit: str) -> dict[str, str]:
     }
 
 
+def _vertical_contract(
+    coexistence: str = "none",
+) -> tuple[dict[str, object], dict[str, object]]:
+    vertical: dict[str, object] = {
+        "starting_scenario": "one caller still uses the previous planning owner",
+        "durable_result": "that caller uses the permanent planning owner",
+        "owner_before": "previous planning owner",
+        "owner_after": "permanent plan-batch owner",
+        "migrated_callers": ["fixture planning caller"],
+        "focused_validation": ["fixture.vertical.green"],
+        "independently_usable_state": "the migrated caller queues reviewed plans",
+        "rollback_boundary": "revert the caller migration",
+        "temporary_residue": [],
+        "ownership_coexistence": coexistence,
+    }
+    matrix: dict[str, object] = {}
+    if coexistence == "temporary":
+        matrix["fixture planning caller"] = {
+            "current_owner": "previous planning owner",
+            "future_owner": "permanent plan-batch owner",
+            "reason": "the caller migrates in this bounded slice",
+            "status": "pending",
+            "removal_slice_or_condition": "focused vertical tests are green",
+        }
+    return vertical, matrix
+
+
 def _state(current_path: Path) -> dict[str, object]:
     current = read_current_document(current_path, toolchain_root=REPO_ROOT)
     selected = current.contract["selected_dispatch"]
@@ -253,6 +280,7 @@ def _request(tmp_path: Path, *, boundaries: tuple[str, ...] = ("owner-seam",)) -
                 "lineage": "pass",
                 "approval_scope": "pass",
                 "semantic_slices": "pass",
+                "vertical_contract": "pass",
                 "stop_boundary": "pass",
             },
             "corrections": [],
@@ -549,6 +577,134 @@ def test_cohesive_single_slice_and_justified_multi_slice_both_queue(tmp_path: Pa
     assert execute_plan_batch(multiple)["outcome"] == "queued"
 
 
+def test_accepts_migration_with_complete_vertical_contract_and_no_coexistence(
+    tmp_path: Path,
+) -> None:
+    request = _request(tmp_path)
+    slice_item = request["planner_result"]["draft"]["runway"]["slices"][0]
+    vertical, matrix = _vertical_contract()
+    slice_item.update(
+        risk="migration", vertical_slice=vertical, migration_matrix=matrix
+    )
+    _redraft(request)
+
+    assert execute_plan_batch(request)["outcome"] == "queued"
+
+
+def test_accepts_migration_with_temporary_coexistence_and_complete_matrix(
+    tmp_path: Path,
+) -> None:
+    request = _request(tmp_path)
+    slice_item = request["planner_result"]["draft"]["runway"]["slices"][0]
+    vertical, matrix = _vertical_contract("temporary")
+    slice_item.update(
+        risk="migration", vertical_slice=vertical, migration_matrix=matrix
+    )
+    _redraft(request)
+
+    assert execute_plan_batch(request)["outcome"] == "queued"
+
+
+def test_rejects_migration_missing_vertical_slice(tmp_path: Path) -> None:
+    request = _request(tmp_path)
+    request["planner_result"]["draft"]["runway"]["slices"][0]["risk"] = "migration"
+    _redraft(request)
+
+    result = execute_plan_batch(request)
+
+    assert result["outcome"] == "blocked"
+    assert result["blockers"][0]["code"] == "quality.vertical_contract"
+    assert not Path(request["transaction"]["transaction_path"]).exists()
+
+
+def test_rejects_migration_missing_matrix_without_queue_mutation(
+    tmp_path: Path,
+) -> None:
+    request = _request(tmp_path)
+    slice_item = request["planner_result"]["draft"]["runway"]["slices"][0]
+    vertical, matrix = _vertical_contract()
+    slice_item.update(
+        risk="migration", vertical_slice=vertical, migration_matrix=matrix
+    )
+    del slice_item["migration_matrix"]
+    _redraft(request)
+    planning_root = tmp_path / "plans"
+    state_before = _state(Path(request["transaction"]["current_path"]))
+    files_before = _file_snapshot(planning_root)
+
+    result = execute_plan_batch(request)
+
+    assert result["outcome"] == "blocked"
+    assert result["blockers"][0]["code"] == "quality.vertical_contract"
+    assert _state(Path(request["transaction"]["current_path"])) == state_before
+    assert _file_snapshot(planning_root) == files_before
+    assert not Path(request["transaction"]["transaction_path"]).exists()
+
+
+@pytest.mark.parametrize("matrix_case", ["empty", "incomplete"])
+def test_rejects_temporary_coexistence_with_empty_or_incomplete_matrix(
+    tmp_path: Path, matrix_case: str
+) -> None:
+    request = _request(tmp_path)
+    slice_item = request["planner_result"]["draft"]["runway"]["slices"][0]
+    vertical, matrix = _vertical_contract("temporary")
+    if matrix_case == "empty":
+        matrix = {}
+    else:
+        del matrix["fixture planning caller"]["removal_slice_or_condition"]
+    slice_item.update(
+        risk="migration", vertical_slice=vertical, migration_matrix=matrix
+    )
+    _redraft(request)
+
+    result = execute_plan_batch(request)
+
+    assert result["outcome"] == "blocked"
+    assert result["blockers"][0]["code"] == "quality.vertical_contract"
+    assert not Path(request["transaction"]["transaction_path"]).exists()
+
+
+def test_rejects_no_coexistence_with_retained_matrix_rows(tmp_path: Path) -> None:
+    request = _request(tmp_path)
+    slice_item = request["planner_result"]["draft"]["runway"]["slices"][0]
+    vertical, matrix = _vertical_contract("temporary")
+    vertical["ownership_coexistence"] = "none"
+    slice_item.update(
+        risk="migration", vertical_slice=vertical, migration_matrix=matrix
+    )
+    _redraft(request)
+
+    result = execute_plan_batch(request)
+
+    assert result["outcome"] == "blocked"
+    assert result["blockers"][0]["code"] == "quality.vertical_contract"
+    assert not Path(request["transaction"]["transaction_path"]).exists()
+
+
+def test_accepts_non_migration_without_vertical_contract(tmp_path: Path) -> None:
+    request = _request(tmp_path)
+
+    assert execute_plan_batch(request)["outcome"] == "queued"
+
+
+def test_applies_mixed_risk_contract_only_to_migration_slices(
+    tmp_path: Path,
+) -> None:
+    request = _request(tmp_path, boundaries=("evidence", "migration"))
+    draft = request["planner_result"]["draft"]
+    draft["dispatch"]["scope"]["batch_kind"] = "mixed-risk"
+    draft["runway"]["batch"]["kind"] = "mixed-risk"
+    request["transaction"]["lineage"]["batch_kind"] = "mixed-risk"
+    migration_slice = draft["runway"]["slices"][1]
+    vertical, matrix = _vertical_contract()
+    migration_slice.update(
+        risk="migration", vertical_slice=vertical, migration_matrix=matrix
+    )
+    _redraft(request)
+
+    assert execute_plan_batch(request)["outcome"] == "queued"
+
+
 @pytest.mark.parametrize(
     ("mutation", "code"),
     [
@@ -755,6 +911,24 @@ def test_roles_are_direct_and_reviewer_correction_routes_to_planner(tmp_path: Pa
     assert indirect_result["blockers"][0]["code"] == "roles.direct_invocation"
     assert correction_result["blockers"][0]["code"] == "review.correction_required"
     assert correction_result["next_action"] == "return_to_batch_planner"
+
+
+@pytest.mark.parametrize("review_state", ["missing", "failed"])
+def test_independent_review_must_check_the_exact_vertical_contract(
+    tmp_path: Path, review_state: str
+) -> None:
+    request = _request(tmp_path)
+    checks = request["reviewer_result"]["checks"]
+    if review_state == "missing":
+        del checks["vertical_contract"]
+    else:
+        checks["vertical_contract"] = "fail"
+
+    result = execute_plan_batch(request)
+
+    assert result["outcome"] == "blocked"
+    assert result["blockers"][0]["code"] in {"request.fields", "review.checks"}
+    assert not Path(request["transaction"]["transaction_path"]).exists()
 
 
 def test_repeated_material_correction_against_unchanged_draft_stops(

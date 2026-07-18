@@ -89,6 +89,43 @@ evidence-only or decision-only work with destructive cleanup, contract
 narrowing, or migration, declare the batch kind as `mixed-risk`, name the risky
 slices, and list the approval gate for each risky slice.
 
+### Vertical Migration Contract
+
+Apply this contract only when a slice carries the exact machine-readable value
+`risk: migration`; never infer applicability from prose. Ownership-transfer
+implementation slices must use that risk. Every migration slice must include:
+
+```yaml
+vertical_slice:
+  starting_scenario: string
+  durable_result: string
+  owner_before: string
+  owner_after: string
+  migrated_callers: []
+  focused_validation: []
+  independently_usable_state: string
+  rollback_boundary: string
+  temporary_residue: []
+  ownership_coexistence: none | temporary
+migration_matrix: {}
+```
+
+`ownership_coexistence: temporary` requires a non-empty matrix. Each caller or
+scenario row must contain exactly `current_owner`, `future_owner`, `reason`,
+`status`, and `removal_slice_or_condition`; status is `pending` or `migrated`.
+`ownership_coexistence: none` requires an explicit empty matrix. Never leave a
+caller ambiguous or add a silent fallback.
+
+Start from one scenario and the durable state produced for it. Derive slice
+count from independently useful ownership, behavior, validation, and rollback
+boundaries. Prefer a vertical sequence over horizontal implementation phases.
+When a boundary is clearly oversized, record a smaller alternative and its
+rejection reason in the proportionality evidence. File counts and line deltas
+are advisory review evidence, not hard limits. Keep focused validation scoped to
+the slice scenario and keep final-range validation separate. A cohesive
+one-slice migration remains valid. Non-migration slices remain valid without
+vertical migration fields, including in a `mixed-risk` batch.
+
 ### Validation Command Status Classes
 
 Every focused validation command in a generated runway must declare exactly one
@@ -188,14 +225,22 @@ single-root batches.
    identifier from that catalog and the complete
    proportionality record: observed failure, invariants, minimum viable change,
    proposed change, justified additions beyond minimum, rejected simpler
-   alternatives, and verdict. Require `batch-plan-draft/v1`. A blocked or
-   malformed result stops without queue mutation.
+   alternatives, and verdict. For every exact `risk: migration` slice, require
+   the complete vertical migration contract and coexistence-consistent matrix
+   above. Require `batch-plan-draft/v1`. A blocked or malformed result stops
+   without queue mutation.
 7. Check the draft before review:
    - one complete dispatch and one complete runway bind the same single finding,
      batch, roots, producers, and immutable source revisions;
    - the proposed change is the minimum viable change and proportional;
    - a cohesive plan may have one slice; multiple slices each need a concrete
      producer/consumer, risk, validation, migration, or contract boundary;
+   - every exact migration-risk slice starts from one scenario, produces one
+     durable independently usable state, names ownership movement and residue,
+     and carries the required matrix; non-migration slices are not inferred to
+     be applicable from prose;
+   - horizontal phases and clearly oversized boundaries without a reviewed
+     smaller-alternative analysis block;
    - filler decomposition and unrelated expansion block;
    - approvals match, in declared order and without extras, the union of
      dispatch `approval_gates`, residual-complexity scopes, and destructive-
@@ -244,8 +289,9 @@ The planner result is exactly `batch-plan-draft/v1`; the reviewer result is
 exactly `batch-plan-review/v1`. The script verifies selected-dispatch, full
 draft, exact approval-record, and independent-evidence-packet hashes,
 one-finding lineage, the selected catalogued validation profile, semantic slice
-rationales, the complete proportionality record, exact approval gates, stop
-boundaries, correction history, and transaction inputs before DEC-038 can write.
+rationales, exact-risk vertical migration fields and caller matrices, the
+complete proportionality record, exact approval gates, stop boundaries,
+correction history, and transaction inputs before DEC-038 can write.
 Agent invocation remains in this skill; the script never invokes roles.
 
 ## Stops

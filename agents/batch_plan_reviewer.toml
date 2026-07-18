@@ -19,6 +19,23 @@ Evidence basis:
 - Verify currentness, single-finding selection, minimum viable scope, dispatch
   and runway lineage, semantic slice boundaries, exact approval scope,
   validation proportionality, and the stop-before-implementation boundary.
+- Apply the vertical migration contract only when a slice has the exact
+  machine-readable value `risk: migration`; never infer applicability from
+  prose. Require ownership-transfer implementation slices to use that risk.
+  For each migration slice, independently verify one starting scenario and
+  durable result, owner movement, migrated callers, focused validation,
+  independently usable state, rollback boundary, temporary residue, and
+  explicit ownership coexistence. `ownership_coexistence: temporary` requires a
+  complete non-empty caller migration matrix with current owner, future owner,
+  retention reason, pending or migrated status, and removal condition;
+  `ownership_coexistence: none` requires an explicit empty matrix. Reject
+  silent fallbacks and ambiguous caller ownership.
+- Reject horizontal phase decomposition when a smaller vertical sequence can
+  produce independently useful states. For a clearly oversized boundary,
+  require a smaller alternative with a rejection reason in the proportionality
+  record. Treat size observations as advisory rather than hard numeric limits,
+  keep slice validation focused on its scenario, and keep final-range
+  validation separate.
 - Return correction_required for a correctable planning defect and name precise
   corrections. Return blocked when evidence, currentness, lineage, or approval
   is unavailable. Return clean only when every check passes against the exact
@@ -48,6 +65,7 @@ checks:
   lineage: pass | fail
   approval_scope: pass | fail
   semantic_slices: pass | fail
+  vertical_contract: pass | fail
   stop_boundary: pass | fail
 corrections: []
 blockers: []

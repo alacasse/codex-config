@@ -26,6 +26,20 @@ slices:
       - schemas/**
     validation:
       - pytest tests/test_planning_contract_schema.py
+    vertical_slice:
+      starting_scenario: planning artifacts lack schema validation
+      durable_result: planning artifacts validate through one schema owner
+      owner_before: prose-only planning contracts
+      owner_after: planning-runway schema validation
+      migrated_callers:
+        - planning contract validator
+      focused_validation:
+        - pytest tests/test_planning_contract_schema.py
+      independently_usable_state: schema validation is usable before later artifact writes
+      rollback_boundary: revert the schema-validation slice
+      temporary_residue: []
+      ownership_coexistence: none
+    migration_matrix: {}
 review:
   final_gate: registered-reviewer
 closeout:

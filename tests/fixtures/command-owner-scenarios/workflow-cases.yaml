@@ -98,6 +98,43 @@ quality-undecided-draft-non-executable:
   mode: guard
   draft_state: undecided
 
+vertical-migration-none-queued:
+  operation: planning
+  mode: select
+  slice_boundaries: [vertical-owner-migration]
+  vertical_case: none
+vertical-migration-temporary-queued:
+  operation: planning
+  mode: select
+  slice_boundaries: [temporary-owner-migration]
+  vertical_case: temporary
+vertical-migration-missing-blocked:
+  operation: planning
+  mode: guard
+  slice_boundaries: [missing-vertical-contract]
+  vertical_case: missing
+vertical-migration-temporary-incomplete-blocked:
+  operation: planning
+  mode: guard
+  slice_boundaries: [incomplete-migration-matrix]
+  vertical_case: temporary-incomplete
+vertical-migration-none-with-rows-blocked:
+  operation: planning
+  mode: guard
+  slice_boundaries: [retained-migration-matrix]
+  vertical_case: none-with-rows
+vertical-non-migration-without-contract-queued:
+  operation: planning
+  mode: select
+  slice_boundaries: [evidence-only]
+  vertical_case: non-migration
+vertical-mixed-risk-exact-predicate-queued:
+  operation: planning
+  mode: select
+  slice_boundaries: [evidence, vertical-owner-migration]
+  vertical_case: mixed-risk
+  batch_kind: mixed-risk
+
 execution-validated-reviewed-committed:
   operation: execution
   input:

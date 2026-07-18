@@ -147,6 +147,30 @@ _QUALITY_FIELDS = frozenset(
     }
 )
 _RATIONALE_FIELDS = frozenset({"slice_id", "kind", "reason"})
+_VERTICAL_CONTRACT_SLICE_RISK = "migration"
+_VERTICAL_SLICE_FIELDS = frozenset(
+    {
+        "starting_scenario",
+        "durable_result",
+        "owner_before",
+        "owner_after",
+        "migrated_callers",
+        "focused_validation",
+        "independently_usable_state",
+        "rollback_boundary",
+        "temporary_residue",
+        "ownership_coexistence",
+    }
+)
+_MIGRATION_MATRIX_ROW_FIELDS = frozenset(
+    {
+        "current_owner",
+        "future_owner",
+        "reason",
+        "status",
+        "removal_slice_or_condition",
+    }
+)
 _APPROVAL_NEED_FIELDS = frozenset({"id", "scope"})
 _APPROVAL_FIELDS = frozenset({"scope", "decision"})
 _PROPORTIONALITY_FIELDS = frozenset(
@@ -212,6 +236,7 @@ _REVIEW_CHECK_FIELDS = frozenset(
         "lineage",
         "approval_scope",
         "semantic_slices",
+        "vertical_contract",
         "stop_boundary",
     }
 )
@@ -869,6 +894,7 @@ def _validate_quality(
     slice_ids: list[str] = []
     for index, value in enumerate(slices):
         slice_item = _mapping_item(value, index, "planner_result.draft.runway.slices")
+        _validate_vertical_contract(slice_item, index=index)
         slice_ids.append(_require_string(slice_item, "id", f"runway.slices[{index}]"))
     rationale_ids: list[str] = []
     for index, value in enumerate(raw_rationales):
@@ -932,6 +958,133 @@ def _validate_quality(
             "quality.approval_order",
             "approval records must follow declared gate order exactly",
             next_action="ask_user",
+        )
+
+
+def _validate_vertical_contract(
+    slice_item: Mapping[str, object], *, index: int
+) -> None:
+    """Enforce the permanent vertical contract only for exact migration risk."""
+
+    if slice_item.get("risk") != _VERTICAL_CONTRACT_SLICE_RISK:
+        return
+
+    label = f"runway.slices[{index}]"
+    raw_vertical = slice_item.get("vertical_slice")
+    raw_matrix = slice_item.get("migration_matrix")
+    if not isinstance(raw_vertical, Mapping):
+        raise PlanBatchBlocked(
+            "quality.vertical_contract",
+            f"{label} with risk migration requires vertical_slice",
+        )
+    if not isinstance(raw_matrix, Mapping):
+        raise PlanBatchBlocked(
+            "quality.vertical_contract",
+            f"{label} with risk migration requires migration_matrix",
+        )
+    vertical = cast(Mapping[str, object], raw_vertical)
+    matrix = cast(Mapping[str, object], raw_matrix)
+    if set(vertical) != set(_VERTICAL_SLICE_FIELDS):
+        raise PlanBatchBlocked(
+            "quality.vertical_contract",
+            f"{label}.vertical_slice must contain every exact vertical field",
+        )
+
+    for field in (
+        "starting_scenario",
+        "durable_result",
+        "owner_before",
+        "owner_after",
+        "independently_usable_state",
+        "rollback_boundary",
+    ):
+        value = vertical.get(field)
+        if not isinstance(value, str) or not value.strip():
+            raise PlanBatchBlocked(
+                "quality.vertical_contract",
+                f"{label}.vertical_slice.{field} must be non-empty",
+            )
+    for field, allow_empty in (
+        ("migrated_callers", False),
+        ("focused_validation", False),
+        ("temporary_residue", True),
+    ):
+        _validate_vertical_string_list(
+            vertical.get(field),
+            label=f"{label}.vertical_slice.{field}",
+            allow_empty=allow_empty,
+        )
+
+    coexistence = vertical.get("ownership_coexistence")
+    if coexistence not in {"none", "temporary"}:
+        raise PlanBatchBlocked(
+            "quality.vertical_contract",
+            f"{label}.vertical_slice.ownership_coexistence must be none or temporary",
+        )
+    if coexistence == "none" and matrix:
+        raise PlanBatchBlocked(
+            "quality.vertical_contract",
+            f"{label} with ownership_coexistence none requires an empty migration_matrix",
+        )
+    if coexistence == "temporary" and not matrix:
+        raise PlanBatchBlocked(
+            "quality.vertical_contract",
+            f"{label} with temporary ownership coexistence requires a non-empty migration_matrix",
+        )
+
+    for scenario, raw_row in matrix.items():
+        if not scenario.strip():
+            raise PlanBatchBlocked(
+                "quality.vertical_contract",
+                f"{label}.migration_matrix scenario keys must be non-empty",
+            )
+        if not isinstance(raw_row, Mapping):
+            raise PlanBatchBlocked(
+                "quality.vertical_contract",
+                f"{label}.migration_matrix.{scenario} must contain every exact ownership field",
+            )
+        row = cast(Mapping[str, object], raw_row)
+        if set(row) != set(_MIGRATION_MATRIX_ROW_FIELDS):
+            raise PlanBatchBlocked(
+                "quality.vertical_contract",
+                f"{label}.migration_matrix.{scenario} must contain every exact ownership field",
+            )
+        for field in (
+            "current_owner",
+            "future_owner",
+            "reason",
+            "removal_slice_or_condition",
+        ):
+            value = row.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise PlanBatchBlocked(
+                    "quality.vertical_contract",
+                    f"{label}.migration_matrix.{scenario}.{field} must be non-empty",
+                )
+        if row.get("status") not in {"pending", "migrated"}:
+            raise PlanBatchBlocked(
+                "quality.vertical_contract",
+                f"{label}.migration_matrix.{scenario}.status must be pending or migrated",
+            )
+
+
+def _validate_vertical_string_list(
+    value: object, *, label: str, allow_empty: bool
+) -> None:
+    if not isinstance(value, list) or (not allow_empty and not value):
+        requirement = "a list" if allow_empty else "a non-empty list"
+        raise PlanBatchBlocked(
+            "quality.vertical_contract", f"{label} must be {requirement}"
+        )
+    values = cast(list[object], value)
+    if any(not isinstance(item, str) or not item.strip() for item in values):
+        raise PlanBatchBlocked(
+            "quality.vertical_contract", f"{label} values must be non-empty strings"
+        )
+    strings = cast(list[str], values)
+    if len(strings) != len(set(strings)):
+        raise PlanBatchBlocked(
+            "quality.vertical_contract", f"{label} values must be unique"
         )
 
 

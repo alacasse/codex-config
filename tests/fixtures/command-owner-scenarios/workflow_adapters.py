@@ -727,15 +727,18 @@ def _run_planning(
             if stop_reason is None:
                 blockers = cast(list[Mapping[str, object]], result["blockers"])
                 stop_reason = cast(str, blockers[0]["message"])
+            blocked_validation = [
+                "planning.guard.green",
+                "planning.no-queue-mutation.green",
+                "planning.installed-owner.green",
+            ]
+            if case.get("vertical_case") is not None:
+                blocked_validation.append("planning.vertical-contract.green")
             return (
                 "planning:blocked",
                 _changed_paths(before, workspace),
                 stop_reason,
-                [
-                    "planning.guard.green",
-                    "planning.no-queue-mutation.green",
-                    "planning.installed-owner.green",
-                ],
+                blocked_validation,
             )
         assert result["outcome"] == "queued"
         validation = [
@@ -747,6 +750,8 @@ def _run_planning(
             validation.append("planning.fixture-role-boundary.green")
         if cast(bool, case.get("residual_complexity", False)):
             validation.append("planning.approval-scoped.green")
+        if case.get("vertical_case") is not None:
+            validation.append("planning.vertical-contract.green")
     current = read_current_document(request.current_path, toolchain_root=repo_root)
     assert current.contract["queued_runway"] == "runway.md"
     assert current.contract["selected_dispatch"] is None
@@ -1004,6 +1009,7 @@ def _planning_owner_request(
                 "lineage": "pass",
                 "approval_scope": "pass",
                 "semantic_slices": "pass",
+                "vertical_contract": "pass",
                 "stop_boundary": "pass",
             },
             "corrections": [],
@@ -1611,13 +1617,17 @@ def _selection_workspace(
         }
         for index, boundary in enumerate(boundaries, start=1)
     ]
+    _apply_vertical_scenario(runway, case)
+    batch_kind = cast(str, case.get("batch_kind", "migration"))
+    cast(dict[str, object], runway["batch"])["kind"] = batch_kind
+    cast(dict[str, object], dispatch["scope"])["batch_kind"] = batch_kind
     lineage = ArtifactLineage(
         planning_root=workspace,
         program="codex-config",
         batch_id="fixture-batch",
         included_finding_ids=("CCFG-1",),
         deferred_finding_ids=(),
-        batch_kind="migration",
+        batch_kind=batch_kind,
         ledger_path=ledger_path,
         ledger_revision="b" * 64,
         dispatch_path=workspace / "dispatch.md",
@@ -1652,6 +1662,65 @@ def _selection_workspace(
             "candidate", commit, "planning-selection-transaction/v1"
         ),
     )
+
+
+def _apply_vertical_scenario(
+    runway: dict[str, object], case: Mapping[str, object]
+) -> None:
+    scenario = case.get("vertical_case")
+    if scenario is None or scenario == "non-migration":
+        return
+
+    slices = cast(list[dict[str, object]], runway["slices"])
+    target = slices[-1] if scenario == "mixed-risk" else slices[0]
+    target["risk"] = "migration"
+    if scenario == "missing":
+        return
+
+    coexistence = (
+        "temporary"
+        if scenario
+        in {
+            "temporary",
+            "temporary-incomplete",
+        }
+        else "none"
+    )
+    vertical, matrix = _vertical_scenario_contract(coexistence)
+    if scenario == "temporary-incomplete":
+        row = cast(dict[str, object], matrix["fixture planning caller"])
+        del row["removal_slice_or_condition"]
+    elif scenario == "none-with-rows":
+        _, matrix = _vertical_scenario_contract("temporary")
+    target["vertical_slice"] = vertical
+    target["migration_matrix"] = matrix
+
+
+def _vertical_scenario_contract(
+    coexistence: str,
+) -> tuple[dict[str, object], dict[str, object]]:
+    vertical: dict[str, object] = {
+        "starting_scenario": "one caller still uses the previous planning owner",
+        "durable_result": "that caller uses the permanent planning owner",
+        "owner_before": "previous planning owner",
+        "owner_after": "permanent plan-batch owner",
+        "migrated_callers": ["fixture planning caller"],
+        "focused_validation": ["planning.vertical-contract.green"],
+        "independently_usable_state": "the migrated caller queues reviewed plans",
+        "rollback_boundary": "revert the caller migration",
+        "temporary_residue": [],
+        "ownership_coexistence": coexistence,
+    }
+    matrix: dict[str, object] = {}
+    if coexistence == "temporary":
+        matrix["fixture planning caller"] = {
+            "current_owner": "previous planning owner",
+            "future_owner": "permanent plan-batch owner",
+            "reason": "the caller migrates in this bounded slice",
+            "status": "pending",
+            "removal_slice_or_condition": "focused vertical tests are green",
+        }
+    return vertical, matrix
 
 
 def _seed_existing_state(

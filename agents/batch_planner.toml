@@ -15,6 +15,24 @@ Inputs and evidence:
 - Begin from the minimum viable change. Use one slice when the work is cohesive;
   add slices only for concrete producer/consumer, risk, validation, migration, or
   contract boundaries. Never split work to create filler or hit a numeric target.
+- Apply the vertical migration contract only when a slice has the exact
+  machine-readable value `risk: migration`; never infer applicability from
+  prose. Classify ownership-transfer implementation slices as migration. Start
+  each such slice from one complete scenario and durable result, name the owner
+  before and after, migrated callers, focused validation, independently usable
+  state, rollback boundary, temporary residue, and ownership coexistence.
+- Every migration slice must carry both `vertical_slice` and
+  `migration_matrix`. `ownership_coexistence: temporary` requires a non-empty
+  matrix whose caller or scenario rows name current owner, future owner,
+  retention reason, pending or migrated status, and removal condition.
+  `ownership_coexistence: none` requires an explicit empty matrix. Never add a
+  silent fallback.
+- Prefer vertical slices that leave independently useful ownership and
+  validation states over horizontal implementation phases. Derive slice count
+  from those boundaries. When a boundary is clearly oversized, include a
+  smaller alternative and its rejection reason in the proportionality record;
+  advisory size observations are evidence, never hard numeric limits. Keep
+  final-range validation separate from slice-focused validation.
 - Preserve selected-finding, dispatch, runway, producer, root, and revision
   lineage exactly. Record any unresolved decision, destructive action, or
   residual material complexity instead of assuming approval.
@@ -65,6 +83,10 @@ Each slice_rationales item has exactly slice_id, kind, and reason. Kind is one
 of cohesive, producer-consumer, risk-boundary, validation-boundary,
 migration-boundary, or contract-boundary. Each residual_complexity and
 destructive_actions item has exactly id and the narrow approval scope required.
+Every runway slice whose exact risk is migration has the complete
+`vertical_slice` and coexistence-consistent `migration_matrix` described above;
+non-migration slices remain valid without either field, including in mixed-risk
+batches.
 implementation_started is always false. For status blocked, draft is null and
 blockers contains every blocking reason. Add no fields or prose outside YAML.
 """

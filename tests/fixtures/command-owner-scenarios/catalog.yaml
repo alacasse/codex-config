@@ -451,6 +451,105 @@ scenarios:
     generation_and_roots: *fixture_roots
     validation: *planning_guard_validation
     binding: *planning_binding
+  - id: vertical-migration-none-queued
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.accept-vertical-no-coexistence
+    expected_transition: planning:queued
+    expected_writes: *planning_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planning stops before implementation
+    generation_and_roots: *fixture_roots
+    validation: &vertical_planning_validation
+      - planning.transaction.green
+      - planning.quality.green
+      - planning.installed-owner.green
+      - planning.vertical-contract.green
+    binding: *planning_binding
+  - id: vertical-migration-temporary-queued
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.accept-vertical-temporary-coexistence
+    expected_transition: planning:queued
+    expected_writes: *planning_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planning stops before implementation
+    generation_and_roots: *fixture_roots
+    validation: *vertical_planning_validation
+    binding: *planning_binding
+  - id: vertical-migration-missing-blocked
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.reject-missing-vertical-contract
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: runway.slices[0] with risk migration requires vertical_slice
+    generation_and_roots: *fixture_roots
+    validation: &vertical_planning_guard_validation
+      - planning.guard.green
+      - planning.no-queue-mutation.green
+      - planning.installed-owner.green
+      - planning.vertical-contract.green
+    binding: *planning_binding
+  - id: vertical-migration-temporary-incomplete-blocked
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.reject-incomplete-migration-matrix
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: runway.slices[0].migration_matrix.fixture planning caller must contain every exact ownership field
+    generation_and_roots: *fixture_roots
+    validation: *vertical_planning_guard_validation
+    binding: *planning_binding
+  - id: vertical-migration-none-with-rows-blocked
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.reject-retained-migration-matrix
+    expected_transition: planning:blocked
+    expected_writes: []
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: runway.slices[0] with ownership_coexistence none requires an empty migration_matrix
+    generation_and_roots: *fixture_roots
+    validation: *vertical_planning_guard_validation
+    binding: *planning_binding
+  - id: vertical-non-migration-without-contract-queued
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.accept-non-migration-without-vertical-contract
+    expected_transition: planning:queued
+    expected_writes: *planning_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planning stops before implementation
+    generation_and_roots: *fixture_roots
+    validation: *vertical_planning_validation
+    binding: *planning_binding
+  - id: vertical-mixed-risk-exact-predicate-queued
+    family: planning-quality
+    evidence_kind: target_interface
+    contracts: []
+    initial_artifacts: *workflow_inputs
+    command: planning-quality.accept-mixed-risk-exact-predicate
+    expected_transition: planning:queued
+    expected_writes: *planning_writes
+    forbidden_writes: *forbidden_writes
+    expected_stop_reason: planning stops before implementation
+    generation_and_roots: *fixture_roots
+    validation: *vertical_planning_validation
+    binding: *planning_binding
 
   - id: execution-validated-reviewed-committed
     family: execution

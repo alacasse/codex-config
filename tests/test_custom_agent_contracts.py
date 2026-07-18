@@ -483,6 +483,28 @@ class CustomAgentContractTests(unittest.TestCase):
         self.assertNotIn("12 lines or fewer", active_text)
         self.assertNotIn("10 lines or fewer", active_text)
 
+    def test_planning_roles_share_the_exact_vertical_migration_predicate(self) -> None:
+        planner = self.instructions("batch_planner")
+        reviewer = self.instructions("batch_plan_reviewer")
+
+        for role, instructions in (("planner", planner), ("reviewer", reviewer)):
+            for required in (
+                "exact machine-readable value `risk: migration`",
+                "never infer applicability from prose",
+                "ownership-transfer implementation slices",
+                "ownership_coexistence: temporary",
+                "ownership_coexistence: none",
+                "current owner, future owner",
+                "removal condition",
+                "horizontal",
+                "hard numeric limits",
+                "final-range validation separate",
+            ):
+                with self.subTest(role=role, requirement=required):
+                    self.assertIn(required, instructions)
+
+        self.assertIn("vertical_contract: pass | fail", reviewer)
+
 
 if __name__ == "__main__":
     unittest.main()

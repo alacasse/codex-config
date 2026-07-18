@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Permanent vertical migration planning
+
+Problem: candidate `plan-batch` could queue migration and ownership-transfer
+runways with generic semantic-slice rationale but without one starting scenario,
+durable ownership result, rollback-safe intermediate state, or complete caller
+migration evidence.
+
+Decision: require every exact `risk: migration` slice to carry the versioned
+runway's complete `vertical_slice` and coexistence-consistent
+`migration_matrix`. Bind the same exact-risk predicate through the command
+owner, planner, independent reviewer, deterministic pre-queue gate, and planning
+runway schema. Keep proportionality evidence advisory and preserve non-migration
+slices without vertical fields, including in mixed-risk batches.
+
+Expected effect: incomplete or ambiguous migration plans fail before DEC-038
+queue mutation, while cohesive one-slice migrations and independently useful
+vertical sequences remain valid. Planning contracts are now 1.1.0,
+`plan-batch` is 2.1.0, and custom agents are 1.6.0.
+
 ### Planning ownership cutover
 
 Problem: Architecture Program Runway and Batch Runway still exposed selection,

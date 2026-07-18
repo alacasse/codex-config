@@ -241,10 +241,10 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                 )
             },
             {
-                "plan-batch": "2.0.0",
+                "plan-batch": "2.1.0",
                 "work-batch": "1.0.6",
                 "batch-runway": "2.0.0",
-                "custom-agents": "1.5.0",
+                "custom-agents": "1.6.0",
             },
         )
 
@@ -622,6 +622,10 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             "observed_failure, invariants",
             "additions_beyond_minimum",
             "simpler_alternatives_rejected",
+            "exact\n  machine-readable value `risk: migration`",
+            "ownership_coexistence: temporary",
+            "ownership_coexistence: none",
+            "smaller alternative and its rejection reason",
             "Do not review or approve the draft",
             "Do not review or approve the draft, choose review evidence, invoke or message\n  batch_plan_reviewer",
         ):
@@ -635,6 +639,9 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             "approvals_sha256: string",
             "evidence_packet_sha256: string",
             "canonical independent-review evidence packet",
+            "exact\n  machine-readable value `risk: migration`",
+            "vertical_contract: pass | fail",
+            "Reject horizontal phase decomposition",
             "implementation_started: false",
             "Do not modify or produce a replacement draft",
         ):

@@ -118,6 +118,13 @@ def test_planning_quality_scenarios_cover_semantic_scope_approval_and_drafts() -
         "quality-planner-reviewer-coupling-blocked",
         "quality-stale-draft-non-executable",
         "quality-undecided-draft-non-executable",
+        "vertical-migration-none-queued",
+        "vertical-migration-temporary-queued",
+        "vertical-migration-missing-blocked",
+        "vertical-migration-temporary-incomplete-blocked",
+        "vertical-migration-none-with-rows-blocked",
+        "vertical-non-migration-without-contract-queued",
+        "vertical-mixed-risk-exact-predicate-queued",
     }
     family_ids = {
         item["id"]
@@ -140,6 +147,15 @@ def test_planning_quality_scenarios_cover_semantic_scope_approval_and_drafts() -
     assert _scenario("quality-undecided-draft-non-executable")[
         "expected_writes"
     ] == []
+    assert _scenario("vertical-migration-missing-blocked")["expected_writes"] == []
+    assert _scenario("vertical-mixed-risk-exact-predicate-queued")[
+        "expected_writes"
+    ] == [
+        "workspace/CURRENT.md",
+        "workspace/dispatch.md",
+        "workspace/runway.md",
+        "workspace/selection.md",
+    ]
 
 
 def test_fixture_planner_and_reviewer_are_injected_called_and_observed_independently(

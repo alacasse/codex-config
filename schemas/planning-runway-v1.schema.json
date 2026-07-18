@@ -31,8 +31,32 @@
         "properties": {
           "id": {"$ref": "#/definitions/nonEmptyString"}, "title": {"$ref": "#/definitions/nonEmptyString"},
           "risk": {"$ref": "#/definitions/nonEmptyString"}, "status": {"enum": ["pending", "active", "blocked", "completed"]},
-          "allowed_paths": {"$ref": "#/definitions/stringList"}, "validation": {"$ref": "#/definitions/stringList"}
-        }
+          "allowed_paths": {"$ref": "#/definitions/stringList"}, "validation": {"$ref": "#/definitions/stringList"},
+          "vertical_slice": {"$ref": "#/definitions/verticalSlice"},
+          "migration_matrix": {"$ref": "#/definitions/migrationMatrix"}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"risk": {"const": "migration"}}, "required": ["risk"]},
+            "then": {
+              "required": ["vertical_slice", "migration_matrix"],
+              "oneOf": [
+                {
+                  "properties": {
+                    "vertical_slice": {"properties": {"ownership_coexistence": {"const": "temporary"}}},
+                    "migration_matrix": {"minProperties": 1}
+                  }
+                },
+                {
+                  "properties": {
+                    "vertical_slice": {"properties": {"ownership_coexistence": {"const": "none"}}},
+                    "migration_matrix": {"maxProperties": 0}
+                  }
+                }
+              ]
+            }
+          }
+        ]
       }
     },
     "review": {
@@ -48,6 +72,40 @@
   "definitions": {
     "nonEmptyString": {"type": "string", "minLength": 1, "pattern": ".*\\S.*"},
     "stringList": {"type": "array", "items": {"$ref": "#/definitions/nonEmptyString"}, "uniqueItems": true},
+    "verticalSlice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["starting_scenario", "durable_result", "owner_before", "owner_after", "migrated_callers", "focused_validation", "independently_usable_state", "rollback_boundary", "temporary_residue", "ownership_coexistence"],
+      "properties": {
+        "starting_scenario": {"$ref": "#/definitions/nonEmptyString"},
+        "durable_result": {"$ref": "#/definitions/nonEmptyString"},
+        "owner_before": {"$ref": "#/definitions/nonEmptyString"},
+        "owner_after": {"$ref": "#/definitions/nonEmptyString"},
+        "migrated_callers": {"allOf": [{"$ref": "#/definitions/stringList"}], "minItems": 1},
+        "focused_validation": {"allOf": [{"$ref": "#/definitions/stringList"}], "minItems": 1},
+        "independently_usable_state": {"$ref": "#/definitions/nonEmptyString"},
+        "rollback_boundary": {"$ref": "#/definitions/nonEmptyString"},
+        "temporary_residue": {"$ref": "#/definitions/stringList"},
+        "ownership_coexistence": {"enum": ["none", "temporary"]}
+      }
+    },
+    "migrationMatrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {"^.*\\S.*$": {"$ref": "#/definitions/migrationMatrixRow"}}
+    },
+    "migrationMatrixRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["current_owner", "future_owner", "reason", "status", "removal_slice_or_condition"],
+      "properties": {
+        "current_owner": {"$ref": "#/definitions/nonEmptyString"},
+        "future_owner": {"$ref": "#/definitions/nonEmptyString"},
+        "reason": {"$ref": "#/definitions/nonEmptyString"},
+        "status": {"enum": ["pending", "migrated"]},
+        "removal_slice_or_condition": {"$ref": "#/definitions/nonEmptyString"}
+      }
+    },
     "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "absolutePath": {"type": "string", "pattern": "^/[^\\u0000]+$"},
     "producer": {

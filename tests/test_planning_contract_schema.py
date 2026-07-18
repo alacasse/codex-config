@@ -63,6 +63,23 @@ def _write_contract(path: Path, contract: Mapping[str, object]) -> Path:
     return path
 
 
+def _validate_runway_contract(tmp_path: Path, contract: Mapping[str, object]) -> object:
+    return validate_planning_contracts(
+        [_write_contract(tmp_path / "runway.md", contract)],
+        toolchain_root=REPO_ROOT,
+    )
+
+
+def _migration_matrix_row() -> dict[str, str]:
+    return {
+        "current_owner": "previous planning owner",
+        "future_owner": "permanent plan-batch owner",
+        "reason": "the caller migrates in this bounded slice",
+        "status": "pending",
+        "removal_slice_or_condition": "focused vertical tests are green",
+    }
+
+
 def _codes(result: object) -> set[str]:
     return {item.code for item in result.diagnostics}  # type: ignore[attr-defined]
 
@@ -89,6 +106,117 @@ def test_valid_fixture_catalog_parses_through_one_public_interface() -> None:
     assert result.is_valid
     assert result.diagnostics == ()
     assert {item.contract["schema"] for item in result.contracts} == set(SCHEMA_NAMES)
+
+
+def test_accepts_migration_with_complete_vertical_contract_and_no_coexistence(
+    tmp_path: Path,
+) -> None:
+    result = _validate_runway_contract(tmp_path, _contract_from_fixture("runway"))
+
+    assert result.is_valid  # type: ignore[attr-defined]
+
+
+def test_accepts_migration_with_temporary_coexistence_and_complete_matrix(
+    tmp_path: Path,
+) -> None:
+    contract = _contract_from_fixture("runway")
+    slice_item = contract["slices"][0]
+    slice_item["vertical_slice"]["ownership_coexistence"] = "temporary"
+    slice_item["migration_matrix"] = {"fixture caller": _migration_matrix_row()}
+
+    result = _validate_runway_contract(tmp_path, contract)
+
+    assert result.is_valid  # type: ignore[attr-defined]
+
+
+def test_rejects_migration_missing_vertical_slice(tmp_path: Path) -> None:
+    contract = _contract_from_fixture("runway")
+    del contract["slices"][0]["vertical_slice"]
+
+    result = _validate_runway_contract(tmp_path, contract)
+
+    assert not result.is_valid  # type: ignore[attr-defined]
+
+
+def test_rejects_migration_missing_matrix_as_required(tmp_path: Path) -> None:
+    contract = _contract_from_fixture("runway")
+    del contract["slices"][0]["migration_matrix"]
+
+    result = _validate_runway_contract(tmp_path, contract)
+
+    assert _codes(result) == {"schema.required"}
+
+
+@pytest.mark.parametrize("field", ["migrated_callers", "focused_validation"])
+def test_rejects_empty_required_vertical_string_lists(
+    tmp_path: Path, field: str
+) -> None:
+    contract = _contract_from_fixture("runway")
+    contract["slices"][0]["vertical_slice"][field] = []
+
+    result = _validate_runway_contract(tmp_path, contract)
+
+    assert _codes(result) == {"schema.minItems"}
+
+
+@pytest.mark.parametrize("matrix_case", ["empty", "incomplete"])
+def test_rejects_temporary_coexistence_with_empty_or_incomplete_matrix(
+    tmp_path: Path, matrix_case: str
+) -> None:
+    contract = _contract_from_fixture("runway")
+    slice_item = contract["slices"][0]
+    slice_item["vertical_slice"]["ownership_coexistence"] = "temporary"
+    matrix = {"fixture caller": _migration_matrix_row()}
+    if matrix_case == "empty":
+        matrix = {}
+    else:
+        del matrix["fixture caller"]["removal_slice_or_condition"]
+    slice_item["migration_matrix"] = matrix
+
+    result = _validate_runway_contract(tmp_path, contract)
+
+    assert not result.is_valid  # type: ignore[attr-defined]
+
+
+def test_rejects_no_coexistence_with_retained_matrix_rows(tmp_path: Path) -> None:
+    contract = _contract_from_fixture("runway")
+    contract["slices"][0]["migration_matrix"] = {
+        "fixture caller": _migration_matrix_row()
+    }
+
+    result = _validate_runway_contract(tmp_path, contract)
+
+    assert not result.is_valid  # type: ignore[attr-defined]
+
+
+def test_accepts_non_migration_without_vertical_contract(tmp_path: Path) -> None:
+    contract = _contract_from_fixture("runway")
+    slice_item = contract["slices"][0]
+    slice_item["risk"] = "evidence-only"
+    del slice_item["vertical_slice"]
+    del slice_item["migration_matrix"]
+
+    result = _validate_runway_contract(tmp_path, contract)
+
+    assert result.is_valid  # type: ignore[attr-defined]
+
+
+def test_applies_mixed_risk_contract_only_to_migration_slices(
+    tmp_path: Path,
+) -> None:
+    contract = _contract_from_fixture("runway")
+    migration_slice = contract["slices"][0]
+    evidence_slice = copy.deepcopy(migration_slice)
+    evidence_slice["id"] = "evidence"
+    evidence_slice["risk"] = "evidence-only"
+    del evidence_slice["vertical_slice"]
+    del evidence_slice["migration_matrix"]
+    contract["batch"]["kind"] = "mixed-risk"
+    contract["slices"] = [evidence_slice, migration_slice]
+
+    result = _validate_runway_contract(tmp_path, contract)
+
+    assert result.is_valid  # type: ignore[attr-defined]
 
 
 @pytest.mark.parametrize("name", ["current", "finding", "dispatch", "runway", "closeout"])
