@@ -11,7 +11,7 @@
 - Queued batch path or ID:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
 - Active batch execution status:
-  `queued; clean two-slice amendment accepted; implementation not started; fresh strict preflight required`
+  `queued; clean two-slice amendment and progression-authority correction accepted; implementation not started; fresh strict preflight required`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - Run artifact location: `None selected`
@@ -37,9 +37,10 @@
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
 - Pending ledger row: CCFG-26, controlled by the queued CCFG-26B runway plus
-  its clean bounded two-slice amendment after completed CCFG-26A and the closed
-  issue #66 slice-shape policy correction plus its post-closeout
-  semantic-authority correction. CCFG-26C through CCFG-26E remain unselected.
+  its clean bounded two-slice amendment and clean progression-authority
+  correction after completed CCFG-26A and the closed issue #66 slice-shape
+  policy correction plus its post-closeout semantic-authority correction.
+  CCFG-26C through CCFG-26E remain unselected.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -92,6 +93,12 @@
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/amendment.md`
 - Clean CCFG-26B amendment review:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/amendment-review.md`
+- Accepted CCFG-26B progression-authority correction, exact SHA-256
+  `b7dbe71f2b8eaa0bff76c14a21a1e08fb5c73c8b2d1b015741b37766ce06cf2a`:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/progression-authority-correction.md`
+- Clean CCFG-26B progression-authority review, exact SHA-256
+  `7044c8afd1119919902e26cd22e1974a8b52b6549f347c1c85942fa99775dfce`:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/progression-authority-review.md`
 - Queued CCFG-26B runway:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
 - CCFG-26 slice-shape policy direction from GitHub issue #66:
@@ -116,7 +123,7 @@
 - Queued batch:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
 - Active batch execution status:
-  `queued; clean two-slice amendment accepted; implementation not started; fresh strict preflight required`
+  `queued; clean two-slice amendment and progression-authority correction accepted; implementation not started; fresh strict preflight required`
 - Queued dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/dispatch.md`
 - Queued planning review:
@@ -125,6 +132,10 @@
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/amendment.md`
 - Queued amendment review:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/amendment-review.md`
+- Queued progression-authority correction:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/progression-authority-correction.md`
+- Queued progression-authority review:
+  `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/progression-authority-review.md`
 - Completed CCFG-26 slice-shape correction dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/dispatch.md`
 - Completed CCFG-26 slice-shape correction review:
@@ -171,16 +182,17 @@
 
 ## Next Safe Action
 
-Execute the queued CCFG-26B runway together with its exact clean amendment basis
-only through a later explicit stable `work-batch` request. Before delegation,
-Planning State must confirm this same queued scope and a fresh strict preflight
-must succeed against the immutable planning snapshot. The first invocation may
-execute only amended Slice 1 and must stop after its commit, durable flight
-evidence, execution-ledger update, and completed-slice archive. A later explicit
-stable `work-batch` may execute only amended Slice 2 and stop under the same
-temporary CCFG-34 policy; final batch gates remain separate. CCFG-26C through
-CCFG-26E and CCFG-27 through CCFG-29 remain unselected; no implementation has
-started.
+Execute the queued CCFG-26B runway together with its exact clean amendment and
+progression-authority correction basis only through a later explicit stable
+`work-batch` request. Before delegation, Planning State must confirm this same
+queued scope and a fresh strict preflight must succeed against the immutable
+planning snapshot. `work-batch` must validate `completed-slices.md` as a
+contiguous prefix of the immutable amendment order and execute only the first
+absent slice ID. Initially that derives Slice 1; after its accepted archive
+entry it derives Slice 2; after both entries it derives the final same-batch
+gate rather than another implementation slice. Each implementation invocation
+stops under the temporary CCFG-34 policy. CCFG-26C through CCFG-26E and CCFG-27
+through CCFG-29 remain unselected; no implementation has started.
 
 ## Stop Conditions
 
@@ -251,9 +263,10 @@ started.
   candidate behavior from GitHub issues #59, #60, and #61, or if that planning
   changes COR-009 identity.
 - Stop if queued CCFG-26B is activated without consuming the completed GitHub
-  issue #66 slice-shape policy correction, this clean independent review, and a
-  fresh strict preflight, or if future work reopens CCFG-26A or adds historical
-  runway compatibility.
+  issue #66 slice-shape policy correction, the exact clean amendment, the exact
+  clean progression-authority correction and review, and a fresh strict
+  preflight, or if future work reopens CCFG-26A or adds historical runway
+  compatibility.
 - Stop if work treats the completed `ccfg-26-slice-shape-policy-correction`
   runway as selected, queued, active, resumable, or executable.
 - Stop if CCFG-26A is widened beyond permanent candidate vertical-planning
