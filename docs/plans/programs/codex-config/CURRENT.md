@@ -61,7 +61,7 @@
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/dispatch.md`
 - Queued CCFG-26A runway:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`
-- Clean CCFG-26A planning review:
+- CCFG-26A planning review and bounded amendment evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/review.md`
 - Live CCFG-25 planning-quality amendment:
   `docs/plans/programs/codex-config/findings/ccfg-25-planning-quality-amendment.md`
@@ -119,9 +119,14 @@ Use `work-batch` to execute exactly the queued
 `batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`. Under the
 temporary stable-runway dogfooding policy, one invocation executes at most its
 single pending implementation slice and leaves all durable evidence before
-stopping. CCFG-26B through CCFG-26E and CCFG-27 through CCFG-29 remain
-unselected. Do not select or prepare a successor during CCFG-26A execution or
-same-batch closeout.
+stopping. CCFG-26A implements and proves integration-ready candidate behavior;
+it does not make candidate generation the canonical planner. Stable
+`plan-batch` plus the temporary CCFG-34 policy remain the canonical planning
+path for CCFG-26B through CCFG-26E until CCFG-29. CCFG-26B depends on CCFG-26A
+as a sequencing and parity boundary and requires a later explicit stable
+`plan-batch` invocation. CCFG-26B through CCFG-26E and CCFG-27 through CCFG-29
+remain unselected. Do not select or prepare a successor during CCFG-26A
+execution or same-batch closeout.
 
 ## Stop Conditions
 
@@ -162,8 +167,9 @@ same-batch closeout.
   without a named caller, reason, owner, and removal condition.
 - Stop if the superseded CCFG-26 dispatch, review, or runway is treated as
   selected, queued, active, resumable, or executable.
-- Stop if work selects, dispatches, queues, refreshes, or prepares CCFG-26
-  without a later explicit `plan-batch` invocation and fresh replan.
+- Stop if work selects, dispatches, queues, refreshes, or prepares CCFG-26B
+  through CCFG-26E without the required predecessor closeout and a later
+  explicit stable `plan-batch` invocation.
 - Stop if CCFG-34 closeout is treated as permission to select or prepare a
   successor batch.
 - Stop if CCFG-25 introduces a new planning schema, store, queue transaction,

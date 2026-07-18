@@ -51,8 +51,15 @@ CCFG-26 finding and COR-009 identity:
 5. CCFG-26E: finalization receipt through same-batch closeout, reconciliation,
    no-successor proof, and final displaced-owner narrowing.
 
-Only CCFG-26A is selected or queued by this planning flight. A later explicit
-`plan-batch` invocation owns each later child batch.
+Only CCFG-26A is selected or queued by this planning flight. CCFG-26A implements
+and proves permanent candidate planning behavior for eventual parity; it does
+not make candidate generation authoritative for canonical planning. Until
+CCFG-29 integrates the candidate and changes the default generation, the stable
+`plan-batch` command under the temporary CCFG-34 repository policy remains the
+canonical planning path for CCFG-26B through CCFG-26E. A later explicit stable
+`plan-batch` invocation owns selection and planning of CCFG-26B. Its dependency
+on successful CCFG-26A completion is a program sequencing and parity boundary,
+not a transfer of canonical planning authority to the candidate.
 
 ## Goal
 
@@ -73,6 +80,25 @@ Make the permanent candidate `plan-batch`, `batch_planner`, and
 ## Vertical Slice
 
 ```yaml
+vertical_contract_applicability:
+  applies_when:
+    slice_risk: migration
+  prose_inference: forbidden
+```
+
+Ownership-transfer work must classify its implementation slice as
+`risk: migration`. In a `mixed-risk` batch, only slices whose exact risk value is
+`migration` carry this contract; non-migration slices remain valid without the
+vertical migration fields. `batch_planner`, `batch_plan_reviewer`, `plan-batch`,
+`scripts/plan_batch.py`, and `planning-runway/v1` must use this same predicate.
+
+```yaml
+vertical_slice_field_contract:
+  ownership_coexistence:
+    enum:
+      - none
+      - temporary
+    other_values: forbidden
 vertical_slice:
   starting_scenario: candidate plan-batch receives one migration or ownership-transfer finding
   durable_result: the queued plan is mechanically bound to vertical slice fields, caller migration ownership, focused validation, rollback-safe intermediate state, and independent proportionality review
@@ -90,17 +116,25 @@ vertical_slice:
     - command-owner scenario catalog validation
     - delta-only test-quality review
     - independent exact-diff runway review
-  independently_usable_state: candidate planning rejects ambiguous horizontal ownership-transfer runways before any work-batch execution owner changes
+  independently_usable_state: candidate planning behavior is complete, testable, and integration-ready while stable plan-batch plus the temporary CCFG-34 policy remain canonical until CCFG-29
   rollback_boundary: one candidate commit restores the exact CCFG-25 candidate baseline without touching stable planning or the default Codex home
   temporary_residue:
     - stable CCFG-34 policy and root instruction hook remain until CCFG-29
     - execution telemetry remains owned by the later CCFG-26B through CCFG-26E sequence
     - work-batch, Batch Runway, and APR execution/closeout ownership remains unchanged
+  ownership_coexistence: temporary
 ```
 
 ## Migration Matrix
 
 ```yaml
+migration_matrix_rule:
+  when_ownership_coexistence_is_temporary:
+    matrix_required: true
+    matrix_must_be_non_empty: true
+  when_ownership_coexistence_is_none:
+    matrix_required: true
+    matrix_must_be_empty: true
 migration_matrix:
   migration_plan_draft:
     current_owner: batch_planner semantic slice rationale
@@ -132,6 +166,12 @@ migration_matrix:
     reason: the durable queued artifact must preserve the evidence later execution and review consume
     status: pending
     removal_slice_or_condition: CCFG-26A exact acceptance is green
+  canonical_planning_authority:
+    current_owner: stable plan-batch plus the temporary CCFG-34 repository policy
+    future_owner: integrated candidate planning behavior after the default generation changes
+    reason: CCFG-26A proves candidate parity without changing the canonical planning path for later CCFG-26 child batches
+    status: pending
+    removal_slice_or_condition: CCFG-29 candidate parity, integration, and default-generation gate
   per_flight_execution_telemetry:
     current_owner: no permanent candidate owner
     future_owner: CCFG-26B through CCFG-26E work-batch flight contracts
@@ -143,7 +183,7 @@ migration_matrix:
 ## Batch Kind And Approval
 
 - Batch kind: `mixed-risk`.
-- Implementation slice risk: `contract-narrowing`.
+- Implementation slice risk: `migration`.
 - Approval gate: the CCFG-26 ledger row, issue #60, and the user's explicit
   request to redo CCFG-26 under the new planning approach authorize the
   candidate planning contract to reject migration or ownership-transfer plans
