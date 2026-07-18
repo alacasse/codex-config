@@ -27,6 +27,27 @@ inside that spawned agent.
 
 Repo-owned skills are reusable workflow code. Do not hard-code a single project's name, paths, validation commands, cache locations, issue policy, or local planning layout into a generic skill. If a workflow needs project-specific behavior, put those values in that project's instructions, local overlay, active spec, or a repo-owned reference document, then make the skill resolve them or stop when they are missing.
 
+Repository exploration must remain tool-neutral. Do not require Graphify or any
+specific knowledge-graph, indexing, or codebase-query product in reusable
+skills, command-owner contracts, candidate refactors, acceptance criteria, or
+required artifacts. Core workflows must work with normal repository reads and
+search plus configured generic support agents. Optional exploration tools may be
+used only when explicitly enabled by user or project instructions, and their
+commands, paths, schemas, hooks, caches, and generated outputs must not become
+semantic authority, required workflow state, or a portability assumption.
+
+## Temporary Graphify suspension
+
+Until the user explicitly lifts this suspension after the command-owner
+refactor is complete, do not invoke Graphify, build, update, or query a Graphify
+graph, install or refresh Graphify hooks, or use `graphify-out` outputs while
+planning, reviewing, implementing, validating, or closing work in
+`codex-config`. Historical Graphify references may be read as evidence, but they
+are not required inputs and must not be treated as authority.
+
+Use Planning State diagnostics, targeted repository reads and searches, and the
+existing `codebase_investigator` when bounded read-only support is needed.
+
 ## Temporary stable-runway dogfooding policy
 
 Before planning or executing CCFG-26 through CCFG-29, read and apply the
