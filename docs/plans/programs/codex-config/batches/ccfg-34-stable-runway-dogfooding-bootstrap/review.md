@@ -47,3 +47,46 @@ plan.
 Approve exactly the replacement dispatch and runway blobs above for CCFG-34.
 Implementation requires a later explicit `work-batch` invocation and must remain
 inside the stated minimal file ceiling.
+
+## Bounded Amendment Review
+
+```yaml
+status: clean
+review_basis:
+  dispatch_git_blob: 7b43871b6a04317af15d8af3f540130aa5cc50f7
+  runway_git_blob: 5d2e978e8798ed3347bf8acfa4dc7429929e5624
+  reviewer: fresh independent planning reviewer
+  reviewer_mode: read-only planning amendment review
+required_changes: []
+scope_drift: []
+implementation_resume_authorized: true
+```
+
+The bounded amendment replaces only the ineffective `.codex/AGENTS.md` hook
+with root `AGENTS.md`, retargets the existing focused contract test to that root
+hook, and preserves the single slice, policy behavior, validation class,
+architecture ceiling, commit shape, closeout boundary, and no-successor rule.
+CCFG-26 remains blocked and unselected.
+
+## Final Implementation Review
+
+```yaml
+status: clean
+diff_basis: HEAD a03e1fea00fc80d3e62ff19ebe650d45694fe722; exact four-file implementation diff committed as ba1e941
+verified_cross_checkout_precreation: null
+verified_cross_checkout_context: null
+lenses_applied:
+  - behavior_change
+  - contract_change
+  - test_change
+  - validation_or_reporting_change
+findings: []
+residual_risks: []
+required_fixes: []
+```
+
+The final reviewer confirmed that root `AGENTS.md` automatically loads the
+temporary project policy, `.codex/AGENTS.md` matches its baseline, the CCFG-29
+removal gate consistently names the root hook, and no runner, generic skill,
+agent contract, feature metadata, candidate code, or runtime state changed.
+Delta-only test-quality review was clean.

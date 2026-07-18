@@ -1,6 +1,6 @@
 # CCFG-34 Minimal Stable Runway Dogfooding Bootstrap Runway
 
-Status: `queued`
+Status: `completed`
 
 ## Purpose
 
@@ -151,7 +151,7 @@ recovery authority.
 
 Required areas:
 
-- `.codex/AGENTS.md`
+- root `AGENTS.md`
 - `docs/plans/programs/codex-config/notes/`
 - `tests/test_stable_runway_dogfooding_policy.py`
 - `CHANGELOG.md`
@@ -174,7 +174,49 @@ Forbidden:
 
 | Slice | Status | Commit | Validation | Review | Notes |
 |---|---|---|---|---|---|
-| 1. Install the minimal temporary dogfooding policy | Pending | — | Pending | Pending | One focused implementation slice; stop after durable completion. |
+| 1. Install the minimal temporary dogfooding policy | Completed | `ba1e941` | 5 tests and 43 subtests; Ruff and exact-range whitespace green | Clean planning amendment, delta-only test-quality review, and final independent review | Root hook, temporary policy, focused test, and changelog committed; no successor selected. |
+
+## Commit Receipt
+
+```yaml
+slice: 1
+commit: ba1e941
+subject: docs: add minimal stable runway dogfooding policy
+status: committed
+files_changed:
+  - AGENTS.md
+  - CHANGELOG.md
+  - docs/plans/programs/codex-config/notes/stable-runway-dogfooding-policy.md
+  - tests/test_stable_runway_dogfooding_policy.py
+validation: focused pytest 5 passed and 43 subtests passed; Ruff clean; exact-range whitespace clean
+review: clean
+convergence:
+  phase: closure
+  scope_trend: shrinking
+  new_unknowns: []
+  blockers: []
+  next_proof: same-batch closeout reconciliation
+```
+
+## Resolved Planning Blocker
+
+Final implementation review proved that the authorized `.codex/AGENTS.md` hook
+is outside Codex's normal project-root-to-working-directory instruction chain.
+The focused test therefore proves link resolution, not automatic loading. See
+`execution-report.md` for the exact review basis and next safe action.
+
+The exact bounded amendment received a clean independent planning review at
+dispatch blob `7b43871b6a04317af15d8af3f540130aa5cc50f7` and runway blob
+`5d2e978e8798ed3347bf8acfa4dc7429929e5624`. Resume only the root-hook and
+focused-test correction. Do not commit or close the slice before corrected
+validation and independent implementation review.
+
+## Bounded Runway Amendment
+
+The amendment replaces `.codex/AGENTS.md` with root `AGENTS.md` as the sole
+project-local policy hook and requires the existing focused contract test to
+validate that root hook. No other implementation file, slice, behavior,
+validation class, architecture surface, or closeout rule changes.
 
 ## Slice 1 — Install The Minimal Temporary Dogfooding Policy
 
@@ -205,15 +247,16 @@ vertical_slice:
 
 - Add one policy document under
   `docs/plans/programs/codex-config/notes/`.
-- Reference it from `.codex/AGENTS.md`.
-- Add one focused contract test proving the hook and required policy clauses.
+- Reference it from root `AGENTS.md`.
+- Add one focused contract test proving the root hook and required policy
+  clauses.
 - Update `CHANGELOG.md`.
 - Change feature metadata only when the current feature installation contract
   mechanically requires it.
 
 ### Allowed Files
 
-- `.codex/AGENTS.md`
+- `AGENTS.md`
 - `docs/plans/programs/codex-config/notes/**`
 - `tests/test_stable_runway_dogfooding_policy.py`
 - `CHANGELOG.md`
@@ -268,7 +311,7 @@ Do not install or mutate runtime Codex state.
 
 ### Worker Brief
 
-Implement only the repository-local hook, temporary policy, focused test,
+Implement only the root repository-local hook, temporary policy, focused test,
 changelog, and mechanically required metadata. Do not modify runner scripts,
 generic skills, agent TOMLs, candidate code, or runtime state. Do not add a
 launcher, protocol, receipt, state field, transition, or telemetry.

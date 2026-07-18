@@ -31,10 +31,10 @@ The policy must provide:
 
 Expected implementation surfaces:
 
-- `.codex/AGENTS.md`;
+- root `AGENTS.md` as the project-local policy hook;
 - one project-owned policy under
   `docs/plans/programs/codex-config/notes/`;
-- one focused policy contract test;
+- one focused policy contract test validating the root hook;
 - `CHANGELOG.md`;
 - `codex-features.json` only if mechanically required.
 
@@ -55,6 +55,15 @@ Do not modify:
 
 Do not add a launcher, execution-unit protocol, automatic continuation,
 persistent store, lifecycle state, helper, or second coordination framework.
+
+## Bounded Runway Amendment
+
+Final implementation review proved that `.codex/AGENTS.md` is not on the normal
+project-root-to-working-directory instruction-discovery chain. This amendment
+replaces only that ineffective hook with root `AGENTS.md` and retargets the
+existing focused contract test accordingly. It does not change the batch goal,
+slice count, policy behavior, validation class, architecture ceiling, or
+closeout boundary.
 
 ## Planning Shape
 

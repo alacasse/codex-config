@@ -8,11 +8,10 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/runway.md`
-- Active batch execution status: `queued`
+- Queued batch path or ID: `None`
+- Active batch execution status: `idle`
 - Latest closeout path:
-  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
 - Run artifact location: `None selected`
 - Program archive location: `docs/plans/archive/`
 
@@ -33,12 +32,8 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-27 through CCFG-29.
-- Pending ledger row: CCFG-34, reviewed and queued for a later explicit
-  `work-batch` invocation.
-- Blocked ledger row: CCFG-26, waiting for CCFG-34 closeout and fresh
-  replanning.
-- Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-33.
+  CCFG-26 through CCFG-29.
+- Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
   CCFG-22 closes all nine COR-005 authoring acceptance keys with candidate-only
@@ -56,6 +51,8 @@
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - CCFG-25 closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
+- CCFG-34 closeout evidence:
+  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
 - Live CCFG-34 intake and CCFG-26 replanning amendment:
   `docs/plans/programs/codex-config/findings/github-issue-62-stable-runway-dogfooding-bootstrap.md`
 - Live CCFG-25 planning-quality amendment:
@@ -75,13 +72,14 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/runway.md`
-- Active batch execution status: `queued`
-- Queued CCFG-34 dispatch:
+- Queued batch: `None`
+- Active batch execution status: `idle`
+- Completed CCFG-34 dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/dispatch.md`
-- Queued CCFG-34 independent planning review:
+- Completed CCFG-34 review evidence:
   `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/review.md`
+- Completed CCFG-34 closeout:
+  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
 - Superseded CCFG-24 planning evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/superseded.md`
 - Superseded CCFG-24A blocked attempt:
@@ -94,22 +92,23 @@
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
 - Superseded CCFG-26 planning evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-closeout-ownership-transfer/superseded.md`
-- Latest completed batch: `ccfg-25-planning-ownership-transfer`
+- Latest completed batch: `ccfg-34-stable-runway-dogfooding-bootstrap`
 - Latest completed dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/dispatch.md`
+  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/dispatch.md`
 - Latest completed runway:
-  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/runway.md`
 - Latest closeout:
-  `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
+  `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
 
 ## Next Safe Action
 
-CCFG-34 is the sole reviewed, queued batch. A later explicit `work-batch`
-invocation may execute exactly
-`batches/ccfg-34-stable-runway-dogfooding-bootstrap/runway.md`. CCFG-26 remains
-blocked until CCFG-34 closeout, then must be replanned from fresh canonical
-state. Do not select, dispatch, queue, refresh, or prepare CCFG-26 through
-CCFG-29 during this queue transition.
+CCFG-34 is closed by
+`batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`. Selected
+dispatch, queued batch, and active runway are `None`. CCFG-26 is open and
+unselected; a later explicit `plan-batch` invocation may replan exactly CCFG-26
+from fresh canonical state with the permanent requirements from issues #59,
+#60, and #61. This closeout did not select, dispatch, queue, refresh, or prepare
+CCFG-26 through CCFG-29.
 
 ## Stop Conditions
 
@@ -132,7 +131,7 @@ CCFG-29 during this queue transition.
 - Stop if a generic reusable skill receives project-specific paths, commands,
   caches, or planning layouts.
 - Stop if work treats closed CCFG-21, CCFG-22, CCFG-23, CCFG-30, CCFG-31,
-  CCFG-32, or CCFG-33 as active work.
+  CCFG-32, CCFG-33, or CCFG-34 as active work.
 - Stop if CCFG-32 execution semantics, Git-derived queue currentness, or broad
   live-lease protocol topology are restored.
 - Stop if CCFG-22 or CCFG-23 behavior is widened into production ownership beyond
@@ -150,10 +149,10 @@ CCFG-29 during this queue transition.
   without a named caller, reason, owner, and removal condition.
 - Stop if the superseded CCFG-26 dispatch, review, or runway is treated as
   selected, queued, active, resumable, or executable.
-- Stop if planning bypasses CCFG-34 or selects CCFG-26 before CCFG-34 closeout
-  and a fresh CCFG-26 replan.
-- Stop if any other batch becomes selected, queued, or active while CCFG-34 is
-  queued, or if this planning flight begins CCFG-34 implementation.
+- Stop if work selects, dispatches, queues, refreshes, or prepares CCFG-26
+  without a later explicit `plan-batch` invocation and fresh replan.
+- Stop if CCFG-34 closeout is treated as permission to select or prepare a
+  successor batch.
 - Stop if CCFG-25 introduces a new planning schema, store, queue transaction,
   lifecycle state, public command, persistent draft store, helper behavior,
   runner protocol, or compatibility layer.
