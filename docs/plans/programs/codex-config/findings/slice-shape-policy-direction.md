@@ -5,7 +5,8 @@
 - Decision status: direction accepted; detailed implementation design intentionally deferred.
 - Program: `codex-config`.
 - Related finding: CCFG-26.
-- Related issue: GitHub issue #60.
+- Original policy issue: GitHub issue #60.
+- Ledger intake issue: GitHub issue #66.
 - Related completed batch: `ccfg-26a-permanent-vertical-runway-contract`.
 - Sequencing constraint: resolve this direction before selecting CCFG-26B.
 
@@ -278,3 +279,12 @@ The accepted direction is:
 - deterministic validation checks policy consistency while independent review judges architectural quality;
 - no backward compatibility is required for historical runways;
 - richer policy design is deferred until after the command-owner refactor and more practical experience.
+
+## Intake Decision
+
+- Ledger identity: `CCFG-26`.
+- Parent finding status: `Prepared`; CCFG-26A remains completed historical evidence.
+- Candidate work: one bounded slice-shape policy correction before CCFG-26B.
+- No dispatch is selected, no batch is queued, and no runway is active by this intake.
+- A later explicit stable `plan-batch` invocation owns selection and detailed
+  implementation design for the corrective preparation batch.

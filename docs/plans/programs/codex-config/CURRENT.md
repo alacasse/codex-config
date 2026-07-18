@@ -8,8 +8,9 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
-- Active batch execution status: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/runway.md`
+- Active batch execution status: `queued; not started`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/closeout.md`
 - Run artifact location: `None selected`
@@ -33,7 +34,8 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
-- Prepared ledger row: CCFG-26 after completed preparation batch CCFG-26A.
+- Pending ledger row: CCFG-26, controlled by the queued issue #66 corrective
+  preparation runway after completed CCFG-26A.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -66,6 +68,14 @@
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/completed-slices.md`
 - CCFG-26A closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/closeout.md`
+- Queued CCFG-26 slice-shape correction dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/dispatch.md`
+- Queued CCFG-26 slice-shape correction runway:
+  `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/runway.md`
+- Clean CCFG-26 slice-shape correction planning review:
+  `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/review.md`
+- Live CCFG-26 slice-shape policy direction from GitHub issue #66:
+  `docs/plans/programs/codex-config/findings/slice-shape-policy-direction.md`
 - Live CCFG-25 planning-quality amendment:
   `docs/plans/programs/codex-config/findings/ccfg-25-planning-quality-amendment.md`
 - Accepted command-owner redesign snapshot:
@@ -83,8 +93,13 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Active batch execution status: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/runway.md`
+- Active batch execution status: `queued; not started`
+- Queued dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/dispatch.md`
+- Clean queued-plan review:
+  `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/review.md`
 - Completed CCFG-26A dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/dispatch.md`
 - Completed CCFG-26A review:
@@ -121,12 +136,14 @@
 
 ## Next Safe Action
 
-No batch is selected, queued, or active. CCFG-26A is completed and parent
-CCFG-26 is `Prepared`. A later explicit stable `plan-batch` invocation may
-select CCFG-26B; this closeout did not select, dispatch, queue, refresh, or
-prepare it. CCFG-26B through CCFG-26E and CCFG-27 through CCFG-29 remain
-unselected. Stable `plan-batch` plus the temporary CCFG-34 policy remain the
-canonical planning path until CCFG-29.
+Execute only
+`docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/runway.md`
+through a later explicit `work-batch` invocation. It contains one vertical
+contract-narrowing implementation slice, passed exact independent planning
+review, and must close before CCFG-26B can be selected. CCFG-26A remains
+completed historical evidence. CCFG-26B through CCFG-26E and CCFG-27 through
+CCFG-29 remain unselected. Stable `plan-batch` plus the temporary CCFG-34 policy
+remain canonical until CCFG-29.
 
 ## Stop Conditions
 
@@ -193,8 +210,15 @@ canonical planning path until CCFG-29.
   `create-spec`, `execute`, or `closeout` identities reserved for CCFG-27,
   physically deletes legacy-owner directories reserved for CCFG-28, or changes
   the temporary bridge reserved for CCFG-29.
-- Stop if CCFG-26 is replanned without the permanent candidate behavior from
-  GitHub issues #59, #60, and #61, or if that replan changes COR-009 identity.
+- Stop if CCFG-26B through CCFG-26E are replanned without the permanent
+  candidate behavior from GitHub issues #59, #60, and #61, or if that planning
+  changes COR-009 identity.
+- Stop if CCFG-26B is selected before the GitHub issue #66 slice-shape policy
+  correction closes, or if the correction reopens CCFG-26A, pulls #59/#61
+  execution behavior into its scope, or adds historical runway compatibility.
+- Stop if execution bypasses the queued
+  `ccfg-26-slice-shape-policy-correction` runway, expands beyond its one reviewed
+  slice, or treats its planning snapshot as a live execution lease.
 - Stop if CCFG-26A is widened beyond permanent candidate vertical-planning
   behavior from issue #60 or pulls issue #59/#61 execution behavior into its
   single slice.
