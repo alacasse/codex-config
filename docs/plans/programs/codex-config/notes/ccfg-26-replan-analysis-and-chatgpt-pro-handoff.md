@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This is the durable project starting point for the next CCFG-26 design pass. It
-captures the verified repository facts, the useful conclusions from the
+This is the durable record and planning handoff for the completed CCFG-26
+design pass. It captures the verified repository facts, the useful conclusions from the
 ChatGPT Pro discussion, corrections to that discussion, the target ownership
-direction, and the unresolved questions that must become formal project
-decisions before another CCFG-26 batch is planned.
+direction, the questions sent to ChatGPT Pro, and their verified formal
+disposition before another CCFG-26 batch is planned.
 
 It is deliberately not a dispatch, runway, batch selection, or authorization to
 implement. A fresh agent should be able to begin here without reconstructing the
@@ -14,8 +14,8 @@ preceding chat or treating the superseded CCFG-26B bundle as current direction.
 
 ## Canonical State After This Amendment
 
-- Parent finding: CCFG-26 / COR-009, still open and now `Blocked` on design
-  decisions.
+- Parent finding: CCFG-26 / COR-009, still open and now `Ready` for a later
+  explicit `plan-batch`; the formal design gate is satisfied.
 - Queued batch: `None`.
 - Selected dispatch: `None`.
 - Active runway: `None`.
@@ -214,10 +214,107 @@ as project decisions:
   required by the current strict topology. Preserve the existing candidate
   branch unless a later explicit Git decision says otherwise.
 
-## Target Ownership Model
+## Formal Disposition Of The ChatGPT Pro Response
 
-This table is the current direction. Rows marked `decision required` must be
-formalized before planning.
+The response was processed on 2026-07-19 against stable
+`357fb5b638137233fdf966be328630625435a7d4` and candidate
+`5c5ec9d52dd9033daa45f3a200031c152363b62c`. The strict
+`cross-checkout-context/v1` helper accepted those roots and revisions, both
+worktrees were clean, and Planning State remained valid and idle.
+
+The formal decision set is recorded in:
+
+- `ccfg-26-execution-state-design-contract.md` for the full CCFG-26 ownership,
+  state/event, crash, path, tracer, compatibility, and test contracts;
+- `ccfg-26-execution-state-design-review.md` for the clean independent review;
+- `../../../../adr/0003-canonical-batch-execution-state.md` for the durable
+  architecture decision;
+- root `CONTEXT.md` for the canonical vocabulary.
+
+The following conclusions are now project decisions rather than open questions:
+
+- one batch-stable `Batch Execution State` document owns intra-batch slice and
+  attempt progression; it is separate from run-scoped Run State;
+- `work-batch` owns semantic execution decisions, the execution-state module
+  owns deterministic transitions, `ledger-store` applies finding mutations,
+  and Planning State alone applies queue/currentness transitions;
+- accepted slice order is snapshotted from the exact runway; completed-prefix,
+  active-attempt, revision, and idempotency facts are canonical JSON;
+- `next_action` is derived by code, excluded from agent result contracts, and
+  recorded only in transition outcomes/receipts;
+- attempts are `reserved` or `in_flight` until exactly one `completed`,
+  `blocked`, or `failed` resolution; interruption is initially a diagnostic for
+  an unresolved `in_flight` attempt;
+- initialization uses compare-to-absence and later mutations use
+  expected-revision CAS under one short, platform-neutral inter-process
+  serialization contract on a single host/local filesystem;
+- Windows, macOS, and Linux are required observable platforms. No `fcntl`,
+  `msvcrt`, concrete lock package, or silent weak fallback is part of the public
+  contract;
+- execution receipts, manifests, and Markdown are projections of canonical
+  applied events and cannot advance state;
+- the execution-state owner is a deep module with a small typed interface;
+  implementation may span multiple semantic slices rather than compressing
+  state, persistence, locking, and real integration into one monolithic change;
+- the first acceptance tracer executes exactly one slice through public
+  `work-batch` and returns the existing compatible stopped phase result with
+  `manual_continuation_required` to prove fresh-process resumption;
+- manual human relaunch is not the accepted normal experience. A separately
+  reviewed automatic-successful-continuation milestone must launch one fresh
+  coordinator per remaining slice before CCFG-26 is normally usable or may
+  close, while recovery, finalization, closeout, and successor selection remain
+  separate;
+- each coordinator returns an action-free typed Execution Flight Result. The
+  runner validates its exact state/receipt reference and derives continuation;
+  the serialized `execute` phase still emits only one final Phase Result/receipt
+  when its internal flight loop stops;
+- planner compaction is not a CCFG-26 prerequisite, and
+  `planning-runway/v1.slices[].status` is plan-time/presentation compatibility
+  data rather than a live runtime owner.
+
+The live-code verification also corrected three overstatements in the response:
+
+1. the stable runner's current phase receipt is written before its phase-state
+   transition; state-first execution-transition receipts are a new CCFG-26
+   contract only;
+2. the project currently has no selected `run_artifact_root`; the design fixes a
+   deterministic batch-stable path beneath an explicitly provided root but does
+   not pretend a machine-local literal already exists; and
+3. process-crash behavior on a single-host local filesystem is in scope, while
+   power-loss durability, shared/network filesystems, distributed leases, and
+   multi-host fencing are not version-1 guarantees.
+
+Concrete lock-library selection and the exact generated-only runtime root used
+by a future acceptance run remain bounded implementation/operation inputs, not
+architecture questions. Project policy or explicit execution input resolves the
+root once and propagates it across flights; a human is not prompted between
+slices, and a reusable skill may not guess a project-specific default.
+
+## User-Directed Quality And Continuation Amendment
+
+After reviewing the human-readable consequences of the accepted design, the
+user made two additional decisions on 2026-07-19:
+
+1. prefer more implementation effort when it produces clean extensible code,
+   cohesive classes/functions, few parameters, and an interface that can grow;
+   allow multiple semantic slices rather than forcing a rushed one-slice module;
+2. reject manual per-slice relaunch as the normal user experience. Preserve one
+   fresh coordinator per flight internally, but require automatic successful
+   same-batch continuation before CCFG-26 is normally usable or may close.
+
+The design contract and ADR incorporate those decisions. The one-flight manual
+stop remains a bounded acceptance milestone because it proves durable
+fresh-process resumption. It is not the target steady-state workflow. Exact
+class count, source filenames, and lock package remain implementation choices;
+the reviewed interface, behavior, testability, and rollback properties are the
+acceptance surface.
+
+## Pre-Response Working Ownership Model
+
+This table is retained as the working model that produced the questions. The
+canonical resolved matrix is now in
+`ccfg-26-execution-state-design-contract.md`; `decision required` below records
+former uncertainty and is not a current blocker.
 
 | Fact or action | Semantic owner | Mechanical owner | Durable representation |
 |---|---|---|---|
@@ -267,27 +364,27 @@ The minimal proposed event vocabulary was `reserve_flight`,
 `accept_flight_result`, `record_blocked_result`, and `record_failed_result`.
 Under that option, canonical execution state is authoritative, flight-result
 receipts are immutable, the batch manifest is a derived index, and
-`completed-slices.md` is a generated human projection. The formal design still
-needs to decide whether interruption/cancellation are first-class events and
-whether the state belongs inside the existing runner state or behind a separate
-store.
+`completed-slices.md` is a generated human projection. The formal design
+selected a separate batch-stable execution state, treats interruption as an
+unresolved `in_flight` diagnostic in version 1, and defers cancellation and
+reviewed recovery events.
 
-## Decisions and Issues to Reconcile
+## Compatibility Decisions Reconciled
 
 | Surface | Current disposition |
 |---|---|
 | DEC-010 single structured authority | Preserve; it directly supports one execution-state owner. |
-| DEC-008 hybrid active artifacts | Do not supersede automatically. Verify whether moving runtime authority out of Markdown requires an amendment while preserving compatible rendered planning artifacts. |
+| DEC-008 hybrid active artifacts | Preserve. Runtime JSON is a separate operational category, so compatible rendered planning artifacts need no amendment. |
 | GitHub issue #44 YAML validation | Preserve. Strict YAML agent responses remain acceptable. |
-| GitHub issues #48 and #50 representation exploration | Verify live status before changing. The new direction is evidence for compact decisions and code rendering, not proof that every historical representation question is already resolved. |
+| GitHub issues #48 and #50 representation exploration | No change in this pass. Compact decisions remain useful follow-up evidence, not a CCFG-26 prerequisite. |
 | GitHub issue #61 / CCFG-26 execution transfer | Preserve the goal and acceptance; replace the superseded CCFG-26B implementation path. |
 | GitHub issues #59 and #60 | Preserve their permanent candidate behaviors and verify exact requirements before planning. |
-| CCFG-26C/D/E candidate rows | Preserve as unselected conceptual evidence until their disposition is decided explicitly. |
+| CCFG-26C/D/E candidate rows | Preserve as unselected concerns; the old labels no longer define a promised sequence. |
 | Git branch topology | Preserve strict stable/candidate topology; no mass rebase, reconstruction, tag, or topic branch is authorized by this amendment. |
 
-## Minimum State Invariants to Decide
+## Accepted Minimum State Invariants
 
-A formal design should either accept or explicitly replace each invariant:
+The formal design contract accepts these invariants:
 
 1. At most one unresolved attempt exists for a batch.
 2. A launch requires a durable reservation written before the external effect.
@@ -304,12 +401,25 @@ A formal design should either accept or explicitly replace each invariant:
 10. Queue currentness is never reconstructed from execution-state files.
 11. Runtime continuation is never inferred from Markdown or Git topology.
 12. No closeout transition selects a successor.
+13. Initialization exclusively creates revision 0 under a companion lock and
+    compare-to-absence; concurrent initialization cannot overwrite state.
+14. Every mutation is serialized through a platform-neutral inter-process
+    locking implementation and expected-state check.
+15. Lock ownership is never durable execution state and never spans an external
+    effect.
+16. Version 1 supports a single host with a local filesystem on Windows, macOS,
+    and Linux; shared/network filesystems require a separately accepted backend.
+17. One Execution Flight advances at most one Slice, but a code-owned outer loop
+    automatically starts later fresh flights on `continue_same_batch` before
+    CCFG-26 is considered normally usable.
+18. Automatic successful continuation never implies automatic recovery,
+    finalization, closeout, queue mutation, or successor selection.
 
-## Questions for the Next ChatGPT Pro Pass
+## Questions Sent To ChatGPT Pro
 
-Ask for explicit answers tied to the verified facts above. Request an ownership
-matrix, state/event sketch, crash table, and smallest tracer; avoid requesting a
-new full runway.
+These questions are retained as provenance for the response disposition above.
+Their accepted answers are canonical only through the linked design contract,
+not through the original external response.
 
 ### 1. Smallest vertical tracer
 
@@ -411,14 +521,15 @@ provide enough confidence for the first tracer? State which tests protect public
 behavior and which merely test the reducer. Do not make a new FSM dependency a
 prerequisite.
 
-## Protocol for Processing the Response
+## Protocol Used To Process The Response
 
-A fresh agent receiving the next ChatGPT Pro answer should:
+The response was processed with this protocol:
 
 1. Run `python scripts/planning_state.py current --root docs/plans` and
    `python scripts/planning_state.py validate --root docs/plans`.
-2. Confirm the program is still idle and CCFG-26 is still blocked; stop if a
-   batch was selected, queued, or activated unexpectedly.
+2. Confirm the program is idle and CCFG-26 is design-blocked at pickup; stop if
+   a batch was selected, queued, or activated unexpectedly. After the accepted
+   contract and clean review, reconcile the row to `Ready` without queueing.
 3. Resolve the exact stable and candidate roots, branches, revisions, and Codex
    homes through the strict cross-checkout evidence. Read canonical planning only
    from stable and target behavior only from candidate.
@@ -445,24 +556,32 @@ A fresh agent receiving the next ChatGPT Pro answer should:
 
 ## Formal Decision Gate Before Planning
 
-The next CCFG-26 `plan-batch` should be blocked unless all of these are true:
+The response disposition satisfies this design gate. A future `plan-batch` must
+still refresh live identities and provide the exact runtime root it intends to
+use:
 
-- [ ] One canonical runtime execution-state owner is named.
-- [ ] Planning State remains the sole queue/currentness owner.
-- [ ] The state and event schemas or equivalent contracts are bounded.
-- [ ] Reservation, CAS, idempotency, and crash recovery are explicit.
-- [ ] The state/receipt/manifest/projection relationship has no dual authority.
-- [ ] `next_action` authorship and validation are explicit.
-- [ ] The first batch has one real caller and one independently useful vertical
+- [x] One canonical runtime execution-state owner is named.
+- [x] Planning State remains the sole queue/currentness owner.
+- [x] The state and event schemas or equivalent contracts are bounded.
+- [x] Reservation, CAS, idempotency, and process-crash behavior are explicit.
+- [x] The state/receipt/manifest/projection relationship has no dual authority.
+- [x] `next_action` authorship and validation are explicit.
+- [x] Deep-module quality and semantic-slice rules prevent a forced monolithic
+      implementation or uncalled horizontal scaffolding.
+- [x] The first batch has one real caller and one independently useful vertical
       result.
-- [ ] The first batch does not silently absorb recovery, automatic continuation,
-      finalization, and closeout.
-- [ ] Stable/candidate roots and exact revisions are freshly verified.
-- [ ] Existing CCFG-21 through CCFG-25 contracts and reserved CCFG-27 identities
+- [x] Manual relaunch is limited to the first acceptance milestone; automatic
+      successful continuation is required before normal use or CCFG-26 closeout.
+- [x] The first batch does not silently absorb recovery, finalization, and
+      closeout.
+- [x] Stable/candidate roots and exact revisions were freshly verified for this
+      design pass; execution must refresh them again.
+- [x] Existing CCFG-21 through CCFG-25 contracts and reserved CCFG-27 identities
       are preserved or formally amended with live-caller evidence.
-- [ ] CCFG-26C/D/E have been preserved, reshaped, or superseded explicitly.
-- [ ] The temporary stable-runway dogfooding policy is applied.
-- [ ] No successor is selected as part of design or closeout.
+- [x] CCFG-26C/D/E have been preserved and reshaped as unselected concerns.
+- [x] The temporary stable-runway dogfooding policy is applied.
+- [x] No successor is selected as part of design or closeout.
+- [x] The user-directed amendment has a fresh clean independent review.
 
 ## Conceptual Dependency Direction
 
@@ -470,8 +589,9 @@ This is a reasoning order, not an accepted batch list:
 
 ```text
 formal execution-state decision
-    -> one manually continued vertical reservation/result tracer
-    -> fresh automatic continuation, if still needed
+    -> deep module through semantically useful slices
+    -> one manually stopped vertical acceptance tracer
+    -> fresh automatic continuation required for normal use
     -> bounded recovery semantics
     -> final validation and finalization
     -> closeout and same-batch Planning State reconciliation
@@ -507,6 +627,9 @@ Canonical live state and policy:
 - `../CURRENT.md`
 - `../LEDGER.md`
 - `stable-runway-dogfooding-policy.md`
+- `ccfg-26-execution-state-design-contract.md`
+- `ccfg-26-execution-state-design-review.md`
+- `../../../../adr/0003-canonical-batch-execution-state.md`
 - `../findings/ccfg-26-execution-state-authority-direction.md`
 - `../findings/command-owner-redesign-planning-execution-carry-forward.md`
 

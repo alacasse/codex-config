@@ -10,7 +10,7 @@
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID: `None`
 - Active batch execution status:
-  `idle; CCFG-26B superseded before implementation; CCFG-26 blocked on formal execution-state design decisions; no successor selected`
+  `idle; CCFG-26 design gate satisfied and Ready for a later explicit plan-batch; no batch selected, queued, or active; no successor selected`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - Run artifact location: `None selected`
@@ -35,11 +35,12 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
-- Blocked ledger row: CCFG-26. Its CCFG-26B runway was superseded before
-  implementation because progression and attempt state lacked one executable
-  owner. The accepted direction and full design handoff must be resolved into
-  formal decisions before a later explicit `plan-batch`. CCFG-26C through
-  CCFG-26E remain unselected conceptual evidence, not a successor chain.
+- Ready ledger row: CCFG-26. Its formal execution-state contract is accepted
+  and independently reviewed clean. A later explicit `plan-batch` may select
+  one bounded execution-foundation batch whose slice count follows semantic
+  interface, behavior, test, and rollback boundaries; no work is selected now.
+  CCFG-26C through CCFG-26E remain unselected conceptual evidence, not a
+  successor chain.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -112,6 +113,12 @@
   `docs/plans/programs/codex-config/findings/ccfg-26-execution-state-authority-direction.md`
 - CCFG-26 replan analysis and ChatGPT Pro handoff:
   `docs/plans/programs/codex-config/notes/ccfg-26-replan-analysis-and-chatgpt-pro-handoff.md`
+- Accepted CCFG-26 execution-state design contract:
+  `docs/plans/programs/codex-config/notes/ccfg-26-execution-state-design-contract.md`
+- Clean CCFG-26 execution-state design review:
+  `docs/plans/programs/codex-config/notes/ccfg-26-execution-state-design-review.md`
+- Accepted canonical batch execution-state ADR:
+  `docs/adr/0003-canonical-batch-execution-state.md`
 - CCFG-26 slice-shape policy direction from GitHub issue #66:
   `docs/plans/programs/codex-config/findings/slice-shape-policy-direction.md`
 - Live CCFG-25 planning-quality amendment:
@@ -133,13 +140,17 @@
 - Active runway: `None`
 - Queued batch: `None`
 - Active batch execution status:
-  `idle; CCFG-26B superseded before implementation; CCFG-26 blocked on formal execution-state design decisions; no successor selected`
+  `idle; CCFG-26 design gate satisfied and Ready for a later explicit plan-batch; no batch selected, queued, or active; no successor selected`
 - Superseded CCFG-26B evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/superseded.md`
 - Accepted CCFG-26 direction:
   `docs/plans/programs/codex-config/findings/ccfg-26-execution-state-authority-direction.md`
 - Durable CCFG-26 design handoff:
   `docs/plans/programs/codex-config/notes/ccfg-26-replan-analysis-and-chatgpt-pro-handoff.md`
+- Accepted CCFG-26 execution-state design contract:
+  `docs/plans/programs/codex-config/notes/ccfg-26-execution-state-design-contract.md`
+- Clean CCFG-26 execution-state design review:
+  `docs/plans/programs/codex-config/notes/ccfg-26-execution-state-design-review.md`
 - Completed CCFG-26 slice-shape correction dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/dispatch.md`
 - Completed CCFG-26 slice-shape correction review:
@@ -186,14 +197,17 @@
 
 ## Next Safe Action
 
-Keep the program idle. A fresh design agent should read
-`notes/ccfg-26-replan-analysis-and-chatgpt-pro-handoff.md`, process the next
-ChatGPT Pro response against the exact live stable and candidate code, and
-record formal decisions for the execution-state owner, state/event model,
-crash/CAS behavior, ownership matrix, and smallest vertical tracer. Do not
-execute or amend CCFG-26B. Do not select, dispatch, queue, or implement a
-successor. Only a later explicit `plan-batch` request may choose one bounded
-CCFG-26 batch after the design gate is satisfied.
+Keep the program idle. Only a later explicit `plan-batch` request may select
+one bounded CCFG-26 execution-foundation batch from
+`notes/ccfg-26-execution-state-design-contract.md`, with as many semantic slices
+as its deep interface, independently useful behaviors, tests, and rollback
+boundaries justify. That invocation must begin from live Planning State, refresh
+the strict stable/candidate identities, apply the temporary stable-runway
+dogfooding policy, resolve the exact run-artifact root from authorized project
+policy or explicit execution input, queue exactly one batch, and stop before
+implementation. Do not execute or amend CCFG-26B, select CCFG-26C through
+CCFG-26E, or implement the accepted design during this design-only
+reconciliation.
 
 ## Stop Conditions
 
@@ -239,8 +253,8 @@ CCFG-26 batch after the design gate is satisfied.
 - Stop if work selects, dispatches, queues, refreshes, or prepares superseded
   CCFG-26B under any condition.
 - Stop if work selects, dispatches, queues, refreshes, or prepares CCFG-26C
-  through CCFG-26E or replacement CCFG-26 work before the formal design gate and
-  a later explicit stable `plan-batch` invocation.
+  through CCFG-26E, or selects replacement CCFG-26 work without a later explicit
+  stable `plan-batch` based on the accepted execution-state design contract.
 - Stop if CCFG-34 closeout is treated as permission to select or prepare a
   successor batch.
 - Stop if CCFG-25 introduces a new planning schema, store, queue transaction,

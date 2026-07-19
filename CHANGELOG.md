@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### Canonical CCFG-26 batch execution state
+
+Problem: CCFG-26B distributed slice progression and attempt state across agent
+results, receipts, runner state, and Markdown, so no executable owner could
+atomically decide or resume one batch execution flight.
+
+Decision: accept a separate batch-stable execution-state aggregate owned
+semantically by `work-batch` and mutated mechanically through a deep store with
+expected-state compare-and-swap, replayable events, and an OS-neutral
+interprocess lock. Derive continuation from canonical state, keep receipts and
+Markdown as projections, and let semantic interface, behavior, test, and rollback
+boundaries determine the implementation slices needed for a clean extensible
+module. Keep one fresh coordinator per Slice, use an intentional manual stop only
+for first-flight acceptance, and require an internal `execute` loop to launch
+later fresh flights automatically before normal use or CCFG-26 closeout. Record
+the user amendment and fresh clean independent review; mark CCFG-26 `Ready`
+without selecting or queueing work.
+
+Expected effect: a later explicit `plan-batch` can plan one narrow vertical
+execution-foundation batch against a reviewed crash/concurrency and deep-module
+contract without reviving CCFG-26B, forcing a monolithic tracer, requiring human
+per-slice relaunch in normal use, or creating runtime state during design.
+
 ### Minimal stable-runway dogfooding policy
 
 Problem: CCFG-26 through CCFG-29 will run on the stable generation, but their
