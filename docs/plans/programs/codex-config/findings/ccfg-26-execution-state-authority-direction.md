@@ -71,17 +71,23 @@ The accepted decisions are:
 
 Operational execution must still refresh strict identities and resolve the exact
 run-artifact root once from authorized project policy or explicit execution
-input. Bounded generated-only acceptance uses an explicit `/tmp` target; normal
-longer-lived use requires an authorized local/external project policy. Concrete
-lock-library selection is a bounded implementation choice tested on Windows,
-macOS, and Linux, not an open design decision.
+input. A bounded generated-only implementation or acceptance invocation supplies
+an explicit absolute temporary root allocated through the host platform's
+temporary-directory facility. Reusable code and planning artifacts do not
+hard-code `/tmp` or any platform-specific temporary path. Normal longer-lived
+use requires an authorized local/external project policy. Concrete lock-library
+selection is a bounded implementation choice tested on Windows, macOS, and
+Linux, not an open design decision.
 
 ## Planning Gate
 
 The amended design gate is satisfied after a fresh clean independent review.
 Keep the program idle and do not invoke `work-batch`. Only a later explicit
-`plan-batch` request may select exactly one
-bounded CCFG-26 execution-foundation batch, derive its slice count from semantic
-interface/behavior/test/rollback boundaries, refresh strict identities, resolve
-the exact runtime root from authorized policy or execution input, and stop before
-implementation. This design pass selected no batch.
+`plan-batch` request may select the first bounded CCFG-26 execution-foundation
+batch. It must end in one independently useful state through the real candidate
+runner/`work-batch` seam. Automatic continuation remains a CCFG-26 completion
+requirement, but belongs to this first batch only if planning proves that its
+semantic, validation, and rollback boundary is proportionate. The planner must
+derive the slice count from those boundaries, refresh strict identities, resolve
+the exact runtime root from authorized policy or execution input, queue exactly
+one batch, and stop before implementation. This design pass selected no batch.

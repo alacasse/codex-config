@@ -33,8 +33,11 @@ The state path is batch-stable under an explicitly supplied run-artifact root:
 No latest-run search, Git fact, Markdown artifact, or per-run directory may
 select a different canonical state document. Project policy or an explicit
 execution input resolves the root once and every flight receives that exact
-value; this ADR does not install runtime state or choose a machine-local literal
-path for codex-config.
+value. Bounded tests and acceptance receive an explicit absolute temporary root
+allocated through the host platform's temporary-directory facility; reusable
+code and planning artifacts do not hard-code `/tmp` or any other
+platform-specific temporary path. This ADR does not install runtime state or
+choose a machine-local literal path for codex-config.
 
 Every mutation is serialized by an operating-system-neutral inter-process
 locking implementation and an expected-state compare-and-swap: absence for
@@ -49,7 +52,10 @@ The runner launches the fresh public `work-batch` coordinator as process
 lifecycle only. Inside that running coordinator, the execution-state store
 reserves the exact slice and persists `in_flight` immediately before the
 effectful worker launch. The runner does not make execution-acceptance or
-attempt-resolution decisions.
+attempt-resolution decisions. Before cutover, this real caller and the new
+behavior are implemented and validated in the candidate generation. The stable
+controller may orchestrate the accepted batch through its existing mechanisms,
+but it does not load candidate code as its own runtime authority.
 
 `next_action` is derived from canonical state and the accepted result. Agents do
 not author it, and it is not duplicated as mutable state. Transition receipts,
@@ -103,9 +109,12 @@ default.
   standalone uncalled framework remains insufficient.
 - The initial flight may stop for manual continuation as acceptance evidence.
   Automatic successful continuation is a separate required CCFG-26 milestone
-  before normal use or CCFG-26 closeout. Recovery of ambiguous in-flight
-  attempts, finalization, closeout, and successor selection remain outside the
-  initial tracer.
+  before normal use or CCFG-26 closeout, not an unconditional acceptance gate
+  for the first implementation batch. A future plan may combine it with the
+  initial tracer only when their semantic, validation, and rollback boundary is
+  proven proportionate. Recovery of ambiguous in-flight attempts,
+  finalization, closeout, and successor selection remain outside the initial
+  tracer.
 - Process-crash behavior is specified for local filesystems. Power-loss
   durability, shared/network filesystems, distributed leases, and multi-host
   fencing are not version-1 guarantees.

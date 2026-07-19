@@ -309,6 +309,36 @@ class count, source filenames, and lock package remain implementation choices;
 the reviewed interface, behavior, testability, and rollback properties are the
 acceptance surface.
 
+## Follow-Up Portability And Batch-Boundary Amendment
+
+A final bounded ChatGPT Pro review was reconciled on 2026-07-19 against stable
+`cc79a52544f80bcb4f59bad98e51349b441978ce` and candidate
+`5c5ec9d52dd9033daa45f3a200031c152363b62c`. Planning State remained valid and
+idle, with no selected dispatch, queued batch, active runway, or successor.
+
+Four corrections are accepted before the next `plan-batch`:
+
+1. generated-only tests and acceptance receive an explicit absolute temporary
+   root allocated through the host platform's temporary-directory facility;
+   reusable code and planning artifacts do not hard-code `/tmp` or any other
+   platform-specific temporary path;
+2. automatic successful continuation is a CCFG-26 completion requirement, not
+   an unconditional acceptance gate for the first execution-foundation batch;
+   it belongs to that batch only when planning proves the combined semantic,
+   validation, and rollback boundary proportionate;
+3. the at-least-two-Slice condition belongs to the public tracer fixture or
+   acceptance runway used to observe `continue_same_batch`; it imposes no
+   minimum Slice count on the CCFG-26 implementation runway; and
+4. the independent review must bind its clean verdict to exact digests of the
+   final ADR, design contract, handoff, and canonical vocabulary.
+
+The phrase “real runner caller” refers to the candidate implementation or its
+executable runner fixture exercising the production seam. It does not authorize
+the stable controller to load or adopt candidate code as runtime authority
+before cutover. The stable controller remains the canonical orchestrator and
+uses only its existing mechanisms while the target behavior is implemented and
+validated in the candidate checkout.
+
 ## Pre-Response Working Ownership Model
 
 This table is retained as the working model that produced the questions. The
@@ -568,10 +598,13 @@ use:
 - [x] `next_action` authorship and validation are explicit.
 - [x] Deep-module quality and semantic-slice rules prevent a forced monolithic
       implementation or uncalled horizontal scaffolding.
-- [x] The first batch has one real caller and one independently useful vertical
-      result.
+- [x] The first bounded batch has one real candidate runner/`work-batch` caller
+      and one independently useful vertical result.
 - [x] Manual relaunch is limited to the first acceptance milestone; automatic
       successful continuation is required before normal use or CCFG-26 closeout.
+- [x] Automatic continuation belongs to the first batch only if planning proves
+      that the combined semantic, validation, and rollback boundary is
+      proportionate.
 - [x] The first batch does not silently absorb recovery, finalization, and
       closeout.
 - [x] Stable/candidate roots and exact revisions were freshly verified for this
@@ -682,6 +715,9 @@ Accepted redesign identity:
   transition protocol, and derived-projection rule.
 - Stop if candidate behavior is inferred from stable code, or canonical planning
   is inferred from candidate-local copies.
+- Stop if the stable controller loads candidate code as runtime authority before
+  cutover; the real caller under validation belongs to the candidate target or
+  its executable fixture.
 - Stop if the first implementation batch is only an uncalled framework without
   an independently useful consumer behavior.
 - Stop if planning selects a successor before a later explicit `plan-batch`

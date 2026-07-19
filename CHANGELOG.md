@@ -17,7 +17,11 @@ boundaries determine the implementation slices needed for a clean extensible
 module. Keep one fresh coordinator per Slice, use an intentional manual stop only
 for first-flight acceptance, and require an internal `execute` loop to launch
 later fresh flights automatically before normal use or CCFG-26 closeout. Record
-the user amendment and fresh clean independent review; mark CCFG-26 `Ready`
+the user amendment and fresh clean independent review. Require host-native
+temporary-directory allocation instead of a literal `/tmp`, make the two-Slice
+minimum an acceptance-fixture property, and keep automatic continuation as a
+CCFG-26 completion gate that enters the first implementation batch only when
+planning proves the combined boundary proportionate. Mark CCFG-26 `Ready`
 without selecting or queueing work.
 
 Expected effect: a later explicit `plan-batch` can plan one narrow vertical

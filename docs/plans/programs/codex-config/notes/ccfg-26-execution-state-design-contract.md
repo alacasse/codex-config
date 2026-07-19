@@ -121,10 +121,12 @@ input resolves it once for the batch, and every runner-launched or direct
 the path between slices. Reusable workflow code may not invent a project-specific
 default.
 
-A future plan must either declare an explicit generated-only `/tmp` root for
-bounded acceptance or add an authorized project policy for the longer-lived
-local/external runtime root. This design pass does not create runtime files or
-choose a machine-local literal root.
+A future implementation or acceptance invocation supplies an explicit
+generated-only absolute temporary root allocated through the host platform's
+temporary-directory facility, or uses an authorized project policy for the
+longer-lived local/external runtime root. Reusable code and planning artifacts
+do not hard-code `/tmp` or any platform-specific temporary path. This design
+pass does not create runtime files or choose a machine-local literal root.
 
 The separate batch-stable namespace is intentional. Placing canonical state in
 the existing per-run `batches/<batch-id>/` directory would allow two runner runs
@@ -499,8 +501,12 @@ not an accepted attempt or execution result.
 The first CCFG-26 implementation plan must optimize for a coherent extensible
 module, not for the fewest slices or the smallest apparent diff. `plan-batch`
 may select one bounded batch with multiple semantic slices when the deep module,
-persistence, real caller integration, and continuation loop have independently
-useful behavior or distinct test/rollback boundaries.
+persistence, and real caller integration have independently useful behavior or
+distinct test/rollback boundaries. The first bounded batch must end in one
+independently useful state through the real candidate runner/`work-batch` seam.
+Automatic successful continuation remains a CCFG-26 completion requirement, but
+belongs to that first batch only when planning proves that combining it with the
+initial tracer has a proportionate semantic, validation, and rollback boundary.
 
 The one-flight tracer below is the first end-to-end milestone, not a requirement
 to implement every supporting responsibility in one large slice or commit. Any
@@ -509,8 +515,10 @@ or executable acceptance path; source-file scaffolding alone is not vertical.
 
 ### Starting scenario
 
-- Planning State identifies exactly one queued runway with at least two ordered
-  implementation slices.
+- The public tracer fixture or acceptance runway contains at least two ordered
+  Slices so `continue_same_batch` can be observed. This does not impose a
+  minimum Slice count on the CCFG-26 implementation runway itself.
+- Planning State identifies exactly one queued runway for that scenario.
 - No Batch Execution State exists for that program/batch path.
 - The future runway provides an explicit generated-only run-artifact root.
 - Stable/candidate roots, branches, revisions, and homes are freshly validated;
@@ -518,10 +526,15 @@ or executable acceptance path; source-file scaffolding alone is not vertical.
 
 ### Public caller and behavior
 
-At the one-flight milestone, the stable serialized `execute` phase remains named `execute` and the runner
-invokes one fresh public `work-batch/v1` coordinator instead of the Batch Runway
-public route. That process begins with no accepted implementation effect; the
-coordinator itself owns the later reserve/authorize decisions.
+At the one-flight milestone, the serialized `execute` phase remains named
+`execute` and the real candidate runner caller under validation invokes one
+fresh public `work-batch/v1` coordinator instead of the Batch Runway public
+route. “Real caller” means the candidate implementation or its executable
+runner fixture exercises the production seam. It does not authorize modifying
+the stable controller to load candidate code as runtime authority before
+cutover. The stable controller may orchestrate the batch only through its
+existing mechanisms. The launched coordinator begins with no accepted
+implementation effect and owns the later reserve/authorize decisions.
 
 The one-flight behavior is:
 
@@ -617,11 +630,13 @@ deep execution-state module through semantically useful slices
 
 Automatic continuation and recovery both consume the state module but remain
 separate semantics: successful continuation is required before CCFG-26 is
-normally usable, while ambiguous-attempt recovery remains a later fail-closed
-concern. They need not be one batch. Finalization requires a complete prefix and
-no active attempt. Closeout requires finalization evidence and idempotent
-partial-closeout recovery. Legacy-owner narrowing occurs only after every
-supported caller has migrated.
+normally usable or closed, but it is not an unconditional gate on the first
+execution-foundation batch. The first tracer and automatic continuation may be
+combined only when planning proves a proportionate shared semantic, validation,
+and rollback boundary. Ambiguous-attempt recovery remains a later fail-closed
+concern. Finalization requires a complete prefix and no active attempt. Closeout
+requires finalization evidence and idempotent partial-closeout recovery.
+Legacy-owner narrowing occurs only after every supported caller has migrated.
 
 CCFG-26C, CCFG-26D, and CCFG-26E remain unselected conceptual evidence. Their
 old labels do not force the dependency graph above.
@@ -651,12 +666,14 @@ coordinator, finalization, closeout, or successor. Negative tests cover wrong
 slice, wrong attempt, candidate mismatch, missing exact state path, orphan
 result, and a Batch Runway public fallback.
 
-Automatic-continuation tests start from an accepted runway with at least two
-slices and prove that the outer loop launches one fresh coordinator per slice
-without human input, never reuses coordinator context, never overlaps attempts,
-validates one action-free Execution Flight Result and unique transition receipt
-per flight, emits only one final execute Phase Result/receipt, and stops at the
-finalization boundary after the finite accepted slice order.
+Automatic-continuation tests start from an accepted test fixture or acceptance
+runway with at least two Slices and prove that the outer loop launches one fresh
+coordinator per Slice without human input, never reuses coordinator context,
+never overlaps attempts, validates one action-free Execution Flight Result and
+unique transition receipt per flight, emits only one final execute Phase
+Result/receipt, and stops at the finalization boundary after the finite accepted
+Slice order. The fixture requirement does not constrain the number of Slices in
+the CCFG-26 implementation runway.
 They also prove fail-closed stop on blocked/failed results, unresolved
 `in_flight` state, receipt conflict, state-path mismatch, and loop-process crash
 between completed flights; no case may recover an ambiguous attempt or select a
@@ -694,9 +711,12 @@ The design questions are resolved as follows:
 Operational execution still requires a fresh strict cross-checkout lease and an
 exact run-artifact root resolved once from project policy or explicit execution
 input. Those are per-run inputs, not open architecture decisions. A later
-explicit `plan-batch` may select exactly one bounded CCFG-26 execution-foundation
-batch whose slice count follows semantic interface, behavior, test, and rollback
-boundaries. This design pass does not select it.
+explicit `plan-batch` may select the first bounded CCFG-26 execution-foundation
+batch, whose slice count follows semantic interface, behavior, test, and rollback
+boundaries and whose outcome is independently useful through the real candidate
+runner/`work-batch` seam. Automatic continuation belongs to that batch only when
+planning proves the combined boundary proportionate. This design pass does not
+select it.
 
 ## Evidence
 

@@ -37,8 +37,11 @@
   CCFG-27 through CCFG-29.
 - Ready ledger row: CCFG-26. Its formal execution-state contract is accepted
   and independently reviewed clean. A later explicit `plan-batch` may select
-  one bounded execution-foundation batch whose slice count follows semantic
-  interface, behavior, test, and rollback boundaries; no work is selected now.
+  the first bounded execution-foundation batch. It must end in one independently
+  useful state through the real candidate runner/`work-batch` seam. Automatic
+  continuation remains a CCFG-26 completion requirement, but belongs to the
+  first batch only if planning proves the combined boundary proportionate; no
+  work is selected now.
   CCFG-26C through CCFG-26E remain unselected conceptual evidence, not a
   successor chain.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
@@ -198,11 +201,14 @@
 ## Next Safe Action
 
 Keep the program idle. Only a later explicit `plan-batch` request may select
-one bounded CCFG-26 execution-foundation batch from
-`notes/ccfg-26-execution-state-design-contract.md`, with as many semantic slices
-as its deep interface, independently useful behaviors, tests, and rollback
-boundaries justify. That invocation must begin from live Planning State, refresh
-the strict stable/candidate identities, apply the temporary stable-runway
+the first bounded CCFG-26 execution-foundation batch from
+`notes/ccfg-26-execution-state-design-contract.md`. It must end in one
+independently useful state through the real candidate runner/`work-batch` seam,
+with as many semantic slices as its interface, behavior, tests, and rollback
+boundaries justify. Automatic continuation remains a CCFG-26 completion
+requirement, but belongs to the first batch only if planning proves the combined
+boundary proportionate. That invocation must begin from live Planning State,
+refresh the strict stable/candidate identities, apply the temporary stable-runway
 dogfooding policy, resolve the exact run-artifact root from authorized project
 policy or explicit execution input, queue exactly one batch, and stop before
 implementation. Do not execute or amend CCFG-26B, select CCFG-26C through
