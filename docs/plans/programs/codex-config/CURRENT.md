@@ -11,7 +11,7 @@
 - Queued batch path or ID:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/runway.md`
 - Active batch execution status:
-  `queued with a clean bootstrap amendment; stable work-batch remains the real-batch controller; no implementation Slice started; no successor selected`
+  `blocked in Slice 1 final review; candidate work remains uncommitted at 5c5ec9d; stable work-batch remains the real-batch controller; no successor selected`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - Run artifact location: `None`; the real implementation batch has no Batch
@@ -39,13 +39,14 @@
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
 - Pending ledger row: CCFG-26. Its first bounded execution-foundation batch is
-  selected, corrected by an independently reviewed bootstrap amendment, and
-  queued. The batch has two vertical Slices. The stable controller executes
-  both real implementation Slices, one per explicit `work-batch` invocation;
-  Slice 2 proves the candidate runner/public-`work-batch` seam only against a
-  disposable fixture. Automatic continuation remains a CCFG-26 completion
-  requirement but is deliberately deferred to a later reviewed milestone. No
-  implementation Slice has started and no successor is selected.
+  selected and queued but blocked in Slice 1 final review. The uncommitted
+  candidate implementation passed its last focused local baseline, but the
+  final path-based filesystem effects remain vulnerable to namespace
+  substitution. A reviewed amendment or superseding replan must authorize one
+  cross-platform anchored-filesystem mechanism and Windows validation path
+  before implementation resumes. The batch still has two vertical Slices; the
+  stable controller owns both real Slices, and Slice 2 remains unstarted. No
+  implementation Slice is accepted or committed, and no successor is selected.
   CCFG-26C through CCFG-26E remain unselected conceptual evidence, not a
   successor chain.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
@@ -148,7 +149,7 @@
 - Queued batch:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/runway.md`
 - Active batch execution status:
-  `queued with a clean bootstrap amendment; stable work-batch remains the real-batch controller; no implementation Slice started; no successor selected`
+  `blocked in Slice 1 final review; preserve the uncommitted candidate worktree; no implementation commit, closeout, or successor selected`
 - Queued CCFG-26 execution-state foundation dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/dispatch.md`
 - Historical original planning review; insufficient by itself to authorize
@@ -158,6 +159,8 @@
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/amendment.md`
 - Clean bootstrap amendment review:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/amendment-review.md`
+- Blocked Slice 1 execution report:
+  `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/execution-report.md`
 - Superseded CCFG-26B evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/superseded.md`
 - Accepted CCFG-26 direction:
@@ -214,20 +217,16 @@
 
 ## Next Safe Action
 
-On a later explicit stable `work-batch`, consume the queued
-`batches/ccfg-26-execution-state-foundation/runway.md` together with its
-authoritative `amendment.md` and clean `amendment-review.md`. Re-read live
-Planning State, refresh the strict stable/candidate identities, and acquire a
-fresh ready live lease for the exact candidate paths. Execute exactly real
-implementation Slice 1 through the existing stable mechanisms, then stop after
-its implementation, focused validation, review, commit, receipt, and archive.
-On the later explicit stable invocation for real Slice 2, the stable controller
-still owns that implementation Slice; the candidate seam is exercised only
-against temporary fixture roots allocated at test time. Create no real Batch
-Execution State for this batch. Keep the same batch current if the
-Ubuntu/macOS/Windows final gate is not yet available. Do not resume CCFG-26B,
-select CCFG-26C through CCFG-26E, implement automatic continuation or later
-CCFG-26 semantics, or select a successor.
+Do not resume implementation under the current Slice 1 scope. Preserve the
+uncommitted candidate worktree and read
+`batches/ccfg-26-execution-state-foundation/execution-report.md`. Use a reviewed
+planning amendment or superseding replan to choose and authorize exactly one
+cross-platform anchored-filesystem mechanism, its dependency or native-backend
+boundary, and its Windows validation path. Only then refresh Planning State and
+the strict live lease, delegate the authorized correction, rerun all Slice 1
+validation and reviews, and request a fresh exact-diff runway review. Do not
+start Slice 2, create real Batch Execution State, close the batch, resume
+CCFG-26B, select CCFG-26C through CCFG-26E, or select any successor.
 
 ## Stop Conditions
 
@@ -237,6 +236,8 @@ CCFG-26 semantics, or select a successor.
   or derives either real implementation Slice of this batch.
 - Stop if execution creates a real Batch Execution State or durable temporary
   run-artifact root for this implementation batch.
+- Stop if execution resumes without reviewed authority for a cross-platform
+  final-effect confinement mechanism and its Windows validation path.
 - Stop if execution imports the stable completed prefix into candidate state or
   adds a legacy-prefix initialization or migration event.
 - Stop if work treats closed CCFG-18 or its completed runway as active work.
