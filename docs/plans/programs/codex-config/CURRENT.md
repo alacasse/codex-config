@@ -8,12 +8,14 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/runway.md`
 - Active batch execution status:
-  `idle; CCFG-26 design gate satisfied and Ready for a later explicit plan-batch; no batch selected, queued, or active; no successor selected`
+  `queued; ccfg-26-execution-state-foundation is reviewed and ready for a later explicit work-batch; no implementation Slice started; no successor selected`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
-- Run artifact location: `None selected`
+- Run artifact location: `/tmp/tmp.nAyp7HeqwO` (exact explicit generated-only
+  input for the queued batch; not project policy or a reusable default)
 - Program archive location: `docs/plans/archive/`
 
 ## Project State Policy
@@ -35,13 +37,13 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
-- Ready ledger row: CCFG-26. Its formal execution-state contract is accepted
-  and independently reviewed clean. A later explicit `plan-batch` may select
-  the first bounded execution-foundation batch. It must end in one independently
-  useful state through the real candidate runner/`work-batch` seam. Automatic
-  continuation remains a CCFG-26 completion requirement, but belongs to the
-  first batch only if planning proves the combined boundary proportionate; no
-  work is selected now.
+- Pending ledger row: CCFG-26. Its first bounded execution-foundation batch is
+  selected, independently reviewed clean, and queued. The batch has two
+  vertical Slices: the canonical execution-state owner and one real
+  runner/public-`work-batch` Execution Flight. Automatic continuation remains a
+  CCFG-26 completion requirement but is deliberately deferred to a later
+  reviewed milestone. No implementation Slice has started and no successor is
+  selected.
   CCFG-26C through CCFG-26E remain unselected conceptual evidence, not a
   successor chain.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
@@ -141,9 +143,14 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/runway.md`
 - Active batch execution status:
-  `idle; CCFG-26 design gate satisfied and Ready for a later explicit plan-batch; no batch selected, queued, or active; no successor selected`
+  `queued; ccfg-26-execution-state-foundation is reviewed and ready for a later explicit work-batch; no implementation Slice started; no successor selected`
+- Queued CCFG-26 execution-state foundation dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/dispatch.md`
+- Clean queued-runway planning review:
+  `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/review.md`
 - Superseded CCFG-26B evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/superseded.md`
 - Accepted CCFG-26 direction:
@@ -200,20 +207,18 @@
 
 ## Next Safe Action
 
-Keep the program idle. Only a later explicit `plan-batch` request may select
-the first bounded CCFG-26 execution-foundation batch from
-`notes/ccfg-26-execution-state-design-contract.md`. It must end in one
-independently useful state through the real candidate runner/`work-batch` seam,
-with as many semantic slices as its interface, behavior, tests, and rollback
-boundaries justify. Automatic continuation remains a CCFG-26 completion
-requirement, but belongs to the first batch only if planning proves the combined
-boundary proportionate. That invocation must begin from live Planning State,
-refresh the strict stable/candidate identities, apply the temporary stable-runway
-dogfooding policy, resolve the exact run-artifact root from authorized project
-policy or explicit execution input, queue exactly one batch, and stop before
-implementation. Do not execute or amend CCFG-26B, select CCFG-26C through
-CCFG-26E, or implement the accepted design during this design-only
-reconciliation.
+On a later explicit `work-batch`, consume only
+`batches/ccfg-26-execution-state-foundation/runway.md`. Re-read live Planning
+State, refresh the strict stable/candidate identities, and acquire a fresh ready
+live lease for the exact candidate paths. Use `/tmp/tmp.nAyp7HeqwO` as the exact
+caller-supplied execution root and require the canonical state path to remain
+absent before Slice 2 initializes the real tracer. Apply the temporary
+stable-runway dogfooding policy: one invocation advances exactly the next
+incomplete implementation Slice through implementation, focused validation,
+review, commit, receipt, and archive, then stops before another Slice. Keep the
+same batch current if the Ubuntu/macOS/Windows final gate is not yet available.
+Do not resume CCFG-26B, select CCFG-26C through CCFG-26E, implement automatic
+continuation or later CCFG-26 semantics, or select a successor.
 
 ## Stop Conditions
 
