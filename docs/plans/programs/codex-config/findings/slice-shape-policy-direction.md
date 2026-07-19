@@ -2,13 +2,17 @@
 
 ## Status
 
-- Decision status: direction accepted; detailed implementation design intentionally deferred.
+- Decision status: accepted historical direction; the bounded correction was
+  completed and reconciled; richer policy design remains deferred.
 - Program: `codex-config`.
 - Related finding: CCFG-26.
 - Original policy issue: GitHub issue #60.
 - Ledger intake issue: GitHub issue #66.
 - Related completed batch: `ccfg-26a-permanent-vertical-runway-contract`.
-- Sequencing constraint: resolve this direction before selecting CCFG-26B.
+- Completed corrective batch: `ccfg-26-slice-shape-policy-correction`.
+- Historical sequencing constraint: this direction was resolved by the completed
+  slice-shape correction before the later, now-superseded CCFG-26B planning
+  attempt. It no longer authorizes CCFG-26B.
 
 This document records the reasoning that followed the completion of CCFG-26A. It is not an executable runway and does not select, queue, or authorize implementation work.
 
@@ -180,9 +184,13 @@ Migration and ownership-transfer work should continue to identify, where applica
 
 These requirements become a migration extension layered beside slice shape, rather than the mechanism that activates vertical planning.
 
-## Minimum Corrective Work Before CCFG-26B
+## Minimum Corrective Work (Historical)
 
-The corrective work should be a bounded preparation batch under CCFG-26, inserted before CCFG-26B is selected. CCFG-26A remains completed historical evidence and must not be reopened or rewritten.
+This section records the scope that the completed slice-shape correction was
+required to satisfy before the historical CCFG-26B planning attempt. Its
+`should` and `must` statements govern that closed correction only; they do not
+authorize current or future CCFG-26B work. CCFG-26A remains completed historical
+evidence and must not be reopened or rewritten.
 
 The minimum batch should produce one complete planning scenario:
 
@@ -256,15 +264,22 @@ After the larger refactor and additional dogfooding, revisit:
 
 These questions are intentionally deferred. The immediate objective is to preserve the option to answer them later without leaving the current migration-only coupling in place.
 
-## Sequencing Decision
+## Sequencing Decision (Historical)
 
-Before any explicit `plan-batch` invocation selects CCFG-26B:
+This sequence governed the slice-shape correction and is now historical:
 
-1. capture this correction in the canonical ledger under CCFG-26;
-2. plan one bounded corrective preparation batch;
-3. implement and validate the externalized minimum slice-shape policy;
-4. reconcile CCFG-26 while leaving the later execution-flight children unselected;
-5. continue with CCFG-26B only after the corrected policy is durable and reviewed.
+1. the correction was captured in the canonical ledger under CCFG-26;
+2. one bounded corrective preparation batch was planned;
+3. the externalized minimum slice-shape policy was implemented and validated;
+4. CCFG-26 was reconciled while later execution-flight children remained
+   unselected;
+5. the permitted later continuation to CCFG-26B was never implemented.
+
+On 2026-07-19, CCFG-26B was explicitly superseded before implementation and the
+canonical queue was cleared. This historical sequencing decision no longer
+authorizes selection, preparation, execution, resumption, or amendment of
+CCFG-26B. Current direction is
+`ccfg-26-execution-state-authority-direction.md`.
 
 ## Decision Summary
 
@@ -280,11 +295,16 @@ The accepted direction is:
 - no backward compatibility is required for historical runways;
 - richer policy design is deferred until after the command-owner refactor and more practical experience.
 
-## Intake Decision
+## Intake Decision (Historical)
 
 - Ledger identity: `CCFG-26`.
-- Parent finding status: `Prepared`; CCFG-26A remains completed historical evidence.
-- Candidate work: one bounded slice-shape policy correction before CCFG-26B.
-- No dispatch is selected, no batch is queued, and no runway is active by this intake.
-- A later explicit stable `plan-batch` invocation owns selection and detailed
-  implementation design for the corrective preparation batch.
+- Parent finding status at intake: `Prepared`; CCFG-26A remained completed
+  historical evidence.
+- Candidate work at intake: one bounded slice-shape policy correction before the
+  now-superseded CCFG-26B.
+- No dispatch was selected, no batch was queued, and no runway was active by
+  this intake.
+- The corrective preparation batch was later selected, completed, and
+  reconciled. Current CCFG-26 status and next action come only from canonical
+  `CURRENT.md`, `LEDGER.md`, and
+  `ccfg-26-execution-state-authority-direction.md`.
