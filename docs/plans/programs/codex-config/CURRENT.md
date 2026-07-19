@@ -161,6 +161,8 @@
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/amendment-review.md`
 - Blocked Slice 1 execution report:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/execution-report.md`
+- CCFG-26 Slice 1 failure retrospective:
+  `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/execution-retrospective.md`
 - Superseded CCFG-26B evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/superseded.md`
 - Accepted CCFG-26 direction:

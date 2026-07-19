@@ -1,5 +1,8 @@
 # CCFG-26 Execution-State Foundation Execution Report
 
+Detailed analysis of the failed execution and required process corrections is
+in `execution-retrospective.md`.
+
 ## Status
 
 - Batch: `ccfg-26-execution-state-foundation`

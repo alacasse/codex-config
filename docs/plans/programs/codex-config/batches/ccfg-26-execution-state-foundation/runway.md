@@ -291,7 +291,7 @@ Overrides:
 
 | Slice | Status | Commit | Review | Durable result |
 |---|---|---|---|---|
-| 1. Canonical execution-state owner | Blocked | — | Findings | Uncommitted candidate implementation; final-effect path confinement requires a reviewed cross-platform mechanism amendment; see `execution-report.md` |
+| 1. Canonical execution-state owner | Blocked | — | Findings | Uncommitted candidate implementation; final-effect path confinement requires a reviewed cross-platform mechanism amendment; see `execution-report.md` and `execution-retrospective.md` |
 | 2. One-flight public `work-batch` tracer | Pending | — | Pending | Real candidate runner advances one Slice, derives `continue_same_batch`, stops compatibly, and supports exact fresh resume |
 
 ## Slice Shape
