@@ -11,11 +11,12 @@
 - Queued batch path or ID:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/runway.md`
 - Active batch execution status:
-  `queued; ccfg-26-execution-state-foundation is reviewed and ready for a later explicit work-batch; no implementation Slice started; no successor selected`
+  `queued with a clean bootstrap amendment; stable work-batch remains the real-batch controller; no implementation Slice started; no successor selected`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
-- Run artifact location: `/tmp/tmp.nAyp7HeqwO` (exact explicit generated-only
-  input for the queued batch; not project policy or a reusable default)
+- Run artifact location: `None`; the real implementation batch has no Batch
+  Execution State. Fixture roots are allocated at execution time and are not
+  durable planning state.
 - Program archive location: `docs/plans/archive/`
 
 ## Project State Policy
@@ -38,12 +39,13 @@
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
 - Pending ledger row: CCFG-26. Its first bounded execution-foundation batch is
-  selected, independently reviewed clean, and queued. The batch has two
-  vertical Slices: the canonical execution-state owner and one real
-  runner/public-`work-batch` Execution Flight. Automatic continuation remains a
-  CCFG-26 completion requirement but is deliberately deferred to a later
-  reviewed milestone. No implementation Slice has started and no successor is
-  selected.
+  selected, corrected by an independently reviewed bootstrap amendment, and
+  queued. The batch has two vertical Slices. The stable controller executes
+  both real implementation Slices, one per explicit `work-batch` invocation;
+  Slice 2 proves the candidate runner/public-`work-batch` seam only against a
+  disposable fixture. Automatic continuation remains a CCFG-26 completion
+  requirement but is deliberately deferred to a later reviewed milestone. No
+  implementation Slice has started and no successor is selected.
   CCFG-26C through CCFG-26E remain unselected conceptual evidence, not a
   successor chain.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
@@ -146,11 +148,16 @@
 - Queued batch:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/runway.md`
 - Active batch execution status:
-  `queued; ccfg-26-execution-state-foundation is reviewed and ready for a later explicit work-batch; no implementation Slice started; no successor selected`
+  `queued with a clean bootstrap amendment; stable work-batch remains the real-batch controller; no implementation Slice started; no successor selected`
 - Queued CCFG-26 execution-state foundation dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/dispatch.md`
-- Clean queued-runway planning review:
+- Historical original planning review; insufficient by itself to authorize
+  execution:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/review.md`
+- Authoritative fixture-only bootstrap amendment:
+  `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/amendment.md`
+- Clean bootstrap amendment review:
+  `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/amendment-review.md`
 - Superseded CCFG-26B evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/superseded.md`
 - Accepted CCFG-26 direction:
@@ -207,21 +214,31 @@
 
 ## Next Safe Action
 
-On a later explicit `work-batch`, consume only
-`batches/ccfg-26-execution-state-foundation/runway.md`. Re-read live Planning
-State, refresh the strict stable/candidate identities, and acquire a fresh ready
-live lease for the exact candidate paths. Use `/tmp/tmp.nAyp7HeqwO` as the exact
-caller-supplied execution root and require the canonical state path to remain
-absent before Slice 2 initializes the real tracer. Apply the temporary
-stable-runway dogfooding policy: one invocation advances exactly the next
-incomplete implementation Slice through implementation, focused validation,
-review, commit, receipt, and archive, then stops before another Slice. Keep the
-same batch current if the Ubuntu/macOS/Windows final gate is not yet available.
-Do not resume CCFG-26B, select CCFG-26C through CCFG-26E, implement automatic
-continuation or later CCFG-26 semantics, or select a successor.
+On a later explicit stable `work-batch`, consume the queued
+`batches/ccfg-26-execution-state-foundation/runway.md` together with its
+authoritative `amendment.md` and clean `amendment-review.md`. Re-read live
+Planning State, refresh the strict stable/candidate identities, and acquire a
+fresh ready live lease for the exact candidate paths. Execute exactly real
+implementation Slice 1 through the existing stable mechanisms, then stop after
+its implementation, focused validation, review, commit, receipt, and archive.
+On the later explicit stable invocation for real Slice 2, the stable controller
+still owns that implementation Slice; the candidate seam is exercised only
+against temporary fixture roots allocated at test time. Create no real Batch
+Execution State for this batch. Keep the same batch current if the
+Ubuntu/macOS/Windows final gate is not yet available. Do not resume CCFG-26B,
+select CCFG-26C through CCFG-26E, implement automatic continuation or later
+CCFG-26 semantics, or select a successor.
 
 ## Stop Conditions
 
+- Stop if the queued runway or original review is consumed without the exact
+  bootstrap amendment and its clean amendment review.
+- Stop if candidate machinery controls, selects, reserves, launches, resolves,
+  or derives either real implementation Slice of this batch.
+- Stop if execution creates a real Batch Execution State or durable temporary
+  run-artifact root for this implementation batch.
+- Stop if execution imports the stable completed prefix into candidate state or
+  adds a legacy-prefix initialization or migration event.
 - Stop if work treats closed CCFG-18 or its completed runway as active work.
 - Stop if planning weakens strict `cross-checkout-context/v1` or treats the
   planning snapshot as a live execution lease.
