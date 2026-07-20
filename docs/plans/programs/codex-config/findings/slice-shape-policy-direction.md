@@ -2,11 +2,12 @@
 
 ## Status
 
-- Decision status: accepted historical direction; the bounded correction was
+- Decision status: accepted slice-shape policy; the bounded correction was
   completed and reconciled; richer policy design remains deferred.
 - Program: `codex-config`.
 - Related finding: CCFG-26.
-- Original policy issue: GitHub issue #60.
+- Original policy issue: GitHub issue #60, closed as completed and retained as
+  provenance rather than a current implementation specification.
 - Ledger intake issue: GitHub issue #66.
 - Related completed batch: `ccfg-26a-permanent-vertical-runway-contract`.
 - Completed corrective batch: `ccfg-26-slice-shape-policy-correction`.
@@ -15,6 +16,34 @@
   attempt. It no longer authorizes CCFG-26B.
 
 This document records the reasoning that followed the completion of CCFG-26A. It is not an executable runway and does not select, queue, or authorize implementation work.
+
+## Completed Issue #60 Contract Boundary
+
+The completed issue #60 contract is limited to the accepted slice-shape policy:
+
+- resolve one project-owned default shape, initially `vertical` here;
+- allow a non-default `horizontal` shape only with the configured override and
+  required justification;
+- persist the selected shape on each newly planned slice;
+- keep migration evidence independent from slice shape; and
+- enforce policy consistency across planning, review, schema, and deterministic
+  validation.
+
+Current authority is this repo-owned policy plus
+`notes/slice-shape-policy.yaml`, the completed slice-shape correction closeout,
+and its post-closeout correction. The raw GitHub issue is historical provenance,
+not an open or additive implementation specification.
+
+Execution telemetry, changed-file counts, line deltas, review breadth,
+validation breadth, and coordinator-compaction metrics are deferred design
+questions. They are not part of the completed issue #60 contract and are not a
+prerequisite for CCFG-26.
+
+Issue #60 also does not authorize fresh coordinator processes, execution
+flights, automatic same-batch continuation, a recovery advisor, Batch Execution
+State, or cross-generation runtime coordination. Those ideas are outside this
+slice-shape policy and cannot be imported into CCFG-26 or CCFG-29 through issue
+#60.
 
 ## Context
 
@@ -151,7 +180,10 @@ shape:
     state with two incompatible representations.
 ```
 
-The persisted decision is useful for review, execution telemetry, future analysis, and later policy redesign. It also prevents shape from being inferred indirectly from risk labels or free-form prose.
+The persisted decision is useful for review, future analysis, and later policy
+redesign. Separately approved telemetry may eventually consume it, but this
+policy does not require telemetry. The persisted value also prevents shape from
+being inferred indirectly from risk labels or free-form prose.
 
 ### 4. Keep deterministic enforcement narrow
 
@@ -264,6 +296,9 @@ After the larger refactor and additional dogfooding, revisit:
 
 These questions are intentionally deferred. The immediate objective is to preserve the option to answer them later without leaving the current migration-only coupling in place.
 
+Their presence in the original issue #60 body does not make them part of the
+completed contract, a CCFG-26 prerequisite, or a CCFG-29 integration gate.
+
 ## Sequencing Decision (Historical)
 
 This sequence governed the slice-shape correction and is now historical:
@@ -278,8 +313,10 @@ This sequence governed the slice-shape correction and is now historical:
 On 2026-07-19, CCFG-26B was explicitly superseded before implementation and the
 canonical queue was cleared. This historical sequencing decision no longer
 authorizes selection, preparation, execution, resumption, or amendment of
-CCFG-26B. Current direction is
-`ccfg-26-execution-state-authority-direction.md`.
+CCFG-26B. Current CCFG-26 direction comes only from canonical `CURRENT.md`,
+`LEDGER.md`, and ADR 0004. The superseded
+`ccfg-26-execution-state-authority-direction.md` remains historical evidence
+only.
 
 ## Decision Summary
 
@@ -293,6 +330,8 @@ The accepted direction is:
 - migration-specific ownership evidence remains separate and intact;
 - deterministic validation checks policy consistency while independent review judges architectural quality;
 - no backward compatibility is required for historical runways;
+- execution telemetry and coordinator-compaction metrics remain deferred and
+  outside the completed issue #60 contract; and
 - richer policy design is deferred until after the command-owner refactor and more practical experience.
 
 ## Intake Decision (Historical)
@@ -306,5 +345,5 @@ The accepted direction is:
   this intake.
 - The corrective preparation batch was later selected, completed, and
   reconciled. Current CCFG-26 status and next action come only from canonical
-  `CURRENT.md`, `LEDGER.md`, and
-  `ccfg-26-execution-state-authority-direction.md`.
+  `CURRENT.md`, `LEDGER.md`, and ADR 0004. The execution-state direction is
+  retained only as rejected historical evidence.

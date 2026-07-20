@@ -38,7 +38,10 @@
 - Ready ledger row: CCFG-26. The rejected execution-state foundation is
   superseded with no candidate implementation retained and no replacement
   selected. A later planning-only invocation must derive one fresh runway from
-  COR-009, ADR 0004, and direct inspection of the current candidate code.
+  COR-009, ADR 0004, direct inspection of the current candidate code, and only
+  the completed slice-shape behavior recorded in
+  `findings/slice-shape-policy-direction.md` and its correction closeout
+  evidence.
   CCFG-26C through CCFG-26E remain unselected historical decomposition evidence,
   not an accepted successor chain.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
@@ -61,8 +64,10 @@
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
 - CCFG-34 closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
-- Live CCFG-34 intake and CCFG-26 replanning amendment:
+- Historical CCFG-34 intake and superseded CCFG-26 replanning amendment:
   `docs/plans/programs/codex-config/findings/github-issue-62-stable-runway-dogfooding-bootstrap.md`
+- Active temporary stable-runway dogfooding policy:
+  `docs/plans/programs/codex-config/notes/stable-runway-dogfooding-policy.md`
 - Completed CCFG-26A dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/dispatch.md`
 - Completed CCFG-26A runway:
@@ -214,11 +219,14 @@
 ## Next Safe Action
 
 Use a later explicit `plan-batch CCFG-26` invocation to create and independently
-review exactly one fresh runway from COR-009, ADR 0004, and direct inspection of
-the current candidate implementation seam. That invocation is planning-only:
-do not implement candidate code or select CCFG-27 through CCFG-29, and do not
-start implementation until the fresh runway is independently reviewed and
-queued.
+review exactly one fresh runway from COR-009, ADR 0004, direct inspection of the
+current candidate implementation seam, and the completed slice-shape policy in
+`findings/slice-shape-policy-direction.md` plus its closeout and post-closeout
+correction evidence. Those policy artifacts carry only the completed vertical
+slice-shape behavior; their deferred telemetry and coordinator-compaction
+questions are not CCFG-26 prerequisites. That invocation is planning-only: do
+not implement candidate code or select CCFG-27 through CCFG-29, and do not start
+implementation until the fresh runway is independently reviewed and queued.
 
 ## Stop Conditions
 
@@ -296,17 +304,23 @@ queued.
   `create-spec`, `execute`, or `closeout` identities reserved for CCFG-27,
   physically deletes legacy-owner directories reserved for CCFG-28, or changes
   the temporary bridge reserved for CCFG-29.
-- Stop if replacement CCFG-26 work or CCFG-26C through CCFG-26E are planned
-  without the permanent candidate behavior from GitHub issues #59, #60, and
-  #61, or if that planning changes COR-009 identity.
+- Stop if replacement CCFG-26 work or CCFG-26C through CCFG-26E changes COR-009
+  identity, treats rejected GitHub issues #59 or #61 as an input, dependency,
+  requirement, or parity gate, or treats the raw issue #60 body as a current
+  implementation specification instead of consuming the accepted slice-shape
+  policy and its completed correction evidence.
+- Stop if future CCFG-26 planning treats execution telemetry, changed-file or
+  line-delta counts, review or validation breadth, or coordinator compaction as
+  completed issue #60 behavior or as a prerequisite. Those metrics remain
+  deferred design questions.
 - Stop if future work reopens CCFG-26A, adds compatibility for historical
   CCFG-26B progression artifacts, or treats CCFG-26C through CCFG-26E as an
   already accepted successor map.
 - Stop if work treats the completed `ccfg-26-slice-shape-policy-correction`
   runway as selected, queued, active, resumable, or executable.
-- Stop if CCFG-26A is widened beyond permanent candidate vertical-planning
-  behavior from issue #60 or pulls issue #59/#61 execution behavior into its
-  single slice.
+- Stop if the completed historical CCFG-26A scope is rewritten beyond its
+  vertical-planning behavior or if rejected issue #59/#61 execution behavior is
+  promoted from historical evidence into current authority.
 - Stop if CCFG-26A execution selects, dispatches, queues, refreshes, or prepares
   CCFG-26B through CCFG-26E or any later finding.
 - Stop if CCFG-34 builds a second complete runway framework, permanent public

@@ -4,7 +4,8 @@
 
 - GitHub issue: https://github.com/alacasse/codex-config/issues/62
 - Ledger identity: `CCFG-34`
-- Related issues: #59, #60, #61
+- Historical related-issue provenance: #59 and #61 are closed as not planned;
+  #60 is closed as completed for slice-shape policy only.
 - Source status: closed as completed
 - Implementation commit: `ba1e941`
 - Closeout:
@@ -101,12 +102,17 @@ machinery to automate that boundary.
 ## CCFG-26 And CCFG-29 Relationship
 
 CCFG-34 is closed. CCFG-26 is open and unselected and requires a fresh
-`plan-batch` invocation with the permanent candidate requirements from #59, #60,
-and #61.
+`plan-batch` invocation from COR-009, ADR 0004, current candidate code, and the
+completed repo-owned slice-shape policy. The earlier interpretation that
+CCFG-26 required permanent candidate requirements from #59, #60, and #61 is
+superseded: #59 and #61 are rejected not-planned ideas, while #60 contributes
+only completed slice-shape behavior through the accepted policy and its
+closeout evidence.
 
 CCFG-29 owns removal of the CCFG-34 policy and root `AGENTS.md` hook only after
 the integrated candidate proves equivalent planning, slice execution, recovery
-escalation, and no-successor behavior.
+escalation, and no-successor behavior from the temporary repo-owned dogfooding
+policy. No issue-number parity gate applies.
 
 ## Acceptance
 
@@ -116,7 +122,8 @@ escalation, and no-successor behavior.
 - manual later invocation resumes from existing durable state;
 - at most one existing-investigator consultation before eligible escalation;
 - no runner architecture or advisor-contract changes;
-- explicit CCFG-29 removal and candidate-parity gate.
+- explicit CCFG-29 removal condition tied to the temporary dogfooding policy's
+  accepted behavior, with no issue-number parity gate.
 
 ## Implementation Resolution
 
