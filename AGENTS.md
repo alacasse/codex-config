@@ -36,6 +36,53 @@ used only when explicitly enabled by user or project instructions, and their
 commands, paths, schemas, hooks, caches, and generated outputs must not become
 semantic authority, required workflow state, or a portability assumption.
 
+## Product and dogfood separation
+
+For work intended to become a reusable or extracted product, keep the product
+boundary separate from the repository-specific harness used to develop it.
+Installation, checkout, test, and dogfooding mechanics do not become product
+concepts merely because they exist in the current repository.
+
+Unless the user explicitly promotes one into the product, treat these as dogfood
+only:
+
+- `CODEX_HOME`, `.codex`, symlink installation, and `codex-features.json`;
+- stable/candidate checkouts, branches, generations, and local clones;
+- cross-checkout helpers, live leases, and bridge receipts;
+- developer-specific absolute paths and machine-specific temporary paths.
+
+Product APIs, schemas, persistent state, storage layout, terminology, and threat
+models must remain understandable and usable without those concepts. A dogfood
+adapter may depend on the product; the product must not depend on the adapter.
+
+Every architecture, migration, extraction, runner, storage, or installation plan
+must state four decision surfaces before implementation:
+
+1. **Product Boundary** — user problem, product modules, public inputs, and
+   persistent state.
+2. **Dogfood Boundary** — temporary repository mechanics, adapter location, and
+   removal condition.
+3. **Threat Model** — concrete failures covered and explicitly unsupported
+   actors or environments.
+4. **Guarantee Feasibility** — failure prevented, user value, implementation
+   primitive or bounded dependency, and cross-platform proof path.
+
+Reject a plan when a dogfood concern enters the product API, schema, storage, or
+durable contract without an explicit user need. When a material guarantee has no
+known implementation primitive, reduce the guarantee or run a small disposable
+feasibility experiment before production work. Do not discover the decisive
+mechanism after building a large Slice.
+
+Small batch-specific runtime state should normally live under the batch
+directory derived from the user-selected planning root. A separate run-artifact
+root is optional for runner-global or bulky outputs, not a mandatory second root
+for one batch's state. Temporary directories are execution-time fixtures and
+must not be persisted as durable planning decisions.
+
+Uncommitted work preserved under user control is not accepted implementation or
+planning authority. Do not delete, reset, commit, reuse, or continue it without
+explicit user direction.
+
 ## Temporary Graphify suspension
 
 Until the user explicitly lifts this suspension after the command-owner
@@ -85,6 +132,10 @@ Apply these source rules:
 5. Do not infer candidate behavior from stable planning prose when the candidate
    code can be inspected directly. Do not infer canonical planning state from
    candidate-local copies.
+
+These topology rules constrain the temporary codex-config dogfood adapter. They
+do not authorize stable/candidate, `CODEX_HOME`, symlink, or cross-checkout
+concepts inside an extraction-ready product boundary.
 
 ## Temporary stable-runway dogfooding policy
 
