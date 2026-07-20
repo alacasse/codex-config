@@ -8,12 +8,13 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
-- Active batch execution status: `None`; CCFG-26 is open for fresh planning and
-  no successor is selected.
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-26-work-batch-owner-transfer/runway.md`
+- Active batch execution status: `queued`; CCFG-26 implementation has not
+  started and no successor is selected.
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
-- Run artifact location: `None`; no implementation batch is selected or queued.
+- Run artifact location: `None`; the queued batch has not started execution.
 - Program archive location: `docs/plans/archive/`
 
 ## Project State Policy
@@ -35,15 +36,13 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
-- Ready ledger row: CCFG-26. The rejected execution-state foundation is
-  superseded with no candidate implementation retained and no replacement
-  selected. A later planning-only invocation must derive one fresh runway from
-  COR-009, ADR 0004, direct inspection of the current candidate code, and only
-  the completed slice-shape behavior recorded in
-  `findings/slice-shape-policy-direction.md` and its correction closeout
-  evidence.
-  CCFG-26C through CCFG-26E remain unselected historical decomposition evidence,
-  not an accepted successor chain.
+- Pending ledger row: CCFG-26. One independently reviewed four-slice vertical
+  runway is queued at
+  `batches/ccfg-26-work-batch-owner-transfer/runway.md`; implementation has not
+  started. The rejected execution-state foundation remains superseded with no
+  retained candidate implementation. CCFG-26C through CCFG-26E remain
+  unselected historical decomposition evidence, not an accepted successor
+  chain.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -90,6 +89,12 @@
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - CCFG-26 slice-shape correction post-closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/post-closeout-correction.md`
+- Queued CCFG-26 work-batch owner-transfer dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-26-work-batch-owner-transfer/dispatch.md`
+- Clean CCFG-26 work-batch owner-transfer planning review:
+  `docs/plans/programs/codex-config/batches/ccfg-26-work-batch-owner-transfer/review.md`
+- Queued CCFG-26 work-batch owner-transfer runway:
+  `docs/plans/programs/codex-config/batches/ccfg-26-work-batch-owner-transfer/runway.md`
 - Superseded CCFG-26B dispatch, historical evidence only:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/dispatch.md`
 - Historical CCFG-26B planning review:
@@ -145,8 +150,9 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Active batch execution status: `None`
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-26-work-batch-owner-transfer/runway.md`
+- Active batch execution status: `queued`; implementation has not started
 - CCFG-26 execution-state foundation supersession:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/superseded.md`
 - Historical CCFG-26 execution-state foundation dispatch:
@@ -218,15 +224,12 @@
 
 ## Next Safe Action
 
-Use a later explicit `plan-batch CCFG-26` invocation to create and independently
-review exactly one fresh runway from COR-009, ADR 0004, direct inspection of the
-current candidate implementation seam, and the completed slice-shape policy in
-`findings/slice-shape-policy-direction.md` plus its closeout and post-closeout
-correction evidence. Those policy artifacts carry only the completed vertical
-slice-shape behavior; their deferred telemetry and coordinator-compaction
-questions are not CCFG-26 prerequisites. That invocation is planning-only: do
-not implement candidate code or select CCFG-27 through CCFG-29, and do not start
-implementation until the fresh runway is independently reviewed and queued.
+Use a later explicit `work-batch` invocation to consume exactly the queued
+`batches/ccfg-26-work-batch-owner-transfer/runway.md`. Refresh its strict
+cross-checkout execution lease first. The stable generation controls the real
+batch while the candidate checkout is the implementation target. Execute its
+four vertical slices through same-batch closeout and reconciliation, then stop
+without selecting CCFG-27 or any other successor.
 
 ## Stop Conditions
 
@@ -238,6 +241,10 @@ implementation until the fresh runway is independently reviewed and queued.
 - Stop if fresh planning turns the stable/candidate development topology into
   runtime communication, shared execution state, or self-hosting.
 - Stop if work treats closed CCFG-18 or its completed runway as active work.
+- Stop if the stable or candidate checkout no longer matches the reviewed
+  planning snapshot when initial execution preflight begins.
+- Stop if another dispatch or runway is created while the queued CCFG-26 runway
+  remains current, or if CCFG-27 is selected before CCFG-26 closeout.
 - Stop if planning weakens strict `cross-checkout-context/v1` or treats the
   planning snapshot as a live execution lease.
 - Stop if any default stable-home installed link resolves to the redesign branch
