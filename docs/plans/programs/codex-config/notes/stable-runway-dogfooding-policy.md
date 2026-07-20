@@ -65,6 +65,11 @@ For CCFG-26 through CCFG-29, one `work-batch` invocation must:
 5. leave the next incomplete ledger row for a later explicit `work-batch`
    invocation, which resumes from the existing durable state.
 
+Progress across those explicit invocations is established from existing
+planning artifacts, receipts, execution-ledger records, and Git evidence. It
+adds no candidate runtime state, and it creates no runtime communication,
+synchronization, or shared execution state between stable and candidate.
+
 This is an instruction boundary only. It adds no launcher, automatic
 continuation, execution-unit protocol, state field, transition, receipt type, or
 telemetry. Existing final validation, finalization, same-batch closeout, and the

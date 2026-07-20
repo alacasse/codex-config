@@ -63,6 +63,14 @@ The current expected topology is:
 - stable Codex home: `/home/alacasse/.codex`;
 - candidate Codex home: `/home/alacasse/.codex-command-owner-redesign`.
 
+This topology is a development integrity boundary, not a product runtime
+interface. One real batch is controlled by one toolchain generation: stable and
+candidate do not import, invoke, synchronize with, or share runtime execution
+state with one another. Cross-checkout support validates repository identity,
+revision, generation, Codex-home, and write scope only. Until cutover, the
+stable mechanism controls any batch building a future controller; the
+controller under construction does not control its own implementation batch.
+
 Treat the CCFG-18 candidate-generation receipts and the latest strict
 cross-checkout context as the authoritative source for the exact roots, branches,
 and revisions. Verify them rather than relying only on the expected paths above.
