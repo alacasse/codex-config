@@ -61,7 +61,7 @@ _Avoid_: phase observation, receipt, transcript
 
 **Run State**:
 The resumable record of one architecture-program run's current phase, active batch, artifact paths, stop reason, and completed count.
-_Avoid_: runner state, global state, cache
+_Avoid_: batch runtime state, global state, cache
 
 **Run Summary**:
 The compact final report of where one runner invocation stopped and which result facts matter.
@@ -72,12 +72,12 @@ A runner-owned operational file scoped to one architecture-program run.
 _Avoid_: batch artifact, source plan, program ledger
 
 **Batch Artifact**:
-A runner-owned operational file scoped to one selected batch within a run.
-_Avoid_: run artifact, source plan, dispatch packet
+A file whose identity and lifecycle belong to one selected batch.
+_Avoid_: run artifact, global cache, installer artifact
 
 **Program Ledger**:
-The durable source of codex-config findings, backlog candidates, selected
-batch status, and closeout pointers that workflow commands coordinate around.
+The durable source of codex-config findings, backlog candidates, selected batch
+status, and closeout pointers that workflow commands coordinate around.
 _Avoid_: run state, run manifest, source code
 
 **Batch**:
@@ -88,45 +88,37 @@ _Avoid_: phase, run, task
 One ordered, independently useful implementation unit in an accepted Batch Runway.
 _Avoid_: phase, arbitrary step, task
 
-**Execution Flight**:
-One fresh `work-batch` coordinator invocation that may advance exactly one Slice.
-_Avoid_: run, phase, attempt
+**Product Boundary**:
+The user-visible problem, public inputs and outputs, modules, and persistent state
+that remain meaningful after extraction from the current development repository.
+_Avoid_: current checkout topology, installer details, dogfood harness
 
-**Execution Attempt**:
-The durable identity of one reserved possible execution of one Slice, from reservation through one accepted resolution.
-_Avoid_: flight, worker session, retry
+**Dogfood Adapter**:
+Temporary repository-specific code or procedure that launches or validates the
+product inside codex-config without becoming part of the product API, schema, or
+storage model.
+_Avoid_: product core, permanent compatibility layer, installation architecture
 
-**Flight Reservation**:
-The durable decision that binds one Execution Attempt to an exact Slice, runway revision, and candidate baseline before an external effect may begin.
-_Avoid_: lock, lease, active process
+**Batch-Local Runtime State**:
+Small machine-readable state whose identity and lifecycle are exactly one batch
+and whose default location is that batch directory's `.runtime/` subdirectory.
+_Avoid_: runner-global run state, separate mandatory artifact root, temporary test path
 
-**Attempt Resolution**:
-The accepted semantic outcome that closes one Execution Attempt exactly once as completed, blocked, or failed.
-_Avoid_: worker result, phase result, replay
+**Threat Model**:
+The explicit failures and actors a product version protects against, together
+with the environments and hostile behavior it deliberately does not support.
+_Avoid_: generic safety, every possible failure, implementation checklist
 
-**Completed Slice Prefix**:
-The contiguous sequence of accepted completed Slices from the beginning of one accepted slice order.
-_Avoid_: completed-slices file, arbitrary completed set, slice status
+**Guarantee Feasibility**:
+The evidence that a material guarantee has a concrete user value, a known
+implementation primitive or bounded dependency, and a credible proof path on
+every required platform.
+_Avoid_: optimistic portability, choose while implementing, green unit tests alone
 
-**Batch Execution State**:
-The canonical structured record of one Batch's intra-batch Slice progression, Execution Attempts, and resolutions across fresh coordinator processes.
-_Avoid_: Run State, Planning State, batch manifest
-
-**Execution Transition Receipt**:
-Immutable evidence of one applied Batch Execution State transition at an exact revision.
-_Avoid_: Phase Receipt, worker result, manifest
-
-**Execution Flight Result**:
-The structured coordinator observation that identifies one resolved Execution Flight for code validation against canonical Batch Execution State.
-_Avoid_: Phase Result, worker result, Execution Next Action
-
-**Execution Next Action**:
-The mechanically derived continuation disposition after an execution-state transition.
-_Avoid_: agent recommendation, successor selection, queue state
-
-**Automatic Same-Batch Continuation**:
-The process-lifecycle behavior that starts a fresh Execution Flight when canonical state derives `continue_same_batch`, without human relaunch or successor selection.
-_Avoid_: multi-slice coordinator, automatic recovery, successor execution
+**Preserved User Worktree**:
+Uncommitted work the user has chosen to retain outside workflow authority. It is
+not accepted implementation, planning authority, or permission to continue.
+_Avoid_: active slice, implementation baseline, reusable patch
 
 **Dispatch Packet**:
 The compact handoff that describes the selected batch for spec creation.
@@ -137,8 +129,9 @@ The historical home at `docs/plans/archive/` for completed or superseded plannin
 _Avoid_: active plan, program ledger, dispatch packet
 
 **Planning Root**:
-The documentation location at `docs/plans/` where active program ledgers, dispatch packets, runway specs, and planning reports live.
-_Avoid_: source root, artifact root, plan archive
+The user-selected documentation location where active program ledgers, batch
+directories, runway specs, and planning reports live.
+_Avoid_: source root, mandatory separate artifact root, plan archive
 
 **Generic Workflow Contract**:
 The planning reference at `docs/plans/generic-phase-runner-workflow-contract.md`
@@ -294,35 +287,32 @@ _Avoid_: hidden user command, duplicate command owner, broad workflow facade
 - A **Runner Invocation** expresses environment intent that becomes a **Phase Environment** for each launched **Phase**.
 - A **Phase Transition** consumes a valid **Phase Result** after its matching **Phase Receipt** is verified.
 - A **Run Artifact** belongs to exactly one architecture-program run.
-- A **Batch Artifact** belongs to exactly one selected batch within one architecture-program run.
+- A **Batch Artifact** belongs to exactly one selected **Batch**.
 - The active codex-config **Program Ledger** is
   `docs/plans/programs/codex-config/LEDGER.md`.
 - A **Program Ledger** may contain many **Batches**.
 - A **Batch** has one accepted ordered set of **Slices**.
-- An **Execution Flight** contains at most one **Execution Attempt**.
-- An **Execution Attempt** belongs to exactly one **Slice**.
-- A **Flight Reservation** must exist before an **Execution Attempt** may cross
-  an external-effect boundary.
-- An **Attempt Resolution** closes one **Execution Attempt** exactly once.
-- The **Completed Slice Prefix** belongs to one **Batch Execution State**.
-- **Batch Execution State** owns runtime Slice progression and does not own
-  selected, queued, or active planning currentness.
-- A **Run State** may reference **Batch Execution State** but does not redefine
-  its Slice or Execution Attempt facts.
-- An **Execution Transition Receipt** projects one accepted transition from
-  **Batch Execution State**.
-- An **Execution Flight Result** references one **Execution Transition Receipt**
-  and cannot determine an **Execution Next Action** by itself.
-- An **Execution Next Action** is derived from **Batch Execution State** and an
-  accepted **Attempt Resolution**; it is not a successor-selection decision.
-- **Automatic Same-Batch Continuation** may start a fresh **Execution Flight**
-  only from a derived `continue_same_batch`; it does not recover an unresolved
-  **Execution Attempt** or change planning currentness.
+- A **Batch-Local Runtime State** belongs to one **Batch** and does not redefine
+  selected, queued, or active Planning State currentness.
+- **Run State** and **Batch-Local Runtime State** have different identities: one
+  runner invocation versus one batch.
+- A **Planning Root** determines the ledger and batch directory. It does not
+  require a second root for small batch-owned state.
+- A **Dogfood Adapter** may depend on modules inside the **Product Boundary**;
+  product modules must not depend on the adapter.
+- `CODEX_HOME`, symlinks, stable/candidate checkouts, and cross-checkout leases
+  are dogfood mechanics unless explicitly accepted as product requirements.
+- A **Threat Model** limits what safety claims the product makes; an unsupported
+  hostile or deployment scenario is not silently converted into implementation scope.
+- **Guarantee Feasibility** is required before a production plan accepts a
+  material guarantee whose implementation could invalidate the design.
+- A **Preserved User Worktree** remains outside planning and execution authority
+  until the user gives explicit direction.
 - A **Dispatch Packet** describes exactly one selected **Batch**.
 - A **Run State** records the active **Batch** when one has been selected.
 - A **Run Summary** reports selected facts from **Run State** and the latest **Phase Receipt**.
 - A **Plan Archive** preserves historical planning evidence that should not be treated as active instructions.
-- The **Planning Root** is `docs/plans/`.
+- The current repository **Planning Root** is `docs/plans/`.
 - The **Plan Archive** is `docs/plans/archive/`.
 - The **Generic Workflow Contract** cross-references this glossary for current
   runner terms and does not replace it.
@@ -418,30 +408,7 @@ _Avoid_: hidden user command, duplicate command owner, broad workflow facade
 > **Domain expert:** "No — workflow commands coordinate around the **Program Ledger**; runner-owned evidence stays beside the selected batch or run."
 > **Dev:** "Should a completed runway plan remain active coordination material?"
 > **Domain expert:** "No — after it is completed or superseded it belongs in the **Plan Archive**."
-> **Dev:** "Should the runner automatically move completed plans into the **Plan Archive**?"
-> **Domain expert:** "No — start with an explicit filesystem convention; runner-managed archival can be considered later."
-> **Dev:** "Where is the active planning-root policy?"
-> **Domain expert:** "Use `docs/plans/CURRENT.md`."
-> **Dev:** "Does moving the **Planning Root** need a decision record?"
-> **Domain expert:** "Yes — use ADR 0001 for the planning-root and archive decision."
-> **Dev:** "Should the future Go runner import `scripts/planning_state.py`?"
-> **Domain expert:** "No — use an explicit command/file protocol if it needs planning-state facts."
-> **Dev:** "Can the Go runner copy the Python `architecture_program_runner*.py` split?"
-> **Domain expert:** "No — implement the contracts and adapters, not the accidental source layout."
-
-## Flagged ambiguities
-
-- "legacy" does not mean code that must survive in its current form; resolved:
-  existing behavior can be preserved while the code is redesigned.
-- "owner module" over-specified the implementation shape; resolved: use
-  **Concept Owner** for the responsible home of a runner concept.
-- "worktree allowance" tied the concept too closely to Git; resolved: use
-  **Change Allowance** for allowed changed paths at a runner phase.
-- "runner state" made the state file sound like global program memory;
-  resolved: use **Run State** for the resumable record of one run.
-- **Phase Contract** and **Phase Environment** both reach the phase through the
-  prompt today; resolved: contract is normative, environment is supplied facts
-  and settings.
-- `planning_state` can sound like runner state; resolved: **Planning State
-  Diagnostic** is planning-root discovery/validation, while **Run State** is the
-  runner's resumable execution record.
+> **Dev:** "Do symlinks and `CODEX_HOME` belong in the extracted product API?"
+> **Domain expert:** "No — they belong to the **Dogfood Adapter** unless the user explicitly makes them product requirements."
+> **Dev:** "Does local crash safety mean we must defeat another same-user process swapping paths during a system call?"
+> **Domain expert:** "No — only when the accepted **Threat Model** explicitly includes that hostile actor."
