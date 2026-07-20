@@ -31,9 +31,15 @@ def normalized(path: Path) -> str:
 
 def queued_runway_path() -> Path | None:
     current = PROGRAM_CURRENT.read_text(encoding="utf-8")
-    match = re.search(r"^- Queued batch path or ID:\s*`?([^`\n]+)`?\s*$", current, re.MULTILINE)
+    match = re.search(
+        r"^- Queued batch path or ID:\s*`?([^`\n]+)`?\s*$",
+        current,
+        re.MULTILINE,
+    )
     if match is None:
-        raise AssertionError("program CURRENT.md must declare Queued batch path or ID")
+        raise AssertionError(
+            "program CURRENT.md must declare Queued batch path or ID"
+        )
     value = match.group(1).strip()
     if value.lower() in {"none", "none selected"}:
         return None
@@ -52,12 +58,17 @@ class ProductDogfoodBoundaryPolicyTests(unittest.TestCase):
             "Dogfood Boundary",
             "Threat Model",
             "Guarantee Feasibility",
-            "Uncommitted work preserved under user control is not accepted implementation",
+            (
+                "Uncommitted work preserved under user control is not accepted "
+                "implementation"
+            ),
         ):
             with self.subTest(required=required):
                 self.assertIn(required, instructions)
 
-    def test_plan_batch_requires_concrete_boundary_and_feasibility_sections(self) -> None:
+    def test_plan_batch_requires_concrete_boundary_and_feasibility_sections(
+        self,
+    ) -> None:
         contract = normalized(PLAN_BATCH)
 
         for required in (
@@ -74,7 +85,9 @@ class ProductDogfoodBoundaryPolicyTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, contract)
 
-    def test_layout_defaults_small_batch_state_to_the_batch_directory(self) -> None:
+    def test_layout_defaults_small_batch_state_to_the_batch_directory(
+        self,
+    ) -> None:
         layout = normalized(PLANNING_ARTIFACTS)
         root_current = normalized(ROOT_CURRENT)
 
@@ -91,7 +104,9 @@ class ProductDogfoodBoundaryPolicyTests(unittest.TestCase):
 
         self.assertIn("Batch runtime policy: `batch-local`", root_current)
 
-    def test_ccfg26_reset_is_canonical_and_old_design_is_historical(self) -> None:
+    def test_ccfg26_reset_is_canonical_and_old_design_is_historical(
+        self,
+    ) -> None:
         current = normalized(PROGRAM_CURRENT)
         ledger = normalized(PROGRAM_LEDGER)
         old_adr = normalized(ADR_0003)
@@ -106,14 +121,19 @@ class ProductDogfoodBoundaryPolicyTests(unittest.TestCase):
         self.assertIn("Superseded", old_adr)
         self.assertIn("supersedes ADR 0003", new_adr)
         self.assertIn("preserved under the user's control", reset)
-        self.assertIn("not executable, resumable, amendable, closable", superseded)
+        self.assertIn(
+            "not executable, resumable, amendable, closable",
+            superseded,
+        )
 
         for forbidden in ("/tmp/tmp.", "Run artifact location: `/tmp"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, current)
                 self.assertNotIn(forbidden, ledger)
 
-    def test_future_queued_migration_runway_must_include_all_four_boundaries(self) -> None:
+    def test_future_queued_migration_runway_must_include_all_four_boundaries(
+        self,
+    ) -> None:
         runway_path = queued_runway_path()
         if runway_path is None:
             return
@@ -121,7 +141,11 @@ class ProductDogfoodBoundaryPolicyTests(unittest.TestCase):
         runway = runway_path.read_text(encoding="utf-8")
         normalized_runway = " ".join(runway.split())
         migration_plan = bool(
-            re.search(r"Batch kind(?: And Slice Risk Contract)?:.*migration", normalized_runway, re.IGNORECASE)
+            re.search(
+                r"Batch kind(?: And Slice Risk Contract)?:.*migration",
+                normalized_runway,
+                re.IGNORECASE,
+            )
         )
         if not migration_plan:
             return
