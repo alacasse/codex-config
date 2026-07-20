@@ -142,7 +142,11 @@ class ProductDogfoodBoundaryPolicyTests(unittest.TestCase):
 
         self.assertIn("Queued batch path or ID: `None`", current)
         self.assertIn("ccfg-26-execution-state-foundation is superseded", current)
-        self.assertIn("CCFG-26: `Ready`", ledger)
+        self.assertIn(
+            "CCFG-26. Transfer Execution and Closeout Ownership to `work-batch` "
+            "| Ready",
+            ledger,
+        )
         self.assertIn("Queued batch: `None`", ledger)
         self.assertIn("Superseded", old_adr)
         self.assertIn("supersedes ADR 0003", new_adr)
