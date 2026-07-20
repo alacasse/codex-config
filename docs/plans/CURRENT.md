@@ -4,13 +4,15 @@
 
 - Layout: Planning Artifact Layout v1
 - Planning root: `docs/plans/`
-- Batch runtime policy: `batch-local`; small state owned by one batch lives under
-  that batch directory, normally in `.runtime/`
-- Run artifact root: `None selected`; optional only for runner-global, bulky, or
-  explicitly external operational artifacts
+- Batch runtime policy: `batch-local`
+- Run artifact root: `None selected`
 - Output root: `None selected`
 - One-shot intake: `None`
 - Program archive root: `docs/plans/archive/`
+
+Small state owned by one batch lives under that batch directory, normally in
+`.runtime/`. A separate run-artifact root is optional only for runner-global,
+bulky, or explicitly external operational artifacts.
 
 ## Active Programs
 
