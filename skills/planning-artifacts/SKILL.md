@@ -1,24 +1,26 @@
 ---
 name: planning-artifacts
-description: Define project-agnostic placement and naming conventions for durable planning docs, program ledgers, dispatch packets, Batch Runway specs, runner receipts, generated outputs, active-state files, and archives. Use when creating, reorganizing, migrating, or interpreting planning roots and workflow artifacts.
+description: Define project-agnostic placement and naming conventions for durable planning docs, program ledgers, dispatch packets, Batch Runway specs, batch-local runtime state, runner artifacts, generated outputs, active-state files, and archives.
 ---
 
 # Planning Artifacts
 
 Use this skill when a workflow needs to decide where durable planning artifacts
-belong. The convention is project-agnostic: project instructions, local
-overlays, active specs, or explicit user direction choose the actual root path.
+or workflow runtime state belong. The convention is project-agnostic: project
+instructions, local overlays, active specs, or explicit user direction choose
+the actual planning root.
+
 This skill defines placement, naming, file shape, batch directory conventions,
-archives, run artifact roots, and output roots under that root.
+batch-local runtime layout, optional runner-artifact roots, output roots, and
+archives. For operational pickup, validation, target policy, and projection
+routing, use `../planning-state/SKILL.md` first when it is available. Planning
+State consumes the layout described here; this layout handoff does not replace
+its pickup diagnostic and grants no queue, dispatch, runway, or lifecycle
+mutation authority.
 
-For operational pickup, validation, target policy, and projection routing, use
-`../planning-state/SKILL.md` first when it is available. Planning State consumes
-the layout described here; this skill does not replace its pickup diagnostic.
-
-Do not hard-code a downstream project name, local path, validation command, or
-personal overlay into reusable skills. If a project has not declared a planning
-root and the placement matters, stop and ask instead of creating loose artifacts
-under `plans/`, `planning/`, or the repository root.
+Do not hard-code a downstream project name, local path, validation command,
+cache location, or personal overlay into reusable skills. If the project has not
+declared a planning root and placement matters, stop instead of inventing one.
 
 ## Layout Version
 
@@ -29,63 +31,43 @@ another convention.
 
 Resolve these values before writing artifacts:
 
-- `planning_root`: durable human-readable planning documents.
-- `run_artifact_root`: runner-owned JSON state, receipts, manifests, and
-  telemetry. If omitted, derive it from the project rule or stop before writing
-  runner artifacts.
-- `output_root`: generated tool outputs that are not durable planning docs.
-- `state_file_policy`: whether durable JSON planning state is `committed`,
-  `ignored-local`, `external`, `generated-only`, or `none`.
-- `state_file_path`: required only when `state_file_policy` selects a durable
-  project-owned state file.
-- `projection_policy`: whether rebuildable reporting/query projections are
-  `ignored-local`, `external`, `generated-only`, or `none`. A committed
-  projection is valid only when project instructions explicitly declare that
-  exception.
-- `projection_path`: required only when `projection_policy` selects a durable
-  projection target.
+- `planning_root`: required; contains durable coordination documents and program
+  batch directories.
+- `batch_runtime_policy`: normally `batch-local`; small state owned by one batch
+  lives under that batch directory.
+- `run_artifact_root`: optional; reserved for runner-global state, telemetry,
+  bulky receipts/logs, or an explicitly configured external backend. It is not a
+  mandatory second root for one batch's canonical state.
+- `output_root`: optional generated products or reports that do not belong with
+  one batch.
+- `state_file_policy`: whether JSON state is `committed`, `ignored-local`,
+  `external`, `generated-only`, or `none`.
+- `projection_policy`: whether rebuildable projections are `ignored-local`,
+  `external`, `generated-only`, or `none`.
 - `update_authority`: whether workflow commands may update the target directly,
   must ask first, or may only validate/read it.
-
-`planning_root` is required. Projects should declare it in repository
-instructions or a local overlay such as `AGENTS.md`, for example:
-
-```markdown
-## Planning artifacts
-
-- Layout: Planning Artifact Layout v1
-- Planning root: `my-docs/planning`
-- Run artifact root: `my-docs/runs`
-- Output root: `my-docs/outputs`
-- State file policy: `ignored-local`
-- State file path: `my-docs/runs/planning-state/state.json`
-- Projection policy: `generated-only`
-- Projection path: `None`
-- Update authority: `ask-first`
-- One-shot intake: `my-docs/planning/intake` or `None`
-```
-
-If no planning root is declared and the task needs durable coordination state,
-stop and ask for the project value. Do not infer a root from another project or
-create loose files under `plans/`, `planning/`, or the repository root.
-
-If a command needs to write durable JSON state or projections and the project
-has not declared a compatible policy, stop before writing. Read-only diagnostics
-may still operate from Markdown-only planning roots. Generic skills must not
-bake in `codex-config` committed paths, ignored local overlay paths from another
-project, or any other project-specific state location as a reusable default.
 
 Preferred discovery order:
 
 1. Explicit user direction for the current task.
 2. Repository instructions or local overlays.
 3. Existing active-state files such as `CURRENT.md`.
-4. Existing adjacent ledger/spec paths named by the user.
+4. The ledger, dispatch, runway, or batch directory already selected.
 5. A documented repo-owned default.
 
-If the task is only a trivial one-shot note and no durable coordination state is
-needed, a project may allow a small intake area. Without that project rule, do
-not invent one.
+The user-selected planning root is sufficient to locate a program ledger and its
+batch directories. Do not require the user to choose another root for small
+batch-specific runtime state.
+
+If a project needs runner-global artifacts and no optional `run_artifact_root`
+is configured, stop only before writing those runner-global artifacts. Do not
+block batch-local state that has an accepted batch directory and compatible
+state policy.
+
+Temporary directories are for tests and disposable acceptance runs. Allocate
+them at execution time through the host platform's temporary-directory facility.
+Do not persist a generated temporary path in `CURRENT.md`, a ledger, a dispatch,
+or a runway as the durable location of a real batch.
 
 ## Canonical Shape
 
@@ -107,6 +89,10 @@ Use a program/workstream layout for durable ledger-driven work:
         <batch-id>-<batch-slug>/
           dispatch.md
           runway.md
+          .runtime/
+            execution-state.json
+            execution-state.lock
+            receipts/
           closeout.md
           completed-slices.md
 
@@ -117,7 +103,11 @@ Use a program/workstream layout for durable ledger-driven work:
 
   intake/
     README.md
+```
 
+Optional separate roots may coexist:
+
+```text
 <run-artifact-root>/
   <runner-name>/
     <program-slug>/
@@ -126,78 +116,92 @@ Use a program/workstream layout for durable ledger-driven work:
         run-manifest.json
         telemetry/
         receipts/
-        batches/
 
 <output-root>/
   <tool-or-output-name>/
 ```
 
-Projects may place these roots under one parent or split them. The important
-boundary is semantic:
+The semantic boundaries are:
 
-- `planning_root` contains human-authored or human-readable coordination docs.
-- `run_artifact_root` contains operational runner evidence and machine state.
-- `output_root` contains generated products, reports, indexes, or other tool
-  outputs.
-- `program_archive_root` contains inactive program planning documents retained
-  for reference.
+- `planning_root` contains human-readable coordination and the directories that
+  define program and batch identity.
+- a batch's `.runtime/` directory contains small machine state whose identity and
+  lifecycle are exactly that batch;
+- `run_artifact_root`, when configured, contains state or evidence whose identity
+  is one runner run or an external operational backend rather than one batch;
+- `output_root` contains generated products not owned by a batch;
+- archives contain inactive planning evidence.
 
-Do not put raw JSON run state, receipts, telemetry, generated indexes, or bulky
-tool output inside the active planning tree unless a project explicitly declares
-that exception.
+Do not separate a small batch-owned state file merely because it is JSON. Do not
+co-locate raw logs, large telemetry, caches, indexes, or bulky generated output
+with active planning unless a project explicitly chooses that tradeoff.
+
+## Product And Dogfood Boundary
+
+Storage layout follows the product's user model, not the current repository's
+installer or dogfood harness.
+
+The following do not influence generic batch placement unless explicitly
+promoted into a product requirement:
+
+- `CODEX_HOME` or `.codex` layout;
+- symlink or manifest installation;
+- stable/candidate repositories or generations;
+- cross-checkout bridge paths or receipts;
+- developer-specific absolute paths.
+
+A dogfood adapter may locate or launch the implementation through those values,
+but the ledger, batch directory, and batch-local runtime layout remain usable
+without them.
 
 ## Active-State Files
 
-`CURRENT.md` files are for fresh-agent handoff. Keep them compact and current;
-they are not ledgers, transcripts, or a competing pickup algorithm.
-
-This section defines the required shape of active-state files. For operational
-pickup order, validation, target policy, and projection routing, use
-`planning-state`; do not infer active work from old filenames while a Layout v1
-`CURRENT.md` path exists.
+`CURRENT.md` files are compact fresh-agent handoffs, not ledgers or transcripts.
 
 The root `CURRENT.md` should include:
 
-- planning layout version
-- planning root, run artifact root, and output root
-- active programs with paths to their `CURRENT.md` files
-- allowed one-shot intake location, or `None`
-- migration exceptions and expiry condition, if any
+- layout version and planning root;
+- batch runtime policy;
+- optional run-artifact and output roots, or `None`;
+- active programs with paths to their program `CURRENT.md` files;
+- allowed one-shot intake location, or `None`;
+- temporary exceptions and expiry conditions.
 
 Each program `CURRENT.md` should include:
 
-- program slug and one-line purpose
-- current ledger path
-- selected dispatch path, or `None`
-- active Batch Runway spec path, or `None`
-- queued batch path or ID, if any
-- latest closeout path, if any
-- run artifact location for the program
-- program archive location
-- next safe action
-- blockers or stop conditions
+- program slug and purpose;
+- current ledger path;
+- selected dispatch, queued batch, and active runway, or `None`;
+- latest closeout, if any;
+- batch runtime policy;
+- next safe action;
+- blockers and explicit user-owned worktree constraints.
+
+Do not turn `CURRENT.md` into a historical evidence index. Put history in the
+ledger, batch directory, or archive.
 
 ## Program Ledgers
 
 Every long-lived ledger owns a program directory unless project instructions
-define an equivalent workstream root. A program ledger should live at:
+define an equivalent workstream root:
 
 ```text
 <planning-root>/programs/<program-slug>/LEDGER.md
 ```
 
-Use nearby `findings/` and `notes/` only for supporting durable context. Do not
-bury the active ledger in a notes folder.
+The ledger is the executable backlog source. Nearby `findings/` and `notes/`
+provide supporting context, not competing work queues.
 
 ## Batch Directories
 
-Co-locate the selected dispatch packet, concrete Batch Runway spec, closeout,
-and completed-slice archive for one batch:
+Co-locate one batch's durable planning documents and small batch-owned runtime
+state:
 
 ```text
 <program-root>/batches/<batch-id>-<batch-slug>/
   dispatch.md
   runway.md
+  .runtime/
   closeout.md
   completed-slices.md
 ```
@@ -205,195 +209,41 @@ and completed-slice archive for one batch:
 The path encodes lineage:
 
 ```text
-program ledger -> batch directory -> dispatch -> runway -> closeout
+program ledger -> batch directory -> dispatch -> runway -> runtime state -> closeout
 ```
 
 Use one batch directory per selected batch. Do not scatter one batch across
-global `dispatch/`, `runways/`, and `closeout/` directories unless an existing
-project convention explicitly requires that compatibility shape.
+global dispatch, runway, state, and closeout directories unless an explicit
+backend or compatibility contract requires it.
 
-## Naming
+Batch runtime state should normally be ignored or generated rather than
+committed. Its required durability is process-to-process continuity, not Git
+history. The project chooses whether `.runtime/` is ignored-local,
+externalized, or generated-only.
 
-Use stable, lowercase ASCII slugs:
+## Naming And Safety
 
-- `program-slug`: short noun phrase, hyphen-separated.
-- `batch-id`: stable program-local identifier such as `b1`, `apr-21`, or
-  `lr-b3`; preserve existing ledger IDs when they already exist.
-- `batch-slug`: short goal phrase, hyphen-separated.
-- `run-id`: timestamp or runner-generated opaque ID that is unique within the
-  runner/program directory.
+Use stable lowercase ASCII slugs for program and batch directory names. Validate
+path components before constructing batch-local paths. Reject parent traversal,
+absolute path injection, ambiguous separators, and collisions under the target
+platform's normal filesystem rules.
 
-Names should describe the workstream, not the agent session. Avoid dates in
-program and batch slugs unless the date is part of the domain fact.
+Version 1 layout safety does not imply protection against a hostile same-user
+process replacing namespace entries during a system call. Such a security claim
+requires an explicit threat model and feasible implementation primitive.
 
-## State Vocabulary
+## Migration And Compatibility
 
-Use these batch states unless a project defines its own:
+Existing projects with a separate `run_artifact_root` may retain it. Migration to
+batch-local state is not mandatory when the separate backend reflects a real
+user requirement.
 
-- `candidate`: plausible future batch, not selected.
-- `selected`: dispatch packet is current input for spec creation.
-- `queued`: concrete runway spec exists but execution has not started.
-- `active`: execution is in progress.
-- `completed`: implementation, validation, review, and closeout are done.
-- `superseded`: replaced by a newer accepted plan.
-- `abandoned`: intentionally stopped and not expected to resume.
-- `blocked`: waiting on a named decision, dependency, or external condition.
+Historical artifacts retain their original paths and meanings. Superseded
+planning stays readable but is not active pickup state. New work should not add a
+second root solely to preserve an accidental development topology.
 
-Record state in the program ledger and program `CURRENT.md`; do not infer it
-only from filenames.
+## Agent-Facing Handoff
 
-## One-Shot Planning
-
-For small notes that do not belong to a long-lived program, use an explicitly
-allowed intake area:
-
-```text
-<planning-root>/intake/<short-slug>.md
-```
-
-An intake note must either be promoted to a program/batch, archived, or left with
-a short reason why it remains standalone. The intake area must not become the
-default home for ledgers, dispatch packets, runway specs, or closeout reports.
-
-## Archives
-
-Archive by semantic reason:
-
-```text
-<program-root>/archive/completed/
-<program-root>/archive/superseded/
-<program-root>/archive/abandoned/
-```
-
-The program archive root is `<program-root>/archive/` unless project
-instructions declare a different program-local archive location. Archive
-completed or superseded planning docs when they should remain readable but
-should not be treated as active coordination state. Keep active-state files
-pointing at current artifacts only.
-
-## Migration Guidance
-
-Do not migrate downstream project artifacts as part of applying this reusable
-skill unless the user explicitly asks for that project migration.
-
-For a large existing planning root, migrate active coordination state first and
-historical material second. A good migration preserves pickup safety before it
-improves visual tidiness.
-
-### Migration Inventory
-
-Before moving files, write or update a compact migration inventory in the old or
-new planning root. The inventory should classify each artifact as one of:
-
-- `active-ledger`: current source of truth for selecting work.
-- `active-dispatch`: selected packet for the next spec creation pass.
-- `active-runway`: spec that may still be executed or resumed.
-- `closeout`: completed batch report or reconciliation evidence.
-- `historical-runway`: completed or superseded spec retained for reference.
-- `finding-note`: review, audit, characterization, or design note.
-- `runner-artifact`: JSON state, receipts, manifests, telemetry, or inventories.
-- `generated-output`: generated reports, indexes, summaries, or tool products.
-- `unknown`: requires human review before moving.
-
-For each row, record:
-
-- old path
-- target path or `leave-in-place`
-- classification
-- active status: `active`, `historical`, `superseded`, `abandoned`, or `unknown`
-- owning program slug, if known
-- redirect needed: `yes` or `no`
-- blocker, if any
-
-Do not move `unknown` rows into an active program path. Either classify them or
-place them in a dated/quarantined migration archive with a note that they are
-not active coordination state.
-
-### Active-First Sequence
-
-Use this sequence when the old root has an active ledger plus substantial
-history:
-
-1. Declare the new `planning_root`, `run_artifact_root`, and `output_root` in
-   project instructions or local overlay before moving files.
-2. Create the root `CURRENT.md`.
-3. Identify each active long-lived ledger and create one program directory for
-   each active workstream.
-4. Move or copy active ledgers into program `LEDGER.md` files. Prefer moving
-   when project tooling and references can be updated immediately; otherwise
-   leave a short redirect note at the old path.
-5. Create each program `CURRENT.md` and name the current ledger, selected
-   dispatch packet, active runway spec, next safe action, and known blockers.
-6. Move active dispatch/runway/closeout sets into batch directories, preserving
-   their lineage.
-7. Move runner JSON, receipts, manifests, telemetry, and input inventories to
-   `run_artifact_root`; keep only links or summaries in planning docs.
-8. Move generated outputs to `output_root`; keep only links or summaries in
-   planning docs.
-9. Move historical runways, closeouts, and notes into program archives only
-   after active pickup paths are correct.
-10. Update project instructions, README files, ledgers, and active specs so new
-    agents stop writing loose artifacts to the old root.
-
-### History Retention
-
-Historical artifacts should remain findable but not look active.
-
-- Completed or superseded dispatch/runway/closeout sets belong under
-  `<program-root>/archive/completed/` or
-  `<program-root>/archive/superseded/`.
-- Abandoned work belongs under `<program-root>/archive/abandoned/` with a short
-  reason.
-- Historical notes that do not clearly belong to one program may stay in a
-  root-level migration archive if the project declares one, but they must not be
-  treated as selected dispatch or active queue state.
-- Keep old filenames when they carry useful search value, but rely on
-  `CURRENT.md` and ledgers for active state.
-- Prefer redirect notes over duplicate copies when old paths may still be
-  referenced by humans, docs, or tools. Each redirect note should name the new
-  path and whether the old path is retained only for compatibility.
-
-### Validation
-
-After migration, validate by reading the files, not by trusting the move:
-
-- root `CURRENT.md` points to every active program.
-- each active program `CURRENT.md` names exactly one active ledger and at most
-  one selected dispatch and active runway.
-- every active batch directory has the expected dispatch/runway/closeout files
-  or explicitly records which are absent.
-- old active paths are either absent, ignored by project rules, or contain
-  redirect notes.
-- runner JSON and generated outputs are outside active planning docs unless a
-  project explicitly declares an exception.
-- project instructions name the new root and forbid new loose planning artifacts
-  in the old root except for documented compatibility paths.
-
-## Consumer Rules
-
-For `legacy-removal`:
-
-- Write the legacy ledger under a program root when the cleanup spans more than
-  one finding, decision, or possible batch.
-- Put the selected dispatch packet in the selected batch directory when one next
-  batch is clear.
-- Keep evidence inventories compact in the ledger; put generated outputs and
-  runner artifacts outside planning.
-
-For `architecture-program-runway`:
-
-- Own the program ledger, program `CURRENT.md`, batch queue, selected dispatch,
-  and closeout reconciliation under the program root.
-- Prefer one selected batch directory per current batch.
-- Keep runner receipts and JSON state in the run artifact root, not in the
-  program ledger.
-
-For `batch-runway`:
-
-- Create concrete specs at
-  `<program-root>/batches/<batch-id>-<batch-slug>/runway.md` when a selected
-  batch directory exists.
-- Keep `dispatch.md`, `runway.md`, `closeout.md`, and completed-slice archives
-  co-located.
-- Do not create loose runway specs directly under generic `plans/` or
-  `planning/` unless project instructions explicitly allow that layout.
+This skill defines placement, naming, file shape, and semantic ownership of
+artifact locations. It does not select work, create a dispatch, approve a
+runway, execute a batch, reconcile a ledger, or choose a successor.
