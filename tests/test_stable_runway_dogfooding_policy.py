@@ -46,8 +46,7 @@ class StableRunwayDogfoodingPolicyTests(unittest.TestCase):
         self.assertIn(
             "CCFG-29 must remove this policy and its root `AGENTS.md` hook "
             "only after the integrated candidate proves equivalent vertical "
-            "planning, one-slice execution, bounded recovery escalation, and "
-            "no-successor behavior.",
+            "planning, bounded recovery escalation, and no-successor behavior.",
             policy,
         )
         self.assertIn(
@@ -93,54 +92,6 @@ class StableRunwayDogfoodingPolicyTests(unittest.TestCase):
         self.assertIn("final range validation remains separate", policy)
         self.assertIn("Never choose a fixed slice count in advance", policy)
         self.assertIn("smaller-alternative analysis", policy)
-
-    def test_policy_executes_one_implementation_slice_per_invocation(self) -> None:
-        policy = normalized(POLICY)
-
-        for fragment in (
-            "consume the current queued or active runway",
-            "execute exactly the next incomplete implementation slice",
-            "worker implementation, focused validation, independent review",
-            "already-authorized correction, commit, receipt, execution-ledger update",
-            "completed-slice archive",
-            "stop before beginning another implementation slice",
-            "later explicit `work-batch` invocation",
-            "resumes from the existing durable state",
-            "no-successor-selection rule",
-        ):
-            with self.subTest(fragment=fragment):
-                self.assertIn(fragment, policy)
-
-        self.assertIn("Manual relaunch", policy)
-        self.assertIn(
-            "does not promise automatic continuation or a fresh process at each "
-            "lifecycle boundary",
-            policy,
-        )
-        self.assertIn(
-            "this policy neither requires nor creates separate finalization or "
-            "closeout processes",
-            policy,
-        )
-        self.assertIn("no launcher", policy)
-        self.assertIn("state field", policy)
-        self.assertIn("telemetry", policy)
-
-    def test_policy_adds_no_candidate_state_or_cross_generation_runtime(self) -> None:
-        policy = normalized(POLICY)
-
-        self.assertIn(
-            "Progress across those explicit invocations is established from "
-            "existing planning artifacts, receipts, execution-ledger records, "
-            "and Git evidence.",
-            policy,
-        )
-        self.assertIn("It adds no candidate runtime state", policy)
-        self.assertIn(
-            "it creates no runtime communication, synchronization, or shared "
-            "execution state between stable and candidate",
-            policy,
-        )
 
     def test_recovery_advice_is_once_read_only_and_non_authoritative(self) -> None:
         policy = normalized(POLICY)

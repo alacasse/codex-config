@@ -62,7 +62,7 @@
   `docs/plans/programs/codex-config/batches/ccfg-24b-intake-ownership-cutover/closeout.md`
 - CCFG-25 closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-25-planning-ownership-transfer/closeout.md`
-- CCFG-34 closeout evidence:
+- Historical CCFG-34 closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
 - Historical CCFG-34 intake and superseded CCFG-26 replanning amendment:
   `docs/plans/programs/codex-config/findings/github-issue-62-stable-runway-dogfooding-bootstrap.md`
@@ -190,11 +190,11 @@
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/runway.md`
 - Completed CCFG-26A closeout:
   `docs/plans/programs/codex-config/batches/ccfg-26a-permanent-vertical-runway-contract/closeout.md`
-- Completed CCFG-34 dispatch:
+- Historical CCFG-34 dispatch evidence:
   `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/dispatch.md`
-- Completed CCFG-34 review evidence:
+- Historical CCFG-34 review evidence:
   `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/review.md`
-- Completed CCFG-34 closeout:
+- Historical CCFG-34 closeout evidence:
   `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md`
 - Superseded CCFG-24 planning evidence:
   `docs/plans/programs/codex-config/batches/ccfg-24-intake-ownership-transfer/superseded.md`

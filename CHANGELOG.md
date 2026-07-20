@@ -29,23 +29,23 @@ execution-foundation batch against a reviewed crash/concurrency and deep-module
 contract without reviving CCFG-26B, forcing a monolithic tracer, requiring human
 per-slice relaunch in normal use, or creating runtime state during design.
 
-### Minimal stable-runway dogfooding policy
+### Narrow stable-runway dogfooding policy
 
-Problem: CCFG-26 through CCFG-29 will run on the stable generation, but their
-vertical-planning, one-slice execution, and bounded mechanical-recovery rules
-were spread across issue prose and runway-specific reminders.
+Problem: the temporary CCFG-34 policy incorrectly made one implementation slice
+per `work-batch` invocation a repository-local rule and required manual relaunch
+for later slices, duplicating execution progression already owned by the
+standard `work-batch` and Batch Runway contracts.
 
-Decision: add one temporary repository-local policy and load it through the
-project instructions. Require explicit vertical ownership and migration
-residue, exactly one incomplete implementation slice per `work-batch`
-invocation, and at most one advisory consultation of the unchanged read-only
-investigator before an avoidable mechanical escalation. Accept manual relaunch,
-preserve existing finalization and closeout behavior, and make CCFG-29 remove
-the policy only after equivalent candidate scenarios pass.
+Decision: delete that execution section and its focused assertions, remove the
+manual-relaunch language, and drop one-slice execution from the CCFG-29 parity
+gate. Keep only the temporary vertical-planning and bounded recovery guidance.
+Retain CCFG-34 planning and closeout artifacts as historical evidence without
+letting them define current planning or execution behavior.
 
-Expected effect: stable planning and execution for the remaining redesign
-batches use one focused temporary contract without adding runner architecture,
-automatic continuation, or new agent authority.
+Expected effect: stable redesign batches follow the standard execution
+contracts without a competing repository-local progression rule, while the
+remaining temporary dogfooding safeguards and their final removal gate stay
+intact.
 
 ### Planning-State queue currentness
 

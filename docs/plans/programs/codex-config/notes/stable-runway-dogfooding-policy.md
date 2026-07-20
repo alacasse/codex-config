@@ -6,11 +6,8 @@ This repository-local policy applies only when the stable generation plans or
 executes CCFG-26 through CCFG-29. It is a temporary bridge to the integrated
 candidate, not a reusable workflow contract.
 
-Manual relaunch between implementation slices is an accepted tradeoff. This
-policy does not promise automatic continuation or a fresh process at each
-lifecycle boundary. Final range validation, finalization, and same-batch
-closeout retain their existing stable behavior; this policy neither requires
-nor creates separate finalization or closeout processes.
+Historical CCFG-34 planning and closeout artifacts document the bootstrap but
+do not define current planning or execution behavior.
 
 ## Vertical Planning
 
@@ -52,29 +49,6 @@ and rollback boundaries. Never choose a fixed slice count in advance. When a
 slice is clearly oversized, record a smaller-alternative analysis before
 accepting the larger boundary.
 
-## One Implementation Slice Per Invocation
-
-For CCFG-26 through CCFG-29, one `work-batch` invocation must:
-
-1. consume the current queued or active runway and its existing durable state;
-2. execute exactly the next incomplete implementation slice;
-3. complete worker implementation, focused validation, independent review,
-   any already-authorized correction, commit, receipt, execution-ledger update,
-   and completed-slice archive for that slice;
-4. stop before beginning another implementation slice; and
-5. leave the next incomplete ledger row for a later explicit `work-batch`
-   invocation, which resumes from the existing durable state.
-
-Progress across those explicit invocations is established from existing
-planning artifacts, receipts, execution-ledger records, and Git evidence. It
-adds no candidate runtime state, and it creates no runtime communication,
-synchronization, or shared execution state between stable and candidate.
-
-This is an instruction boundary only. It adds no launcher, automatic
-continuation, execution-unit protocol, state field, transition, receipt type, or
-telemetry. Existing final validation, finalization, same-batch closeout, and the
-no-successor-selection rule retain their current owners and behavior.
-
 ## Bounded Read-Only Recovery Advice
 
 Before escalating an ambiguous blocker that appears mechanical, the coordinator
@@ -100,6 +74,6 @@ acceptance, commit, closeout, and successor decision.
 ## Removal Condition
 
 CCFG-29 must remove this policy and its root `AGENTS.md` hook only after the
-integrated candidate proves equivalent vertical planning, one-slice execution,
-bounded recovery escalation, and no-successor behavior. Remove the focused
-regression test only after equivalent candidate scenarios pass.
+integrated candidate proves equivalent vertical planning, bounded recovery
+escalation, and no-successor behavior. Remove the focused regression test only
+after equivalent candidate scenarios pass.
