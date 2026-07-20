@@ -9,8 +9,9 @@
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID: `None`
-- Active batch execution status: `idle`; the superseded CCFG-26 package was not
-  implemented, no replacement is selected, and no successor is selected.
+- Active batch execution status: `idle`; two descriptive CCFG-26 candidate
+  briefs are recorded, neither is selected or queued, and no successor is
+  selected.
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - Run artifact location: `None`; no batch execution is active.
@@ -37,10 +38,14 @@
   CCFG-26 through CCFG-29.
 - Open CCFG-26 direction: the four-slice
   `ccfg-26-work-batch-owner-transfer` package is superseded before
-  implementation. A reviewed compact source contract now governs a later
-  explicit `plan-batch CCFG-26`; no replacement is selected or queued.
+  implementation. Its reviewed one-batch replanning brief and review are now
+  historical evidence. Active planning direction is split into
+  `ccfg-26-public-work-batch-owner`, which is ready for a later explicit
+  planning-only request, and `ccfg-26-installed-caller-cutover`, which remains
+  deferred until the first batch's exact closeout. Neither candidate is
+  selected or queued.
   The rejected execution-state foundation remains superseded with no retained
-  candidate implementation. CCFG-26C through CCFG-26E remain unselected
+  candidate implementation. CCFG-26C through CCFG-26E are superseded
   historical decomposition evidence, not an accepted successor chain.
   Execution telemetry, changed-line counts, and coordinator-compaction metrics
   remain deferred.
@@ -98,10 +103,14 @@
   `docs/plans/programs/codex-config/batches/ccfg-26-work-batch-owner-transfer/runway.md`
 - CCFG-26 work-batch owner-transfer supersession notice:
   `docs/plans/programs/codex-config/batches/ccfg-26-work-batch-owner-transfer/superseded.md`
-- Reviewed CCFG-26 work-batch owner-transfer replanning brief:
+- Historical reviewed CCFG-26 work-batch owner-transfer replanning brief:
   `docs/plans/programs/codex-config/findings/ccfg-26-work-batch-owner-transfer-replanning-brief.md`
-- Clean CCFG-26 replanning-brief review:
+- Historical clean CCFG-26 replanning-brief review:
   `docs/plans/programs/codex-config/findings/ccfg-26-work-batch-owner-transfer-replanning-brief-review.md`
+- CCFG-26 public work-batch owner candidate source:
+  `docs/plans/programs/codex-config/findings/ccfg-26-public-work-batch-owner.md`
+- Deferred CCFG-26 installed-caller cutover candidate source:
+  `docs/plans/programs/codex-config/findings/ccfg-26-installed-caller-cutover.md`
 - Detailed CCFG-26 plan-gap interrogation evidence:
   `docs/plans/programs/codex-config/notes/ccfg-26-plan-gap-interrogation.md`
 - Superseded CCFG-26B dispatch, historical evidence only:
@@ -163,10 +172,14 @@
 - Active batch execution status: `idle`; CCFG-26 implementation has not started
 - Superseded CCFG-26 work-batch owner-transfer package:
   `docs/plans/programs/codex-config/batches/ccfg-26-work-batch-owner-transfer/superseded.md`
-- Reviewed CCFG-26 work-batch owner-transfer replanning brief:
+- Historical reviewed CCFG-26 work-batch owner-transfer replanning brief:
   `docs/plans/programs/codex-config/findings/ccfg-26-work-batch-owner-transfer-replanning-brief.md`
-- Clean CCFG-26 replanning-brief review:
+- Historical clean CCFG-26 replanning-brief review:
   `docs/plans/programs/codex-config/findings/ccfg-26-work-batch-owner-transfer-replanning-brief-review.md`
+- Ready-for-planning CCFG-26 public-owner candidate source:
+  `docs/plans/programs/codex-config/findings/ccfg-26-public-work-batch-owner.md`
+- Dependency-blocked CCFG-26 installed-caller cutover candidate source:
+  `docs/plans/programs/codex-config/findings/ccfg-26-installed-caller-cutover.md`
 - CCFG-26 execution-state foundation supersession:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/superseded.md`
 - Historical CCFG-26 execution-state foundation dispatch:
@@ -238,14 +251,17 @@
 
 ## Next Safe Action
 
-Use a later explicit stable `plan-batch CCFG-26` planning-only invocation based
-on COR-009, ADR 0004, the current candidate implementation seam, Planning State,
+Use a later explicit stable
+`plan-batch ccfg-26-public-work-batch-owner` planning-only invocation based on
+COR-009, ADR 0004, the current candidate implementation seam, Planning State,
 the CCFG-26 ledger row, and
-`findings/ccfg-26-work-batch-owner-transfer-replanning-brief.md`. Verify current
-stable/candidate identities, complete the two disposable feasibility gates, and
-leave one new replacement dispatch/runway independently reviewed and queued.
-The governing instruction is: do not implement candidate code; stop without
-selecting CCFG-27 or any other successor.
+`findings/ccfg-26-public-work-batch-owner.md`. Verify current stable/candidate
+identities, complete both disposable feasibility gates, and leave one
+independently reviewed public-owner dispatch/runway queued. Do not plan, select,
+dispatch, or queue `ccfg-26-installed-caller-cutover`; it becomes ready for a
+later separate planning request only after the public-owner batch closes with
+CCFG-26 `Prepared`. Do not implement candidate code or select CCFG-27 or any
+other successor during planning.
 
 ## Stop Conditions
 
@@ -260,8 +276,9 @@ selecting CCFG-27 or any other successor.
 - Stop if the stable or candidate checkout no longer matches the reviewed
   planning snapshot when initial execution preflight begins.
 - Stop if a replacement dispatch or runway is created except by a later explicit
-  stable `plan-batch CCFG-26` from idle Planning State, or if CCFG-27 is selected
-  before CCFG-26 closeout.
+  stable `plan-batch ccfg-26-public-work-batch-owner` from idle Planning State,
+  or if the installed-caller cutover or CCFG-27 is selected before its declared
+  dependency is closed.
 - Stop if planning weakens strict `cross-checkout-context/v1` or treats the
   planning snapshot as a live execution lease.
 - Stop if any default stable-home installed link resolves to the redesign branch
@@ -304,7 +321,12 @@ selecting CCFG-27 or any other successor.
   CCFG-26B under any condition.
 - Stop if work selects, dispatches, queues, refreshes, or prepares CCFG-26C
   through CCFG-26E, or selects replacement CCFG-26 work without a later explicit
-  stable `plan-batch` based on COR-009, ADR 0004, and current candidate code.
+  stable `plan-batch` based on the applicable new candidate source, COR-009,
+  ADR 0004, and current candidate code.
+- Stop if `ccfg-26-installed-caller-cutover` is planned, selected, dispatched,
+  or queued before the exact accepted closeout of
+  `ccfg-26-public-work-batch-owner` leaves CCFG-26 `Prepared` and Planning State
+  idle.
 - Stop if CCFG-34 closeout is treated as permission to select or prepare a
   successor batch.
 - Stop if CCFG-25 introduces a new planning schema, store, queue transaction,
@@ -327,15 +349,15 @@ selecting CCFG-27 or any other successor.
 - Stop if CCFG-26 changes or removes the serialized `select-dispatch`,
   `create-spec`, `execute`, or `closeout` identities reserved for CCFG-27,
   physically deletes legacy-owner directories reserved for CCFG-28, or removes
-  the temporary bridge reserved for CCFG-29. CCFG-26 may add only the reviewed
-  brief's candidate mechanical live-lease preflight and refresh parity; it must
-  not expand bridge semantic authority or create cross-generation runtime
+  the temporary bridge reserved for CCFG-29. CCFG-26 may add only the new
+  candidate sources' mechanical live-lease preflight and refresh parity; it
+  must not expand bridge semantic authority or create cross-generation runtime
   communication.
-- Stop if replacement CCFG-26 work or CCFG-26C through CCFG-26E changes COR-009
-  identity, treats rejected GitHub issues #59 or #61 as an input, dependency,
-  requirement, or parity gate, or treats the raw issue #60 body as a current
-  implementation specification instead of consuming the accepted slice-shape
-  policy and its completed correction evidence.
+- Stop if either new CCFG-26 candidate or superseded CCFG-26C through CCFG-26E
+  changes COR-009 identity, treats rejected GitHub issues #59 or #61 as an
+  input, dependency, requirement, or parity gate, or treats the raw issue #60
+  body as a current implementation specification instead of consuming the
+  accepted slice-shape policy and its completed correction evidence.
 - Stop if future CCFG-26 planning treats execution telemetry, changed-file or
   line-delta counts, review or validation breadth, or coordinator compaction as
   completed issue #60 behavior or as a prerequisite. Those metrics remain

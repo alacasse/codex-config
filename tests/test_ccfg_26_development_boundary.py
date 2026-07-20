@@ -20,6 +20,12 @@ DOGFOOD_POLICY = PROGRAM_ROOT / "notes/stable-runway-dogfooding-policy.md"
 ISSUE_62_FINDING = (
     PROGRAM_ROOT / "findings/github-issue-62-stable-runway-dogfooding-bootstrap.md"
 )
+PUBLIC_WORK_BATCH_OWNER = (
+    PROGRAM_ROOT / "findings/ccfg-26-public-work-batch-owner.md"
+)
+INSTALLED_CALLER_CUTOVER = (
+    PROGRAM_ROOT / "findings/ccfg-26-installed-caller-cutover.md"
+)
 SUPERSESSION = (
     PROGRAM_ROOT / "batches/ccfg-26-execution-state-foundation/superseded.md"
 )
@@ -105,16 +111,38 @@ class Ccfg26DevelopmentBoundaryTests(unittest.TestCase):
 
         next_action = markdown_section(CURRENT, "## Next Safe Action")
         for fragment in (
-            "`plan-batch CCFG-26`",
+            "`plan-batch ccfg-26-public-work-batch-owner`",
             "COR-009",
             "ADR 0004",
             "current candidate implementation seam",
             "planning-only",
-            "do not implement candidate code",
-            "independently reviewed and queued",
+            "Do not implement candidate code",
+            "independently reviewed public-owner dispatch/runway queued",
+            "`ccfg-26-installed-caller-cutover`",
+            "only after the public-owner batch closes with CCFG-26 `Prepared`",
         ):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, next_action)
+
+    def test_two_descriptive_candidates_are_linked_and_ordered(self) -> None:
+        ledger = LEDGER.read_text(encoding="utf-8")
+        public_owner = normalized_text(PUBLIC_WORK_BATCH_OWNER)
+        caller_cutover = normalized_text(INSTALLED_CALLER_CUTOVER)
+
+        for path in (PUBLIC_WORK_BATCH_OWNER, INSTALLED_CALLER_CUTOVER):
+            with self.subTest(path=path):
+                self.assertIn(str(path.relative_to(PROGRAM_ROOT)), ledger)
+
+        self.assertIn("Sequence: first of two descriptive CCFG-26 child batches.", public_owner)
+        self.assertIn(
+            "Planning state: not selected, not dispatched, not queued, and not authorized for implementation.",
+            public_owner,
+        )
+        self.assertIn("Sequence: second of two descriptive CCFG-26 child batches.", caller_cutover)
+        self.assertIn(
+            "Planning state: deferred candidate; not selected, not dispatched, not queued, and not ready for planning until the first batch closes.",
+            caller_cutover,
+        )
 
     def test_single_generation_boundary_is_active_in_adr_and_instructions(
         self,
@@ -206,7 +234,8 @@ class Ccfg26DevelopmentBoundaryTests(unittest.TestCase):
         self.assertEqual(
             issue_guardrails,
             {
-                "stop if replacement ccfg-26 work or ccfg-26c through ccfg-26e "
+                "stop if either new ccfg-26 candidate or superseded ccfg-26c "
+                "through ccfg-26e "
                 "changes cor-009 identity, treats rejected github issues #59 or "
                 "#61 as an input, dependency, requirement, or parity gate, or "
                 "treats the raw issue #60 body as a current implementation "
