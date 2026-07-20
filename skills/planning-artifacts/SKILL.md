@@ -12,11 +12,11 @@ the actual planning root.
 
 This skill defines placement, naming, file shape, batch directory conventions,
 batch-local runtime layout, optional runner-artifact roots, output roots, and
-archives. For operational pickup, validation, target policy, and projection
-routing, use `../planning-state/SKILL.md` first when it is available. Planning
-State consumes the layout described here; this layout handoff does not replace
-its pickup diagnostic and grants no queue, dispatch, runway, or lifecycle
-mutation authority.
+archives. For operational pickup, use Planning State Diagnostic-First Pickup
+through `../planning-state/SKILL.md` first when it is available. Planning State
+consumes the layout described here; this layout handoff does not replace its
+pickup diagnostic, does not create a competing pickup algorithm, and grants no
+queue, dispatch, runway, or lifecycle mutation authority.
 
 Do not hard-code a downstream project name, local path, validation command,
 cache location, or personal overlay into reusable skills. If the project has not
@@ -156,7 +156,8 @@ without them.
 
 ## Active-State Files
 
-`CURRENT.md` files are compact fresh-agent handoffs, not ledgers or transcripts.
+`CURRENT.md` files are compact fresh-agent handoffs, not ledgers, transcripts,
+or a competing pickup algorithm.
 
 The root `CURRENT.md` should include:
 
