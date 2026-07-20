@@ -54,6 +54,80 @@ slice implementation, never creates new findings from fresh request text, and
 never treats external sources as executable work unless the current program
 ledger points to them.
 
+## Product, Dogfood, Threat, And Feasibility Gate
+
+Before creating an architecture, migration, extraction, runner, storage, or
+installation dispatch or runway, classify the proposed work from the user's
+product outward. Do not start from the current repository topology or from code
+that already exists.
+
+The dispatch and runway must each make these four surfaces explicit:
+
+### Product Boundary
+
+State:
+
+- the concrete user problem;
+- product files or modules that will exist afterward;
+- public inputs and outputs;
+- persistent product state and its location;
+- dogfood or installation concepts forbidden from the product interface.
+
+### Dogfood Boundary
+
+State:
+
+- repository-specific launch, checkout, installation, fixture, or validation
+  mechanics;
+- the adapter or harness that owns them;
+- why they are temporary;
+- their removal condition.
+
+A dogfood adapter may depend on product code. Product code, schemas, state, and
+public interfaces must not depend on the adapter unless the user explicitly
+accepts that dependency as a product requirement.
+
+### Threat Model
+
+State the realistic failure causes covered by the batch and the actors,
+filesystems, or deployment modes explicitly unsupported. Do not silently widen a
+local reliability requirement into adversarial security, distributed execution,
+network-filesystem, or power-loss guarantees.
+
+### Guarantee Feasibility
+
+For every material technical guarantee, state:
+
+- the exact failure prevented;
+- the realistic actor or cause;
+- the user value;
+- the implementation primitive or bounded dependency;
+- the cross-platform proof path when portability is required.
+
+When the primitive is unknown, do not emit a production implementation Slice.
+Reduce the guarantee or plan one small disposable feasibility experiment first.
+A plan must not defer its most consequential mechanism decision into a large
+production diff.
+
+The reviewer must return `correction_required` or `blocked` when:
+
+- a `CODEX_HOME`, symlink, stable/candidate checkout, cross-checkout bridge,
+  developer-specific path, or temporary fixture shapes the product API, schema,
+  state layout, or terminology without explicit user need;
+- a temporary path is persisted as durable project or batch state;
+- batch-specific runtime state is forced into a separate root without a concrete
+  user requirement;
+- a guarantee has no named feasible primitive;
+- preserved uncommitted work is treated as accepted implementation or as the
+  source of the replacement design.
+
+This gate is not satisfied by repeating labels such as `bounded`, `deep module`,
+`portable`, or `fail closed`. The plan must describe the resulting files,
+processes, state, guarantees, and temporary machinery in terms the user can
+evaluate.
+
+## Planning Result
+
 This skill owns the user's request to plan one bounded batch. Use
 `../planning-state/SKILL.md` for current/validate diagnostics,
 `../planning-artifacts/SKILL.md` for Layout v1 locations and vocabulary,
@@ -103,7 +177,8 @@ strict post-creation contract.
 
 This conditional bridge does not change `plan-batch` selection, one-spec, or
 stop-before-implementation ownership. It adds no step for ordinary single-root
-batches.
+batches. It is dogfood context and must not be copied into an extraction-ready
+product contract.
 
 ## Stops
 
@@ -113,6 +188,10 @@ batches.
 - Do not bypass an existing selected dispatch, queued batch, or active runway.
 - Do not run project-level integration harnesses unless the spec explicitly
   assigns them.
+- Do not emit an architecture, migration, extraction, runner, storage, or
+  installation plan without the four boundary sections above.
+- Do not use preserved uncommitted work as planning authority without explicit
+  user direction.
 
 ## Agent-Facing Support
 
