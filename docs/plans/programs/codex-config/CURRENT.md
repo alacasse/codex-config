@@ -13,6 +13,8 @@
   `idle; ccfg-26-execution-state-foundation is superseded; no implementation Slice is accepted; candidate WIP remains under user control; no successor selected`
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
+- Run artifact location: `None`; batch-local `.runtime/` state exists only for an
+  active batch, while separate runner-global artifacts require explicit policy
 - Program archive location: `docs/plans/archive/`
 
 ## Project State Policy
