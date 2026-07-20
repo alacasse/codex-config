@@ -7,6 +7,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AGENTS = REPO_ROOT / "AGENTS.md"
+CONTEXT = REPO_ROOT / "CONTEXT.md"
 PLAN_BATCH = REPO_ROOT / "skills/plan-batch/SKILL.md"
 PLANNING_ARTIFACTS = REPO_ROOT / "skills/planning-artifacts/SKILL.md"
 ROOT_CURRENT = REPO_ROOT / "docs/plans/CURRENT.md"
@@ -65,6 +66,31 @@ class ProductDogfoodBoundaryPolicyTests(unittest.TestCase):
         ):
             with self.subTest(required=required):
                 self.assertIn(required, instructions)
+
+    def test_canonical_context_uses_product_terms_not_superseded_flight_terms(
+        self,
+    ) -> None:
+        context = normalized(CONTEXT)
+
+        for required in (
+            "Product Boundary",
+            "Dogfood Adapter",
+            "Batch-Local Runtime State",
+            "Threat Model",
+            "Guarantee Feasibility",
+            "Preserved User Worktree",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, context)
+
+        for superseded_term in (
+            "Execution Flight",
+            "Flight Reservation",
+            "Execution Transition Receipt",
+            "Automatic Same-Batch Continuation",
+        ):
+            with self.subTest(superseded_term=superseded_term):
+                self.assertNotIn(superseded_term, context)
 
     def test_plan_batch_requires_concrete_boundary_and_feasibility_sections(
         self,
