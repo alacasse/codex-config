@@ -4,8 +4,10 @@
 
 - Layout: Planning Artifact Layout v1
 - Planning root: `docs/plans/`
-- Run artifact root: `None selected`; selected runner batches may declare
-  program-local run artifacts before execution
+- Batch runtime policy: `batch-local`; small state owned by one batch lives under
+  that batch directory, normally in `.runtime/`
+- Run artifact root: `None selected`; optional only for runner-global, bulky, or
+  explicitly external operational artifacts
 - Output root: `None selected`
 - One-shot intake: `None`
 - Program archive root: `docs/plans/archive/`
@@ -30,8 +32,11 @@
   state.
 - Repository-root `plans/` is retired. Do not create or use it for active,
   semi-active, or compatibility planning.
-- The closed extraction-prep compatibility artifacts now live under
+- The closed extraction-prep compatibility artifacts live under
   `docs/plans/archive/compatibility/root-plans/`.
+- A temporary directory may be used by a test or disposable acceptance run, but
+  its generated path is not durable planning state and must not be persisted as
+  the location of a real batch.
 
 ## Next Safe Action
 
