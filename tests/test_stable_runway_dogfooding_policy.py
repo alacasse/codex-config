@@ -126,6 +126,22 @@ class StableRunwayDogfoodingPolicyTests(unittest.TestCase):
         self.assertIn("state field", policy)
         self.assertIn("telemetry", policy)
 
+    def test_policy_adds_no_candidate_state_or_cross_generation_runtime(self) -> None:
+        policy = normalized(POLICY)
+
+        self.assertIn(
+            "Progress across those explicit invocations is established from "
+            "existing planning artifacts, receipts, execution-ledger records, "
+            "and Git evidence.",
+            policy,
+        )
+        self.assertIn("It adds no candidate runtime state", policy)
+        self.assertIn(
+            "it creates no runtime communication, synchronization, or shared "
+            "execution state between stable and candidate",
+            policy,
+        )
+
     def test_recovery_advice_is_once_read_only_and_non_authoritative(self) -> None:
         policy = normalized(POLICY)
 

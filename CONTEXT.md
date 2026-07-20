@@ -88,46 +88,6 @@ _Avoid_: phase, run, task
 One ordered, independently useful implementation unit in an accepted Batch Runway.
 _Avoid_: phase, arbitrary step, task
 
-**Execution Flight**:
-One fresh `work-batch` coordinator invocation that may advance exactly one Slice.
-_Avoid_: run, phase, attempt
-
-**Execution Attempt**:
-The durable identity of one reserved possible execution of one Slice, from reservation through one accepted resolution.
-_Avoid_: flight, worker session, retry
-
-**Flight Reservation**:
-The durable decision that binds one Execution Attempt to an exact Slice, runway revision, and candidate baseline before an external effect may begin.
-_Avoid_: lock, lease, active process
-
-**Attempt Resolution**:
-The accepted semantic outcome that closes one Execution Attempt exactly once as completed, blocked, or failed.
-_Avoid_: worker result, phase result, replay
-
-**Completed Slice Prefix**:
-The contiguous sequence of accepted completed Slices from the beginning of one accepted slice order.
-_Avoid_: completed-slices file, arbitrary completed set, slice status
-
-**Batch Execution State**:
-The canonical structured record of one Batch's intra-batch Slice progression, Execution Attempts, and resolutions across fresh coordinator processes.
-_Avoid_: Run State, Planning State, batch manifest
-
-**Execution Transition Receipt**:
-Immutable evidence of one applied Batch Execution State transition at an exact revision.
-_Avoid_: Phase Receipt, worker result, manifest
-
-**Execution Flight Result**:
-The structured coordinator observation that identifies one resolved Execution Flight for code validation against canonical Batch Execution State.
-_Avoid_: Phase Result, worker result, Execution Next Action
-
-**Execution Next Action**:
-The mechanically derived continuation disposition after an execution-state transition.
-_Avoid_: agent recommendation, successor selection, queue state
-
-**Automatic Same-Batch Continuation**:
-The process-lifecycle behavior that starts a fresh Execution Flight when canonical state derives `continue_same_batch`, without human relaunch or successor selection.
-_Avoid_: multi-slice coordinator, automatic recovery, successor execution
-
 **Dispatch Packet**:
 The compact handoff that describes the selected batch for spec creation.
 _Avoid_: batch spec, program ledger, receipt
@@ -299,25 +259,6 @@ _Avoid_: hidden user command, duplicate command owner, broad workflow facade
   `docs/plans/programs/codex-config/LEDGER.md`.
 - A **Program Ledger** may contain many **Batches**.
 - A **Batch** has one accepted ordered set of **Slices**.
-- An **Execution Flight** contains at most one **Execution Attempt**.
-- An **Execution Attempt** belongs to exactly one **Slice**.
-- A **Flight Reservation** must exist before an **Execution Attempt** may cross
-  an external-effect boundary.
-- An **Attempt Resolution** closes one **Execution Attempt** exactly once.
-- The **Completed Slice Prefix** belongs to one **Batch Execution State**.
-- **Batch Execution State** owns runtime Slice progression and does not own
-  selected, queued, or active planning currentness.
-- A **Run State** may reference **Batch Execution State** but does not redefine
-  its Slice or Execution Attempt facts.
-- An **Execution Transition Receipt** projects one accepted transition from
-  **Batch Execution State**.
-- An **Execution Flight Result** references one **Execution Transition Receipt**
-  and cannot determine an **Execution Next Action** by itself.
-- An **Execution Next Action** is derived from **Batch Execution State** and an
-  accepted **Attempt Resolution**; it is not a successor-selection decision.
-- **Automatic Same-Batch Continuation** may start a fresh **Execution Flight**
-  only from a derived `continue_same_batch`; it does not recover an unresolved
-  **Execution Attempt** or change planning currentness.
 - A **Dispatch Packet** describes exactly one selected **Batch**.
 - A **Run State** records the active **Batch** when one has been selected.
 - A **Run Summary** reports selected facts from **Run State** and the latest **Phase Receipt**.
