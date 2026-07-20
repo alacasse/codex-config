@@ -1,5 +1,11 @@
 # CCFG-26 Execution-State Authority Direction
 
+> **Historical evidence.** This rejected direction was superseded by
+> [ADR 0004](../../../../adr/0004-single-generation-command-owner-development-boundary.md)
+> and the
+> [execution-state foundation supersession](../batches/ccfg-26-execution-state-foundation/superseded.md).
+> Do not use it to select, queue, or execute CCFG-26 work.
+
 ## Status
 
 Accepted direction and formal design resolution for CCFG-26, dated 2026-07-19.

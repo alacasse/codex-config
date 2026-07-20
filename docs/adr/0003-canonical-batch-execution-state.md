@@ -2,7 +2,11 @@
 
 ## Status
 
-Accepted.
+Superseded by
+[ADR 0004: Single-Generation Command-Owner Development Boundary](0004-single-generation-command-owner-development-boundary.md).
+
+This ADR is retained as historical rationale for the rejected execution-state
+direction. It is not current CCFG-26 architecture or planning authority.
 
 ## Context
 

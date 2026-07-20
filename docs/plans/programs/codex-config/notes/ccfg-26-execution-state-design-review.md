@@ -1,5 +1,12 @@
 # CCFG-26 Execution-State Design Review
 
+> **Historical evidence.** This review applies only to the rejected design
+> superseded by
+> [ADR 0004](../../../../adr/0004-single-generation-command-owner-development-boundary.md)
+> and the
+> [execution-state foundation supersession](../batches/ccfg-26-execution-state-foundation/superseded.md).
+> It is not current planning or execution authority.
+
 ## Verdict
 
 `clean` on 2026-07-19 after two initial bounded correction rounds, one fresh

@@ -8,15 +8,12 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/runway.md`
-- Active batch execution status:
-  `blocked in Slice 1 final review; candidate work remains uncommitted at 5c5ec9d; stable work-batch remains the real-batch controller; no successor selected`
+- Queued batch path or ID: `None`
+- Active batch execution status: `None`; CCFG-26 is open for fresh planning and
+  no successor is selected.
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
-- Run artifact location: `None`; the real implementation batch has no Batch
-  Execution State. Fixture roots are allocated at execution time and are not
-  durable planning state.
+- Run artifact location: `None`; no implementation batch is selected or queued.
 - Program archive location: `docs/plans/archive/`
 
 ## Project State Policy
@@ -38,17 +35,12 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-27 through CCFG-29.
-- Pending ledger row: CCFG-26. Its first bounded execution-foundation batch is
-  selected and queued but blocked in Slice 1 final review. The uncommitted
-  candidate implementation passed its last focused local baseline, but the
-  final path-based filesystem effects remain vulnerable to namespace
-  substitution. A reviewed amendment or superseding replan must authorize one
-  cross-platform anchored-filesystem mechanism and Windows validation path
-  before implementation resumes. The batch still has two vertical Slices; the
-  stable controller owns both real Slices, and Slice 2 remains unstarted. No
-  implementation Slice is accepted or committed, and no successor is selected.
-  CCFG-26C through CCFG-26E remain unselected conceptual evidence, not a
-  successor chain.
+- Ready ledger row: CCFG-26. The rejected execution-state foundation is
+  superseded with no candidate implementation retained and no replacement
+  selected. A later planning-only invocation must derive one fresh runway from
+  COR-009, ADR 0004, and direct inspection of the current candidate code.
+  CCFG-26C through CCFG-26E remain unselected historical decomposition evidence,
+  not an accepted successor chain.
 - Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
@@ -117,16 +109,18 @@
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/runway.md`
 - CCFG-26B supersession notice:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/superseded.md`
-- Accepted CCFG-26 execution-state direction amendment:
+- Historical CCFG-26 execution-state direction:
   `docs/plans/programs/codex-config/findings/ccfg-26-execution-state-authority-direction.md`
-- CCFG-26 replan analysis and ChatGPT Pro handoff:
+- Historical CCFG-26 replan analysis and ChatGPT Pro handoff:
   `docs/plans/programs/codex-config/notes/ccfg-26-replan-analysis-and-chatgpt-pro-handoff.md`
-- Accepted CCFG-26 execution-state design contract:
+- Historical CCFG-26 execution-state design contract:
   `docs/plans/programs/codex-config/notes/ccfg-26-execution-state-design-contract.md`
-- Clean CCFG-26 execution-state design review:
+- Historical CCFG-26 execution-state design review:
   `docs/plans/programs/codex-config/notes/ccfg-26-execution-state-design-review.md`
-- Accepted canonical batch execution-state ADR:
+- Superseded canonical batch execution-state ADR:
   `docs/adr/0003-canonical-batch-execution-state.md`
+- Accepted single-generation development boundary:
+  `docs/adr/0004-single-generation-command-owner-development-boundary.md`
 - CCFG-26 slice-shape policy direction from GitHub issue #66:
   `docs/plans/programs/codex-config/findings/slice-shape-policy-direction.md`
 - Live CCFG-25 planning-quality amendment:
@@ -146,18 +140,18 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/runway.md`
-- Active batch execution status:
-  `blocked in Slice 1 final review; preserve the uncommitted candidate worktree; no implementation commit, closeout, or successor selected`
-- Queued CCFG-26 execution-state foundation dispatch:
+- Queued batch: `None`
+- Active batch execution status: `None`
+- CCFG-26 execution-state foundation supersession:
+  `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/superseded.md`
+- Historical CCFG-26 execution-state foundation dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/dispatch.md`
 - Historical original planning review; insufficient by itself to authorize
   execution:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/review.md`
-- Authoritative fixture-only bootstrap amendment:
+- Historical fixture-only bootstrap amendment:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/amendment.md`
-- Clean bootstrap amendment review:
+- Historical bootstrap amendment review:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/amendment-review.md`
 - Blocked Slice 1 execution report:
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/execution-report.md`
@@ -165,13 +159,13 @@
   `docs/plans/programs/codex-config/batches/ccfg-26-execution-state-foundation/execution-retrospective.md`
 - Superseded CCFG-26B evidence:
   `docs/plans/programs/codex-config/batches/ccfg-26b-fresh-slice-flight/superseded.md`
-- Accepted CCFG-26 direction:
+- Historical CCFG-26 execution-state direction:
   `docs/plans/programs/codex-config/findings/ccfg-26-execution-state-authority-direction.md`
-- Durable CCFG-26 design handoff:
+- Historical CCFG-26 design handoff:
   `docs/plans/programs/codex-config/notes/ccfg-26-replan-analysis-and-chatgpt-pro-handoff.md`
-- Accepted CCFG-26 execution-state design contract:
+- Historical CCFG-26 execution-state design contract:
   `docs/plans/programs/codex-config/notes/ccfg-26-execution-state-design-contract.md`
-- Clean CCFG-26 execution-state design review:
+- Historical CCFG-26 execution-state design review:
   `docs/plans/programs/codex-config/notes/ccfg-26-execution-state-design-review.md`
 - Completed CCFG-26 slice-shape correction dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/dispatch.md`
@@ -219,29 +213,22 @@
 
 ## Next Safe Action
 
-Do not resume implementation under the current Slice 1 scope. Preserve the
-uncommitted candidate worktree and read
-`batches/ccfg-26-execution-state-foundation/execution-report.md`. Use a reviewed
-planning amendment or superseding replan to choose and authorize exactly one
-cross-platform anchored-filesystem mechanism, its dependency or native-backend
-boundary, and its Windows validation path. Only then refresh Planning State and
-the strict live lease, delegate the authorized correction, rerun all Slice 1
-validation and reviews, and request a fresh exact-diff runway review. Do not
-start Slice 2, create real Batch Execution State, close the batch, resume
-CCFG-26B, select CCFG-26C through CCFG-26E, or select any successor.
+Use a later explicit `plan-batch CCFG-26` invocation to create and independently
+review exactly one fresh runway from COR-009, ADR 0004, and direct inspection of
+the current candidate implementation seam. That invocation is planning-only:
+do not implement candidate code or select CCFG-27 through CCFG-29, and do not
+start implementation until the fresh runway is independently reviewed and
+queued.
 
 ## Stop Conditions
 
-- Stop if the queued runway or original review is consumed without the exact
-  bootstrap amendment and its clean amendment review.
-- Stop if candidate machinery controls, selects, reserves, launches, resolves,
-  or derives either real implementation Slice of this batch.
-- Stop if execution creates a real Batch Execution State or durable temporary
-  run-artifact root for this implementation batch.
-- Stop if execution resumes without reviewed authority for a cross-platform
-  final-effect confinement mechanism and its Windows validation path.
-- Stop if execution imports the stable completed prefix into candidate state or
-  adds a legacy-prefix initialization or migration event.
+- Stop if any artifact in the superseded
+  `ccfg-26-execution-state-foundation` directory is treated as selected, queued,
+  active, resumable, amendable, executable, or current architectural authority.
+- Stop if the candidate controller controls, selects, or executes the real
+  CCFG-26 development batch before cutover.
+- Stop if fresh planning turns the stable/candidate development topology into
+  runtime communication, shared execution state, or self-hosting.
 - Stop if work treats closed CCFG-18 or its completed runway as active work.
 - Stop if planning weakens strict `cross-checkout-context/v1` or treats the
   planning snapshot as a live execution lease.
@@ -285,7 +272,7 @@ CCFG-26B, select CCFG-26C through CCFG-26E, or select any successor.
   CCFG-26B under any condition.
 - Stop if work selects, dispatches, queues, refreshes, or prepares CCFG-26C
   through CCFG-26E, or selects replacement CCFG-26 work without a later explicit
-  stable `plan-batch` based on the accepted execution-state design contract.
+  stable `plan-batch` based on COR-009, ADR 0004, and current candidate code.
 - Stop if CCFG-34 closeout is treated as permission to select or prepare a
   successor batch.
 - Stop if CCFG-25 introduces a new planning schema, store, queue transaction,

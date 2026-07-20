@@ -1,5 +1,11 @@
 # CCFG-26 Execution-State Design Contract
 
+> **Historical evidence.** This rejected design was superseded by
+> [ADR 0004](../../../../adr/0004-single-generation-command-owner-development-boundary.md)
+> and the
+> [execution-state foundation supersession](../batches/ccfg-26-execution-state-foundation/superseded.md).
+> Do not use it as current CCFG-26 architecture or execution authority.
+
 ## Status And Scope
 
 Accepted initially on 2026-07-19 after the clean independent review recorded in
