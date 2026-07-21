@@ -48,7 +48,7 @@ class AgentDoneNotifyTests(unittest.TestCase):
             "permission_mode": "default",
             "session_id": "0123456789abcdef",
             "turn_id": "turn-abcdef123456789",
-            "last_assistant_message": "Finished validation and updated the ledger.",
+            "last_assistant_message": "Finished focused validation.",
         }
 
         with (
@@ -64,7 +64,7 @@ class AgentDoneNotifyTests(unittest.TestCase):
         self.assertIn("dirty: 2 file(s)", notification.message)
         self.assertIn("cwd: tools/install_sandbox", notification.message)
         self.assertIn("host: devbox", notification.message)
-        self.assertIn("last: Finished validation", notification.message)
+        self.assertIn("last: Finished focused validation.", notification.message)
 
     def test_hook_exits_quietly_without_configured_backend(self) -> None:
         payload = {

@@ -9,8 +9,9 @@ import json
 import os
 import shutil
 import sys
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TypedDict, cast
 
 
 STATE_RELATIVE_PATH = Path("codex-config/installed-features.json")
@@ -21,7 +22,75 @@ class InstallError(RuntimeError):
     """Raised for user-correctable install failures."""
 
 
-def parse_args() -> argparse.Namespace:
+@dataclass(frozen=True)
+class StaleLink:
+    """One previously managed link absent from the current manifest."""
+
+    feature: str
+    source: Path | None
+    target: Path
+
+
+class LinkRecord(TypedDict):
+    """One source-to-target link in the manifest or installed state."""
+
+    source: str
+    target: str
+
+
+class FeatureRecord(TypedDict, total=False):
+    """Validated feature fields used by the installer."""
+
+    version: str
+    description: str
+    default_enabled: bool
+    owner: str
+    requires: list[str]
+    links: list[LinkRecord]
+
+
+class Manifest(TypedDict):
+    """Validated installer manifest."""
+
+    schema_version: int
+    features: dict[str, FeatureRecord]
+
+
+class InstalledFeatureRecord(TypedDict, total=False):
+    """Persisted state for one installed feature."""
+
+    version: str
+    description: str
+    links: list[LinkRecord]
+
+
+class InstallState(TypedDict, total=False):
+    """Persisted installer state."""
+
+    schema_version: int
+    installed_at: str
+    reconciled_at: str
+    repo_root: str
+    manifest: str
+    features: dict[str, InstalledFeatureRecord]
+
+
+class Arguments(argparse.Namespace):
+    """Typed command-line arguments."""
+
+    repo_root: str | None
+    manifest: str
+    codex_home: str
+    feature: list[str]
+    all_features: bool
+    list: bool
+    status: bool
+    prune: bool
+    dry_run: bool
+    force: bool
+
+
+def parse_args() -> Arguments:
     parser = argparse.ArgumentParser(
         description="Install versioned Codex features from this repository."
     )
@@ -60,7 +129,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--status",
         action="store_true",
-        help="Show installed feature versions and exit.",
+        help="Show installed feature versions and stale managed links, then exit.",
+    )
+    parser.add_argument(
+        "--prune",
+        action="store_true",
+        help="Remove stale links that still match their recorded managed sources.",
     )
     parser.add_argument(
         "--dry-run",
@@ -72,7 +146,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Replace conflicting targets after backing up non-symlink files.",
     )
-    return parser.parse_args()
+    return cast(Arguments, parser.parse_args())
 
 
 def repo_root_from_args(value: str | None) -> Path:
@@ -88,23 +162,26 @@ def resolve_manifest(repo_root: Path, manifest_arg: str) -> Path:
     return manifest.resolve()
 
 
-def load_manifest(path: Path) -> dict[str, Any]:
+def load_manifest(path: Path) -> Manifest:
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        raw: object = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
         raise InstallError(f"manifest not found: {path}") from exc
     except json.JSONDecodeError as exc:
         raise InstallError(f"manifest is not valid JSON: {path}: {exc}") from exc
 
+    if not isinstance(raw, dict):
+        raise InstallError("manifest root must be an object")
+    data = cast(dict[str, object], raw)
     if data.get("schema_version") != 1:
         raise InstallError("unsupported manifest schema_version; expected 1")
     features = data.get("features")
     if not isinstance(features, dict) or not features:
         raise InstallError("manifest must contain a non-empty features object")
-    return data
+    return cast(Manifest, data)
 
 
-def selected_feature_names(args: argparse.Namespace, manifest: dict[str, Any]) -> list[str]:
+def selected_feature_names(args: Arguments, manifest: Manifest) -> list[str]:
     available = manifest["features"]
     requested: list[str] = []
     for raw in args.feature:
@@ -129,7 +206,7 @@ def selected_feature_names(args: argparse.Namespace, manifest: dict[str, Any]) -
 
 
 def expand_feature_dependencies(
-    names: list[str], available: dict[str, Any]
+    names: list[str], available: dict[str, FeatureRecord]
 ) -> list[str]:
     expanded: list[str] = []
     visited: set[str] = set()
@@ -169,22 +246,33 @@ def state_path(codex_home: Path) -> Path:
     return codex_home / STATE_RELATIVE_PATH
 
 
-def load_state(codex_home: Path) -> dict[str, Any]:
+def load_state(codex_home: Path) -> InstallState:
     path = state_path(codex_home)
     if not path.exists():
         return {"features": {}}
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = cast(dict[str, object], json.loads(path.read_text(encoding="utf-8")))
     except json.JSONDecodeError:
         return {"features": {}}
     if not isinstance(data, dict):
         return {"features": {}}
     if not isinstance(data.get("features"), dict):
         data["features"] = {}
-    return data
+    return cast(InstallState, data)
 
 
-def print_feature_list(manifest: dict[str, Any]) -> None:
+def write_state(codex_home: Path, state: InstallState) -> None:
+    path = state_path(codex_home)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(f"{path.suffix}.tmp")
+    temporary.write_text(
+        json.dumps(state, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+
+
+def print_feature_list(manifest: Manifest) -> None:
     for name, feature in manifest["features"].items():
         version = feature.get("version", "unversioned")
         description = feature.get("description", "")
@@ -194,7 +282,7 @@ def print_feature_list(manifest: dict[str, Any]) -> None:
         print(f"{name} {version} [{install_mode}{owner_suffix}] - {description}")
 
 
-def print_status(codex_home: Path, manifest: dict[str, Any]) -> None:
+def print_status(codex_home: Path, manifest: Manifest) -> None:
     state = load_state(codex_home)
     installed = state.get("features", {})
     if not installed:
@@ -202,12 +290,26 @@ def print_status(codex_home: Path, manifest: dict[str, Any]) -> None:
         return
 
     for name, details in sorted(installed.items()):
+        if not isinstance(details, dict):
+            raise InstallError(f"installed state for feature {name} is invalid")
         installed_version = details.get("version", "unknown")
-        manifest_version = manifest["features"].get(name, {}).get("version")
+        manifest_feature = manifest["features"].get(name)
+        manifest_version = (
+            manifest_feature.get("version") if manifest_feature is not None else None
+        )
         suffix = ""
-        if manifest_version and manifest_version != installed_version:
+        if manifest_version is None:
+            suffix = " [stale feature]"
+        elif manifest_version != installed_version:
             suffix = f" (manifest: {manifest_version})"
         print(f"{name} {installed_version}{suffix}")
+
+    stale, unresolved = stale_managed_links(codex_home, manifest, state)
+    for item in stale:
+        source = str(item.source) if item.source is not None else "unknown source"
+        print(f"stale-link {item.feature} {item.target} -> {source}")
+    for feature in unresolved:
+        print(f"stale-state {feature}: previous link inventory is unavailable")
 
 
 def validate_relative_path(value: str, field_name: str) -> Path:
@@ -217,6 +319,208 @@ def validate_relative_path(value: str, field_name: str) -> Path:
     if any(part == ".." for part in path.parts):
         raise InstallError(f"{field_name} must not contain '..': {value}")
     return path
+
+
+def validate_manifest(repo_root: Path, manifest: Manifest) -> None:
+    features = manifest["features"]
+    seen_targets: dict[Path, str] = {}
+
+    for name, feature in features.items():
+        if not isinstance(name, str) or not name:
+            raise InstallError("feature names must be non-empty strings")
+        if not isinstance(feature, dict):
+            raise InstallError(f"feature {name} must be an object")
+        version = feature.get("version")
+        if not isinstance(version, str) or not version:
+            raise InstallError(f"feature {name} must define a non-empty version")
+        links = feature.get("links")
+        if not isinstance(links, list) or not links:
+            raise InstallError(f"feature {name} must define at least one link")
+
+        for link in links:
+            if not isinstance(link, dict):
+                raise InstallError(f"feature {name} has an invalid link entry")
+            source_value = link.get("source")
+            target_value = link.get("target")
+            if not isinstance(source_value, str) or not source_value:
+                raise InstallError(f"feature {name} has an invalid source")
+            if not isinstance(target_value, str) or not target_value:
+                raise InstallError(f"feature {name} has an invalid target")
+            source = validate_relative_path(source_value, "source")
+            target = validate_relative_path(target_value, "target")
+            if not (repo_root / source).exists():
+                raise InstallError(f"source does not exist: {repo_root / source}")
+            prior_owner = seen_targets.get(target)
+            if prior_owner is not None:
+                raise InstallError(
+                    f"target {target} is declared by both {prior_owner} and {name}"
+                )
+            seen_targets[target] = name
+
+    expand_feature_dependencies(list(features), features)
+
+
+def current_manifest_targets(manifest: Manifest) -> set[Path]:
+    return {
+        Path(link["target"])
+        for feature in manifest["features"].values()
+        for link in feature.get("links", [])
+    }
+
+
+def stale_managed_links(
+    codex_home: Path,
+    manifest: Manifest,
+    state: InstallState | None = None,
+) -> tuple[list[StaleLink], list[str]]:
+    installed_state = state if state is not None else load_state(codex_home)
+    installed = installed_state.get("features", {})
+    if not isinstance(installed, dict):
+        raise InstallError("installed feature state is invalid")
+
+    raw_repo_root = installed_state.get("repo_root")
+    recorded_root = (
+        Path(raw_repo_root).expanduser().resolve(strict=False)
+        if isinstance(raw_repo_root, str) and raw_repo_root
+        else None
+    )
+    expected_targets = current_manifest_targets(manifest)
+    stale: list[StaleLink] = []
+    unresolved: list[str] = []
+
+    for feature_name, details in sorted(installed.items()):
+        if not isinstance(details, dict):
+            raise InstallError(
+                f"installed state for feature {feature_name} is invalid"
+            )
+        recorded_links = details.get("links")
+        feature_removed = feature_name not in manifest["features"]
+        if not isinstance(recorded_links, list):
+            if feature_removed:
+                unresolved.append(feature_name)
+            continue
+
+        for link in recorded_links:
+            if not isinstance(link, dict):
+                raise InstallError(
+                    f"installed link state for feature {feature_name} is invalid"
+                )
+            source_value = link.get("source")
+            target_value = link.get("target")
+            if not isinstance(target_value, str) or not target_value:
+                raise InstallError(
+                    f"installed link target for feature {feature_name} is invalid"
+                )
+            target_rel = validate_relative_path(target_value, "installed target")
+            if target_rel in expected_targets:
+                continue
+            source = None
+            if isinstance(source_value, str) and source_value and recorded_root:
+                source_rel = validate_relative_path(source_value, "installed source")
+                source = (recorded_root / source_rel).resolve(strict=False)
+            stale.append(
+                StaleLink(
+                    feature=feature_name,
+                    source=source,
+                    target=codex_home / target_rel,
+                )
+            )
+
+    return stale, unresolved
+
+
+def resolved_symlink_target(target: Path) -> Path | None:
+    link_target = symlink_target(target)
+    if link_target is None:
+        return None
+    if not link_target.is_absolute():
+        link_target = target.parent / link_target
+    return link_target.resolve(strict=False)
+
+
+def reconciled_features(
+    installed: dict[str, InstalledFeatureRecord], manifest: Manifest
+) -> dict[str, InstalledFeatureRecord]:
+    expected_targets = current_manifest_targets(manifest)
+    reconciled: dict[str, InstalledFeatureRecord] = {}
+    for feature_name, details in installed.items():
+        if feature_name not in manifest["features"] or not isinstance(details, dict):
+            continue
+        links = details.get("links")
+        if isinstance(links, list):
+            retained_links: list[LinkRecord] = [
+                link
+                for link in links
+                if isinstance(link, dict)
+                and isinstance(link.get("target"), str)
+                and Path(link["target"]) in expected_targets
+            ]
+            details = cast(
+                InstalledFeatureRecord,
+                {**details, "links": retained_links},
+            )
+        reconciled[feature_name] = details
+    return reconciled
+
+
+def prune_stale_links(
+    codex_home: Path, manifest: Manifest, *, dry_run: bool
+) -> None:
+    state = load_state(codex_home)
+    stale, unresolved = stale_managed_links(codex_home, manifest, state)
+    unsafe: list[str] = []
+
+    for item in stale:
+        if item.source is None:
+            unsafe.append(f"{item.target}: recorded source is unavailable")
+        elif item.target.is_symlink():
+            observed = resolved_symlink_target(item.target)
+            if observed != item.source:
+                unsafe.append(
+                    f"{item.target}: symlink points to {observed}, expected {item.source}"
+                )
+        elif item.target.exists():
+            unsafe.append(f"{item.target}: target is not a symlink")
+
+    unsafe.extend(
+        f"feature {feature}: previous link inventory is unavailable"
+        for feature in unresolved
+    )
+    if unsafe:
+        for reason in unsafe:
+            print(f"preserve {reason}")
+        raise InstallError("stale managed links require manual resolution")
+
+    if not stale:
+        print("No stale managed links found.")
+        return
+
+    for item in stale:
+        if item.target.is_symlink():
+            print(f"prune   {item.target} -> {item.source}")
+        else:
+            print(f"missing {item.target}")
+
+    if dry_run:
+        print("dry-run: stale links and installed feature state were not changed")
+        return
+
+    for item in stale:
+        if item.target.is_symlink():
+            item.target.unlink()
+
+    installed = state.get("features", {})
+    if not isinstance(installed, dict):
+        raise InstallError("installed feature state is invalid")
+    state["features"] = reconciled_features(installed, manifest)
+    state["reconciled_at"] = (
+        dt.datetime.now(dt.timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
+    write_state(codex_home, state)
+    print(f"state   {state_path(codex_home)}")
 
 
 def symlink_target(path: Path) -> Path | None:
@@ -282,7 +586,7 @@ def install_features(
     repo_root: Path,
     codex_home: Path,
     manifest_path: Path,
-    manifest: dict[str, Any],
+    manifest: Manifest,
     names: list[str],
     *,
     dry_run: bool,
@@ -290,7 +594,12 @@ def install_features(
 ) -> None:
     previous_state = load_state(codex_home)
     previous_features = previous_state.get("features", {})
-    installed_features: dict[str, Any] = {}
+    stale, unresolved = stale_managed_links(codex_home, manifest, previous_state)
+    if stale or unresolved:
+        raise InstallError(
+            "stale managed links are recorded; run --status and --prune before installing"
+        )
+    installed_features: dict[str, InstalledFeatureRecord] = {}
 
     for name in names:
         feature = manifest["features"][name]
@@ -307,7 +616,7 @@ def install_features(
         if not isinstance(links, list) or not links:
             raise InstallError(f"feature {name} must define at least one link")
 
-        installed_links: list[dict[str, str]] = []
+        installed_links: list[LinkRecord] = []
         for link in links:
             if not isinstance(link, dict):
                 raise InstallError(f"feature {name} has an invalid link entry")
@@ -328,7 +637,7 @@ def install_features(
         print("dry-run: installed feature state was not written")
         return
 
-    state = {
+    state: InstallState = {
         "schema_version": 1,
         "installed_at": dt.datetime.now(dt.timezone.utc)
         .replace(microsecond=0)
@@ -341,10 +650,8 @@ def install_features(
             **installed_features,
         },
     }
-    path = state_path(codex_home)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"state   {path}")
+    write_state(codex_home, state)
+    print(f"state   {state_path(codex_home)}")
 
 
 def main() -> int:
@@ -354,12 +661,26 @@ def main() -> int:
         manifest_path = resolve_manifest(repo_root, args.manifest)
         codex_home = Path(args.codex_home).expanduser()
         manifest = load_manifest(manifest_path)
+        validate_manifest(repo_root, manifest)
+
+        action_count = int(args.list) + int(args.status) + int(args.prune)
+        if action_count > 1:
+            raise InstallError("choose only one of --list, --status, or --prune")
+        if (args.list or args.status or args.prune) and (
+            args.feature or args.all_features or args.force
+        ):
+            raise InstallError(
+                "--list, --status, and --prune cannot select features or use --force"
+            )
 
         if args.list:
             print_feature_list(manifest)
             return 0
         if args.status:
             print_status(codex_home, manifest)
+            return 0
+        if args.prune:
+            prune_stale_links(codex_home, manifest, dry_run=args.dry_run)
             return 0
 
         names = selected_feature_names(args, manifest)

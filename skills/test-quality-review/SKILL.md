@@ -9,11 +9,10 @@ Evaluate whether tests create confidence in important behavior. Do not optimize
 for coverage percentages. Treat hard-to-write or hard-to-read tests as evidence:
 the issue may be in test code, production design, or both.
 
-This is an agent-facing review support skill, not a primary human planning
-command. It is independent from `batch-runway` and may be used by reviewers,
-architects, implementation agents, or future automation. It remains directly
-requestable for focused audits when the user asks to inspect a specific test
-file, module, feature, or bug fix.
+This is an agent-facing review support skill rather than a task orchestrator.
+It may be used by reviewers, architects, implementation agents, or future
+automation, and remains directly requestable for focused audits of a test file,
+module, feature, or bug fix.
 
 ## Mode Selection
 

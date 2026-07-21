@@ -2,7 +2,7 @@
   "schema_version": 1,
   "features": {
     "global-instructions": {
-      "version": "1.0.3",
+      "version": "2.0.0",
       "description": "Global Codex operating instructions.",
       "links": [
         {
@@ -11,93 +11,9 @@
         }
       ]
     },
-    "add-to-ledger": {
-      "version": "1.0.2",
-      "description": "User-facing command-owner skill for adding findings and work requests to planning ledgers.",
-      "requires": [
-        "planning-artifacts",
-        "planning-state",
-        "architecture-program-runway",
-        "legacy-removal"
-      ],
-      "links": [
-        {
-          "source": "skills/add-to-ledger",
-          "target": "skills/add-to-ledger"
-        }
-      ]
-    },
-    "plan-batch": {
-      "version": "1.0.8",
-      "description": "User-facing command-owner skill for selecting bounded ledger work or reporting selected batch state before writing at most one concrete batch spec.",
-      "requires": [
-        "planning-artifacts",
-        "planning-state",
-        "architecture-program-runway",
-        "batch-runway"
-      ],
-      "links": [
-        {
-          "source": "skills/plan-batch",
-          "target": "skills/plan-batch"
-        }
-      ]
-    },
-    "work-batch": {
-      "version": "1.0.9",
-      "description": "User-facing command-owner skill for executing the current queued or active batch runway.",
-      "requires": [
-        "planning-artifacts",
-        "planning-state",
-        "batch-runway",
-        "architecture-program-runway"
-      ],
-      "links": [
-        {
-          "source": "skills/work-batch",
-          "target": "skills/work-batch"
-        }
-      ]
-    },
-    "batch-runway": {
-      "version": "1.5.6",
-      "description": "Agent-facing runtime support used by plan-batch and work-batch for runway spec mechanics and execution contracts.",
-      "requires": [
-        "planning-artifacts",
-        "planning-state"
-      ],
-      "links": [
-        {
-          "source": "skills/batch-runway",
-          "target": "skills/batch-runway"
-        },
-        {
-          "source": "scripts/cross_checkout_context.py",
-          "target": "scripts/cross_checkout_context.py"
-        }
-      ]
-    },
-    "architecture-program-runway": {
-      "version": "1.1.9",
-      "description": "Agent-facing program-ledger support used by add-to-ledger, plan-batch, and work-batch for grouping, sequencing, selected dispatches, and closeout reconciliation.",
-      "requires": [
-        "planning-artifacts",
-        "planning-state"
-      ],
-      "links": [
-        {
-          "source": "skills/architecture-program-runway",
-          "target": "skills/architecture-program-runway"
-        },
-        {
-          "source": "scripts/architecture_program_runner.py",
-          "target": "scripts/architecture_program_runner.py"
-        }
-      ]
-    },
     "port-by-contract": {
-      "version": "1.0.2",
-      "description": "User-facing command-owner skill for implementation-neutral rewrites and ports.",
+      "version": "2.0.0",
+      "description": "Implementation-neutral contract extraction for ports and rewrites.",
       "links": [
         {
           "source": "skills/port-by-contract",
@@ -106,8 +22,8 @@
       ]
     },
     "test-quality-review": {
-      "version": "1.0.1",
-      "description": "Agent-facing review support for behavioral test confidence, regression protection, and design friction.",
+      "version": "1.1.0",
+      "description": "Behavioral test-confidence and test-design review guidance.",
       "links": [
         {
           "source": "skills/test-quality-review",
@@ -116,8 +32,8 @@
       ]
     },
     "custom-agents": {
-      "version": "1.4.1",
-      "description": "Reusable custom Codex agents.",
+      "version": "2.0.0",
+      "description": "Focused read-only investigation and review agents.",
       "links": [
         {
           "source": "agents/codebase_investigator.toml",
@@ -126,24 +42,12 @@
         {
           "source": "agents/import_topology_reviewer.toml",
           "target": "agents/import_topology_reviewer.toml"
-        },
-        {
-          "source": "agents/runway_reviewer.toml",
-          "target": "agents/runway_reviewer.toml"
-        },
-        {
-          "source": "agents/runway_worker.toml",
-          "target": "agents/runway_worker.toml"
-        },
-        {
-          "source": "agents/spark.toml",
-          "target": "agents/spark.toml"
         }
       ]
     },
     "approval-rules": {
       "version": "1.0.0",
-      "description": "Reusable approval rules.",
+      "description": "Personal reusable approval rules.",
       "links": [
         {
           "source": "rules/default.rules",
@@ -152,8 +56,8 @@
       ]
     },
     "dead-surface-audit": {
-      "version": "1.0.4",
-      "description": "Agent-facing evidence audit for code surfaces kept alive only by test-retained compatibility or topology assertions.",
+      "version": "2.0.0",
+      "description": "Evidence audit for test-retained dead or compatibility surfaces.",
       "links": [
         {
           "source": "skills/dead-surface-audit",
@@ -161,50 +65,9 @@
         }
       ]
     },
-    "legacy-removal": {
-      "version": "1.0.9",
-      "description": "Agent-facing evidence and scoping support for exceptional legacy-removal residues and cleanup handoffs.",
-      "requires": [
-        "planning-artifacts",
-        "planning-state"
-      ],
-      "links": [
-        {
-          "source": "skills/legacy-removal",
-          "target": "skills/legacy-removal"
-        }
-      ]
-    },
-    "planning-artifacts": {
-      "version": "1.0.0",
-      "description": "Agent-facing project-agnostic planning artifact layout and naming convention.",
-      "links": [
-        {
-          "source": "skills/planning-artifacts",
-          "target": "skills/planning-artifacts"
-        }
-      ]
-    },
-    "planning-state": {
-      "version": "1.0.2",
-      "description": "Agent-facing operational planning-state diagnostics, generated state fixtures, and policy-gated projection reporting.",
-      "requires": [
-        "planning-artifacts"
-      ],
-      "links": [
-        {
-          "source": "skills/planning-state",
-          "target": "skills/planning-state"
-        },
-        {
-          "source": "scripts/planning_state.py",
-          "target": "scripts/planning_state.py"
-        }
-      ]
-    },
     "agent-notifications": {
       "version": "1.0.0",
-      "description": "Opt-in Codex Stop phone notification hook script and registration example.",
+      "description": "Opt-in principal-agent completion notification hook.",
       "default_enabled": false,
       "links": [
         {

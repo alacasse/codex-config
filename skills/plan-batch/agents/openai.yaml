@@ -1,4 +1,0 @@
-interface:
-  display_name: "Plan Batch"
-  short_description: "Create one concrete batch spec"
-  default_prompt: "Use $plan-batch to select bounded ledger work and write one concrete batch runway spec."

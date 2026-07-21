@@ -1,4 +1,0 @@
-schema: slice-shape-policy/v1
-default_shape: vertical
-allow_override: true
-require_override_reason: true

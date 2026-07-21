@@ -1,4 +1,0 @@
-interface:
-  display_name: "Work Batch"
-  short_description: "Execute the current planned batch"
-  default_prompt: "Use $work-batch to execute the current queued or active batch runway."
