@@ -2,19 +2,63 @@
 
 ## Status And Intended Ledger Identity
 
-- Status: intake definition complete; no planning or implementation has started.
-- Intended lifecycle status: `Open` until a later explicit `plan-batch`
-  invocation selects this work.
+- Status: amended after explicit supersession; no implementation has started.
+- Lifecycle history: the candidate-targeted CCFG-35 dispatch/runway/review was
+  superseded before implementation on 2026-07-20, and CCFG-35 was restored to
+  `Open` before replacement planning began. Canonical `LEDGER.md` owns the
+  current lifecycle state after a replacement plan is accepted.
 - Intended ledger identity: `CCFG-35`, allocated as the next valid unused
   canonical identity after this document was created and before its ledger row
   was added.
-- Planning state: unselected, undispatched, unqueued, and inactive.
+- Planning state at amendment: unselected, undispatched, unqueued, and inactive;
+  a later replacement `plan-batch` may return the row to `Pending` only after a
+  master-based dispatch/runway receives a fresh independent clean review.
 - Intended title: **Harden Planning And Independent Review**.
 - Area: reusable planning and independent review.
 
 This document is the complete durable source for the future ledger task. It
 defines a generic reusable planning-system improvement, not a project-specific
 exception, temporary overlay, or amendment to another task.
+
+## Master-Only Implementation Authority Amendment
+
+This section is project coordination authority for CCFG-35, not a reusable
+branch-specific planning rule.
+
+- The only implementation repository is
+  `/home/alacasse/projects/codex-config` on branch `master`.
+- Replacement planning must inspect and change the planner actually used from
+  master: the installed `plan-batch` skill and its existing master support route
+  through Architecture Program Runway and Batch Runway create-spec.
+- `/home/alacasse/projects/codex-config-command-owner-redesign` and
+  `/home/alacasse/.codex-command-owner-redesign` are evidence-only for CCFG-35.
+  They are forbidden implementation, validation-install, and closeout targets.
+- Candidate-only `batch_planner` / `batch_plan_reviewer` roles,
+  `scripts/plan_batch.py`, `scripts/planning_contract.py`, planning schema
+  families, transaction machinery, and candidate scenario adapters are not
+  CCFG-35 implementation surfaces.
+- The replacement plan is ordinary single-root work. It must not carry a
+  strict cross-checkout planning snapshot or require candidate live leases.
+
+An accepted CCFG-35 closeout must prove that the accepted implementation
+changed the planner used on master. The final independent reviewer must verify,
+from the exact accepted commit range and fresh local evidence, all of the
+following:
+
+1. implementation commits are on `master` in the canonical repository;
+2. the accepted diff changes the public master `plan-batch` route or the exact
+   master create-spec / independent-review handoff it consumes, rather than
+   only adding disconnected tests, schemas, scripts, prompts, or documents;
+3. `/home/alacasse/.codex/skills/plan-batch` remains owned by this repository
+   and resolves to the accepted master `skills/plan-batch` source;
+4. installed planner content matches the accepted master source, with installer
+   status or dry-run evidence reconciled when manifest versions change; and
+5. the behavioral counterfactual would fail if the accepted master planning or
+   review gate were removed or bypassed.
+
+Planner self-attestation, candidate-home evidence, manifest presence alone, or
+a closeout statement without independently reconstructed path and revision
+evidence cannot satisfy this authority amendment.
 
 ## Observed Problem
 

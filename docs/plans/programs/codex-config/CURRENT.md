@@ -9,10 +9,11 @@
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
 - Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/runway.md`
-- Active batch execution status: `queued`; CCFG-35 has one exact independently
-  reviewed three-slice runway, implementation has not started, and no successor
-  is selected.
+  `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/runway.md`
+- Active batch execution status: `queued`; the candidate-targeted CCFG-35 plan
+  is superseded, the transition through `Open` is recorded, and the exact
+  master-only replacement is independently reviewed clean. Implementation has
+  not started and no successor is selected.
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - Run artifact location: `None`; no batch execution is active.
@@ -37,10 +38,11 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-26 through CCFG-29.
-- Pending ledger row: CCFG-35. Its exact dispatch and three-slice vertical
-  runway are independently reviewed clean and queued. The batch hardens only
-  reusable planning and independent review; implementation has not started and
-  no successor is selected.
+- Pending ledger row: CCFG-35. Its candidate-targeted plan is superseded before
+  implementation. After an explicit transition through `Open`, one master-only
+  replacement dispatch and two-slice runway passed fresh exact-draft review and
+  are now the sole queue entry. Implementation has not started and no successor
+  is selected.
 - Open CCFG-26 direction: the four-slice
   `ccfg-26-work-batch-owner-transfer` package is superseded before
   implementation. Its reviewed one-batch replanning brief and review are now
@@ -174,15 +176,17 @@
 - Selected dispatch: `None`
 - Active runway: `None`
 - Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/runway.md`
-- Active batch execution status: `queued`; CCFG-35 implementation has not
-  started and no successor is selected
-- Queued CCFG-35 dispatch:
-  `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/dispatch.md`
-- Clean CCFG-35 independent planning review:
-  `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/review.md`
-- Queued CCFG-35 runway:
-  `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/runway.md`
+  `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/runway.md`
+- Active batch execution status: `queued`; replacement planning review is
+  clean, implementation has not started, and no successor is selected
+- Queued master-only CCFG-35 dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/dispatch.md`
+- Clean master-only CCFG-35 planning review:
+  `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/review.md`
+- Queued master-only CCFG-35 runway:
+  `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/runway.md`
+- Superseded candidate-targeted CCFG-35 package:
+  `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/superseded.md`
 - Superseded CCFG-26 work-batch owner-transfer package:
   `docs/plans/programs/codex-config/batches/ccfg-26-work-batch-owner-transfer/superseded.md`
 - Historical reviewed CCFG-26 work-batch owner-transfer replanning brief:
@@ -265,11 +269,12 @@
 ## Next Safe Action
 
 On a later explicit `work-batch`, consume only
-`batches/ccfg-35-planning-independent-review-hardening/runway.md`. Re-read live
-Planning State, require the same selected scope, and pass the installed strict
-cross-checkout ready/blocked preflight before acquiring a fresh live lease for
-the first candidate handoff. Execute only the next incomplete CCFG-35 slice
-under its contract-narrowing approval gate. Do not select, dispatch, queue,
+`batches/ccfg-35-master-planner-review-hardening/runway.md`. Re-read live
+Planning State, require `master` as the sole implementation branch/root, verify
+the installed stable `plan-batch` is owned by and resolves to this master
+repository, then execute only the next incomplete CCFG-35 slice under its
+contract-narrowing approval gate. Use ordinary single-root handoffs; do not use
+candidate or strict cross-checkout execution. Do not select, dispatch, queue,
 prepare, implement, or close CCFG-26 or any other unrelated work, and do not
 select a successor.
 

@@ -13,9 +13,10 @@ ledger. This ledger is the only active executable backlog source under
 - Keep Markdown and JSON readable, diffable, and repairable.
 - Keep SQLite optional and rebuildable as a reporting projection.
 - Keep all codex-config workflow and skill-cleanup work in this ledger.
-- CCFG-35 is the sole queued batch. Its exact dispatch and three-slice vertical
-  runway are independently reviewed clean. A later explicit `work-batch` may
-  execute only that runway and must stop without successor selection.
+- The candidate-targeted CCFG-35 plan is superseded before implementation.
+  CCFG-35 was restored to `Open`, its source finding now grants master-only
+  implementation authority, and one replacement master-based dispatch/runway
+  is independently reviewed clean and solely queued. Nothing is active.
 - Create a dispatch or runway only when one row is explicitly chosen by
   `plan-batch`. CCFG-26A and the issue #66 slice-shape policy correction are
   completed and reconciled. CCFG-26B was superseded before implementation by
@@ -26,7 +27,7 @@ ledger. This ledger is the only active executable backlog source under
   The active decomposition is
   `findings/ccfg-26-public-work-batch-owner.md` followed by
   `findings/ccfg-26-installed-caller-cutover.md`. Both remain unselected while
-  CCFG-35 is queued. A later separate explicit request
+  CCFG-35 replacement planning is queued. A later separate explicit request
   may plan the public-owner candidate only after canonical Planning State is
   idle again. The caller-cutover candidate becomes eligible for a separate
   planning request only after the first batch closes with CCFG-26 `Prepared`.
@@ -174,14 +175,15 @@ row-by-row here.
 | CCFG-32. Make Planning State authoritative for queue currentness | Closed | GitHub issue #55; `findings/github-issue-55-planning-state-queue-currentness.md`; `batches/ccfg-32-planning-state-queue-currentness/closeout.md` | Cross-checkout startup / planning-currentness ownership | None | Closed with semantic currentness owned by Planning State and material handoff safety preserved. |
 | CCFG-33. Simplify CCFG-23 acceptance execution | Closed | `batches/ccfg-23-behavioral-scenario-harness/execution-retrospective.md`; `batches/ccfg-33-acceptance-execution-simplification/closeout.md` | Command-owner redesign / behavioral-harness execution | None | Closed with one exact-commit evidence-pytest process and preserved COR-006 behavior. |
 | CCFG-34. Bootstrap minimal stable runway dogfooding before CCFG-26 | Closed | GitHub issue #62; `findings/github-issue-62-stable-runway-dogfooding-bootstrap.md` | Stable runway / temporary dogfooding bootstrap | None | Closed by `batches/ccfg-34-stable-runway-dogfooding-bootstrap/closeout.md` and implementation commit `ba1e941`: root `AGENTS.md` loads the temporary policy, the focused contract gate and reviews are green, and no runner, generic skill, agent contract, candidate, runtime state, or successor changed. |
-| CCFG-35. Harden Planning And Independent Review | Pending | `findings/planning-and-independent-review-hardening.md`; `batches/ccfg-35-planning-independent-review-hardening/dispatch.md`; `batches/ccfg-35-planning-independent-review-hardening/review.md` | Planning and independent review | Execute only `batches/ccfg-35-planning-independent-review-hardening/runway.md` on a later explicit `work-batch`; stop without successor selection | Exact three-slice vertical runway is independently reviewed clean and queued. It hardens evidence-backed semantic planning, independent review, focused behavioral regressions, and minimal mechanical pre-queue enforcement. Implementation has not started. |
+| CCFG-35. Harden Planning And Independent Review | Pending | `findings/planning-and-independent-review-hardening.md`; `batches/ccfg-35-master-planner-review-hardening/dispatch.md`; `batches/ccfg-35-master-planner-review-hardening/review.md`; historical `batches/ccfg-35-planning-independent-review-hardening/superseded.md` | Planning and independent review | Execute only `batches/ccfg-35-master-planner-review-hardening/runway.md` on a later explicit `work-batch`; stop without successor selection | The candidate-targeted plan was superseded before implementation and CCFG-35 transitioned through `Open`. The exact two-slice master-only replacement is independently reviewed clean and solely queued. Implementation has not started. |
 
 ## Batch Queue
 
 Active batch: `None`.
-Selected dispatch and active runway are `None`.
+Selected dispatch: `None`.
+Active runway: `None`.
 Queued batch:
-`docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/runway.md`.
+`docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/runway.md`.
 
 | Batch | Status | Dispatch | Spec | Covers | Notes |
 |---|---|---|---|---|---|
@@ -223,24 +225,27 @@ Queued batch:
 | `ccfg-26d-finalization-flight` | superseded | None | None | CCFG-26 | Historical decomposition evidence only; superseded as active direction by `findings/ccfg-26-public-work-batch-owner.md` and must not be planned or selected. |
 | `ccfg-26e-closeout-ownership-cutover` | superseded | None | None | CCFG-26 | Historical decomposition evidence only; superseded as active direction by the two descriptive candidate sources and must not be planned or selected. |
 | `ccfg-34-stable-runway-dogfooding-bootstrap` | completed | `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-34-stable-runway-dogfooding-bootstrap/runway.md` | CCFG-34 | Closed by implementation commit `ba1e941` with clean focused validation, delta-only test-quality review, final independent review, and no successor selection. |
-| `ccfg-35-planning-independent-review-hardening` | queued | `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/runway.md` | CCFG-35 | Exact independently reviewed three-slice vertical plan. Implementation has not started; execute only through a later explicit `work-batch`, preserve strict stable/candidate separation, and select no successor. |
+| `ccfg-35-planning-independent-review-hardening` | superseded | `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/runway.md` | CCFG-35 | Superseded before implementation; see `batches/ccfg-35-planning-independent-review-hardening/superseded.md`. Candidate-only implementation and review authority is historical and non-executable. |
+| `ccfg-35-master-planner-review-hardening` | queued | `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/dispatch.md` | `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/runway.md` | CCFG-35 | Exact master-only replacement independently reviewed clean. A later explicit `work-batch` must change and prove the installed planner sourced from accepted master commits, use no candidate implementation, and select no successor. |
 
 ## Recommended Work Order
 
 1. Start pickup from root and program `CURRENT.md`.
 2. CCFG-18 through CCFG-24 and CCFG-30 through CCFG-33 are closed.
-3. CCFG-35 is `Pending` with one exact independently reviewed dispatch/runway
-   pair queued at
-   `batches/ccfg-35-planning-independent-review-hardening/runway.md`.
-4. A later explicit `work-batch` may execute only that runway, beginning with a
-   fresh strict live-lease preflight and the next incomplete slice, and must stop
-   without selecting or preparing unrelated work or a successor.
+3. The candidate-targeted CCFG-35 package is superseded before implementation;
+   CCFG-35 transitioned through `Open` and now has one independently reviewed
+   master-only replacement dispatch/runway queued.
+4. A later explicit `work-batch` may execute only
+   `batches/ccfg-35-master-planner-review-hardening/runway.md`. It must use the
+   ordinary single-root master route, prove accepted installed-master content,
+   and stop without selecting or preparing unrelated work or a successor.
 5. CCFG-25, CCFG-26A, CCFG-34, and the issue #66 slice-shape correction are
    closed; parent CCFG-26 is `Open`. Its active decomposition is the public
    work-batch owner followed by installed-caller cutover. The reviewed one-batch
    brief, execution-state foundation, CCFG-26B through CCFG-26E, and the later
    four-slice owner-transfer package remain superseded historical evidence.
-6. Keep `ccfg-26-public-work-batch-owner` unselected while CCFG-35 is queued. A
+6. Keep `ccfg-26-public-work-batch-owner` unselected while CCFG-35 replacement
+   planning is queued. A
    later separate explicit stable
    `plan-batch ccfg-26-public-work-batch-owner` may consume
    `findings/ccfg-26-public-work-batch-owner.md`, complete both disposable
