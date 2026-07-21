@@ -8,10 +8,11 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID: `None`
-- Active batch execution status: `idle`; CCFG-35 is an intake-complete `Open`
-  finding, two descriptive CCFG-26 candidate briefs remain recorded, and none
-  is selected or queued.
+- Queued batch path or ID:
+  `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/runway.md`
+- Active batch execution status: `queued`; CCFG-35 has one exact independently
+  reviewed three-slice runway, implementation has not started, and no successor
+  is selected.
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - Run artifact location: `None`; no batch execution is active.
@@ -35,14 +36,11 @@
 
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
-  CCFG-26 through CCFG-29, plus CCFG-35.
-- Open CCFG-35 direction: use a later explicit `plan-batch CCFG-35`
-  planning-only invocation based on
-  `docs/plans/programs/codex-config/findings/planning-and-independent-review-hardening.md`.
-  Plan only that reusable planning and independent-review hardening task, leave
-  at most one independently reviewed dispatch/runway queued, and stop before
-  implementation. CCFG-35 remains unselected, undispatched, and unqueued by
-  this intake.
+  CCFG-26 through CCFG-29.
+- Pending ledger row: CCFG-35. Its exact dispatch and three-slice vertical
+  runway are independently reviewed clean and queued. The batch hardens only
+  reusable planning and independent review; implementation has not started and
+  no successor is selected.
 - Open CCFG-26 direction: the four-slice
   `ccfg-26-work-batch-owner-transfer` package is superseded before
   implementation. Its reviewed one-batch replanning brief and review are now
@@ -175,9 +173,16 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch: `None`
-- Active batch execution status: `idle`; CCFG-35 and CCFG-26 implementation have
-  not started
+- Queued batch:
+  `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/runway.md`
+- Active batch execution status: `queued`; CCFG-35 implementation has not
+  started and no successor is selected
+- Queued CCFG-35 dispatch:
+  `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/dispatch.md`
+- Clean CCFG-35 independent planning review:
+  `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/review.md`
+- Queued CCFG-35 runway:
+  `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/runway.md`
 - Superseded CCFG-26 work-batch owner-transfer package:
   `docs/plans/programs/codex-config/batches/ccfg-26-work-batch-owner-transfer/superseded.md`
 - Historical reviewed CCFG-26 work-batch owner-transfer replanning brief:
@@ -259,14 +264,14 @@
 
 ## Next Safe Action
 
-Use a later explicit `plan-batch CCFG-35` planning-only invocation based on the
-CCFG-35 ledger row and
-`findings/planning-and-independent-review-hardening.md`. Plan only this generic
-reusable planning and independent-review hardening task, inspect the current
-planning, review, and deterministic pre-queue seams, and leave at most one
-independently reviewed CCFG-35 dispatch/runway queued. Stop before
-implementation. Do not select, dispatch, queue, prepare, or implement CCFG-26 or
-any other unrelated work during that planning invocation.
+On a later explicit `work-batch`, consume only
+`batches/ccfg-35-planning-independent-review-hardening/runway.md`. Re-read live
+Planning State, require the same selected scope, and pass the installed strict
+cross-checkout ready/blocked preflight before acquiring a fresh live lease for
+the first candidate handoff. Execute only the next incomplete CCFG-35 slice
+under its contract-narrowing approval gate. Do not select, dispatch, queue,
+prepare, implement, or close CCFG-26 or any other unrelated work, and do not
+select a successor.
 
 ## Stop Conditions
 
