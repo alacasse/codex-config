@@ -68,12 +68,38 @@ The normal flow is:
 1. This skill selects one batch and writes or refreshes `dispatch.md`.
 2. A fresh `batch-runway create-spec` pass consumes that dispatch and writes
    `runway.md`.
-3. `batch-runway execute-spec` completes slices, validation, review, commits,
+3. `plan-batch` delegates a fresh, read-only independent review of both exact
+   drafts and their supporting evidence.
+4. Planning State applies the queue transition only when the declared planning
+   and review decisions, evidence, paths, and current SHA-256 hashes pass its
+   fail-closed authorization check. This skill then owns the semantic queue
+   state change.
+5. `batch-runway execute-spec` completes slices, validation, review, commits,
    and the concrete execution ledger/archive.
-4. This skill consumes compact closeout evidence from the completed concrete
+6. This skill consumes compact closeout evidence from the completed concrete
    runway and reconciles the program ledger. If invoked by `work-batch`, this
    closeout is limited to the just-completed batch and must stop before
    selecting another batch.
+
+## Queue Authorization Boundary
+
+This skill remains the semantic owner of program selection, dispatch, and queue
+state. It must not mark a runway queued until `plan-batch` has completed the
+independent planning review and `planning_state.py queue-batch` has mechanically
+accepted the declared authorization facts and exact draft binding.
+
+`batch-runway` remains the semantic owner of the concrete runway plan. For
+ownership-transfer, migration, replacement, or genuinely high-assumption work,
+its single **Conditional Semantic Planning Checklist** in
+`../batch-runway/references/create-spec.md` governs plan content and review. Do
+not duplicate that checklist here, and do not impose its ceremony on ordinary
+small non-migration plans.
+
+Planning State does not authenticate reviewers, establish independence, or
+judge evidence relevance or sufficiency. Those are procedural `plan-batch`
+responsibilities. A rejected authorization leaves selected program state
+unchanged; revise or edit the drafts, obtain new hashes through a fresh review,
+and retry rather than bypassing the transition.
 
 ## Required First Steps
 
@@ -109,8 +135,9 @@ After that handoff, this skill makes the semantic program decision:
   and source packet needed to select exactly one next batch.
 - Write or update the co-located batch directory for that one selected batch:
   `dispatch.md` first, then `runway.md` only in `create-next-runway` mode.
-- Update the program `CURRENT.md` and `LEDGER.md`, then stop before coding
-  unless the user explicitly asked to execute.
+- Update queued program `CURRENT.md` and `LEDGER.md` only after the independent
+  planning review and fail-closed Planning State authorization apply, then stop
+  before coding unless the user explicitly asked to execute.
 
 Knowledge-graph queries, broad `find` or repository-wide `rg` scans over the
 planning tree, old flat dispatch/runway filenames, generated reports,
@@ -376,11 +403,13 @@ When creating the selected concrete batch:
    unless the brief is missing or stale.
 4. Create exactly one local runway spec unless the user explicitly asks for
    multiple.
-5. The generated spec must name which program findings it covers and which
+5. Before queue mutation, return control to `plan-batch` for fresh independent
+   review and fail-closed Planning State authorization.
+6. The generated spec must name which program findings it covers and which
    findings remain open.
-6. Keep execution contracts in `batch-runway`; do not duplicate full execution
+7. Keep execution contracts in `batch-runway`; do not duplicate full execution
    details in the program ledger.
-7. Stop before coding unless the user explicitly asked to execute.
+8. Stop before coding unless the user explicitly asked to execute.
 
 When a concrete runway closes under Layout v1, use Planning State Diagnostic
 facts and focused closeout evidence before reading historical plans or broad

@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Fail-closed planning review before queueing
+
+Problem: a drafted dispatch/runway pair could reach queue mutation without an
+independent review mechanically bound to the exact current files and declared
+supporting evidence.
+
+Decision: require `plan-batch` to delegate one fresh read-only review before
+queueing, centralize the conditional high-assumption planning checklist in Batch
+Runway, and extend Planning State's existing `queue-batch` transition with
+fail-closed decision, evidence, exact-path, and SHA-256 checks. Preserve
+Architecture Program Runway as semantic queue owner, Batch Runway as semantic
+planning owner, and Planning State as a non-authenticating mechanical validator.
+
+Expected effect: only `plan + approve` bound to unchanged exact drafts and
+nonblank declared review evidence can mutate queue state; revisions, blockers,
+missing facts, or later edits remain unqueued and require another review.
+
 ### Canonical CCFG-26 batch execution state
 
 Problem: CCFG-26B distributed slice progression and attempt state across agent

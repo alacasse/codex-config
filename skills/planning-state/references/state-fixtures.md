@@ -44,7 +44,20 @@ operational companion, not the durable planning ledger.
 
 5. Use `select-batch` and `queue-batch` only with an explicit `--state-file`.
    Add `--receipt-file` for command evidence when the caller has supplied a
-   temp or policy-compatible receipt target.
+   temp or policy-compatible receipt target. Queueing follows:
+
+   ```text
+   plan -> exact drafts -> independent review -> fail-closed authorization -> queue
+   ```
+
+   Supply `queue-batch` with `--planner-decision plan`,
+   `--reviewer-decision approve`, the exact queued paths repeated as
+   `--reviewed-dispatch` and `--reviewed-runway`, their current lowercase
+   64-hex SHA-256 values supplied through `--reviewed-dispatch-sha256` and
+   `--reviewed-runway-sha256`, and one or more nonblank `--review-evidence`
+   values.
+   Any missing or rejected decision, evidence value, path binding, hash shape,
+   or current-content match rejects the transition without changing state.
 
 ## Boundaries
 
@@ -58,3 +71,10 @@ When fixtures model Layout v1 adoption, use portable project shapes and generic
 paths. A generated-only fixture should prove that projection rebuilds need an
 explicit temp target. An ignored-local fixture should prove that the declared
 policy path is accepted without making that path a shared default.
+
+Planning State validates only the authorization facts declared by its caller
+and the exact draft binding immediately before mutation. It does not
+authenticate the reviewer or prove reviewer independence, and it does not judge
+evidence relevance or sufficiency. Those procedural and semantic checks remain
+with `plan-batch` and Batch Runway; Architecture Program Runway remains the
+semantic queue owner.

@@ -7,11 +7,6 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ROUTING_CONTRACT = REPO_ROOT / "docs/skill-routing-contract.md"
-RUNWAY = (
-    REPO_ROOT
-    / "docs/plans/programs/codex-config/batches/"
-    "ccfg-8-ledger-dispatch-rule-dedupe/runway.md"
-)
 ADD_TO_LEDGER = REPO_ROOT / "skills/add-to-ledger/SKILL.md"
 PLAN_BATCH = REPO_ROOT / "skills/plan-batch/SKILL.md"
 WORK_BATCH = REPO_ROOT / "skills/work-batch/SKILL.md"
@@ -55,7 +50,10 @@ def table_rows(markdown: str) -> dict[str, tuple[str, str]]:
 class SkillRoutingRuleOwnershipTests(unittest.TestCase):
     def test_runway_names_one_owner_for_each_repeated_rule_category(self) -> None:
         rows = table_rows(
-            section(RUNWAY.read_text(encoding="utf-8"), "Rule Ownership Map")
+            section(
+                ROUTING_CONTRACT.read_text(encoding="utf-8"),
+                "Rule Ownership Map",
+            )
         )
 
         expected_rows = {
@@ -202,10 +200,16 @@ class SkillRoutingRuleOwnershipTests(unittest.TestCase):
             encoding="utf-8"
         )
         ledger_statuses = section(architecture_program_runway, "Ledger Statuses")
-        owner_map = section(RUNWAY.read_text(encoding="utf-8"), "Rule Ownership Map")
+        owner_map = section(
+            ROUTING_CONTRACT.read_text(encoding="utf-8"),
+            "Rule Ownership Map",
+        )
 
         self.assertIn("Keep them separate from batch artifact state", ledger_statuses)
-        self.assertIn("selected, queued, or active batch\n  artifacts", ledger_statuses)
+        self.assertIn(
+            "selected, queued, or active batch artifacts",
+            re.sub(r"\s+", " ", ledger_statuses),
+        )
         self.assertIn("finding lifecycle status", owner_map)
         self.assertIn("selected/queued/active batch artifact state", owner_map)
 

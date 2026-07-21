@@ -32,6 +32,18 @@ Keep human-facing command decisions separate from runtime mechanics:
 Command-owner skills may reference those runtime/support owners, but should not
 duplicate their procedure details.
 
+## Rule Ownership Map
+
+| Repeated rule category | Canonical owner | Boundary |
+| --- | --- | --- |
+| Command routing and human-facing stop points | `docs/skill-routing-contract.md` | `add-to-ledger`, `plan-batch`, and `work-batch` keep their user-visible routes and stop conditions. |
+| Ledger and external-source intake | `add-to-ledger` | Fresh work enters the executable ledger only through intake. |
+| Planning State Diagnostic ordering, target-policy checks, and projection routing | `planning-state` | Operational facts and policy checks only; no semantic planning or queue decision. |
+| Planning Artifact Layout v1 placement, naming, active-state shape, and archive vocabulary | `planning-artifacts` | Artifact layout and state vocabulary only. |
+| Program dispatch, selected/queued/active batch artifact state, program queue mechanics, and finding lifecycle status | `architecture-program-runway` | Semantic selection, dispatch, and queue ownership; mutation waits for mechanical authorization. |
+| Concrete runway spec, slice ledger, validation/review loop, completed-slice archive, and commit receipt mechanics | `batch-runway` | Semantic concrete planning and execution mechanics. |
+| Same-batch closeout reconciliation mechanics | `architecture-program-runway` | Reconcile only the completed batch; no successor selection. |
+
 ## Skill Audiences
 
 - **Human-facing command-owner skill**: the primary skill that owns the user's
@@ -58,6 +70,15 @@ about which existing finding to prioritize, but it must not silently create new
 ledger findings. If no suitable ledger finding exists, stop and report that
 `add-to-ledger` must run first.
 
+Before queue mutation, `plan-batch` must follow `plan -> exact drafts -> fresh
+independent review -> fail-closed authorization -> queue`. Only an independent
+`approve` result bound to both exact current draft hashes and nonblank review
+evidence may reach the existing Planning State queue transition. Edits require
+new hashes and another review. Architecture Program Runway remains the semantic
+queue owner, Batch Runway remains the semantic plan owner, and Planning State
+only validates declared authorization facts and exact draft binding; it does
+not authenticate reviewers or judge evidence relevance.
+
 `work-batch` consumes the current queued or active runway. It must not create
 new ledger findings, select new ledger work, or create a new runway unless
 explicit recovery instructions require replanning. After concrete closeout
@@ -80,7 +101,7 @@ For this repository, the active program ledger is
 | User command/input | Primary skill | Input source | Output | Runtime/support skills |
 | --- | --- | --- | --- | --- |
 | Capture fresh work/finding text, review results, bugs, cleanup needs, or work requests | `add-to-ledger` | User-provided work/finding text plus project planning state | New or updated ledger finding | `planning-state`, `planning-artifacts`, `architecture-program-runway`; `legacy-removal` only for evidence-backed legacy scoping |
-| Plan the next bounded batch/spec from existing ledger work | `plan-batch` | Existing ledger state, selected dispatch, or user preference pointing at existing ledger work | One dispatch/runway; no implementation | `planning-state`, `planning-artifacts`, `architecture-program-runway`, then `batch-runway` in `create-spec` mode |
+| Plan the next bounded batch/spec from existing ledger work | `plan-batch` | Existing ledger state, selected dispatch, or user preference pointing at existing ledger work | One independently reviewed and authorized dispatch/runway; no implementation | `planning-state`, `planning-artifacts`, `architecture-program-runway`, then `batch-runway` in `create-spec` mode, fresh read-only review, and Planning State queue authorization |
 | Execute the current queued or active batch runway | `work-batch` | Current queued or active runway state | Executed slices, validation/review evidence, commits, closeout evidence, and same-batch program reconciliation | `planning-state`, `planning-artifacts`, then `batch-runway` in `execute-spec` mode, then `architecture-program-runway` in `closeout-runway` mode for the completed batch only |
 | Extract behavior contracts before a rewrite, migration, or port | `port-by-contract` | Current implementation and durable domain context | Implementation-neutral contract artifacts before any runway | `batch-runway` or `architecture-program-runway` only after contract artifacts exist |
 

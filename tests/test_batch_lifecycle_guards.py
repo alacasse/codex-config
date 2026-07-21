@@ -20,6 +20,13 @@ EXECUTE_SLICE_CORE = (
 EXECUTE_RECOVERY = (
     REPO_ROOT / "skills/batch-runway/references/execute-recovery-v1.md"
 )
+PLAN_BATCH = REPO_ROOT / "skills/plan-batch/SKILL.md"
+ARCHITECTURE_PROGRAM_RUNWAY = (
+    REPO_ROOT / "skills/architecture-program-runway/SKILL.md"
+)
+STATE_FIXTURES = (
+    REPO_ROOT / "skills/planning-state/references/state-fixtures.md"
+)
 
 
 class BatchLifecycleGuardTests(unittest.TestCase):
@@ -359,6 +366,74 @@ class BatchLifecycleGuardTests(unittest.TestCase):
             "without explicit cancellation or documented blocker evidence",
             text,
         )
+
+    def test_plan_batch_requires_fresh_independent_review_before_queueing(
+        self,
+    ) -> None:
+        plan_batch = self.normalized_path(PLAN_BATCH)
+
+        self.assertIn(
+            "plan -> exact drafts -> independent review -> fail-closed "
+            "authorization -> queue",
+            plan_batch,
+        )
+        self.assertIn(
+            "delegate one fresh, read-only independent planning review",
+            plan_batch,
+        )
+        self.assertIn("directly inspect both draft files", plan_batch)
+        self.assertIn("supporting evidence", plan_batch)
+        self.assertIn("`approve | revise | block`", plan_batch)
+        self.assertIn("Planner self-attestation is insufficient", plan_batch)
+        self.assertIn("exact repo-relative dispatch and runway paths", plan_batch)
+        self.assertIn("SHA-256 hash of each inspected draft", plan_batch)
+        self.assertIn("at least one nonblank evidence reference", plan_batch)
+        self.assertIn("Any edit to either draft after review invalidates", plan_batch)
+        self.assertIn("delegate another fresh independent review", plan_batch)
+
+    def test_queue_owners_and_mechanical_authorization_boundary_stay_separate(
+        self,
+    ) -> None:
+        plan_batch = self.normalized_path(PLAN_BATCH)
+        architecture = self.normalized_path(ARCHITECTURE_PROGRAM_RUNWAY)
+        fixtures = self.normalized_path(STATE_FIXTURES)
+
+        self.assertIn(
+            "Architecture Program Runway remains the semantic queue owner",
+            fixtures,
+        )
+        self.assertIn(
+            "`batch-runway` remains the semantic owner of the concrete runway plan",
+            architecture,
+        )
+        self.assertIn(
+            "must not mark a runway queued until `plan-batch` has completed the "
+            "independent planning review",
+            architecture,
+        )
+        for text in (plan_batch, architecture, fixtures):
+            with self.subTest(surface=text[:40]):
+                self.assertIn("does not authenticate", text)
+                self.assertIn("judge evidence relevance or sufficiency", text)
+
+    def test_state_fixture_guidance_declares_exact_queue_authorization_facts(
+        self,
+    ) -> None:
+        fixtures = self.normalized_path(STATE_FIXTURES)
+
+        for flag in (
+            "--planner-decision plan",
+            "--reviewer-decision approve",
+            "--reviewed-dispatch",
+            "--reviewed-dispatch-sha256",
+            "--reviewed-runway",
+            "--reviewed-runway-sha256",
+            "--review-evidence",
+        ):
+            with self.subTest(flag=flag):
+                self.assertIn(flag, fixtures)
+        self.assertIn("lowercase 64-hex SHA-256 values", fixtures)
+        self.assertIn("rejects the transition without changing state", fixtures)
 
 
 if __name__ == "__main__":

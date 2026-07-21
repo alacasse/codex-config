@@ -385,6 +385,80 @@ class BatchRunwayCreateSpecContractTests(unittest.TestCase):
             with self.subTest(status_class=status_class):
                 self.assertIn(f"`{status_class}`", validation_contract)
 
+    def test_conditional_semantic_checklist_is_centralized_and_complete(self) -> None:
+        text = CREATE_SPEC.read_text(encoding="utf-8")
+        checklist = normalized(
+            section_between(
+                text,
+                "## Conditional Semantic Planning Checklist",
+                "When the project uses Planning Artifact Layout v1",
+            )
+        )
+
+        self.assertIn(
+            "ownership-transfer, migration, replacement, or genuinely "
+            "high-assumption work",
+            checklist,
+        )
+        checklist_requirements = (
+            "current and future semantic owners",
+            "exact callers and entrypoints",
+            "retained and forbidden fallbacks",
+            "ownership of every reachable failure path",
+            "a current consumer for every intermediate state",
+            "an old-owner behavioral counterfactual",
+            "direct evidence or a bounded proof plan for every decisive assumption",
+            "the best smaller usable alternative that serves the widest slice",
+            "available cost evidence, or explicit unknowns",
+        )
+        for requirement in checklist_requirements:
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, checklist)
+
+        checklist_consumers = {
+            "plan-batch": normalized(
+                (REPO_ROOT / "skills/plan-batch/SKILL.md").read_text(
+                    encoding="utf-8"
+                )
+            ),
+            "architecture-program-runway": normalized(
+                (
+                    REPO_ROOT / "skills/architecture-program-runway/SKILL.md"
+                ).read_text(encoding="utf-8")
+            ),
+        }
+        for consumer_name, consumer in checklist_consumers.items():
+            with self.subTest(consumer=consumer_name):
+                self.assertIn("Conditional Semantic Planning Checklist", consumer)
+                self.assertIn(
+                    "../batch-runway/references/create-spec.md",
+                    consumer,
+                )
+                for requirement in checklist_requirements:
+                    self.assertNotIn(requirement, consumer)
+
+        self.assertIn(
+            "Do not copy that checklist here",
+            checklist_consumers["plan-batch"],
+        )
+        self.assertIn(
+            "Do not duplicate that checklist here",
+            checklist_consumers["architecture-program-runway"],
+        )
+
+    def test_ordinary_small_non_migration_plans_stay_compact(self) -> None:
+        text = normalized(CREATE_SPEC.read_text(encoding="utf-8"))
+
+        self.assertIn(
+            "Ordinary small non-migration plans retain the compact required spec form",
+            text,
+        )
+        self.assertIn(
+            "They do not require checklist-specific sections",
+            text,
+        )
+        self.assertIn("or other migration ceremony", text)
+
     def test_required_green_requires_evidence_or_slice_owned_remediation(self) -> None:
         text = CREATE_SPEC.read_text(encoding="utf-8")
         validation_contract = normalized(

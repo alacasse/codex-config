@@ -28,7 +28,7 @@
       ]
     },
     "plan-batch": {
-      "version": "1.0.7",
+      "version": "1.0.8",
       "description": "User-facing command-owner skill for selecting bounded ledger work or reporting selected batch state before writing at most one concrete batch spec.",
       "requires": [
         "planning-artifacts",
@@ -60,7 +60,7 @@
       ]
     },
     "batch-runway": {
-      "version": "1.5.5",
+      "version": "1.5.6",
       "description": "Agent-facing runtime support used by plan-batch and work-batch for runway spec mechanics and execution contracts.",
       "requires": [
         "planning-artifacts",
@@ -78,7 +78,7 @@
       ]
     },
     "architecture-program-runway": {
-      "version": "1.1.8",
+      "version": "1.1.9",
       "description": "Agent-facing program-ledger support used by add-to-ledger, plan-batch, and work-batch for grouping, sequencing, selected dispatches, and closeout reconciliation.",
       "requires": [
         "planning-artifacts",
@@ -186,7 +186,7 @@
       ]
     },
     "planning-state": {
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "Agent-facing operational planning-state diagnostics, generated state fixtures, and policy-gated projection reporting.",
       "requires": [
         "planning-artifacts"

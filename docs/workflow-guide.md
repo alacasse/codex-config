@@ -13,7 +13,10 @@ external shaping / candidate source
 -> add-to-ledger
 -> program ledger
 -> plan-batch
--> dispatch/runway
+-> exact dispatch/runway drafts
+-> independent planning review
+-> fail-closed queue authorization
+-> queued runway
 -> work-batch
 -> closeout / same-batch program reconciliation
 -> follow-up ingestion or successor planning by explicit request
@@ -43,7 +46,8 @@ Examples from `skills-lock.json` include:
 
 - `add-to-ledger`: the explicit ingestion boundary for selected candidate work.
 - `plan-batch`: consumes existing ledger work, honors selected/queued/active
-  state, and creates at most one dispatch/runway before stopping.
+  state, creates at most one exact dispatch/runway pair, delegates its fresh
+  independent review, and queues only after fail-closed authorization.
 - `work-batch`: executes the current queued or active runway.
 - `port-by-contract`: extracts behavior contracts before a rewrite or port; it
   is not a general cleanup shortcut.
@@ -60,7 +64,7 @@ the normal direct commands for the ledger-driven workflow.
 - `architecture-program-runway`: program selection, selected dispatch, batch
   queue metadata, selected/queued/active artifact state, finding lifecycle
   status, and same-batch closeout reconciliation.
-- `batch-runway`: concrete runway specs, slice ledgers, validation/review
+- `batch-runway`: semantic concrete runway specs, slice ledgers, validation/review
   loops, completed-slice archives, and commit receipt mechanics.
 - `legacy-removal`
 - `dead-surface-audit`
@@ -121,6 +125,14 @@ lease rather than the planning snapshot.
 - `plan-batch` must not discover new work by scanning external sources.
 - `plan-batch` reports existing queued or active runway state instead of
   replacing it or beginning implementation.
+- New queue state follows `plan -> exact drafts -> independent review ->
+  fail-closed authorization -> queue`. A non-approve, missing evidence, or stale
+  draft leaves the batch unqueued and an edited draft requires another review.
+- `architecture-program-runway` remains the semantic queue owner;
+  `batch-runway` remains the semantic planning owner; Planning State only
+  validates declared authorization facts and exact draft binding.
+- Reviewer independence and evidence relevance remain procedural `plan-batch`
+  responsibilities, not Planning State authentication or classification.
 - `plan-batch` normally leaves a queued runway. That queued state is not
   residue; consume it with `work-batch` instead of closing or abandoning it
   without explicit cancellation or documented blocker evidence.

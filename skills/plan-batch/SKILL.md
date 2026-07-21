@@ -62,6 +62,51 @@ ownership, and `../batch-runway/SKILL.md` only in `create-spec` mode for the
 concrete spec procedure. Stop before implementation. When routing ambiguity
 exists, follow `../../docs/skill-routing-contract.md`.
 
+## Independent Planning Review Gate
+
+The queueing flow is:
+
+```text
+plan -> exact drafts -> independent review -> fail-closed authorization -> queue
+```
+
+After the exact repo-relative `dispatch.md` and `runway.md` drafts exist, but
+before any queue mutation, delegate one fresh, read-only independent planning
+review. Planner self-attestation is insufficient. The reviewer must directly
+inspect both draft files and the supporting evidence instead of relying on the
+planner's summary.
+
+The review handoff must require one decision, `approve | revise | block`, and a
+result containing:
+
+- the exact repo-relative dispatch and runway paths;
+- the SHA-256 hash of each inspected draft as 64 lowercase hexadecimal
+  characters; and
+- at least one nonblank evidence reference that the reviewer actually inspected.
+
+For ownership-transfer, migration, replacement, or genuinely high-assumption
+work, both the planner and reviewer must apply the single **Conditional Semantic
+Planning Checklist** in
+`../batch-runway/references/create-spec.md`. Do not copy that checklist here.
+Ordinary small non-migration plans keep the compact create-spec form and do not
+gain migration-specific sections or ceremony.
+
+Only `approve` may continue to mechanical authorization. Treat `revise`,
+`block`, a missing result, missing or blank evidence, a path mismatch, malformed
+hash, or hash mismatch as fail-closed: leave the batch unqueued. Any edit to
+either draft after review invalidates the approval; compute new hashes and
+delegate another fresh independent review before trying to queue again.
+
+Invoke the existing `planning_state.py queue-batch` transition with the exact
+queued paths plus `--planner-decision plan`, `--reviewer-decision approve`, both
+reviewed paths and SHA-256 values, and one or more `--review-evidence` values.
+`architecture-program-runway` retains semantic selection, dispatch, and queue
+ownership and may mark queue state only after that command applies.
+`planning-state` only validates the declared decisions, nonblank evidence facts,
+and exact path/hash binding immediately before mutation. It does not authenticate
+the reviewer, establish independence, or judge evidence relevance or
+sufficiency; this skill owns those procedural responsibilities.
+
 ## Explicit Cross-Checkout Pre-Creation Planning
 
 When the selected dispatch explicitly names
@@ -111,11 +156,14 @@ batches.
 - Do not create more than one batch spec.
 - Do not create new ledger findings from fresh user work text.
 - Do not bypass an existing selected dispatch, queued batch, or active runway.
+- Do not mutate queue state before an independent `approve` result passes the
+  fail-closed Planning State authorization check.
 - Do not run project-level integration harnesses unless the spec explicitly
   assigns them.
 
 ## Agent-Facing Support
 
-Use `../architecture-program-runway/SKILL.md` for selected-dispatch and queue
-mechanics. Use `../batch-runway/SKILL.md` in create-spec mode only as runtime
-support for writing exactly one concrete runway behind this command.
+Use `../architecture-program-runway/SKILL.md` only for program selection,
+dispatch ownership, and semantic queue mechanics. Use
+`../batch-runway/SKILL.md` in create-spec mode only as runtime support for
+writing exactly one concrete runway behind this command.

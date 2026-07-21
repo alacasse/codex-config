@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 from pathlib import PurePosixPath
@@ -5,6 +6,7 @@ import re
 import sqlite3
 import subprocess
 import sys
+from typing import Any
 
 from scripts.planning_state import (
     CLOSEOUT_MAX_ARTIFACT_PATH_CHARS,
@@ -33,6 +35,22 @@ from scripts.planning_state import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PLANNING_STATE_SCRIPT = REPO_ROOT / "scripts" / "planning_state.py"
+
+
+def _recursive_mapping_keys(value: Any) -> set[str]:
+    if isinstance(value, dict):
+        return set(value) | {
+            nested_key
+            for nested_value in value.values()
+            for nested_key in _recursive_mapping_keys(nested_value)
+        }
+    if isinstance(value, list):
+        return {
+            nested_key
+            for nested_value in value
+            for nested_key in _recursive_mapping_keys(nested_value)
+        }
+    return set()
 
 
 def test_loads_codex_config_layout_v1_root_and_program_state(tmp_path: Path) -> None:
@@ -5256,6 +5274,176 @@ def test_queue_batch_requires_selected_registered_dispatch_and_runway(
     assert state["programs"][0]["queued_batch"] == runway
 
 
+def test_queue_batch_authorization_is_a_fail_closed_conjunction(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "docs" / "plans"
+    _write_codex_config_fixture(root)
+    _write_program_current(
+        root,
+        "planning-state-tooling",
+        queued="None",
+        latest="None",
+    )
+    batch_root = _write_transition_batch(root)
+    state_file = tmp_path / "state.json"
+    dispatch = f"{batch_root}/dispatch.md"
+    runway = f"{batch_root}/runway.md"
+    dispatch_file = root / Path(dispatch).relative_to("docs/plans")
+    runway_file = root / Path(runway).relative_to("docs/plans")
+    _write_state_fixture(
+        state_file,
+        selected_dispatch=dispatch,
+        artifacts=[
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": dispatch,
+                "type": "dispatch",
+            },
+            {
+                "batch_id": "planning-state-write-transitions",
+                "path": runway,
+                "type": "runway",
+            },
+        ],
+    )
+    state_before = state_file.read_bytes()
+    approved_dispatch_sha256 = hashlib.sha256(dispatch_file.read_bytes()).hexdigest()
+    approved_runway_sha256 = hashlib.sha256(runway_file.read_bytes()).hexdigest()
+
+    rejected_cases: tuple[tuple[str, dict[str, Any], str], ...] = (
+        (
+            "planner-block",
+            {"planner_decision": "block"},
+            "planner_decision_blocked",
+        ),
+        (
+            "reviewer-revise",
+            {"reviewer_decision": "revise"},
+            "reviewer_decision_revise",
+        ),
+        (
+            "reviewer-block",
+            {"reviewer_decision": "block"},
+            "reviewer_decision_block",
+        ),
+        (
+            "blank-evidence",
+            {"review_evidence": (" ",)},
+            "blank_review_evidence",
+        ),
+        (
+            "one-of-many-evidence-values-is-blank",
+            {"review_evidence": ("tests/evidence.md", "")},
+            "blank_review_evidence",
+        ),
+        (
+            "malformed-dispatch-hash",
+            {"reviewed_dispatch_sha256": "ABC123"},
+            "malformed_reviewed_dispatch_sha256",
+        ),
+        (
+            "malformed-runway-hash",
+            {"reviewed_runway_sha256": "a" * 63},
+            "malformed_reviewed_runway_sha256",
+        ),
+        (
+            "wrong-dispatch-path",
+            {"reviewed_dispatch": f"{batch_root}/other-dispatch.md"},
+            "reviewed_dispatch_path_mismatch",
+        ),
+        (
+            "wrong-runway-path",
+            {"reviewed_runway": f"{batch_root}/other-runway.md"},
+            "reviewed_runway_path_mismatch",
+        ),
+    )
+    for name, kwargs, expected_code in rejected_cases:
+        receipt_file = tmp_path / f"{name}.json"
+        result = _run_queue_batch(
+            root,
+            state_file,
+            receipt_file,
+            **kwargs,
+        )
+
+        assert result.returncode == 1, name
+        assert state_file.read_bytes() == state_before, name
+        receipt = json.loads(receipt_file.read_text(encoding="utf-8"))
+        assert expected_code in {blocker["code"] for blocker in receipt["blockers"]}
+
+    for missing_argument in (
+        "planner_decision",
+        "reviewer_decision",
+        "reviewed_dispatch",
+        "reviewed_dispatch_sha256",
+        "reviewed_runway",
+        "reviewed_runway_sha256",
+        "review_evidence",
+    ):
+        receipt_file = tmp_path / f"missing-{missing_argument}.json"
+        result = _run_queue_batch(
+            root,
+            state_file,
+            receipt_file,
+            omit_authorization=frozenset({missing_argument}),
+        )
+
+        assert result.returncode == 2, missing_argument
+        assert state_file.read_bytes() == state_before, missing_argument
+        assert not receipt_file.exists(), missing_argument
+
+    original_dispatch = dispatch_file.read_bytes()
+    dispatch_file.write_bytes(original_dispatch + b"edited after review\n")
+    result = _run_queue_batch(
+        root,
+        state_file,
+        tmp_path / "edited-dispatch.json",
+        reviewed_dispatch_sha256=approved_dispatch_sha256,
+    )
+    assert result.returncode == 1
+    assert state_file.read_bytes() == state_before
+    assert "reviewed_dispatch_sha256_mismatch" in {
+        blocker["code"]
+        for blocker in json.loads(
+            (tmp_path / "edited-dispatch.json").read_text(encoding="utf-8")
+        )["blockers"]
+    }
+    dispatch_file.write_bytes(original_dispatch)
+
+    original_runway = runway_file.read_bytes()
+    runway_file.write_bytes(original_runway + b"edited after review\n")
+    result = _run_queue_batch(
+        root,
+        state_file,
+        tmp_path / "edited-runway.json",
+        reviewed_runway_sha256=approved_runway_sha256,
+    )
+    assert result.returncode == 1
+    assert state_file.read_bytes() == state_before
+    assert "reviewed_runway_sha256_mismatch" in {
+        blocker["code"]
+        for blocker in json.loads(
+            (tmp_path / "edited-runway.json").read_text(encoding="utf-8")
+        )["blockers"]
+    }
+    runway_file.write_bytes(original_runway)
+
+    result = _run_queue_batch(
+        root,
+        state_file,
+        tmp_path / "valid-authorization.json",
+        reviewed_dispatch_sha256=approved_dispatch_sha256,
+        reviewed_runway_sha256=approved_runway_sha256,
+        review_evidence=("tests/evidence-one.md", "tests/evidence-two.md"),
+    )
+    assert result.returncode == 0
+    assert state_file.read_bytes() != state_before
+    state = json.loads(state_file.read_text(encoding="utf-8"))
+    assert state["programs"][0]["selected_dispatch"] is None
+    assert state["programs"][0]["queued_batch"] == runway
+
+
 def test_queue_batch_receipt_includes_runner_consumable_obligations(
     tmp_path: Path,
 ) -> None:
@@ -5301,6 +5489,7 @@ def test_queue_batch_receipt_includes_runner_consumable_obligations(
     )
 
     result = _run_queue_batch(root, state_file, receipt_file)
+    state = json.loads(state_file.read_text(encoding="utf-8"))
     receipt = json.loads(receipt_file.read_text(encoding="utf-8"))
 
     assert result.returncode == 0
@@ -5329,6 +5518,19 @@ def test_queue_batch_receipt_includes_runner_consumable_obligations(
         "blockers",
         "messages",
     } <= receipt.keys()
+    forbidden_authorization_fields = {
+        "planner_decision",
+        "reviewer_decision",
+        "reviewed_dispatch",
+        "reviewed_dispatch_sha256",
+        "reviewed_runway",
+        "reviewed_runway_sha256",
+        "review_evidence",
+    }
+    for document_name, document in (("state", state), ("receipt", receipt)):
+        assert forbidden_authorization_fields.isdisjoint(
+            _recursive_mapping_keys(document)
+        ), document_name
 
 
 def test_queue_batch_rejects_foreign_state_file_before_mutation(
@@ -6350,11 +6552,55 @@ def _run_queue_batch(
     root: Path,
     state_file: Path,
     receipt_file: Path,
+    *,
+    planner_decision: str = "plan",
+    reviewer_decision: str = "approve",
+    reviewed_dispatch: str | None = None,
+    reviewed_dispatch_sha256: str | None = None,
+    reviewed_runway: str | None = None,
+    reviewed_runway_sha256: str | None = None,
+    review_evidence: tuple[str, ...] = ("tests/fixtures/review-evidence.md",),
+    omit_authorization: frozenset[str] = frozenset(),
 ) -> subprocess.CompletedProcess[str]:
     batch_root = (
         "docs/plans/programs/planning-state-tooling/batches/"
         "planning-state-write-transitions"
     )
+    dispatch = f"{batch_root}/dispatch.md"
+    runway = f"{batch_root}/runway.md"
+    dispatch_file = root / Path(dispatch).relative_to("docs/plans")
+    runway_file = root / Path(runway).relative_to("docs/plans")
+
+    def current_sha256(path: Path) -> str:
+        if not path.is_file():
+            return "0" * 64
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    authorization_values = {
+        "planner_decision": ("--planner-decision", planner_decision),
+        "reviewer_decision": ("--reviewer-decision", reviewer_decision),
+        "reviewed_dispatch": (
+            "--reviewed-dispatch",
+            reviewed_dispatch or dispatch,
+        ),
+        "reviewed_dispatch_sha256": (
+            "--reviewed-dispatch-sha256",
+            reviewed_dispatch_sha256 or current_sha256(dispatch_file),
+        ),
+        "reviewed_runway": ("--reviewed-runway", reviewed_runway or runway),
+        "reviewed_runway_sha256": (
+            "--reviewed-runway-sha256",
+            reviewed_runway_sha256 or current_sha256(runway_file),
+        ),
+    }
+    authorization_args: list[str] = []
+    for name, (flag, value) in authorization_values.items():
+        if name not in omit_authorization:
+            authorization_args.extend((flag, value))
+    if "review_evidence" not in omit_authorization:
+        for evidence in review_evidence:
+            authorization_args.extend(("--review-evidence", evidence))
+
     return subprocess.run(
         [
             sys.executable,
@@ -6367,9 +6613,10 @@ def _run_queue_batch(
             "--batch-id",
             "planning-state-write-transitions",
             "--dispatch",
-            f"{batch_root}/dispatch.md",
+            dispatch,
             "--runway",
-            f"{batch_root}/runway.md",
+            runway,
+            *authorization_args,
             "--state-file",
             str(state_file),
             "--receipt-file",

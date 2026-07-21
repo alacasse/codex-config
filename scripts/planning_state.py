@@ -20,6 +20,7 @@ from typing import Any, Iterable
 
 NONE_VALUES = {"", "none", "none selected", "n/a", "tbd"}
 FIELD_PATTERN = re.compile(r"^(?:-\s*)?([^:|]+):\s*(.*)$")
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 PLANNING_STATE_PROTOCOL_NAME = "planning-state-facts"
 PLANNING_STATE_PROTOCOL_VERSION = 1
 STATE_FIXTURE_SCHEMA_NAME = "planning-state-tool-state"
@@ -963,6 +964,26 @@ def main(argv: list[str] | None = None) -> int:
     queue_parser.add_argument("--batch-id", required=True)
     queue_parser.add_argument("--dispatch", required=True)
     queue_parser.add_argument("--runway", required=True)
+    queue_parser.add_argument(
+        "--planner-decision",
+        choices=("plan", "block"),
+        required=True,
+    )
+    queue_parser.add_argument(
+        "--reviewer-decision",
+        choices=("approve", "revise", "block"),
+        required=True,
+    )
+    queue_parser.add_argument("--reviewed-dispatch", required=True)
+    queue_parser.add_argument("--reviewed-dispatch-sha256", required=True)
+    queue_parser.add_argument("--reviewed-runway", required=True)
+    queue_parser.add_argument("--reviewed-runway-sha256", required=True)
+    queue_parser.add_argument(
+        "--review-evidence",
+        action="append",
+        required=True,
+        help="Repeatable nonblank evidence reference declared by the reviewer.",
+    )
     queue_parser.add_argument("--state-file", type=Path, required=True)
     queue_parser.add_argument("--receipt-file", type=Path)
     closeout_parser = subparsers.add_parser(
@@ -1124,6 +1145,13 @@ def main(argv: list[str] | None = None) -> int:
                 batch_id=args.batch_id,
                 dispatch_path=args.dispatch,
                 runway_path=args.runway,
+                planner_decision=args.planner_decision,
+                reviewer_decision=args.reviewer_decision,
+                reviewed_dispatch_path=args.reviewed_dispatch,
+                reviewed_dispatch_sha256=args.reviewed_dispatch_sha256,
+                reviewed_runway_path=args.reviewed_runway,
+                reviewed_runway_sha256=args.reviewed_runway_sha256,
+                review_evidence=args.review_evidence,
                 state_file=args.state_file,
                 receipt_file=args.receipt_file,
             )
@@ -1512,6 +1540,13 @@ def queue_batch(
     batch_id: str,
     dispatch_path: str,
     runway_path: str,
+    planner_decision: str,
+    reviewer_decision: str,
+    reviewed_dispatch_path: str,
+    reviewed_dispatch_sha256: str,
+    reviewed_runway_path: str,
+    reviewed_runway_sha256: str,
+    review_evidence: list[str],
     state_file: Path,
     receipt_file: Path | None,
 ) -> dict[str, Any]:
@@ -1553,6 +1588,19 @@ def queue_batch(
         )
     _validate_batch_known_to_ledger(program, batch_id, messages)
     _append_obligation_messages(data, messages)
+    _validate_queue_authorization(
+        state,
+        dispatch_path=dispatch_path,
+        runway_path=runway_path,
+        planner_decision=planner_decision,
+        reviewer_decision=reviewer_decision,
+        reviewed_dispatch_path=reviewed_dispatch_path,
+        reviewed_dispatch_sha256=reviewed_dispatch_sha256,
+        reviewed_runway_path=reviewed_runway_path,
+        reviewed_runway_sha256=reviewed_runway_sha256,
+        review_evidence=review_evidence,
+        messages=messages,
+    )
     obligations = _obligations_for_batch(data, batch_id)
     receipt = _transition_receipt(
         state,
@@ -6055,6 +6103,106 @@ def _validate_queue_transition_state(
             code="markdown_selected_dispatch_conflict",
             message="CURRENT.md selected dispatch does not match the queued dispatch",
             source_path=str(program.current_path),
+        )
+
+
+def _validate_queue_authorization(
+    state: PlanningState,
+    *,
+    dispatch_path: str,
+    runway_path: str,
+    planner_decision: str,
+    reviewer_decision: str,
+    reviewed_dispatch_path: str,
+    reviewed_dispatch_sha256: str,
+    reviewed_runway_path: str,
+    reviewed_runway_sha256: str,
+    review_evidence: list[str],
+    messages: list[dict[str, str | None]],
+) -> None:
+    """Validate declared review facts without authenticating or judging them."""
+
+    if planner_decision != "plan":
+        _append_message(
+            messages,
+            severity="error",
+            code="planner_decision_blocked",
+            message="planner decision must be plan before queueing",
+            source_path=None,
+        )
+    if reviewer_decision != "approve":
+        _append_message(
+            messages,
+            severity="error",
+            code=f"reviewer_decision_{reviewer_decision}",
+            message="reviewer decision must be approve before queueing",
+            source_path=None,
+        )
+
+    reviewed_artifacts = (
+        (
+            "dispatch",
+            dispatch_path,
+            reviewed_dispatch_path,
+            reviewed_dispatch_sha256,
+        ),
+        (
+            "runway",
+            runway_path,
+            reviewed_runway_path,
+            reviewed_runway_sha256,
+        ),
+    )
+    for (
+        artifact_type,
+        queued_path,
+        reviewed_path,
+        reviewed_sha256,
+    ) in reviewed_artifacts:
+        if reviewed_path != queued_path:
+            _append_message(
+                messages,
+                severity="error",
+                code=f"reviewed_{artifact_type}_path_mismatch",
+                message=(
+                    f"reviewed {artifact_type} path must exactly match the queued path"
+                ),
+                source_path=reviewed_path,
+            )
+        if SHA256_PATTERN.fullmatch(reviewed_sha256) is None:
+            _append_message(
+                messages,
+                severity="error",
+                code=f"malformed_reviewed_{artifact_type}_sha256",
+                message=(
+                    f"reviewed {artifact_type} SHA-256 must be 64 lowercase "
+                    "hex characters"
+                ),
+                source_path=reviewed_path,
+            )
+            continue
+
+        artifact = _resolve_pointer(state.root.root_path, queued_path)
+        if artifact.is_file():
+            current_sha256 = hashlib.sha256(artifact.read_bytes()).hexdigest()
+            if current_sha256 != reviewed_sha256:
+                _append_message(
+                    messages,
+                    severity="error",
+                    code=f"reviewed_{artifact_type}_sha256_mismatch",
+                    message=(
+                        f"queued {artifact_type} changed after the declared review"
+                    ),
+                    source_path=queued_path,
+                )
+
+    if not review_evidence or any(not evidence.strip() for evidence in review_evidence):
+        _append_message(
+            messages,
+            severity="error",
+            code="blank_review_evidence",
+            message="every declared review evidence reference must be nonblank",
+            source_path=None,
         )
 
 

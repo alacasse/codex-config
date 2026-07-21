@@ -173,13 +173,17 @@ class CodexFeaturesManifestTests(unittest.TestCase):
                     "plan-batch",
                     "work-batch",
                     "batch-runway",
+                    "architecture-program-runway",
+                    "planning-state",
                     "custom-agents",
                 )
             },
             {
-                "plan-batch": "1.0.7",
+                "plan-batch": "1.0.8",
                 "work-batch": "1.0.9",
-                "batch-runway": "1.5.5",
+                "batch-runway": "1.5.6",
+                "architecture-program-runway": "1.1.9",
+                "planning-state": "1.0.2",
                 "custom-agents": "1.4.1",
             },
         )
@@ -473,6 +477,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         plan_batch = (REPO_ROOT / "skills/plan-batch/SKILL.md").read_text(
             encoding="utf-8"
         )
+        normalized_plan_batch = " ".join(plan_batch.split())
 
         self.assertIn(
             "User-facing command-owner skill",
@@ -509,7 +514,10 @@ class CodexFeaturesManifestTests(unittest.TestCase):
             "This skill reads executable work only from the current program ledger",
             plan_batch,
         )
-        self.assertIn("Do not scan external sources to discover new work", plan_batch)
+        self.assertIn(
+            "Do not scan external sources to discover new work",
+            normalized_plan_batch,
+        )
         self.assertIn("Select bounded work from the current program ledger", plan_batch)
         self.assertIn("Do not select different work. Use that dispatch.", plan_batch)
         self.assertIn("Do not create another spec or replace the queue.", plan_batch)
@@ -537,6 +545,7 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         plan_batch = (REPO_ROOT / "skills/plan-batch/SKILL.md").read_text(
             encoding="utf-8"
         )
+        normalized_plan_batch = " ".join(plan_batch.split())
 
         self.assertIn("## Executable Work Source", routing_contract)
         self.assertIn(
@@ -547,7 +556,10 @@ class CodexFeaturesManifestTests(unittest.TestCase):
         self.assertIn("explicit ingestion boundary", add_to_ledger)
         self.assertIn("GitHub issues", add_to_ledger)
         self.assertIn("external tickets", add_to_ledger)
-        self.assertIn("Do not scan external sources to discover new work", plan_batch)
+        self.assertIn(
+            "Do not scan external sources to discover new work",
+            normalized_plan_batch,
+        )
         self.assertIn(
             "evidence only when an\nexisting ledger row points to them",
             plan_batch,

@@ -91,6 +91,32 @@ Examples:
   cleanup or contract narrowing because approval and rollback requirements
   differ.
 
+## Conditional Semantic Planning Checklist
+
+Apply this checklist only to ownership-transfer, migration, replacement, or
+genuinely high-assumption work. The generated dispatch and runway must make each
+applicable item explicit:
+
+- current and future semantic owners;
+- exact callers and entrypoints;
+- retained and forbidden fallbacks;
+- ownership of every reachable failure path;
+- a current consumer for every intermediate state;
+- an old-owner behavioral counterfactual describing what would still happen if
+  the old owner remained authoritative;
+- direct evidence or a bounded proof plan for every decisive assumption;
+- the best smaller usable alternative that serves the widest slice of the
+  requested outcome; and
+- available cost evidence, or explicit unknowns when cost evidence is absent.
+
+The independent planning reviewer must inspect both exact drafts and their
+supporting evidence against this same checklist when it applies. `plan-batch`
+references this section instead of restating it.
+
+Ordinary small non-migration plans retain the compact required spec form below.
+They do not require checklist-specific sections, ownership-transfer
+counterfactuals, fallback matrices, cost analysis, or other migration ceremony.
+
 When the project uses Planning Artifact Layout v1, store the concrete spec at:
 
 ```text
