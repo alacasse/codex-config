@@ -96,7 +96,7 @@ def active_ccfg26_and_ccfg29_authority() -> str:
 
 
 class Ccfg26DevelopmentBoundaryTests(unittest.TestCase):
-    def test_current_state_has_an_empty_queue_and_planning_only_next_action(
+    def test_current_state_has_an_empty_queue_and_hardening_next_action(
         self,
     ) -> None:
         current = CURRENT.read_text(encoding="utf-8")
@@ -111,15 +111,15 @@ class Ccfg26DevelopmentBoundaryTests(unittest.TestCase):
 
         next_action = markdown_section(CURRENT, "## Next Safe Action")
         for fragment in (
-            "`plan-batch ccfg-26-public-work-batch-owner`",
-            "COR-009",
-            "ADR 0004",
-            "current candidate implementation seam",
+            "`plan-batch CCFG-35`",
+            "`findings/planning-and-independent-review-hardening.md`",
             "planning-only",
-            "Do not implement candidate code",
-            "independently reviewed public-owner dispatch/runway queued",
-            "`ccfg-26-installed-caller-cutover`",
-            "only after the public-owner batch closes with CCFG-26 `Prepared`",
+            "generic reusable planning and independent-review hardening task",
+            "current planning, review, and deterministic pre-queue seams",
+            "at most one independently reviewed CCFG-35 dispatch/runway queued",
+            "Stop before implementation",
+            "Do not select, dispatch, queue, prepare, or implement CCFG-26 or "
+            "any other unrelated work",
         ):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, next_action)
