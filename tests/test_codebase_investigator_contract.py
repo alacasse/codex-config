@@ -19,18 +19,16 @@ def test_investigator_is_bounded_read_only_support() -> None:
     assert "direct evidence, reasonable inference, and unresolved uncertainty" in instructions
 
 
-def test_investigator_result_contract_is_compact_and_evidence_backed() -> None:
+def test_investigator_response_guidance_is_compact_and_evidence_backed() -> None:
     instructions = tomllib.loads(AGENT_PATH.read_text(encoding="utf-8"))[
         "developer_instructions"
     ]
-    for field in (
-        "status: answered | partial | blocked",
-        "question_answered: string",
-        "files_checked:",
-        "findings:",
-        "risks: []",
-        "suggested_next_read: []",
+    for guidance in (
+        "Lead with the answer",
+        "precise file and line references",
+        "direct evidence, reasonable inference, and unresolved uncertainty",
+        "Omit raw logs",
     ):
-        assert field in instructions
-    assert "references:" in instructions
-    assert "Omit raw logs" in instructions
+        assert guidance in instructions
+    assert "Return YAML only" not in instructions
+    assert "machine-readable" not in instructions

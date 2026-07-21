@@ -35,7 +35,6 @@ def test_manifest_is_complete_and_all_sources_exist() -> None:
         "port-by-contract",
         "test-quality-review",
         "custom-agents",
-        "approval-rules",
         "dead-surface-audit",
         "agent-notifications",
     }
@@ -97,6 +96,25 @@ def test_surviving_skill_metadata_matches_directory_names() -> None:
         text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
         assert text.startswith("---\n")
         assert f"\nname: {skill_dir.name}\n" in text
+
+
+def test_surviving_skills_keep_independent_behavioral_lenses() -> None:
+    port = (REPO_ROOT / "skills" / "port-by-contract" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    quality = (REPO_ROOT / "skills" / "test-quality-review" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    dead = (REPO_ROOT / "skills" / "dead-surface-audit" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "implementation-neutral behavior contracts" in port
+    assert "Design from contract responsibilities" in port
+    assert "behavioral confidence" in quality
+    assert "Do not optimize for coverage percentages" in quality
+    assert "`behavioral`" in dead
+    assert "`topology-assertion`" in dead
 
 
 def test_surviving_agent_configs_parse_and_are_read_only() -> None:

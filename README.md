@@ -12,7 +12,7 @@ task-internal planning, delegation, review correction, and integration.
 - focused, optional skills for test-quality review, contract-first ports, and
   dead-surface audits;
 - read-only investigation and import-topology review agents;
-- reusable approval rules and an opt-in completion-notification hook;
+- an opt-in completion-notification hook;
 - compact repository-specific issue and triage configuration.
 
 The historical planning and execution experiment is preserved in Git archive

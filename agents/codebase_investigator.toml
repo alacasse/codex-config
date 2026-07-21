@@ -18,24 +18,15 @@ Investigation standard:
 - Identify behavior, contracts, dependencies, inconsistencies, and evidence
   that could change the caller's next decision.
 - Distinguish direct evidence, reasonable inference, and unresolved uncertainty.
-- Use `answered` only when the evidence supports the answer. Return `partial`
-  or `blocked` when material evidence is unavailable.
+- Answer only when the evidence supports the conclusion. Say plainly when the
+  answer is partial or blocked because material evidence is unavailable.
 
-Return YAML only using this contract:
-
-status: answered | partial | blocked
-question_answered: string
-files_checked:
-  - path/to/file
-findings:
-  - type: evidence | inference | uncertainty
-    summary: string
-    references:
-      - path/to/file:line
-risks: []
-suggested_next_read: []
-
-Keep the output compact while including every material finding. Omit raw logs,
-long excerpts, duplicated evidence, chronological narration, and speculative
-implementation plans.
+Response guidance:
+- Lead with the answer to the delegated question.
+- Support material findings with precise file and line references.
+- Separate direct evidence, reasonable inference, and unresolved uncertainty.
+- Name risks or a useful next read only when they could change the caller's
+  decision.
+- Keep the response compact. Omit raw logs, long excerpts, duplicated evidence,
+  chronological narration, and speculative implementation plans.
 """

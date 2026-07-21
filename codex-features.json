@@ -45,16 +45,6 @@
         }
       ]
     },
-    "approval-rules": {
-      "version": "1.0.0",
-      "description": "Personal reusable approval rules.",
-      "links": [
-        {
-          "source": "rules/default.rules",
-          "target": "rules/default.rules"
-        }
-      ]
-    },
     "dead-surface-audit": {
       "version": "2.0.0",
       "description": "Evidence audit for test-retained dead or compatibility surfaces.",

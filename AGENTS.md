@@ -22,7 +22,7 @@ comments.
 
 ## Reusable configuration
 
-- Treat `skills/`, `agents/`, `rules/`, hooks, and installer metadata as
+- Treat `skills/`, `agents/`, hooks, and installer metadata as
   production configuration.
 - Keep reusable skills project-neutral. Resolve project paths, commands, issue
   policy, and local document placement from the target project's instructions.

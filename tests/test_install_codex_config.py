@@ -210,6 +210,62 @@ def test_install_blocks_before_stale_state_can_be_overwritten() -> None:
         assert state_path.read_text(encoding="utf-8") == original_state
 
 
+def test_existing_invalid_state_fails_closed_without_installing() -> None:
+    invalid_states = (
+        "not json\n",
+        "[]\n",
+        "{}\n",
+        '{"features": []}\n',
+    )
+    for raw_state in invalid_states:
+        with tempfile.TemporaryDirectory() as directory:
+            codex_home = Path(directory) / "codex-home"
+            state_path = codex_home / STATE_RELATIVE
+            state_path.parent.mkdir(parents=True)
+            state_path.write_text(raw_state, encoding="utf-8")
+
+            completed = run_installer(codex_home)
+
+            assert completed.returncode == 1
+            assert "installed state" in completed.stderr
+            assert state_path.read_text(encoding="utf-8") == raw_state
+            assert not (codex_home / "AGENTS.md").exists()
+
+
+def test_prune_reconciles_a_target_adopted_by_another_feature() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        codex_home = Path(directory) / "codex-home"
+        state_path = write_state(
+            codex_home,
+            {
+                "retired-feature": {
+                    "version": "1.0.0",
+                    "links": [
+                        {
+                            "source": "skills/retired-tool",
+                            "target": "AGENTS.md",
+                        }
+                    ],
+                }
+            },
+        )
+        target = codex_home / "AGENTS.md"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.symlink_to(REPO_ROOT / "AGENTS.md")
+
+        pruned = run_installer(codex_home, "--prune")
+
+        assert pruned.returncode == 0, pruned.stderr
+        assert "target is claimed by the current manifest" in pruned.stdout
+        assert target.is_symlink()
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        assert state["features"] == {}
+
+        installed = run_installer(codex_home, "--feature", "global-instructions")
+        assert installed.returncode == 0, installed.stderr
+        assert target.resolve() == (REPO_ROOT / "AGENTS.md").resolve()
+
+
 def test_force_backs_up_a_real_file_conflict() -> None:
     with tempfile.TemporaryDirectory() as directory:
         codex_home = Path(directory) / "codex-home"

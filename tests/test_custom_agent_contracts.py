@@ -26,14 +26,14 @@ def test_import_topology_reviewer_has_one_narrow_review_lens() -> None:
     assert "Do not broaden into general architecture" in text
 
 
-def test_import_topology_reviewer_returns_a_fixed_result_shape() -> None:
+def test_import_topology_reviewer_reports_findings_without_a_result_schema() -> None:
     text = instructions("import_topology_reviewer")
-    for field in (
-        "status: clean | findings | blocked",
-        "diff_basis: string",
-        "findings: []",
-        "residual_risks: []",
-        "required_fixes: []",
+    for guidance in (
+        "Lead with whether the exact diff is clean",
+        "Order actionable findings by severity",
+        "cite precise files and lines",
+        "State the exact diff basis used",
     ):
-        assert field in text
-    assert "severity, file, issue, and evidence" in text
+        assert guidance in text
+    assert "Return YAML only" not in text
+    assert "exactly these top-level fields" not in text

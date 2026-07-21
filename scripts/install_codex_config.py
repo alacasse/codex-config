@@ -29,6 +29,7 @@ class StaleLink:
     feature: str
     source: Path | None
     target: Path
+    remove_target: bool
 
 
 class LinkRecord(TypedDict):
@@ -251,13 +252,14 @@ def load_state(codex_home: Path) -> InstallState:
     if not path.exists():
         return {"features": {}}
     try:
-        data = cast(dict[str, object], json.loads(path.read_text(encoding="utf-8")))
-    except json.JSONDecodeError:
-        return {"features": {}}
-    if not isinstance(data, dict):
-        return {"features": {}}
+        raw: object = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise InstallError(f"installed state is not valid JSON: {path}: {exc}") from exc
+    if not isinstance(raw, dict):
+        raise InstallError(f"installed state root must be an object: {path}")
+    data = cast(dict[str, object], raw)
     if not isinstance(data.get("features"), dict):
-        data["features"] = {}
+        raise InstallError(f"installed state must contain a features object: {path}")
     return cast(InstallState, data)
 
 
@@ -307,7 +309,8 @@ def print_status(codex_home: Path, manifest: Manifest) -> None:
     stale, unresolved = stale_managed_links(codex_home, manifest, state)
     for item in stale:
         source = str(item.source) if item.source is not None else "unknown source"
-        print(f"stale-link {item.feature} {item.target} -> {source}")
+        kind = "stale-link" if item.remove_target else "stale-record"
+        print(f"{kind} {item.feature} {item.target} -> {source}")
     for feature in unresolved:
         print(f"stale-state {feature}: previous link inventory is unavailable")
 
@@ -368,6 +371,13 @@ def current_manifest_targets(manifest: Manifest) -> set[Path]:
     }
 
 
+def manifest_targets_by_feature(manifest: Manifest) -> dict[str, set[Path]]:
+    return {
+        name: {Path(link["target"]) for link in feature.get("links", [])}
+        for name, feature in manifest["features"].items()
+    }
+
+
 def stale_managed_links(
     codex_home: Path,
     manifest: Manifest,
@@ -384,6 +394,7 @@ def stale_managed_links(
         if isinstance(raw_repo_root, str) and raw_repo_root
         else None
     )
+    expected_by_feature = manifest_targets_by_feature(manifest)
     expected_targets = current_manifest_targets(manifest)
     stale: list[StaleLink] = []
     unresolved: list[str] = []
@@ -412,7 +423,7 @@ def stale_managed_links(
                     f"installed link target for feature {feature_name} is invalid"
                 )
             target_rel = validate_relative_path(target_value, "installed target")
-            if target_rel in expected_targets:
+            if target_rel in expected_by_feature.get(feature_name, set()):
                 continue
             source = None
             if isinstance(source_value, str) and source_value and recorded_root:
@@ -423,6 +434,7 @@ def stale_managed_links(
                     feature=feature_name,
                     source=source,
                     target=codex_home / target_rel,
+                    remove_target=target_rel not in expected_targets,
                 )
             )
 
@@ -441,13 +453,14 @@ def resolved_symlink_target(target: Path) -> Path | None:
 def reconciled_features(
     installed: dict[str, InstalledFeatureRecord], manifest: Manifest
 ) -> dict[str, InstalledFeatureRecord]:
-    expected_targets = current_manifest_targets(manifest)
+    expected_by_feature = manifest_targets_by_feature(manifest)
     reconciled: dict[str, InstalledFeatureRecord] = {}
     for feature_name, details in installed.items():
         if feature_name not in manifest["features"] or not isinstance(details, dict):
             continue
         links = details.get("links")
         if isinstance(links, list):
+            expected_targets = expected_by_feature[feature_name]
             retained_links: list[LinkRecord] = [
                 link
                 for link in links
@@ -471,6 +484,8 @@ def prune_stale_links(
     unsafe: list[str] = []
 
     for item in stale:
+        if not item.remove_target:
+            continue
         if item.source is None:
             unsafe.append(f"{item.target}: recorded source is unavailable")
         elif item.target.is_symlink():
@@ -496,7 +511,9 @@ def prune_stale_links(
         return
 
     for item in stale:
-        if item.target.is_symlink():
+        if not item.remove_target:
+            print(f"retain  {item.target}: target is claimed by the current manifest")
+        elif item.target.is_symlink():
             print(f"prune   {item.target} -> {item.source}")
         else:
             print(f"missing {item.target}")
@@ -506,7 +523,7 @@ def prune_stale_links(
         return
 
     for item in stale:
-        if item.target.is_symlink():
+        if item.remove_target and item.target.is_symlink():
             item.target.unlink()
 
     installed = state.get("features", {})

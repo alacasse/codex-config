@@ -18,7 +18,7 @@ were difficult to separate from that machinery.
 - Remove the custom planning, queue, runner, and mandatory worker/reviewer
   system from the restoration candidate.
 - Retain the generic installer, ownership inspection, independent skills,
-  focused read-only agents, rules, and opt-in notification hook.
+  focused read-only agents, and opt-in notification hook.
 - Add generic stale managed-link reporting and safe pruning to support upgrades
   from older installed manifests.
 
