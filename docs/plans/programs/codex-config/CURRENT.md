@@ -8,13 +8,11 @@
 - Current ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Selected dispatch path: `None`
 - Active Batch Runway spec path: `None`
-- Queued batch path or ID:
-  `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/runway.md`
-- Active batch execution status: `queued`; the candidate-targeted CCFG-35 plan
-  is superseded, the transition through `Open` is recorded, and the exact
-  master-only replacement now has a bounded proof-lane amendment and clean
-  exact amendment review. The previous review is historical. Implementation
-  has not started and no successor is selected.
+- Queued batch path or ID: `None`
+- Active batch execution status: `None`; CCFG-35 is resolved by accepted
+  implementation commit `995f511404d53fb6cabd5272f548e726a1ed0a91`. The stale
+  master-only package is superseded without execution, and no successor is
+  selected.
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - Run artifact location: `None`; no batch execution is active.
@@ -39,11 +37,11 @@
 - Ledger: `docs/plans/programs/codex-config/LEDGER.md`
 - Open ledger rows: CCFG-2 through CCFG-6, CCFG-9 through CCFG-11, and
   CCFG-26 through CCFG-29.
-- Pending ledger row: CCFG-35. Its candidate-targeted plan is superseded before
-  implementation. After an explicit transition through `Open`, one master-only
-  replacement dispatch and two-slice runway remain the sole queue entry. Their
-  bounded proof-lane amendment passed fresh exact review; the previous review
-  is historical. Implementation has not started and no successor is selected.
+- Closed ledger row: CCFG-35. Accepted implementation commit
+  `995f511404d53fb6cabd5272f548e726a1ed0a91` added fail-closed independent
+  planning review authorization, passed implementation and scenario review,
+  and was installed with verified provenance. Its stale queued package is
+  superseded without execution.
 - Open CCFG-26 direction: the four-slice
   `ccfg-26-work-batch-owner-transfer` package is superseded before
   implementation. Its reviewed one-batch replanning brief and review are now
@@ -57,7 +55,7 @@
   historical decomposition evidence, not an accepted successor chain.
   Execution telemetry, changed-line counts, and coordinator-compaction metrics
   remain deferred.
-- Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-34.
+- Closed ledger rows: CCFG-18 through CCFG-25 and CCFG-30 through CCFG-35.
   CCFG-21 closes all six COR-004 planning-contract acceptance keys without live
   planning migration or command integration.
   CCFG-22 closes all nine COR-005 authoring acceptance keys with candidate-only
@@ -176,21 +174,19 @@
 
 - Selected dispatch: `None`
 - Active runway: `None`
-- Queued batch:
-  `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/runway.md`
-- Active batch execution status: `queued`; the proof-lane amendment is
-  independently reviewed clean, implementation has not started, and no
+- Queued batch: `None`
+- Active batch execution status: `None`; no batch execution is active and no
   successor is selected
-- Queued master-only CCFG-35 dispatch:
+- Superseded unexecuted master-only CCFG-35 dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/dispatch.md`
 - Historical pre-amendment CCFG-35 planning review:
   `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/review.md`
-- Reviewed CCFG-35 bounded proof-lane amendment:
+- Historical reviewed CCFG-35 bounded proof-lane amendment:
   `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/amendment.md`
-- Authoritative CCFG-35 amendment review, exact SHA-256
+- Historical CCFG-35 amendment review, exact SHA-256
   `c0db626d9b412f9c9d4d02e29cc511df7dc9cb4f31d4229a9cd553a1bdb2d47b`:
   `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/amendment-review.md`
-- Queued master-only CCFG-35 runway:
+- Superseded unexecuted master-only CCFG-35 runway:
   `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/runway.md`
 - Superseded candidate-targeted CCFG-35 package:
   `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/superseded.md`
@@ -275,12 +271,9 @@
 
 ## Next Safe Action
 
-On a later explicit `work-batch`, consume only the reviewed CCFG-35 runway and
-amendment, verify the exact review hashes and master identity, and execute Slice
-1 only. After accepted Slice 1, run the two-call batched smoke, persist its cost
-receipt, obtain the separate cost-gate review, then stop and report the measured
-estimate. Slice 2 requires a later explicit user approval of that estimate. Do
-not select, prepare, implement, or close unrelated work or a successor.
+Planning State is idle after CCFG-35 administrative reconciliation. No successor
+is selected or queued. A later explicit `plan-batch` may select exactly one
+eligible ledger item; do not infer one from the superseded CCFG-35 package.
 
 ## Stop Conditions
 
