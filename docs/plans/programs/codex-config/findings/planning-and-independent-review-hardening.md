@@ -60,6 +60,43 @@ Planner self-attestation, candidate-home evidence, manifest presence alone, or
 a closeout statement without independently reconstructed path and revision
 evidence cannot satisfy this authority amendment.
 
+## Bounded Acceptance-Evaluation Authority Amendment
+
+This section is CCFG-35 coordination authority, not a reusable requirement for
+ordinary `plan-batch` use. The user's 2026-07-20 correction explicitly rejects
+the prior mandatory per-scenario live-evaluation lane and authorizes only the
+following bounded, one-time acceptance evidence:
+
+- after Slice 1, one planner invocation may process one batched smoke input and
+  one different reviewer invocation may review all smoke results;
+- after Slice 2, one planner invocation may process the ten isolated evidence
+  packets and one different reviewer invocation may review all ten results;
+- every packet keeps its own root, hashes, evidence identifiers, disposition,
+  and queue decision even though the semantic invocations are batched; and
+- the normal call budget is therefore four live semantic invocations for the
+  whole batch: two smoke calls and two final calls, excluding implementation
+  workers and implementation/test-quality reviewers.
+
+This authority does not permit one planner/reviewer pair per scenario, a
+permanent evaluation service, routine live-model evaluation in `plan-batch`, or
+silent expansion after a semantic correction. At most one transport-only retry
+per batched invocation is allowed; it must be recorded and cannot disguise a
+semantic `correct`, `revise`, or `block` result as infrastructure failure.
+
+The smoke must record wall time, retry count, input and output byte counts, and
+the model, effort, and token counts when the host exposes them. Unexposed values
+must be recorded as `unavailable`, never guessed. It must compare the batched
+shape with the rejected twenty-call per-scenario alternative and extrapolate
+the final two-call lane. Slice 2 is not authorized until a separate read-only
+cost-gate reviewer accepts that exact smoke receipt and the user explicitly
+approves the measured estimate.
+
+Green mechanical or behavioral validation receipts may be reused across later
+same-commit reviewers when the exact commit, command, input hashes, environment
+identity, result, duration, and output digest match. A material code, test,
+command, dependency, configuration, input, or environment change invalidates
+the receipt and requires rerun; reviewer preference alone does not.
+
 ## Observed Problem
 
 The reusable planning pipeline can accept a plan that is structurally valid but
@@ -69,7 +106,7 @@ which callers still reach an old owner, who owns reachable failure paths, whethe
 an intermediate state has a real consumer, or whether a decisive implementation
 primitive is feasible.
 
-The corresponding independent review can return a clean result by confirming
+The corresponding aggregate independent review can return `clean` by confirming
 planner-authored claims instead of reconstructing the decisive facts from pinned
 repository evidence. A list of semantic `pass` statements without a recorded
 evidence basis can therefore authorize queue mutation even though the review did
@@ -97,7 +134,7 @@ explicit plan-batch request
   -> Batch Runway create-spec semantic planning
   -> structural and focused validation
   -> independently delegated planning review where the workflow supplies one
-  -> queue mutation based on a clean review and valid canonical state
+  -> queue mutation based on an aggregate `clean` review and valid canonical state
 ```
 
 The relevant trust boundaries are:
@@ -112,7 +149,7 @@ The relevant trust boundaries are:
    feasibility proof, or bounded cost evidence.
 3. The current stable planning-review practice can bind a verdict to exact
    dispatch and runway drafts, but the reusable system does not require each
-   clean semantic conclusion to cite an independently reconstructed evidence
+   reviewer `approve` disposition to cite an independently reconstructed evidence
    basis.
 4. `scripts/planning_state.py` correctly validates mechanically decidable
    planning-root, pointer, path, registration, lineage, selected-state, and
@@ -184,6 +221,8 @@ The resulting system must:
 - Universal numeric file, line, slice, token, or runtime thresholds.
 - Mandatory execution telemetry.
 - Mandatory fresh coordinator processes.
+- Per-scenario live planner or reviewer invocation, or any live-model
+  evaluation beyond the bounded acceptance authority above.
 - Persisting every useful review question.
 - Turning semantic review judgments into deterministic validator claims.
 - Changing unrelated execution, finalization, reconciliation, or closeout
@@ -285,13 +324,13 @@ reviewer must record concise supporting evidence for each applicable fact:
 - the widest slice's best smaller usable alternative; and
 - significant execution and validation cost multipliers.
 
-For a clean result, each applicable semantic conclusion must state the
+For a reviewer `approve` result, each applicable semantic conclusion must state the
 reconstructed fact and cite concise evidence identifiers, paths, or pinned
 source references. Bare semantic `pass` statements must not authorize queue
 mutation.
 
 The reviewer must remain bound to the exact dispatch and runway drafts it
-approves. A changed draft invalidates the prior clean result. If the bounded
+approves. A changed draft invalidates the prior `approve` result. If the bounded
 evidence packet is insufficient, the reviewer must either perform permitted
 bounded read-only inspection at the pinned basis or return a blocker. It must
 not fill evidence gaps by repeating planner self-attestation.
@@ -309,8 +348,8 @@ Deterministic validation should enforce only mechanically decidable facts. As
 supported by the current artifact representation, appropriate checks include:
 
 - exact review binding to the dispatch and runway drafts;
-- required evidence references for a clean semantic review;
-- refusal of a clean verdict with absent or empty required evidence references;
+- required evidence references for a reviewer `approve` disposition;
+- refusal of `approve` with absent or empty required evidence references;
 - non-empty and unique caller identifiers when persisted;
 - alignment between persisted migrated callers, retained routes, and acceptance
   references;
@@ -350,7 +389,7 @@ Add behavior-level coverage for at least these cases:
 | A decisive primitive is asserted without evidence. | Require applicable production evidence or a bounded disposable proof. | Reject assertion-only feasibility. |
 | An intermediate producer state has no current consumer. | Merge, reorder, or name a real current consumer. | Reject the independent-usability claim. |
 | Two independently atomic durable writes are described as one atomic operation without ordering and recovery proof. | Require ordering, partial-state behavior, recovery owner, and fault proof. | Reject the compound atomicity claim. |
-| An independent reviewer accepts planner self-attestation without reconstructing evidence. | The plan remains unauthorized for queue mutation. | Return revise or block; an evidence-free clean result is invalid. |
+| An independent reviewer accepts planner self-attestation without reconstructing evidence. | The plan remains unauthorized for queue mutation. | Return `revise` or `block`; an evidence-free `approve` result is invalid. |
 | A valid small non-migration plan is submitted. | Plan it without migration-specific ceremony. | Approve when its ordinary scope, validation, rollback, and proportionality are supported. |
 
 Tests should assert coarse dispositions such as `plan`, `correct`, `block`,
@@ -370,7 +409,7 @@ supports that check.
 - The strengthened planner corrects or blocks each applicable bad plan for the
   intended reason.
 - The strengthened independent reviewer rejects unsupported semantic approval
-  and records an evidence-backed reconstruction for a clean result.
+  and records an evidence-backed reconstruction for an `approve` result.
 - Mechanical validation rejects missing or malformed required evidence
   references where the current artifact representation supports them.
 - Exact review binding to the approved dispatch and runway drafts is preserved.
@@ -388,6 +427,14 @@ supports that check.
 - No implementation work outside the planning and review system is introduced.
 - No new top-level schema family, persistent planning/execution state, or agent
   role is introduced.
+- The ten behavioral cases are evaluated as ten isolated packets through one
+  batched planner and one different batched reviewer, with ten independently
+  applied queue decisions.
+- Slice 2 cannot start before the two-packet Slice 1 smoke records actual cost,
+  an independent cost-gate review accepts the estimate, and the user approves
+  it.
+- Planner, reviewer, and queue vocabularies have one explicit fail-closed
+  mapping; no synonymous positive term may authorize queue mutation.
 
 ## Expected Changed Surfaces
 
@@ -435,6 +482,12 @@ must not introduce universal hard limits for files, lines, slices, tokens, or
 runtime. Missing telemetry does not itself block planning when bounded existing
 evidence or explicit unknowns are sufficient.
 
+CCFG-35 must also apply the repository's CCFG-23 execution-retrospective
+evidence: the prior 123-test scenario suite took 814.32 seconds and implied
+about 41,125 subprocess executions, while unchanged reruns multiplied that cost
+directly. Its exact-commit receipt-reuse recommendation is therefore a required
+batch-local constraint for CCFG-35 rather than optional background reading.
+
 Implementation and test design should remain focused. Prefer small pinned
 evidence packets and coarse outcomes over broad generated-prose snapshots or a
 new permanent evaluation infrastructure.
@@ -466,7 +519,7 @@ Stop planning or implementation if:
   exploration product;
 - the actual independent planning-review handoff and result boundary cannot be
   identified from current code and instructions;
-- a clean review can still be represented by unsupported semantic `pass`
+- an aggregate `clean` review can still be represented by unsupported semantic `pass`
   statements;
 - an ownership-transfer plan can still omit callers, retained-route terminal
   conditions, forbidden fallbacks, reachable failure owners, or a behavioral
@@ -532,7 +585,7 @@ Current reusable surfaces inspected at intake revision
 - `tests/test_ccfg_26_development_boundary.py`
 
 Historical planning-review artifacts were inspected only to establish the
-generic failure pattern: exact draft binding and clean review can coexist with
+generic failure pattern: exact draft binding and aggregate `clean` review can coexist with
 unsupported semantic conclusions. Their ledger identities, project topology,
 batch decomposition, and sequencing are not requirements for this task.
 

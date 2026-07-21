@@ -19,6 +19,10 @@ in its dispatch. Implementation has not started.
   `docs/plans/programs/codex-config/findings/planning-and-independent-review-hardening.md`.
 - Dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/dispatch.md`.
+- Bounded proof-lane amendment:
+  `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/amendment.md`.
+- Authoritative amendment review:
+  `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/amendment-review.md`.
 - Superseded predecessor:
   `docs/plans/programs/codex-config/batches/ccfg-35-planning-independent-review-hardening/superseded.md`.
 - Concrete status at queue time: `queued`; all execution rows remain `Pending`.
@@ -96,7 +100,7 @@ public plan-batch request
   -> a separate read-only planning reviewer independently reconstructs facts
   -> exact dispatch/runway hashes and evidence references bind the result
   -> correction or blocker returns to plan-batch without queue mutation
-  -> only an exact evidence-backed clean result permits queue mutation
+  -> only planner=plan + reviewer=approve + binding=valid permits queue mutation
   -> plan-batch stops before implementation
 ```
 
@@ -143,9 +147,12 @@ or fixture-authored conclusions cannot authorize queue mutation.
 - Batch kind: `mixed-risk`.
 - Slice 1: `contract-narrowing`.
 - Slice 2: `contract-narrowing`.
-- Approval gate: a later explicit user `work-batch` while this exact runway is
-  the sole queue entry, master identity is unchanged except for accepted batch
-  commits, the previous slice is accepted, and no stop condition is active.
+- Approval gate: a later explicit user `work-batch` while this exact runway and
+  its reviewed amendment are the sole queue entry, master identity is unchanged
+  except for accepted batch commits, the previous slice is accepted, and no
+  stop condition is active. That authorization releases Slice 1 only. Slice 2
+  requires a later explicit user approval of the measured smoke estimate under
+  `Slice 1 Cost Gate`.
 
 ## Batch Non-Goals
 
@@ -158,10 +165,10 @@ or fixture-authored conclusions cannot authorize queue mutation.
   command, or compatibility wrapper.
 - No deterministic semantic completeness, usefulness, feasibility, shape, or
   cost authority.
-- No universal thresholds, mandatory telemetry, routine live-model evaluation
-  in ordinary `plan-batch`, or permanent scenario service. This batch's bounded
-  disposable final acceptance lane is explicitly required and is not reusable
-  runtime infrastructure.
+- No universal thresholds, mandatory product telemetry, routine live-model
+  evaluation in ordinary `plan-batch`, permanent scenario service, or one live
+  planner/reviewer pair per scenario. The only live semantic evaluation
+  authority is the four-call batch-local budget below.
 - No project-specific identities, paths, branches, policies, or Graphify
   dependencies inside reusable workflow contracts.
 - No execution, finalization, reconciliation, or unrelated finding changes.
@@ -201,6 +208,10 @@ installer-visible content.
 ### Current Required-Green Baseline
 
 - `required-green`: `python -m pytest -p no:cacheprovider -q tests/test_skill_routing_rule_ownership.py tests/test_batch_runway_create_spec_contract.py tests/test_semantic_slice_shape_contract.py`
+- Measured on 2026-07-20 at master commit
+  `e31256758f3d7b1d01309332c2e23e24e7dd7392`: 28 passed in 0.07 seconds of
+  pytest time; `/usr/bin/time` recorded 0.29 seconds wall, 0.25 seconds user,
+  0.04 seconds system, and 38,368 KiB maximum RSS.
 - `required-green`: `git diff --check`.
 - `required-green`: owner/link/content commands recorded in `Current Master
   Baseline` currently pass.
@@ -217,6 +228,10 @@ tests/test_codex_features_manifest.py::CodexFeaturesManifestTests::test_executab
 tests/test_codex_features_manifest.py::CodexFeaturesManifestTests::test_plan_batch_command_owner_runtime_boundaries_are_explicit
 ```
 
+Measured together on 2026-07-20 at the same commit: two expected failures in
+0.04 seconds of pytest time; `/usr/bin/time` recorded 0.23 seconds wall, 0.20
+seconds user, 0.02 seconds system, and 41,824 KiB maximum RSS.
+
 ### Known-Red And Diagnostic Baseline
 
 - `known-red-baseline`:
@@ -231,52 +246,176 @@ tests/test_codex_features_manifest.py::CodexFeaturesManifestTests::test_plan_bat
   feature-state version lag. It becomes a CCFG-35 gate only for feature versions
   directly changed by the batch.
 
-## Disposable Actual-Master Behavioral Proof Lane
+### Historical Cost Warning
 
-Final acceptance requires bounded live planner and reviewer invocations because
-master's semantic planner is instruction-driven Markdown and no executable
-semantic planner exists. Static wording tests, candidate adapters, deterministic
-semantic classifiers, and fixtures that state their own conclusions cannot
-substitute for this lane. If the required fresh invocations are unavailable,
-stop before final acceptance and closeout.
+`../ccfg-23-behavioral-scenario-harness/execution-retrospective.md` records a
+123-test acceptance suite at 814.32 seconds, 35 whole-catalog evaluations, and
+an estimated 41,125 subprocess executions. It also records that two unchanged
+reruns would cost 27:08 and recommends combined execution plus reusable
+exact-commit receipts. CCFG-35 must treat that evidence as a constraint: batch
+semantic evaluations, do not repeat unchanged gates by reviewer role, and
+measure before expanding beyond Slice 1.
 
-For each of the ten scenarios:
+## Live Evaluation Authority And Call Budget
 
-1. Create one fresh temporary directory with `mktemp -d`. Under it, create a
-   minimal isolated Planning Artifact Layout v1 root containing only the
+Master's semantic planner is instruction-driven Markdown, so final behavioral
+acceptance may use live semantic evaluation. The user's 2026-07-20 correction
+authorizes it only as a bounded batch-local closeout technique. It does not
+authorize routine `plan-batch` evaluation infrastructure or one invocation per
+scenario.
+
+The normal execution budget is:
+
+| Phase | Agent purpose | Normal invocations | Retry rule |
+|---|---|---:|---|
+| Slice 1 implementation | `runway_worker` | 1 | semantic correction returns to the same slice; record every repeat |
+| Slice 1 implementation review | `runway_reviewer` | 1 | repeat only after a material correction |
+| Slice 1 batched smoke | planner plus different planning reviewer | 2 | at most one transport-only retry per invocation |
+| Slice 1 cost-gate review | separate read-only reviewer | 1 | no silent retry after `revise` or `block` |
+| Slice 2 implementation | `runway_worker` | 1 | semantic correction returns to the same slice; record every repeat |
+| Slice 2 implementation review | `runway_reviewer` | 1 | repeat only after a material correction |
+| Final ten-packet lane | planner plus different planning reviewer | 2 | at most one transport-only retry per invocation |
+| Changed-test quality review | `test-quality-review` | 1 | repeat only after a material test correction |
+| Final exact-range review | separate independent reviewer | 1 | repeat only after a material correction |
+
+The base orchestration shape is therefore eleven agent invocations, of which
+exactly four are live planner/planning-reviewer semantic evaluations. The
+rejected design used twenty final semantic calls plus two smoke calls before
+the worker and review calls. A semantic `correct`, `revise`, or `block` result
+is not a transport failure and must never be retried merely to obtain a more
+favorable answer. Any transport retry records its reason, duration, and partial
+usage separately.
+
+Model and effort must be held constant between the two smoke invocations and
+their corresponding final invocations when the orchestration surface supports
+selection. The receipt records the actual model and effort when exposed and
+`unavailable` otherwise; it must not infer or invent them. No token budget was
+specified for this batch. Token counts are recorded when exposed, and
+`unavailable` otherwise.
+
+## Slice 1 Cost Gate
+
+After Slice 1 implementation and implementation review, but before Slice 2:
+
+1. Create two isolated packets: one valid ordinary-small-plan control and one
+   negative exact-review packet with an evidence-free or draft-mismatched
+   approval that must not authorize queue mutation.
+2. Send both packets together to one planner invocation. Send both pinned
+   inputs and both planner results together to one different read-only planning
+   reviewer invocation. Apply and verify the two queue decisions separately.
+3. Persist `smoke-cost-receipt.md` with exact accepted Slice 1 commit, source and
+   packet hashes, invocation start/end timestamps and wall seconds, retry count
+   and reason, serialized input/output bytes, output digest, queue outcomes,
+   and model, effort, input/output/total tokens when exposed. Use `unavailable`
+   for host-hidden fields.
+4. Record the rejected alternative as twenty final semantic calls versus two
+   final batched calls. Extrapolate the ten-packet lane from actual final packet
+   byte counts when available; before the packets exist, use the conservative
+   formula `smoke wall seconds * max(1, projected final input bytes / smoke
+   input bytes)` for each role. Record assumptions and a range rather than
+   presenting the estimate as a measured final duration.
+5. Delegate a separate read-only cost-gate review bound to the exact smoke
+   receipt and accepted Slice 1 commit. It must compare the per-scenario and
+   batched shapes, assess the historical CCFG-23 multiplier evidence, verify
+   the retry and receipt-reuse rules, and return `clean`,
+   `correction_required`, or `blocked`.
+6. Stop and report the measured receipt, estimate, and cost-gate verdict. Slice
+   2 remains unauthorized until the verdict is `clean` and the user explicitly
+   approves that measured estimate. A `work-batch` request made before the
+   receipt exists does not pre-approve an unknown estimate.
+
+The cost gate is a progression boundary, not a new implementation slice. A
+correction to measurement or evidence does not authorize production changes
+beyond Slice 1.
+
+## Canonical Verdict And Queue Mapping
+
+These are the only accepted values:
+
+| Boundary | Values | Queue meaning |
+|---|---|---|
+| Planner disposition | `plan`, `correct`, `block` | only `plan` can continue to review |
+| Planning-reviewer disposition | `approve`, `revise`, `block` | only `approve` can continue to mechanical authorization |
+| Mechanical review binding | `valid`, `invalid` | only `valid` can continue |
+| Queue decision | `authorized`, `not_authorized` | the only queue-facing result |
+| Aggregate acceptance review | `clean`, `correction_required`, `blocked` | describes the complete expected scenario set; it never substitutes for a per-packet queue decision |
+
+`queue_decision: authorized` is legal if and only if planner=`plan`,
+reviewer=`approve`, binding=`valid`, all required evidence references are
+present, and the draft/input hashes match. Every other combination, missing
+value, unknown synonym, changed draft, stale evidence reference, or absent
+review maps to `not_authorized`.
+
+For the aggregate lane, `blocked` takes precedence when an invocation or
+required fact is unavailable or contradictory. Otherwise any unexpected but
+correctable disposition, binding, or queue result yields
+`correction_required`. `clean` requires all nine negative packets to be
+`not_authorized` for their intended reason and the positive control alone to be
+`authorized`. Thus a negative packet's expected `correct`, `revise`, or `block`
+does not make the aggregate review non-clean.
+
+The aliases `clean`, `approve`, and `plan` are not interchangeable. Only the
+full conjunction above authorizes one packet's queue mutation.
+
+## Batched Actual-Master Behavioral Proof Lane
+
+Final acceptance uses one batched planner invocation and one different batched
+planning-reviewer invocation for all ten scenarios. If either invocation is
+unavailable after its single allowed transport retry, stop before final
+acceptance and closeout.
+
+1. Create ten fresh temporary directories with `mktemp -d`. In each, create a
+   minimal isolated Planning Artifact Layout v1 root containing only that
    scenario's `CURRENT.md`, program `CURRENT.md`, `LEDGER.md`, source finding,
-   pinned repository-evidence packet, and empty batch target. Do not point any
+   pinned repository-evidence packet, and empty batch target. Never point a
    fixture at canonical planning state.
-2. Record SHA-256 values for every scenario input and the exact accepted master
-   planner/support files used by the invocation.
-3. Launch one fresh bounded planner subagent with the installed
-   `/home/alacasse/.codex/skills/plan-batch/SKILL.md`, its accepted master
-   support references, the isolated planning root, and permission to write only
-   inside that scenario root. Require the coarse disposition `plan`, `correct`,
-   or `block`, exact draft hashes when produced, and cited evidence identifiers.
-4. Launch a different fresh read-only reviewer subagent with the accepted
-   plan-batch planning-review handoff/result reference produced by Slice 1, the
-   pinned inputs, and any exact draft. Require `approve`, `revise`, or `block`,
-   independently reconstructed facts/evidence, and exact draft hashes. It must
-   not reuse planner prose as evidence.
-5. Apply the accepted master Architecture Program Runway queue decision only to
-   that isolated root. A negative scenario must record correct/block or
-   revise/block and `queue_outcome: not_queued`. The positive control must
-   record a compact plan, evidence-backed approval, and exactly one isolated
-   queued runway.
-6. For the review-gate counterfactual, present an evidence-free clean result,
-   a changed draft after review, and a missing review result to the accepted
-   queue boundary. Each must record `queue_outcome: not_queued` without editing
-   the installed source.
-7. Record a compact durable table in this batch's closeout with scenario ID,
-   input hash, planner disposition, reviewer disposition, dispatch/runway
-   hashes, evidence identifiers, queue outcome, and temporary root deletion
-   result. Do not copy transcripts or generated prose into planning state.
+2. Build a ten-entry manifest with unique scenario ID, root, expected result,
+   SHA-256 for every input, and hashes of the exact accepted master
+   planner/support files. Hash the serialized manifest and ordered packet
+   bundle.
+3. Launch one bounded planner subagent with the installed
+   `/home/alacasse/.codex/skills/plan-batch/SKILL.md`, accepted master support
+   references, and all ten isolated packets. Permit writes only inside the ten
+   listed roots. Require ten separately indexed `plan`, `correct`, or `block`
+   results, exact draft hashes when produced, and evidence identifiers. One
+   packet's prose or evidence must not be cited for another packet.
+4. Launch one different read-only reviewer subagent once, with the accepted
+   Slice 1 planning-review contract, ten pinned inputs, the exact ordered
+   planner output, and every produced draft. Require ten separately indexed
+   `approve`, `revise`, or `block` results with independently reconstructed
+   evidence and exact draft hashes. The reviewer must detect missing, duplicate,
+   reordered, or cross-contaminated packet results and fail closed.
+5. Apply the accepted master Architecture Program Runway decision separately
+   to each root using the canonical mapping above. The nine negative packets
+   must be `not_authorized`; the positive control must create exactly one
+   queued runway in its own root. No batch-level approval may queue all roots.
+6. Present an evidence-free approval, a changed draft after review, and a
+   missing review result to the accepted queue boundary. Each must remain
+   `not_authorized` without editing installed source.
+7. Persist one final-lane receipt with source/packet/bundle/output hashes,
+   per-invocation cost fields from the smoke schema, ten per-packet
+   dispositions and queue outcomes, and temporary-root deletion results. Keep
+   transcripts and generated prose out of canonical planning state.
 
-The coordinator owns fixture construction, isolation, hash capture, queue-
-outcome verification, and summary acceptance. The planner and reviewer remain
-separate. Temporary scenario roots are proof environments, never canonical
-state, reusable caches, or candidate-home inputs.
+The coordinator owns fixture construction, isolation, hashes, separate queue
+application, telemetry capture, and summary acceptance. Batching shares calls,
+not evidence or queue authority.
+
+## Exact-Commit Validation Receipt Reuse
+
+Every reusable validation receipt must include command, exact accepted commit,
+changed-source hashes, input-manifest hash where applicable, relevant
+dependency/configuration and environment identity, exit/result, wall duration,
+and output digest. Later workers, implementation reviewers, test-quality
+reviewers, and the final reviewer consume the receipt instead of rerunning the
+same green gate against the same immutable inputs.
+
+Rerun only when the commit, relevant source/test blob, command/selector,
+dependency lock or installed feature version, configuration, environment,
+scenario input, or expected behavior materially changes, or when the receipt
+is missing or malformed. Record the invalidating fact. A fresh reviewer still
+reconstructs semantic conclusions; receipt reuse avoids duplicate mechanical
+execution and does not permit planner self-attestation.
 
 ## Slice Shape Rationale
 
@@ -285,8 +424,8 @@ state, reusable caches, or candidate-home inputs.
   semantic evidence that gate consumes and adds broader falsification and
   installed-master closeout proof. This is a valid producer/consumer boundary;
   either commit can be reviewed and rolled back independently.
-- Slice 1 is useful without Slice 2 because evidence-free clean review can no
-  longer queue any plan.
+- Slice 1 is useful without Slice 2 because evidence-free reviewer `approve`
+  can no longer queue any plan.
 - Slice 2 is separately useful because substitutive and high-assumption plans
   can no longer omit the source finding's decisive facts while ordinary plans
   stay compact.
@@ -344,25 +483,31 @@ State as structural owner.
 - The review handoff gives a separate read-only reviewer pinned repository
   evidence, exact draft identities, applicability questions, and permission for
   bounded read-only reconstruction.
-- A clean result records reconstructed facts plus non-empty evidence references;
-  bare semantic passes or copied planner claims are invalid.
-- Changed drafts invalidate the result; correction/blocked outcomes leave
+- A reviewer `approve` result records reconstructed facts plus non-empty
+  evidence references; bare semantic passes or copied planner claims are
+  invalid.
+- Changed drafts invalidate the result; `revise`/`block` outcomes leave
   CCFG-35 unqueued and return control to the public planner.
-- Architecture Program Runway queues only after consuming the exact accepted
-  clean result; it does not absorb semantic review ownership.
+- Architecture Program Runway queues only after consuming planner=`plan`,
+  reviewer=`approve`, and binding=`valid`; it does not absorb semantic review
+  ownership.
 - Planning State remains structural and create-spec remains semantic draft
   owner.
 - A behavioral queue-gate counterfactual proves removing/bypassing the review
   result prevents authorization; string/manifest presence alone is not enough.
 - The two slice-owned baseline failures become green without weakening their
   command-owner assertions.
+- Planner, reviewer, binding, aggregate-review, and queue vocabularies implement
+  the exact fail-closed mapping above; no alias authorizes queue mutation.
+- Same-commit validation produces reusable receipts with explicit invalidation
+  conditions rather than forcing every later reviewer to rerun the gate.
 
 ### Focused Validation
 
 - `required-green after slice-owned remediation`: the two exact plan-batch
   manifest contract tests listed above.
 - `required-green`: focused new/updated tests covering exact draft binding,
-  evidence-free clean rejection, correction/blocked no-queue behavior, and the
+  evidence-free `approve` rejection, `revise`/`block` no-queue behavior, and the
   queue-gate bypass counterfactual.
 - `required-green`: `python -m pytest -p no:cacheprovider -q tests/test_skill_routing_rule_ownership.py tests/test_batch_runway_create_spec_contract.py`.
 - `conditional`: `python -m pytest -p no:cacheprovider -q tests/test_codex_features_manifest.py`
@@ -372,9 +517,12 @@ State as structural owner.
 - `required-green`: Ruff on touched Python and `git diff --check`.
 - `conditional`: `./install.sh --feature plan-batch --dry-run` when the manifest
   version changes; do not install during worker execution.
-- `implementation-created`: one isolated positive smoke scenario using the
-  disposable proof lane after Slice 1 creates the review handoff; this becomes
-  required-green before Slice 2 and must show exactly one isolated queue entry.
+- `implementation-created`: the two-packet batched smoke under `Slice 1 Cost
+  Gate`, using one planner and one different reviewer invocation. It must leave
+  the negative packet unauthorized and the positive packet alone queued.
+- `progression-gate`: record `smoke-cost-receipt.md`, obtain a clean separate
+  cost-gate review, report the measured/extrapolated cost to the user, and stop.
+  Slice 2 remains unauthorized until explicit user approval.
 
 ### Worker Brief
 
@@ -390,18 +538,24 @@ review, commits, ledger, and installation.
 
 Review the exact Slice 1 commit/diff and independently trace the public master
 route from `skills/plan-batch` through create-spec, review, and Architecture
-Program Runway queue mutation. Attempt evidence-free clean approval, changed-
+Program Runway queue mutation. Attempt evidence-free `approve`, changed-
 draft reuse, and review-gate bypass. Verify no candidate machinery, new agent
-role, or deterministic semantic authority appeared. Echo the exact diff basis
-and keep cross-checkout fields null.
+role, or deterministic semantic authority appeared. Verify the canonical
+verdict mapping and exact-commit receipt schema. Echo the exact diff basis and
+keep cross-checkout fields null. This implementation review is not the later
+cost-gate reviewer.
 
 ### Slice Stop Conditions
 
 Stop if the actual master planner route remains unchanged; if a disconnected
 reference/test is the only change; if the queue owner can proceed without the
-exact clean review; if the reviewer can self-author evidence; if Planning State
-gains semantic authority; or if a new agent role/script/schema/state family is
-required.
+exact planner=`plan` + reviewer=`approve` + binding=`valid` conjunction; if the
+reviewer can self-author evidence; if Planning State gains semantic authority;
+if the two-packet smoke exceeds one planner and one
+reviewer invocation except a recorded transport retry; if its metrics or
+independent cost-gate review are missing; if Slice 2 would proceed without the
+user's measured-cost approval; or if a new agent role/script/schema/state
+family is required.
 
 ## Slice 2: Applicable Semantic Assurance And Master Closeout Provenance
 
@@ -436,6 +590,8 @@ produce final master-install and accepted-closeout proof.
 - No mandatory migration ceremony for ordinary plans.
 - No universal numeric thresholds, mandatory telemetry, or permanent live-
   model evaluation infrastructure.
+- No per-scenario semantic invocation or expansion beyond the reviewed
+  four-call batch-local semantic budget.
 - No CCFG-26/test cleanup, work-batch wording repair, or candidate changes.
 
 ### Scenario Acceptance Matrix
@@ -469,6 +625,9 @@ produce final master-install and accepted-closeout proof.
   alone is insufficient.
 - Cost multipliers use available evidence or explicit unknowns without hard
   thresholds.
+- The exact Slice 1 smoke receipt, clean cost-gate review, and explicit user
+  approval authorize this slice; their model/effort availability, retries,
+  bytes, duration, tokens when exposed, and final estimate remain traceable.
 - All nine negative scenarios reach the intended correct/block/revise outcome,
   and the positive plan remains compact and queueable.
 - Scenario evidence exercises the actual installed master planning/review route
@@ -482,7 +641,8 @@ produce final master-install and accepted-closeout proof.
 
 ### Focused Validation
 
-- `required-green`: all Slice 1 gates.
+- `required-green`: all Slice 1 gates, the exact smoke cost receipt, clean
+  cost-gate review, and recorded explicit user approval of the estimate.
 - `required-green`: focused master-route scenario tests/evidence for the ten-row
   matrix and the review-gate bypass counterfactual.
 - `required-green`: `python -m pytest -p no:cacheprovider -q tests/test_semantic_slice_shape_contract.py tests/test_batch_runway_create_spec_contract.py tests/test_skill_routing_rule_ownership.py`.
@@ -493,9 +653,10 @@ produce final master-install and accepted-closeout proof.
   exact unrelated known red and run all CCFG-35-relevant cases.
 - `required-green`: `./install.sh --feature plan-batch --dry-run` after manifest
   changes and before coordinator installation.
-- `required-green`: all ten bounded live scenarios through `Disposable Actual-
-  Master Behavioral Proof Lane`; unavailable planner/reviewer invocation is a
-  stop, not a skipped or xfailed gate.
+- `required-green`: all ten isolated packets through `Batched Actual-Master
+  Behavioral Proof Lane` using one planner and one different reviewer
+  invocation, followed by ten separate queue decisions. Unavailable invocation
+  after one transport retry is a stop, not a skipped or xfailed gate.
 
 ### Worker Brief
 
@@ -511,55 +672,71 @@ owns final installation, independent review, commits, and closeout.
 Review the exact Slice 2 commit/diff. Independently reconstruct the ten scenario
 facts and attempt to falsify each expected disposition, including removal or
 bypass of the new gate. Verify ordinary small work stays compact, deterministic
-checks do not claim semantic truth, and every changed surface participates in
-the actual master route. Echo the exact diff basis and keep cross-checkout
-fields null.
+checks do not claim semantic truth, the final lane is two batched calls rather
+than twenty calls, exact-commit receipts are reused unless invalidated, and
+every changed surface participates in the actual master route. Echo the exact
+diff basis and keep cross-checkout fields null.
 
 ### Slice Stop Conditions
 
 Stop if scenario results are manufactured by fixtures; if a string/schema test
 is the only behavior proof; if applicability becomes universal; if the review
 cannot falsify planner self-attestation; if the widest-slice alternative is
-omitted; or if master provenance is deferred to candidate-home evidence.
+omitted; if the final lane exceeds one planner and one reviewer call except a
+recorded transport retry; if a same-commit gate is rerun without recorded
+invalidation; or if master provenance is deferred to candidate-home evidence.
 
 ## Final Validation
 
 After both accepted slice commits, from the canonical master checkout:
 
-1. Re-run every required-green focused command from both slices.
-2. Run all CCFG-35-relevant cases in `tests/test_codex_features_manifest.py` and
-   preserve the exact unrelated `work-batch` known red if still present.
-3. Run broader affected planning-skill tests when practical; any new or CCFG-35-
-   related failure blocks acceptance.
-4. Run Ruff on all touched Python and `git diff --check`.
-5. Run `./install.sh --feature plan-batch --dry-run` and inspect dependency-
+1. Inventory every focused validation receipt from both slices. Reuse a green
+   receipt when its exact commit and all receipt-key inputs still match. Rerun
+   only missing, malformed, or explicitly invalidated gates, and record the
+   invalidating fact.
+2. Ensure the reusable receipt set covers all CCFG-35-relevant cases in
+   `tests/test_codex_features_manifest.py`, preserving the exact unrelated
+   `work-batch` known red if still present.
+3. Run broader affected planning-skill tests only when their receipt is absent
+   or a material affected input changed; any new CCFG-35-related failure blocks
+   acceptance.
+4. Run or reuse exact-commit receipts for Ruff on touched Python and `git diff
+   --check`.
+5. Execute the final ten-packet lane with one planner and one different reviewer
+   invocation, then apply ten separate queue decisions. Persist its actual cost
+   fields and compare them with the Slice 1 estimate; unexplained material
+   divergence requires correction or block, not extra semantic reruns.
+6. Run `./install.sh --feature plan-batch --dry-run` and inspect dependency-
    expanded actions before any stable-home write.
-6. With coordinator authority, install the changed `plan-batch` feature into
+7. With coordinator authority, install the changed `plan-batch` feature into
    `/home/alacasse/.codex` when needed to reconcile a changed manifest version;
    do not install any candidate-home feature.
-7. Enumerate every changed installed-route file in the accepted master range,
+8. Enumerate every changed installed-route file in the accepted master range,
    including public `plan-batch`, Architecture Program Runway, Batch Runway
    create-spec, and any new plan-batch reference. For each owning installed
    feature, run `python scripts/codex_owner.py` and `readlink -f`. Hash the
    installed file and the exact accepted commit blob from `git show
    <accepted-commit>:<repo-path>` and require equality. Worktree-only `cmp` or
    hash equality is insufficient.
-8. Run `./install.sh --status` plus the relevant feature dry-runs; reconcile
+9. Run `./install.sh --status` plus the relevant feature dry-runs; reconcile
    directly changed manifest versions and distinguish unrelated pre-existing
    version lag.
-9. Verify `git branch --show-current` is `master`; record the exact accepted
+10. Verify `git branch --show-current` is `master`; record the exact accepted
    commits and prove every changed planner/review surface is present in the
    accepted master commit range. Reject uncommitted-only content as proof.
-10. Verify the candidate checkout and candidate Codex home received no CCFG-35
+11. Verify the candidate checkout and candidate Codex home received no CCFG-35
    writes or installs.
-11. Run `test-quality-review` on changed behavior tests.
-12. Delegate one final independent exact-range review with the required proof
+12. Run `test-quality-review` on changed behavior tests, consuming valid
+    same-commit test receipts instead of rerunning unchanged gates.
+13. Delegate one final independent exact-range review with the required proof
     below. Do not accept a generic clean diff verdict that omits installed-master
-    provenance.
+    provenance, the measured batched-lane comparison, or receipt-reuse audit.
 
 ## Required Accepted-Closeout Proof
 
-The final independent reviewer and closeout must record, from fresh evidence:
+The final independent reviewer and closeout must reconstruct the semantic and
+provenance conclusions independently, using fresh reads plus reusable
+exact-commit validation receipts where their keys remain valid:
 
 - exact accepted master commit range and `master` branch identity;
 - exact public route: installed `plan-batch` -> repo public owner -> Planning
@@ -567,8 +744,16 @@ The final independent reviewer and closeout must record, from fresh evidence:
   create-spec -> independent planning review -> queue decision;
 - which accepted changes alter that route and why disconnected test/docs-only
   changes are insufficient;
-- ten-row behavioral results, evidence references, and bypass/removal
-  counterfactual;
+- ten-row behavioral results from one planner batch and one independent
+  reviewer batch, ten separately applied queue decisions, evidence references,
+  canonical verdict mappings, and bypass/removal counterfactual;
+- exact smoke and final semantic-call counts, wall durations, retries,
+  input/output bytes, output digests, model/effort/token availability, projected
+  versus actual cost, the clean cost-gate review, and the explicit user approval
+  that released Slice 2;
+- the validation receipt inventory, every reuse, every invalidation and rerun,
+  and proof that no unchanged expensive gate was repeated merely because a new
+  reviewer consumed it;
 - per-file accepted-commit blob hashes plus installed-content hashes, exact
   `codex_owner.py`, `readlink -f`, installer dry-run/status, and manifest-version
   facts for every changed installed route feature; mutable worktree comparison
@@ -585,9 +770,14 @@ or an unbound clean verdict is a blocker.
 
 - The actual installed master planner route changed and is proven by exact
   source, commit, owner, link, content, and behavioral evidence.
-- Evidence-free clean planning review cannot authorize queue mutation.
+- Evidence-free reviewer=`approve` cannot authorize queue mutation.
 - Applicable semantic omissions correct or block for the intended reason.
 - The valid ordinary small-plan control remains compact and queueable.
+- The final ten-packet lane used exactly one planner and one different reviewer
+  invocation in the normal path, with ten isolated queue results and measured
+  cost reconciled against the accepted Slice 1 estimate.
+- Every queue result follows the canonical fail-closed verdict mapping.
+- Exact-commit receipts were reused until a recorded material invalidation.
 - Exact draft binding and Planning State structural authority remain intact.
 - No new agent role, top-level schema/state family, queue owner, candidate port,
   deterministic semantic authority, or project-specific reusable rule exists.
@@ -599,14 +789,18 @@ or an unbound clean verdict is a blocker.
 
 Stop if master identity or installed-link ownership is missing or ambiguous; if
 candidate-only paths enter implementation; if any handoff uses strict cross-
-checkout context; if a clean review can remain evidence-free; if changed drafts
-reuse an old verdict; if queue mutation can bypass the independent review; if
+checkout context; if reviewer=`approve` can remain evidence-free; if changed
+drafts reuse an old verdict; if queue mutation can bypass the independent review; if
 scenario evidence is only wording/schema/fixture self-attestation; if semantic
 judgment moves into Planning State or a deterministic helper; if a new role,
 schema/state family, queue owner, compatibility wrapper, universal threshold,
-mandatory telemetry, or permanent live-model service is required; if reusable
-rules gain project-specific facts or Graphify authority; if unrelated known-red
-tests are silently repaired; or if any other finding is selected or changed.
+mandatory product telemetry, per-scenario live lane, or permanent live-model
+service is required; if the four-call semantic budget is exceeded except a
+recorded transport retry; if Slice 2 lacks measured-cost approval; if verdict
+mapping is ambiguous; if unchanged validation is rerun without invalidation;
+if reusable rules gain project-specific facts or Graphify authority; if
+unrelated known-red tests are silently repaired; or if any other finding is
+selected or changed.
 
 ## Closeout Boundary
 

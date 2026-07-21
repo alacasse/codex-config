@@ -12,8 +12,9 @@
   `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/runway.md`
 - Active batch execution status: `queued`; the candidate-targeted CCFG-35 plan
   is superseded, the transition through `Open` is recorded, and the exact
-  master-only replacement is independently reviewed clean. Implementation has
-  not started and no successor is selected.
+  master-only replacement now has a bounded proof-lane amendment and clean
+  exact amendment review. The previous review is historical. Implementation
+  has not started and no successor is selected.
 - Latest closeout path:
   `docs/plans/programs/codex-config/batches/ccfg-26-slice-shape-policy-correction/closeout.md`
 - Run artifact location: `None`; no batch execution is active.
@@ -40,9 +41,9 @@
   CCFG-26 through CCFG-29.
 - Pending ledger row: CCFG-35. Its candidate-targeted plan is superseded before
   implementation. After an explicit transition through `Open`, one master-only
-  replacement dispatch and two-slice runway passed fresh exact-draft review and
-  are now the sole queue entry. Implementation has not started and no successor
-  is selected.
+  replacement dispatch and two-slice runway remain the sole queue entry. Their
+  bounded proof-lane amendment passed fresh exact review; the previous review
+  is historical. Implementation has not started and no successor is selected.
 - Open CCFG-26 direction: the four-slice
   `ccfg-26-work-batch-owner-transfer` package is superseded before
   implementation. Its reviewed one-batch replanning brief and review are now
@@ -177,12 +178,18 @@
 - Active runway: `None`
 - Queued batch:
   `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/runway.md`
-- Active batch execution status: `queued`; replacement planning review is
-  clean, implementation has not started, and no successor is selected
+- Active batch execution status: `queued`; the proof-lane amendment is
+  independently reviewed clean, implementation has not started, and no
+  successor is selected
 - Queued master-only CCFG-35 dispatch:
   `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/dispatch.md`
-- Clean master-only CCFG-35 planning review:
+- Historical pre-amendment CCFG-35 planning review:
   `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/review.md`
+- Reviewed CCFG-35 bounded proof-lane amendment:
+  `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/amendment.md`
+- Authoritative CCFG-35 amendment review, exact SHA-256
+  `c0db626d9b412f9c9d4d02e29cc511df7dc9cb4f31d4229a9cd553a1bdb2d47b`:
+  `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/amendment-review.md`
 - Queued master-only CCFG-35 runway:
   `docs/plans/programs/codex-config/batches/ccfg-35-master-planner-review-hardening/runway.md`
 - Superseded candidate-targeted CCFG-35 package:
@@ -268,15 +275,12 @@
 
 ## Next Safe Action
 
-On a later explicit `work-batch`, consume only
-`batches/ccfg-35-master-planner-review-hardening/runway.md`. Re-read live
-Planning State, require `master` as the sole implementation branch/root, verify
-the installed stable `plan-batch` is owned by and resolves to this master
-repository, then execute only the next incomplete CCFG-35 slice under its
-contract-narrowing approval gate. Use ordinary single-root handoffs; do not use
-candidate or strict cross-checkout execution. Do not select, dispatch, queue,
-prepare, implement, or close CCFG-26 or any other unrelated work, and do not
-select a successor.
+On a later explicit `work-batch`, consume only the reviewed CCFG-35 runway and
+amendment, verify the exact review hashes and master identity, and execute Slice
+1 only. After accepted Slice 1, run the two-call batched smoke, persist its cost
+receipt, obtain the separate cost-gate review, then stop and report the measured
+estimate. Slice 2 requires a later explicit user approval of that estimate. Do
+not select, prepare, implement, or close unrelated work or a successor.
 
 ## Stop Conditions
 
