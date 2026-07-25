@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-25 - Codex commit attribution
+
+### Problem
+
+Codex-assisted commits were not consistently attributed across repositories.
+
+### Decision
+
+Require commits to include the standard Codex co-author trailer exactly once
+when Codex materially contributes, and publish global instructions version
+2.0.1.
+
+### Expected effect
+
+Future Codex-assisted commits use consistent GitHub-compatible attribution
+without marking human-only commits.
+
 ## 2026-07-21 - Native-first restoration candidate
 
 ### Problem

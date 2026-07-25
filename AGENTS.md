@@ -11,6 +11,11 @@ acceptance criteria, and links to detailed repository documents. Do not paste
 large designs, schemas, logs, or Markdown dumps into issue or pull-request
 comments.
 
+## Git commit attribution
+
+When Codex materially contributes to a commit, append
+`Co-authored-by: Codex <codex@openai.com>` exactly once.
+
 ## Native orchestration
 
 - Use native Codex plans and native child-agent orchestration for task-internal
