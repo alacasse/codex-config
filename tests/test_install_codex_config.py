@@ -78,6 +78,36 @@ def test_fresh_default_install_uses_only_default_manifest_features() -> None:
                 assert target.resolve() == source.resolve()
 
 
+def test_installed_owner_command_recognizes_the_global_instructions() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        codex_home = Path(directory) / "codex-home"
+        installed = run_installer(
+            codex_home,
+            "--feature",
+            "global-instructions",
+        )
+        command = codex_home / "bin" / "codex-owner"
+
+        inspected = subprocess.run(
+            [
+                str(command),
+                "--codex-home",
+                str(codex_home),
+                str(codex_home / "AGENTS.md"),
+            ],
+            cwd=REPO_ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        assert installed.returncode == 0, installed.stderr
+        assert inspected.returncode == 0, inspected.stderr
+        assert "owner: codex-config" in inspected.stdout
+        assert "feature: global-instructions 3.0.0" in inspected.stdout
+
+
 def test_dry_run_does_not_create_the_codex_home() -> None:
     with tempfile.TemporaryDirectory() as directory:
         codex_home = Path(directory) / "not-created"
@@ -232,6 +262,130 @@ def test_existing_invalid_state_fails_closed_without_installing() -> None:
             assert not (codex_home / "AGENTS.md").exists()
 
 
+def test_install_retargets_an_exact_previously_managed_source() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        codex_home = Path(directory) / "codex-home"
+        state_path = write_state(
+            codex_home,
+            {
+                "global-instructions": {
+                    "version": "2.0.1",
+                    "links": [{"source": "AGENTS.md", "target": "AGENTS.md"}],
+                }
+            },
+        )
+        target = codex_home / "AGENTS.md"
+        target.symlink_to(REPO_ROOT / "AGENTS.md")
+
+        completed = run_installer(
+            codex_home,
+            "--feature",
+            "global-instructions",
+        )
+
+        assert completed.returncode == 0, completed.stderr
+        assert "global-instructions 2.0.1 -> 3.0.0" in completed.stdout
+        assert "retarget" in completed.stdout
+        assert target.resolve() == (REPO_ROOT / "global" / "AGENTS.md").resolve()
+        assert (codex_home / "bin" / "codex-owner").is_symlink()
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        assert state["features"]["global-instructions"]["links"] == [
+            {"source": "global/AGENTS.md", "target": "AGENTS.md"},
+            {"source": "scripts/codex_owner.py", "target": "bin/codex-owner"},
+        ]
+
+
+def test_retarget_dry_run_preserves_the_previous_link_and_state() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        codex_home = Path(directory) / "codex-home"
+        state_path = write_state(
+            codex_home,
+            {
+                "global-instructions": {
+                    "version": "2.0.1",
+                    "links": [{"source": "AGENTS.md", "target": "AGENTS.md"}],
+                }
+            },
+        )
+        original_state = state_path.read_text(encoding="utf-8")
+        target = codex_home / "AGENTS.md"
+        target.symlink_to(REPO_ROOT / "AGENTS.md")
+
+        completed = run_installer(
+            codex_home,
+            "--feature",
+            "global-instructions",
+            "--dry-run",
+        )
+
+        assert completed.returncode == 0, completed.stderr
+        assert "retarget" in completed.stdout
+        assert target.resolve() == (REPO_ROOT / "AGENTS.md").resolve()
+        assert not (codex_home / "bin" / "codex-owner").exists()
+        assert state_path.read_text(encoding="utf-8") == original_state
+
+
+def test_install_refuses_to_retarget_a_foreign_symlink() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        codex_home = root / "codex-home"
+        state_path = write_state(
+            codex_home,
+            {
+                "global-instructions": {
+                    "version": "2.0.1",
+                    "links": [{"source": "AGENTS.md", "target": "AGENTS.md"}],
+                }
+            },
+        )
+        original_state = state_path.read_text(encoding="utf-8")
+        foreign = root / "foreign"
+        foreign.mkdir()
+        target = codex_home / "AGENTS.md"
+        target.symlink_to(foreign)
+
+        completed = run_installer(
+            codex_home,
+            "--feature",
+            "global-instructions",
+        )
+
+        assert completed.returncode == 1
+        assert "not managed by this manifest" in completed.stderr
+        assert target.resolve() == foreign.resolve()
+        assert state_path.read_text(encoding="utf-8") == original_state
+        assert not (codex_home / "bin" / "codex-owner").exists()
+
+
+def test_install_refuses_a_malformed_previous_source_record() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        codex_home = Path(directory) / "codex-home"
+        state_path = write_state(
+            codex_home,
+            {
+                "global-instructions": {
+                    "version": "2.0.1",
+                    "links": [{"target": "AGENTS.md"}],
+                }
+            },
+        )
+        original_state = state_path.read_text(encoding="utf-8")
+        target = codex_home / "AGENTS.md"
+        target.symlink_to(REPO_ROOT / "AGENTS.md")
+
+        completed = run_installer(
+            codex_home,
+            "--feature",
+            "global-instructions",
+        )
+
+        assert completed.returncode == 1
+        assert "installed link source" in completed.stderr
+        assert target.resolve() == (REPO_ROOT / "AGENTS.md").resolve()
+        assert state_path.read_text(encoding="utf-8") == original_state
+        assert not (codex_home / "bin" / "codex-owner").exists()
+
+
 def test_prune_reconciles_a_target_adopted_by_another_feature() -> None:
     with tempfile.TemporaryDirectory() as directory:
         codex_home = Path(directory) / "codex-home"
@@ -251,7 +405,7 @@ def test_prune_reconciles_a_target_adopted_by_another_feature() -> None:
         )
         target = codex_home / "AGENTS.md"
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.symlink_to(REPO_ROOT / "AGENTS.md")
+        target.symlink_to(REPO_ROOT / "global" / "AGENTS.md")
 
         pruned = run_installer(codex_home, "--prune")
 
@@ -263,7 +417,7 @@ def test_prune_reconciles_a_target_adopted_by_another_feature() -> None:
 
         installed = run_installer(codex_home, "--feature", "global-instructions")
         assert installed.returncode == 0, installed.stderr
-        assert target.resolve() == (REPO_ROOT / "AGENTS.md").resolve()
+        assert target.resolve() == (REPO_ROOT / "global" / "AGENTS.md").resolve()
 
 
 def test_force_backs_up_a_real_file_conflict() -> None:

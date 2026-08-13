@@ -1,27 +1,11 @@
-# Personal Codex Operating Instructions
+# codex-config Development Instructions
 
 This repository owns the source-controlled part of the user's Codex
 configuration. Keep it small, reviewable, and independent from Codex's native
 planner and child-agent runtime.
 
-## GitHub issues and comments
+## Native runtime boundary
 
-Keep GitHub bodies compact and actionable: summary, why, proposed direction,
-acceptance criteria, and links to detailed repository documents. Do not paste
-large designs, schemas, logs, or Markdown dumps into issue or pull-request
-comments.
-
-## Git commit attribution
-
-When Codex materially contributes to a commit, append
-`Co-authored-by: Codex <codex@openai.com>` exactly once.
-
-## Native orchestration
-
-- Use native Codex plans and native child-agent orchestration for task-internal
-  work.
-- Delegate when it improves implementation, review, exploration, or context
-  management; keep each child prompt bounded.
 - Do not introduce a repository-owned planner, scheduler, worker/reviewer loop,
   task ledger, or transient agent-result protocol.
 
@@ -38,17 +22,16 @@ When Codex materially contributes to a commit, append
   or generated installation homes.
 - Update `CHANGELOG.md` for meaningful behavior changes.
 
-## Codex configuration ownership
+## Installer and ownership development
 
-Before editing a path under `~/.codex`, inspect it with:
+Use the repository source when developing or testing ownership inspection:
 
 ```bash
-/home/alacasse/src/codex-config/scripts/codex_owner.py <path>
+./scripts/codex_owner.py <path>
 ```
 
-If it reports `owner: codex-config`, edit the repository source, not the linked
-runtime path. Never run this repository's installer against the active Codex
-home during tests; use `--codex-home` with an isolated temporary directory.
+Never run this repository's installer against the active Codex home during
+tests; use `--codex-home` with an isolated temporary directory.
 
 ## Repository configuration
 

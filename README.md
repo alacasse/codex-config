@@ -8,6 +8,8 @@ task-internal planning, delegation, review correction, and integration.
 
 - a generic feature installer with isolated-home, dry-run, status, and stale
   managed-link cleanup support;
+- distinct global operating instructions and repository-local development
+  guidance;
 - ownership inspection for repository-managed Codex paths;
 - focused, optional skills for test-quality review, contract-first ports, and
   dead-surface audits;
@@ -52,7 +54,13 @@ features install unless `--feature` or `--all` selects another set.
 
 Targets are symlinks. Existing real files and foreign symlinks are preserved;
 `--force` is required to back up a real-file conflict or replace a conflicting
-symlink during installation.
+symlink during installation. When a feature changes the source for an existing
+target, the installer retargets it without `--force` only if the current symlink
+still matches the source recorded in installed state.
+
+The repository root `AGENTS.md` contains development instructions for this
+repository. The separate `global/AGENTS.md` is installed as the Codex-home
+`AGENTS.md`, so repository paths and policies do not leak into other projects.
 
 ## Status and stale managed links
 
@@ -77,6 +85,18 @@ recorded in the previous installed state. Missing targets are reconciled.
 Retargeted symlinks and real files are reported and preserved, and the prune
 fails before changing anything.
 
+After upgrading `global-instructions` from 2.0.1 to 3.0.0, preview and apply the
+managed source migration:
+
+```bash
+./install.sh --dry-run
+./install.sh
+```
+
+The second command safely retargets the previously managed `AGENTS.md` and
+installs `bin/codex-owner`. It does not require `--force` while the old link
+still matches its recorded source.
+
 ## Ownership inspection
 
 Check whether a repository source or installed target is owned by this
@@ -85,10 +105,13 @@ configuration:
 ```bash
 ./scripts/codex_owner.py ~/.codex/skills/test-quality-review
 ./scripts/codex_owner.py --json ~/.codex/AGENTS.md
+~/.codex/bin/codex-owner ~/.codex/AGENTS.md
 ```
 
-The ownership tool uses the current manifest. Use installer `--status` and
-`--prune` for links recorded by an older manifest.
+The installed command belongs to the default `global-instructions` feature; use
+the equivalent path under `CODEX_HOME` when a non-default home is active. The
+ownership tool uses the current manifest. Use installer `--status` and `--prune`
+for links recorded by an older manifest.
 
 ## Optional notification hook
 

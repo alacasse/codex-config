@@ -2,12 +2,16 @@
   "schema_version": 1,
   "features": {
     "global-instructions": {
-      "version": "2.0.1",
+      "version": "3.0.0",
       "description": "Global Codex operating instructions.",
       "links": [
         {
-          "source": "AGENTS.md",
+          "source": "global/AGENTS.md",
           "target": "AGENTS.md"
+        },
+        {
+          "source": "scripts/codex_owner.py",
+          "target": "bin/codex-owner"
         }
       ]
     },

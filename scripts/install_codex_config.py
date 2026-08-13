@@ -557,6 +557,63 @@ def target_matches(target: Path, source: Path) -> bool:
     return link_target.resolve() == source.resolve()
 
 
+def previous_source_for_link(
+    state: InstallState, feature_name: str, target: Path
+) -> Path | None:
+    """Resolve the recorded source for one surviving feature target."""
+    installed = state.get("features", {})
+    details = installed.get(feature_name)
+    if details is None:
+        return None
+    if not isinstance(details, dict):
+        raise InstallError(f"installed state for feature {feature_name} is invalid")
+
+    links = details.get("links")
+    if links is None:
+        return None
+    if not isinstance(links, list):
+        raise InstallError(
+            f"installed link state for feature {feature_name} is invalid"
+        )
+
+    recorded_source: Path | None = None
+    for link in links:
+        if not isinstance(link, dict):
+            raise InstallError(
+                f"installed link state for feature {feature_name} is invalid"
+            )
+        target_value = link.get("target")
+        if not isinstance(target_value, str) or not target_value:
+            raise InstallError(
+                f"installed link target for feature {feature_name} is invalid"
+            )
+        target_rel = validate_relative_path(target_value, "installed target")
+        if target_rel != target:
+            continue
+
+        source_value = link.get("source")
+        if not isinstance(source_value, str) or not source_value:
+            raise InstallError(
+                f"installed link source for feature {feature_name} is invalid"
+            )
+        raw_repo_root = state.get("repo_root")
+        if not isinstance(raw_repo_root, str) or not raw_repo_root:
+            raise InstallError(
+                f"recorded source for feature {feature_name} is unavailable"
+            )
+        source_rel = validate_relative_path(source_value, "installed source")
+        candidate = (
+            Path(raw_repo_root).expanduser().resolve(strict=False) / source_rel
+        ).resolve(strict=False)
+        if recorded_source is not None:
+            raise InstallError(
+                f"installed state has duplicate target {target} for feature {feature_name}"
+            )
+        recorded_source = candidate
+
+    return recorded_source
+
+
 def backup_target(target: Path, dry_run: bool) -> Path:
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     backup = target.with_name(f"{target.name}.backup-{stamp}")
@@ -569,7 +626,14 @@ def backup_target(target: Path, dry_run: bool) -> Path:
     return backup
 
 
-def link_one(source: Path, target: Path, *, dry_run: bool, force: bool) -> str:
+def link_one(
+    source: Path,
+    target: Path,
+    *,
+    previous_source: Path | None,
+    dry_run: bool,
+    force: bool,
+) -> str:
     if not source.exists():
         raise InstallError(f"source does not exist: {source}")
 
@@ -578,12 +642,16 @@ def link_one(source: Path, target: Path, *, dry_run: bool, force: bool) -> str:
 
     target_exists = target.exists() or target.is_symlink()
     if target_exists:
-        if not force:
+        if previous_source is not None and target_matches(target, previous_source):
+            if not dry_run:
+                target.unlink()
+            action = "retarget"
+        elif not force:
             raise InstallError(
                 f"target already exists and is not managed by this manifest: {target}\n"
                 "Use --force to replace symlink conflicts or back up real files."
             )
-        if target.is_symlink():
+        elif target.is_symlink():
             if not dry_run:
                 target.unlink()
             action = "replace"
@@ -641,7 +709,18 @@ def install_features(
             target_rel = validate_relative_path(str(link.get("target", "")), "target")
             source = (repo_root / source_rel).resolve()
             target = codex_home / target_rel
-            print(link_one(source, target, dry_run=dry_run, force=force))
+            previous_source = previous_source_for_link(
+                previous_state, name, target_rel
+            )
+            print(
+                link_one(
+                    source,
+                    target,
+                    previous_source=previous_source,
+                    dry_run=dry_run,
+                    force=force,
+                )
+            )
             installed_links.append({"source": str(source_rel), "target": str(target_rel)})
 
         installed_features[name] = {
