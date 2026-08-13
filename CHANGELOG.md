@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-13 - Conflict-safe installation preflight
+
+### Problem
+
+Installation classified and changed targets one at a time, so a conflict on a
+later target could leave an earlier managed symlink partially retargeted.
+Lexically relative manifest sources could also escape the repository through a
+symlink.
+
+### Decision
+
+- Preflight every selected target before applying any symlink or backup change.
+- Reject manifest sources whose resolved paths are outside the repository.
+- Preserve managed retargeting, foreign-conflict protection, forced backups,
+  dry runs, pruning, and installed-state convergence.
+
+### Expected effect
+
+Known target conflicts fail without partial installation, installed metadata
+still converges on version-only upgrades, and every installed source remains
+owned by this repository.
+
 ## 2026-08-13 - Global and repository instruction separation
 
 ### Problem

@@ -49,8 +49,33 @@ def test_manifest_is_complete_and_all_sources_exist() -> None:
             assert ".." not in source.parts
             assert ".." not in target.parts
             assert (REPO_ROOT / source).exists()
+            assert (REPO_ROOT / source).resolve().is_relative_to(REPO_ROOT.resolve())
             targets.append(str(target))
     assert len(targets) == len(set(targets))
+
+
+def test_manifest_rejects_a_source_symlink_that_escapes_the_repository(
+    tmp_path: Path,
+) -> None:
+    external_source = tmp_path / "external-source"
+    external_source.write_text("external\n", encoding="utf-8")
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    (repository / "escaped-source").symlink_to(external_source)
+    data = {
+        "schema_version": 1,
+        "features": {
+            "escaped": {
+                "version": "1.0.0",
+                "links": [
+                    {"source": "escaped-source", "target": "escaped-target"}
+                ],
+            }
+        },
+    }
+
+    with pytest.raises(InstallError, match="resolves outside the repository"):
+        validate_manifest(repository, data)
 
 
 def test_default_and_all_feature_selection() -> None:

@@ -129,6 +129,12 @@ def test_all_installs_the_opt_in_notification_feature() -> None:
         assert (codex_home / "hooks.json").is_symlink()
         state = json.loads((codex_home / STATE_RELATIVE).read_text(encoding="utf-8"))
         assert set(state["features"]) == set(MANIFEST["features"])
+        for feature in MANIFEST["features"].values():
+            for link in feature["links"]:
+                target = codex_home / link["target"]
+                source = REPO_ROOT / link["source"]
+                assert target.is_symlink()
+                assert target.resolve() == source.resolve()
 
 
 def test_status_identifies_removed_features_and_links() -> None:
@@ -357,6 +363,42 @@ def test_install_refuses_to_retarget_a_foreign_symlink() -> None:
         assert not (codex_home / "bin" / "codex-owner").exists()
 
 
+def test_install_preflights_every_target_before_retargeting() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        codex_home = root / "codex-home"
+        state_path = write_state(
+            codex_home,
+            {
+                "global-instructions": {
+                    "version": "2.0.1",
+                    "links": [{"source": "AGENTS.md", "target": "AGENTS.md"}],
+                }
+            },
+        )
+        original_state = state_path.read_text(encoding="utf-8")
+        instructions_target = codex_home / "AGENTS.md"
+        instructions_target.symlink_to(REPO_ROOT / "AGENTS.md")
+        foreign = root / "foreign-owner"
+        foreign.write_text("foreign\n", encoding="utf-8")
+        owner_target = codex_home / "bin" / "codex-owner"
+        owner_target.parent.mkdir(parents=True)
+        owner_target.symlink_to(foreign)
+
+        completed = run_installer(
+            codex_home,
+            "--feature",
+            "global-instructions",
+        )
+
+        assert completed.returncode == 1
+        assert "not managed by this manifest" in completed.stderr
+        assert instructions_target.resolve() == (REPO_ROOT / "AGENTS.md").resolve()
+        assert owner_target.resolve() == foreign.resolve()
+        assert state_path.read_text(encoding="utf-8") == original_state
+        assert not list(codex_home.rglob("*.backup-*"))
+
+
 def test_install_refuses_a_malformed_previous_source_record() -> None:
     with tempfile.TemporaryDirectory() as directory:
         codex_home = Path(directory) / "codex-home"
@@ -384,6 +426,48 @@ def test_install_refuses_a_malformed_previous_source_record() -> None:
         assert target.resolve() == (REPO_ROOT / "AGENTS.md").resolve()
         assert state_path.read_text(encoding="utf-8") == original_state
         assert not (codex_home / "bin" / "codex-owner").exists()
+
+
+def test_install_converges_metadata_for_a_version_only_upgrade() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        codex_home = root / "codex-home"
+        manifest = json.loads(json.dumps(MANIFEST))
+        feature = manifest["features"]["global-instructions"]
+        feature["version"] = "99.0.0"
+        feature["description"] = "Updated global instructions metadata."
+        manifest_path = root / "version-only-manifest.json"
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        state_path = write_state(
+            codex_home,
+            {
+                "global-instructions": {
+                    "version": "98.0.0",
+                    "description": "Stale metadata.",
+                    "links": feature["links"],
+                }
+            },
+        )
+        for link in feature["links"]:
+            target = codex_home / link["target"]
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.symlink_to(REPO_ROOT / link["source"])
+
+        completed = run_installer(
+            codex_home,
+            "--manifest",
+            str(manifest_path),
+            "--feature",
+            "global-instructions",
+        )
+
+        assert completed.returncode == 0, completed.stderr
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        assert state["features"]["global-instructions"] == {
+            "version": feature["version"],
+            "description": feature["description"],
+            "links": feature["links"],
+        }
 
 
 def test_prune_reconciles_a_target_adopted_by_another_feature() -> None:

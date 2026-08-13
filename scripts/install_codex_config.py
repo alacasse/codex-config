@@ -32,6 +32,16 @@ class StaleLink:
     remove_target: bool
 
 
+@dataclass(frozen=True)
+class PlannedLink:
+    """One fully classified source-to-target installation action."""
+
+    source: Path
+    target: Path
+    action: str
+    backup: Path | None = None
+
+
 class LinkRecord(TypedDict):
     """One source-to-target link in the manifest or installed state."""
 
@@ -327,6 +337,7 @@ def validate_relative_path(value: str, field_name: str) -> Path:
 def validate_manifest(repo_root: Path, manifest: Manifest) -> None:
     features = manifest["features"]
     seen_targets: dict[Path, str] = {}
+    resolved_repo_root = repo_root.resolve()
 
     for name, feature in features.items():
         if not isinstance(name, str) or not name:
@@ -351,8 +362,17 @@ def validate_manifest(repo_root: Path, manifest: Manifest) -> None:
                 raise InstallError(f"feature {name} has an invalid target")
             source = validate_relative_path(source_value, "source")
             target = validate_relative_path(target_value, "target")
-            if not (repo_root / source).exists():
-                raise InstallError(f"source does not exist: {repo_root / source}")
+            source_path = repo_root / source
+            if not source_path.exists():
+                raise InstallError(f"source does not exist: {source_path}")
+            resolved_source = source_path.resolve()
+            try:
+                resolved_source.relative_to(resolved_repo_root)
+            except ValueError as exc:
+                raise InstallError(
+                    f"source resolves outside the repository: {source_path} -> "
+                    f"{resolved_source}"
+                ) from exc
             prior_owner = seen_targets.get(target)
             if prior_owner is not None:
                 raise InstallError(
@@ -614,37 +634,34 @@ def previous_source_for_link(
     return recorded_source
 
 
-def backup_target(target: Path, dry_run: bool) -> Path:
+def available_backup_target(target: Path, reserved: set[Path]) -> Path:
+    """Choose a backup path without changing the filesystem."""
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     backup = target.with_name(f"{target.name}.backup-{stamp}")
     counter = 1
-    while backup.exists() or backup.is_symlink():
+    while backup.exists() or backup.is_symlink() or backup in reserved:
         backup = target.with_name(f"{target.name}.backup-{stamp}-{counter}")
         counter += 1
-    if not dry_run:
-        shutil.move(str(target), str(backup))
     return backup
 
 
-def link_one(
+def preflight_link(
     source: Path,
     target: Path,
     *,
     previous_source: Path | None,
-    dry_run: bool,
     force: bool,
-) -> str:
+    reserved: set[Path],
+) -> PlannedLink:
     if not source.exists():
         raise InstallError(f"source does not exist: {source}")
 
     if target_matches(target, source):
-        return f"ok      {target} -> {source}"
+        return PlannedLink(source=source, target=target, action="ok")
 
     target_exists = target.exists() or target.is_symlink()
     if target_exists:
         if previous_source is not None and target_matches(target, previous_source):
-            if not dry_run:
-                target.unlink()
             action = "retarget"
         elif not force:
             raise InstallError(
@@ -652,19 +669,44 @@ def link_one(
                 "Use --force to replace symlink conflicts or back up real files."
             )
         elif target.is_symlink():
-            if not dry_run:
-                target.unlink()
             action = "replace"
         else:
-            backup = backup_target(target, dry_run)
-            action = f"backup  {target} -> {backup}\nlink"
+            backup = available_backup_target(target, reserved)
+            reserved.add(backup)
+            return PlannedLink(
+                source=source,
+                target=target,
+                action="backup",
+                backup=backup,
+            )
     else:
         action = "link"
 
-    if not dry_run:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.symlink_to(source)
-    return f"{action:<7} {target} -> {source}"
+    return PlannedLink(source=source, target=target, action=action)
+
+
+def describe_planned_link(link: PlannedLink) -> str:
+    """Format one preflighted action using the installer's stable output style."""
+    if link.action == "backup":
+        return (
+            f"backup  {link.target} -> {link.backup}\n"
+            f"link    {link.target} -> {link.source}"
+        )
+    return f"{link.action:<7} {link.target} -> {link.source}"
+
+
+def apply_planned_link(link: PlannedLink) -> None:
+    """Apply one action after the entire installation has passed preflight."""
+    if link.action == "ok":
+        return
+    if link.action in {"retarget", "replace"}:
+        link.target.unlink()
+    elif link.action == "backup":
+        if link.backup is None:
+            raise AssertionError("backup action must include a backup path")
+        shutil.move(str(link.target), str(link.backup))
+    link.target.parent.mkdir(parents=True, exist_ok=True)
+    link.target.symlink_to(link.source)
 
 
 def install_features(
@@ -685,23 +727,30 @@ def install_features(
             "stale managed links are recorded; run --status and --prune before installing"
         )
     installed_features: dict[str, InstalledFeatureRecord] = {}
+    feature_messages: dict[str, str] = {}
+    prepared_links: dict[str, list[tuple[Path, Path, Path | None]]] = {}
+    reserved_paths: set[Path] = set()
 
     for name in names:
         feature = manifest["features"][name]
         version = str(feature.get("version", "unversioned"))
-        previous_version = previous_features.get(name, {}).get("version")
+        previous_feature = previous_features.get(name, {})
+        if not isinstance(previous_feature, dict):
+            raise InstallError(f"installed state for feature {name} is invalid")
+        previous_version = previous_feature.get("version")
         if previous_version == version:
-            print(f"feature {name} {version}")
+            feature_messages[name] = f"feature {name} {version}"
         elif previous_version:
-            print(f"feature {name} {previous_version} -> {version}")
+            feature_messages[name] = f"feature {name} {previous_version} -> {version}"
         else:
-            print(f"feature {name} {version}")
+            feature_messages[name] = f"feature {name} {version}"
 
         links = feature.get("links")
         if not isinstance(links, list) or not links:
             raise InstallError(f"feature {name} must define at least one link")
 
         installed_links: list[LinkRecord] = []
+        feature_links: list[tuple[Path, Path, Path | None]] = []
         for link in links:
             if not isinstance(link, dict):
                 raise InstallError(f"feature {name} has an invalid link entry")
@@ -712,26 +761,42 @@ def install_features(
             previous_source = previous_source_for_link(
                 previous_state, name, target_rel
             )
-            print(
-                link_one(
-                    source,
-                    target,
-                    previous_source=previous_source,
-                    dry_run=dry_run,
-                    force=force,
-                )
-            )
+            feature_links.append((source, target, previous_source))
+            reserved_paths.add(target)
             installed_links.append({"source": str(source_rel), "target": str(target_rel)})
 
+        prepared_links[name] = feature_links
         installed_features[name] = {
             "version": version,
             "description": feature.get("description", ""),
             "links": installed_links,
         }
 
+    installation_plan: dict[str, list[PlannedLink]] = {}
+    for name in names:
+        installation_plan[name] = [
+            preflight_link(
+                source,
+                target,
+                previous_source=previous_source,
+                force=force,
+                reserved=reserved_paths,
+            )
+            for source, target, previous_source in prepared_links[name]
+        ]
+
+    for name in names:
+        print(feature_messages[name])
+        for link in installation_plan[name]:
+            print(describe_planned_link(link))
+
     if dry_run:
         print("dry-run: installed feature state was not written")
         return
+
+    for name in names:
+        for link in installation_plan[name]:
+            apply_planned_link(link)
 
     state: InstallState = {
         "schema_version": 1,
