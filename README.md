@@ -109,6 +109,18 @@ the equivalent path under `CODEX_HOME` when a non-default home is active. The
 ownership tool uses the current manifest. Use installer `--status` and `--prune`
 for links recorded by an older manifest.
 
+## GitHub tracker setup
+
+Check the triage and Wayfinder label adapter against an explicit repository:
+
+```bash
+./scripts/setup_github_labels.py --repo alacasse/codex-config
+```
+
+`--apply` creates only missing labels with approved metadata and never edits an
+existing same-name label. It changes external GitHub state and should be run
+only after the reported operations are approved.
+
 ## Optional notification hook
 
 The `agent-notifications` feature installs the principal-agent `Stop` hook. It

@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-13 - Repository-owned GitHub label setup
+
+### Problem
+
+The tracker adapters named triage and Wayfinder labels without a repository
+command to verify or provision them, and the documented external-PR query used
+a GitHub CLI field unsupported by the installed command.
+
+### Decision
+
+- Add an explicit, check-only-by-default label setup command with offline unit
+  tests and an approval-gated `--apply` mode.
+- Create only labels with approved metadata and never overwrite an existing
+  same-name label.
+- Discover external pull requests through paginated REST data and inspect each
+  selected pull request with `gh pr view --comments`.
+
+### Expected effect
+
+Repository-local tracker adapters can be verified reproducibly before use,
+label creation remains idempotent and reviewable, and external pull-request
+triage uses fields provided by GitHub's REST response.
+
 ## 2026-08-13 - Current instruction and skill authority
 
 ### Problem

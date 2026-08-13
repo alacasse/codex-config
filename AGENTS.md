@@ -43,3 +43,5 @@ tests; use `--codex-home` with an isolated temporary directory.
 
 - Issues are tracked in GitHub; see `docs/agents/issue-tracker.md`.
 - Use the five-label triage vocabulary in `docs/agents/triage-labels.md`.
+- Verify required tracker labels with `scripts/setup_github_labels.py`; applying
+  missing labels changes external state and requires explicit approval.
