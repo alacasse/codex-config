@@ -1,28 +1,34 @@
 # codex-config Development Instructions
 
-This repository owns the source-controlled part of the user's Codex
-configuration. Keep it small, reviewable, and independent from Codex's native
-planner and child-agent runtime.
+This repository owns the source-controlled configuration installed into the
+user's Codex environment. Its production surfaces are global instructions,
+reusable skills and agents, hooks, the manifest-driven installer, ownership
+tooling, and repository-local tracker adapters. Keep them small and reviewable.
 
-## Native runtime boundary
+This repository configures Codex. It does not implement a task-execution
+runtime.
 
-- Do not introduce a repository-owned planner, scheduler, worker/reviewer loop,
-  task ledger, or transient agent-result protocol.
+## Repository-owned configuration
 
-## Reusable configuration
-
-- Treat `skills/`, `agents/`, hooks, and installer metadata as
-  production configuration.
+- Treat `global/AGENTS.md`, `skills/`, `agents/`, hooks, installer metadata,
+  ownership tooling, and tracker adapters as production configuration.
 - Keep reusable skills project-neutral. Resolve project paths, commands, issue
   policy, and local document placement from the target project's instructions.
 - Repository exploration must work with normal reads and search. Optional
-  indexing tools may help when explicitly enabled, but must not become semantic
-  authority or a portability requirement.
+  indexes may help, but must not become semantic authority or a portability
+  requirement.
+- Keep `codex-features.json` limited to features owned by this repository;
+  vendor-owned skills, agents, and runtime state do not belong in the manifest.
 - Do not commit secrets, auth files, runtime databases, logs, sessions, caches,
   or generated installation homes.
-- Update `CHANGELOG.md` for meaningful behavior changes.
+- For meaningful behavior changes, update `CHANGELOG.md` with the problem,
+  decision, and expected effect.
 
 ## Installer and ownership development
+
+Manifest-managed targets must be symlinks to their declared repository sources.
+Installer changes must preserve safe upgrades, conflict handling, dry runs,
+pruning, and installed-state accuracy.
 
 Use the repository source when developing or testing ownership inspection:
 

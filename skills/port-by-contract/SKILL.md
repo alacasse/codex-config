@@ -77,8 +77,7 @@ freeze accidental compatibility, aliases, wrappers, or internal topology.
 
 Compare target behavior to every accepted contract ID and classify each as
 `satisfied`, `changed`, `deferred`, or `rejected`, with target-side evidence.
-Report unresolved gaps directly. Do not turn them into a new task framework or
-execution protocol.
+Report unresolved gaps directly.
 
 ## Non-goals
 

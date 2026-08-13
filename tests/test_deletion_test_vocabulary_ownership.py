@@ -31,4 +31,3 @@ def test_dead_surface_audit_requires_behavioral_caller_evidence() -> None:
     assert "production/runtime code" in text
     assert "topology-assertion" in text
     assert "Require a named caller or contract" in text
-    assert "Do not create queues, execution state" in text

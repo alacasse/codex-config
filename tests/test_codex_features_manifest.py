@@ -40,6 +40,7 @@ def test_manifest_is_complete_and_all_sources_exist() -> None:
     }
 
     targets: list[str] = []
+    sources: set[Path] = set()
     for feature in features.values():
         for link in feature["links"]:
             source = Path(link["source"])
@@ -50,8 +51,12 @@ def test_manifest_is_complete_and_all_sources_exist() -> None:
             assert ".." not in target.parts
             assert (REPO_ROOT / source).exists()
             assert (REPO_ROOT / source).resolve().is_relative_to(REPO_ROOT.resolve())
+            assert source.parts[0] not in {".agents", ".codex"}
+            sources.add(source)
             targets.append(str(target))
     assert len(targets) == len(set(targets))
+    assert Path("AGENTS.md") not in sources
+    assert not (REPO_ROOT / ".codex" / "AGENTS.md").exists()
 
 
 def test_manifest_rejects_a_source_symlink_that_escapes_the_repository(
@@ -94,7 +99,7 @@ def test_global_and_repository_instructions_have_distinct_scopes() -> None:
     data = manifest()
     global_feature = data["features"]["global-instructions"]
 
-    assert global_feature["version"] == "3.0.0"
+    assert global_feature["version"] == "3.0.1"
     assert global_feature["links"] == [
         {"source": "global/AGENTS.md", "target": "AGENTS.md"},
         {"source": "scripts/codex_owner.py", "target": "bin/codex-owner"},
@@ -108,9 +113,17 @@ def test_global_and_repository_instructions_have_distinct_scopes() -> None:
     assert "This repository owns" not in global_text
     assert "docs/agents/" not in global_text
     assert "/home/alacasse/" not in global_text
-    assert "Reusable configuration" in repository_text
+    assert "Repository-owned configuration" in repository_text
     assert "docs/agents/issue-tracker.md" in repository_text
     assert "Git commit attribution" not in repository_text
+
+
+def test_surviving_skill_versions_publish_the_cleanup() -> None:
+    features = manifest()["features"]
+
+    assert features["dead-surface-audit"]["version"] == "2.0.1"
+    assert features["test-quality-review"]["version"] == "1.1.1"
+    assert features["port-by-contract"]["version"] == "2.0.1"
 
 
 def test_dependency_expansion_is_ordered_and_fails_closed() -> None:

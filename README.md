@@ -1,10 +1,9 @@
 # Codex Config
 
-Personal, source-controlled Codex configuration with a manifest-driven
-installer. The repository configures and guides Codex; native Codex owns
-task-internal planning, delegation, review correction, and integration.
+Source-controlled Codex configuration delivered by a manifest-driven installer.
+The repository configures Codex; it does not implement a task-execution runtime.
 
-## What survives here
+## What this repository owns
 
 - a generic feature installer with isolated-home, dry-run, status, and stale
   managed-link cleanup support;
@@ -16,9 +15,6 @@ task-internal planning, delegation, review correction, and integration.
 - read-only investigation and import-topology review agents;
 - an opt-in completion-notification hook;
 - compact repository-specific issue and triage configuration.
-
-The historical planning and execution experiment is preserved in Git archive
-branches rather than installed or maintained on the active line.
 
 ## Install
 
@@ -85,7 +81,7 @@ recorded in the previous installed state. Missing targets are reconciled.
 Retargeted symlinks and real files are reported and preserved, and the prune
 fails before changing anything.
 
-After upgrading `global-instructions` from 2.0.1 to 3.0.0, preview and apply the
+After upgrading `global-instructions` from 2.0.1 to 3.0.1, preview and apply the
 managed source migration:
 
 ```bash

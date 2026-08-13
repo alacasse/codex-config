@@ -85,6 +85,3 @@ Lead with findings ordered by deletion confidence, then include a compact table:
 ```text
 Surface | Production callers | Test-only callers | Contract evidence | Status | Next action
 ```
-
-Do not create queues, execution state, cleanup protocols, or compatibility
-wrappers as part of the audit.

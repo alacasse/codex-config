@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-13 - Current instruction and skill authority
+
+### Problem
+
+An orphaned nested instruction file and transition-era wording still described
+deleted configuration responsibilities. Three surviving skills also carried
+scope language about execution machinery unrelated to their current behavior.
+
+### Decision
+
+- Keep durable global preferences in `global/AGENTS.md` and current repository
+  development contracts in the root `AGENTS.md`; remove `.codex/AGENTS.md`.
+- Describe repository ownership positively and keep optional indexes
+  non-authoritative without an activation policy.
+- Describe the focused skills directly and publish patch versions for global
+  instructions, dead-surface audit, test-quality review, and port by contract.
+
+### Expected effect
+
+Only applicable instruction surfaces remain active, repository scope is clear,
+and installed metadata advertises the cleaned skill behavior without reviving
+legacy vocabulary through tests.
+
 ## 2026-08-13 - Conflict-safe installation preflight
 
 ### Problem

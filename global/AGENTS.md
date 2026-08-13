@@ -12,13 +12,6 @@ comments.
 When Codex materially contributes to a commit, append
 `Co-authored-by: Codex <codex@openai.com>` exactly once.
 
-## Native orchestration
-
-- Use native Codex plans and native child-agent orchestration for task-internal
-  work.
-- Delegate when it improves implementation, review, exploration, or context
-  management; keep each child prompt bounded.
-
 ## Codex configuration ownership
 
 Before editing a path under the active Codex home, inspect it with the
@@ -30,4 +23,5 @@ Before editing a path under the active Codex home, inspect it with the
 
 When `CODEX_HOME` is set, use its `bin/codex-owner` instead. If the command
 reports `owner: codex-config`, edit the reported repository source rather than
-the installed runtime path.
+the installed runtime path. Before editing that source, read and follow the
+applicable instructions in its repository.
