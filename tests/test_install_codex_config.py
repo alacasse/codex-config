@@ -105,7 +105,7 @@ def test_installed_owner_command_recognizes_the_global_instructions() -> None:
         assert installed.returncode == 0, installed.stderr
         assert inspected.returncode == 0, inspected.stderr
         assert "owner: codex-config" in inspected.stdout
-        assert "feature: global-instructions 3.0.1" in inspected.stdout
+        assert "feature: global-instructions 3.1.0" in inspected.stdout
 
 
 def test_dry_run_does_not_create_the_codex_home() -> None:
@@ -290,7 +290,7 @@ def test_install_retargets_an_exact_previously_managed_source() -> None:
         )
 
         assert completed.returncode == 0, completed.stderr
-        assert "global-instructions 2.0.1 -> 3.0.1" in completed.stdout
+        assert "global-instructions 2.0.1 -> 3.1.0" in completed.stdout
         assert "retarget" in completed.stdout
         assert target.resolve() == (REPO_ROOT / "global" / "AGENTS.md").resolve()
         assert (codex_home / "bin" / "codex-owner").is_symlink()

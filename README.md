@@ -9,6 +9,8 @@ The repository configures Codex; it does not implement a task-execution runtime.
   managed-link cleanup support;
 - distinct global operating instructions and repository-local development
   guidance;
+- a project-neutral documentation-root selector with a repository-local
+  override;
 - ownership inspection for repository-managed Codex paths;
 - focused, optional skills for test-quality review, contract-first ports, and
   dead-surface audits;
@@ -58,6 +60,21 @@ The repository root `AGENTS.md` contains development instructions for this
 repository. The separate `global/AGENTS.md` is installed as the Codex-home
 `AGENTS.md`, so repository paths and policies do not leak into other projects.
 
+## Project documentation roots
+
+Global instructions use `docs` as the default documentation root for questions
+about project status, plans, decisions, or architecture. A repository can select
+a different root without changing tracked files:
+
+```bash
+git config --local codex.docs-root project-docs
+```
+
+The selector accepts only an existing repository-relative directory whose
+resolved path stays inside the repository. Its `AGENTS.md`, when present, is a
+documentation index; normally discovered Codex instructions retain their usual
+scope and precedence.
+
 ## Status and stale managed links
 
 Installed state is recorded under the selected Codex home at:
@@ -81,7 +98,7 @@ recorded in the previous installed state. Missing targets are reconciled.
 Retargeted symlinks and real files are reported and preserved, and the prune
 fails before changing anything.
 
-After upgrading `global-instructions` from 2.0.1 to 3.0.1, preview and apply the
+After upgrading `global-instructions` from 2.0.1 to 3.1.0, preview and apply the
 managed source migration:
 
 ```bash

@@ -12,6 +12,17 @@ comments.
 When Codex materially contributes to a commit, append
 `Co-authored-by: Codex <codex@openai.com>` exactly once.
 
+## Project documentation
+
+For questions about project status, plans, decisions, or architecture, resolve a
+single documentation root before answering. Use the non-empty value of
+`git config --local --get codex.docs-root` when it names an existing
+repository-relative directory whose resolved path stays within the repository;
+otherwise use `docs`. If the selected root contains `AGENTS.md`, read it as the
+index for that documentation workstream and follow its pointers for the
+question. This selection adds documentation context; the normal Codex
+instruction chain continues to govern repository work.
+
 ## Codex configuration ownership
 
 Before editing a path under the active Codex home, inspect it with the

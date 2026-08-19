@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-08-19 - Repository-local project documentation root
+
+### Problem
+
+Codex discovers project instructions only from the repository root down to the
+current working directory. A session started at the root therefore cannot use a
+documentation index nested under `docs`, while choosing between multiple
+documentation directories by their mere presence creates ambiguous authority.
+
+### Decision
+
+- Resolve one documentation root for status, planning, decision, and
+  architecture questions from the local Git setting `codex.docs-root`, with
+  `docs` as the implicit default.
+- Accept only existing repository-relative directories that resolve within the
+  repository.
+- Treat the selected `AGENTS.md` as a documentation index without replacing the
+  normal Codex instruction chain.
+- Publish global instructions version 3.1.0.
+
+### Expected effect
+
+Repositories keep a conventional `docs` default, local clones can select a
+private documentation root without changing tracked files, and maintainer-owned
+instructions remain distinct from the selected documentation context.
+
 ## 2026-08-13 - Repository-owned GitHub label setup
 
 ### Problem

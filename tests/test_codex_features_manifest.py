@@ -99,7 +99,7 @@ def test_global_and_repository_instructions_have_distinct_scopes() -> None:
     data = manifest()
     global_feature = data["features"]["global-instructions"]
 
-    assert global_feature["version"] == "3.0.1"
+    assert global_feature["version"] == "3.1.0"
     assert global_feature["links"] == [
         {"source": "global/AGENTS.md", "target": "AGENTS.md"},
         {"source": "scripts/codex_owner.py", "target": "bin/codex-owner"},
@@ -116,6 +116,18 @@ def test_global_and_repository_instructions_have_distinct_scopes() -> None:
     assert "Repository-owned configuration" in repository_text
     assert "docs/agents/issue-tracker.md" in repository_text
     assert "Git commit attribution" not in repository_text
+
+
+def test_global_instructions_resolve_one_project_documentation_root() -> None:
+    global_text = (REPO_ROOT / "global" / "AGENTS.md").read_text(encoding="utf-8")
+    normalized_global = " ".join(global_text.split())
+
+    assert "single documentation root" in normalized_global
+    assert "git config --local --get codex.docs-root" in normalized_global
+    assert "otherwise use `docs`" in normalized_global
+    assert "normal Codex instruction chain" in normalized_global
+    assert "my-docs" not in global_text
+    assert "/home/alacasse/" not in global_text
 
 
 def test_surviving_skill_versions_publish_the_cleanup() -> None:
