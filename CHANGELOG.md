@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-08-20 - Fail-closed instruction-file ownership
+
+### Problem
+
+An agent could follow a local instruction overlay yet still write a local
+workflow policy into a public repository instruction file. Reading the
+instruction chain alone did not force the agent to identify the target's scope
+and owner before editing it.
+
+### Decision
+
+- Before editing `AGENTS.md` or `CLAUDE.md`, require classification of the
+  target as global configuration, public repository guidance, or a local
+  overlay.
+- Require commentary to name the exact target, owner, and governing instruction
+  before writing, then route the change to that owner.
+- Require explicit authorization naming a public repository instruction file
+  before changing it.
+- Publish global instructions version 3.2.0.
+
+### Expected effect
+
+Instruction-file edits fail closed at the ownership boundary, local workflow
+policy stays with its established local owner, and public repository guidance
+changes only when the user deliberately authorizes that exact surface.
+
 ## 2026-08-19 - Repository-local project documentation root
 
 ### Problem

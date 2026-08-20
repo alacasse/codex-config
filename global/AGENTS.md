@@ -23,6 +23,14 @@ index for that documentation workstream and follow its pointers for the
 question. This selection adds documentation context; the normal Codex
 instruction chain continues to govern repository work.
 
+## Instruction-file ownership
+
+Before editing an `AGENTS.md` or `CLAUDE.md`, classify the target as global
+configuration, public repository guidance, or a local overlay. In commentary,
+state the exact target, owner, and governing instruction before editing. Route
+the change to the established owner. Changing a public repository instruction
+file requires explicit authorization naming that file.
+
 ## Codex configuration ownership
 
 Before editing a path under the active Codex home, inspect it with the
