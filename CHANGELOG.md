@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-20 - Documentation and target repository roles
+
+### Problem
+
+When local project documentation lived in an independent repository, an agent
+could confuse the repository that owned the documents with the repository where
+the documented implementation and branch workflow applied. Moving that
+workflow into global configuration would instead leak one project's topology
+into every repository.
+
+### Decision
+
+- Require agents to identify a separate documentation repository and target
+  repository before acting.
+- Apply implementation, branch, pull-request, test, and release instructions
+  only to the repository they name, without mirroring the target's branch
+  structure into the documentation repository.
+- Keep project-specific repository names and workflows in selected project
+  documentation while global configuration remains project-neutral.
+- Publish global instructions version 3.3.0.
+
+### Expected effect
+
+Independent documentation repositories retain their own simple workflow,
+project-specific implementation policy stays with the project it describes,
+and global Codex guidance prevents scope transfer without imposing one
+project's branch model everywhere.
+
 ## 2026-08-20 - Fail-closed instruction-file ownership
 
 ### Problem

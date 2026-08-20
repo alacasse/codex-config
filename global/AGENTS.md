@@ -23,6 +23,19 @@ index for that documentation workstream and follow its pointers for the
 question. This selection adds documentation context; the normal Codex
 instruction chain continues to govern repository work.
 
+## Repository roles
+
+When project documentation lives in a repository separate from the target
+project, identify both repositories before acting. The documentation repository
+owns the documentation files; it is not automatically the target of workflows
+those files describe. Apply implementation, branch, pull-request, test, and
+release instructions only to the repository they name. Resolve an unnamed
+target from project context before acting; do not mirror a target repository's
+branch structure into the documentation repository.
+
+Keep project-specific repository names and workflows in the selected project
+documentation; keep global configuration project-neutral.
+
 ## Instruction-file ownership
 
 Before editing an `AGENTS.md` or `CLAUDE.md`, classify the target as global

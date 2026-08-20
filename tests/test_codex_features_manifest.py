@@ -99,7 +99,7 @@ def test_global_and_repository_instructions_have_distinct_scopes() -> None:
     data = manifest()
     global_feature = data["features"]["global-instructions"]
 
-    assert global_feature["version"] == "3.2.0"
+    assert global_feature["version"] == "3.3.0"
     assert global_feature["links"] == [
         {"source": "global/AGENTS.md", "target": "AGENTS.md"},
         {"source": "scripts/codex_owner.py", "target": "bin/codex-owner"},
@@ -140,6 +140,23 @@ def test_global_instructions_fail_closed_on_instruction_file_ownership() -> None
     )
     assert "exact target, owner, and governing instruction" in normalized_global
     assert "explicit authorization naming that file" in normalized_global
+
+
+def test_global_instructions_distinguish_documentation_and_target_repositories() -> None:
+    global_text = (REPO_ROOT / "global" / "AGENTS.md").read_text(encoding="utf-8")
+    normalized_global = " ".join(global_text.split())
+
+    assert "documentation repository owns the documentation files" in (
+        normalized_global
+    )
+    assert "not automatically the target of workflows" in normalized_global
+    assert "only to the repository they name" in normalized_global
+    assert "do not mirror a target repository's branch structure" in (
+        normalized_global
+    )
+    assert "keep global configuration project-neutral" in normalized_global
+    assert "my-docs" not in global_text
+    assert "Graphify" not in global_text
 
 
 def test_surviving_skill_versions_publish_the_cleanup() -> None:
