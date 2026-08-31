@@ -16,7 +16,7 @@
       ]
     },
     "port-by-contract": {
-      "version": "2.0.1",
+      "version": "2.0.2",
       "description": "Implementation-neutral contract extraction for ports and rewrites.",
       "links": [
         {

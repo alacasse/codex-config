@@ -164,7 +164,15 @@ def test_surviving_skill_versions_publish_the_cleanup() -> None:
 
     assert features["dead-surface-audit"]["version"] == "2.0.1"
     assert features["test-quality-review"]["version"] == "1.1.1"
-    assert features["port-by-contract"]["version"] == "2.0.1"
+    assert features["port-by-contract"]["version"] == "2.0.2"
+
+
+def test_port_by_contract_requires_explicit_invocation() -> None:
+    config = (
+        REPO_ROOT / "skills" / "port-by-contract" / "agents" / "openai.yaml"
+    ).read_text(encoding="utf-8")
+
+    assert "\npolicy:\n  allow_implicit_invocation: false\n" in config
 
 
 def test_dependency_expansion_is_ordered_and_fails_closed() -> None:

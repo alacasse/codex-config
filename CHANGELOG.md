@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-31 - Explicit port-by-contract invocation
+
+### Problem
+
+Automatic invocation repeatedly restarted contract extraction during rewrite,
+migration, replacement, and behavior-preservation work even when an accepted
+contract already existed as the durable authority.
+
+### Decision
+
+- Disable implicit invocation for `port-by-contract` while preserving explicit
+  `$port-by-contract` use.
+- Publish `port-by-contract` version 2.0.2.
+
+### Expected effect
+
+Agents consume accepted contracts during ordinary design and implementation
+work, while users can still explicitly invoke the skill to produce or revalidate
+an implementation-neutral contract.
+
 ## 2026-08-20 - Documentation and target repository roles
 
 ### Problem
