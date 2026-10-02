@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-31 - Disable completion notifications
+
+### Problem
+
+The installed principal-agent `Stop` hook sent a notification whenever Codex
+finished a turn, even though completion notifications were no longer wanted.
+
+### Decision
+
+- Remove the `Stop` registration from the active repository-owned hook file.
+- Preserve the former registration as an explicit example for intentional
+  restoration.
+- Publish `agent-notifications` version 1.0.1.
+
+### Expected effect
+
+The active `~/.codex/hooks.json` symlink no longer triggers completion
+notifications, while the notification implementation and restoration example
+remain available.
+
 ## 2026-08-31 - Explicit port-by-contract invocation
 
 ### Problem

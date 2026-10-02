@@ -1,12 +1,16 @@
 # Codex Hooks
 
-## Agent completion notifications
+## Agent completion notifications (disabled)
 
-`agent_done_notify.py` sends a compact notification when the principal Codex
-agent finishes a turn and the `Stop` hook fires. The script reads Codex hook
-JSON from stdin and derives the active project from the hook `cwd`, so it works
-even when installed as a symlink from this repo into a different project's Codex
-session.
+The active `agent_done_hooks.json` intentionally registers no `Stop` hook, so
+completion notifications are disabled. The previous registration remains in
+`agent_done_hooks.example.json` as an explicit reference if the notification is
+intentionally restored later.
+
+When registered, `agent_done_notify.py` sends a compact notification after the
+principal Codex agent finishes a turn. The script reads Codex hook JSON from
+stdin and derives the active project from the hook `cwd`, so it works even when
+installed as a symlink from this repo into a different project's Codex session.
 
 The alert includes:
 
@@ -27,9 +31,9 @@ Install the script:
 ./install.sh --feature agent-notifications
 ```
 
-This feature installs `~/.codex/hooks.json` as a symlink to the repo-owned
-`hooks/agent_done_hooks.json`. Review and trust the hook with `/hooks` in
-Codex after installing.
+This feature installs `~/.codex/hooks.json` as a symlink to the repo-owned,
+disabled `hooks/agent_done_hooks.json` and installs the implementation and
+example beside it.
 
 If you already have an unmanaged `~/.codex/hooks.json`, the installer stops
 instead of overwriting it. In that case, merge the event entries from

@@ -15,7 +15,7 @@ The repository configures Codex; it does not implement a task-execution runtime.
 - focused, optional skills for test-quality review, contract-first ports, and
   dead-surface audits;
 - read-only investigation and import-topology review agents;
-- an opt-in completion-notification hook;
+- completion-notification resources with the active `Stop` hook disabled;
 - compact repository-specific issue and triage configuration.
 
 ## Install
@@ -138,10 +138,12 @@ Check the triage and Wayfinder label adapter against an explicit repository:
 existing same-name label. It changes external GitHub state and should be run
 only after the reported operations are approved.
 
-## Optional notification hook
+## Completion notification hook (disabled)
 
-The `agent-notifications` feature installs the principal-agent `Stop` hook. It
-is opt-in because it may replace an existing `hooks.json` target:
+The `agent-notifications` feature installs the notification implementation and
+an active `hooks.json` that does not register a `Stop` hook. The former
+registration remains in `hooks/agent_done_hooks.example.json` as an explicit
+reference if completion notifications are intentionally restored later:
 
 ```bash
 ./install.sh --feature agent-notifications

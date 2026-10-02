@@ -116,16 +116,29 @@ class AgentDoneNotifyTests(unittest.TestCase):
         feature = manifest["features"]["agent-notifications"]
 
         self.assertIs(feature["default_enabled"], False)
-        self.assertEqual(feature["version"], "1.0.0")
+        self.assertEqual(feature["version"], "1.0.1")
         self.assertIn(
             {"source": "hooks/agent_done_hooks.json", "target": "hooks.json"},
             feature["links"],
         )
 
-    def test_installed_hook_config_only_registers_principal_agent_stop(self) -> None:
-        config = json.loads((REPO_ROOT / "hooks" / "agent_done_hooks.json").read_text(encoding="utf-8"))
+    def test_installed_hook_config_disables_principal_agent_stop(self) -> None:
+        active = json.loads(
+            (REPO_ROOT / "hooks" / "agent_done_hooks.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        example = json.loads(
+            (REPO_ROOT / "hooks" / "agent_done_hooks.example.json").read_text(
+                encoding="utf-8"
+            )
+        )
 
-        self.assertEqual(set(config["hooks"]), {"Stop"})
+        self.assertEqual(active, {"hooks": {}})
+        self.assertEqual(
+            example["hooks"]["Stop"][0]["hooks"][0]["command"],
+            "python3 ~/.codex/hooks/agent_done_notify.py",
+        )
 
 
 if __name__ == "__main__":

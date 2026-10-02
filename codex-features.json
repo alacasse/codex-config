@@ -60,8 +60,8 @@
       ]
     },
     "agent-notifications": {
-      "version": "1.0.0",
-      "description": "Opt-in principal-agent completion notification hook.",
+      "version": "1.0.1",
+      "description": "Completion notification resources with the active Stop hook disabled.",
       "default_enabled": false,
       "links": [
         {
