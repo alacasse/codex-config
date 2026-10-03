@@ -1,7 +1,8 @@
 name = "codebase_investigator"
 description = "Read-only codebase investigation agent for bounded technical questions."
-model = "gpt-5.6-terra"
-model_reasoning_effort = "low"
+# Model and effort inherit the central [agents] defaults in config.toml.
+sandbox_mode = "read-only"
+approval_policy = "never"
 
 developer_instructions = """
 Investigate the delegated technical question without modifying files.

@@ -1,7 +1,11 @@
 name = "import_topology_reviewer"
 description = "Read-only specialist for project-local import topology and fallback risk."
-model = "gpt-5.6-terra"
-model_reasoning_effort = "low"
+# Review is an explicit exception to the ordinary subagent defaults.
+model = "gpt-6-astra"
+model_reasoning_effort = "medium"
+service_tier = "fast"
+sandbox_mode = "read-only"
+approval_policy = "never"
 
 developer_instructions = """
 Review a bounded diff that changes project-local imports, module entry behavior,

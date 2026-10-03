@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-10-02 - Native subagent model routing
+
+### Problem
+
+The investigator and import-topology reviewer pinned the same older model,
+preventing ordinary subagents from following a central default and giving
+review no distinct selection. Their read-only scope was only an instruction.
+
+### Decision
+
+- Use native user-level `[agents]` defaults for ordinary model/effort choices;
+  remove the investigator's pins and document Sol 6.1 low activation without
+  adopting or rewriting the user's personal config.
+- Preserve import-topology review and add a general `reviewer`, both explicitly
+  selecting Astra medium and Fast. Retain these two necessary role exceptions.
+- Enforce read-only sandboxing without approval escalation for custom roles.
+- Publish `custom-agents` version 2.1.0 through the existing symlink installer.
+- Document native `config_file` bindings to canonical source files because the
+  current desktop runtime refuses to apply role layers through symlinks.
+- Keep principal settings, native worker permissions, `/review`, approval
+  review, and disabled notifications unchanged. Ordinary Fast inherits the
+  principal's existing `priority` tier; no unsupported subagent-tier key is used.
+
+### Expected effect
+
+Ordinary subagents share one native model/effort choice. Named reviewers use
+the approved review selection and report findings without applying fixes.
+Future model changes use the central defaults or the two documented review
+exceptions, without a custom execution framework or automatic fallback.
+
 ## 2026-08-31 - Disable completion notifications
 
 ### Problem

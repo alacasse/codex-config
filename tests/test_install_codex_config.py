@@ -108,6 +108,44 @@ def test_installed_owner_command_recognizes_the_global_instructions() -> None:
         assert "feature: global-instructions 3.3.0" in inspected.stdout
 
 
+def test_custom_agents_install_preserves_personal_config_and_disabled_hooks(
+    tmp_path: Path,
+) -> None:
+    codex_home = tmp_path / "codex-home"
+    codex_home.mkdir()
+    config = codex_home / "config.toml"
+    config.write_text(
+        '# Personal choices stay outside installer ownership.\n'
+        'model = "gpt-6-astra"\nmodel_reasoning_effort = "xhigh"\n'
+        'service_tier = "priority"\n\n[agents]\n'
+        'default_subagent_model = "gpt-6.1-sol"\n'
+        'default_subagent_reasoning_effort = "low"\n',
+        encoding="utf-8",
+    )
+    hooks = codex_home / "hooks.json"
+    hooks.write_text('{"hooks": {}}\n', encoding="utf-8")
+    before_config, before_hooks = config.read_bytes(), hooks.read_bytes()
+
+    preview = run_installer(codex_home, "--feature", "custom-agents", "--dry-run")
+    assert preview.returncode == 0, preview.stderr
+    assert not (codex_home / "agents").exists()
+    assert not (codex_home / STATE_RELATIVE).exists()
+
+    for _ in range(2):
+        installed = run_installer(codex_home, "--feature", "custom-agents")
+        assert installed.returncode == 0, installed.stderr
+        assert config.read_bytes() == before_config
+        assert not config.is_symlink()
+        assert hooks.read_bytes() == before_hooks
+        for name in ("codebase_investigator", "import_topology_reviewer", "reviewer"):
+            target = codex_home / "agents" / f"{name}.toml"
+            assert target.is_symlink()
+            assert target.resolve() == REPO_ROOT / "agents" / f"{name}.toml"
+        state = json.loads((codex_home / STATE_RELATIVE).read_text(encoding="utf-8"))
+        assert set(state["features"]) == {"custom-agents"}
+        assert state["features"]["custom-agents"]["version"] == "2.1.0"
+
+
 def test_dry_run_does_not_create_the_codex_home() -> None:
     with tempfile.TemporaryDirectory() as directory:
         codex_home = Path(directory) / "not-created"

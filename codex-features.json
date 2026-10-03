@@ -36,7 +36,7 @@
       ]
     },
     "custom-agents": {
-      "version": "2.0.0",
+      "version": "2.1.0",
       "description": "Focused read-only investigation and review agents.",
       "links": [
         {
@@ -46,6 +46,10 @@
         {
           "source": "agents/import_topology_reviewer.toml",
           "target": "agents/import_topology_reviewer.toml"
+        },
+        {
+          "source": "agents/reviewer.toml",
+          "target": "agents/reviewer.toml"
         }
       ]
     },

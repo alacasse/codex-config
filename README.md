@@ -14,7 +14,7 @@ The repository configures Codex; it does not implement a task-execution runtime.
 - ownership inspection for repository-managed Codex paths;
 - focused, optional skills for test-quality review, contract-first ports, and
   dead-surface audits;
-- read-only investigation and import-topology review agents;
+- read-only investigation, general review, and import-topology review agents;
 - completion-notification resources with the active `Stop` hook disabled;
 - compact repository-specific issue and triage configuration.
 
@@ -125,6 +125,81 @@ The installed command belongs to the default `global-instructions` feature; use
 the equivalent path under `CODEX_HOME` when a non-default home is active. The
 ownership tool uses the current manifest. Use installer `--status` and `--prune`
 for links recorded by an older manifest.
+
+## Subagent model routing
+
+Ordinary subagents use the native defaults in the user's `config.toml`:
+
+```toml
+[agents]
+default_subagent_model = "gpt-6.1-sol"
+default_subagent_reasoning_effort = "low"
+```
+
+Merge only these two keys into an existing `[agents]` table, preserving its
+other settings. Do not add a second table or replace the personal config.
+Back up the file before editing it. These central defaults cover native agents
+and `codebase_investigator`; an explicit spawn model or effort can override
+them. The installer deliberately does not own or rewrite `config.toml`.
+
+Register the custom role layers in that same personal config, using the
+canonical absolute checkout path reported by `codex-owner`:
+
+```toml
+[agents.codebase_investigator]
+config_file = "/absolute/checkout/agents/codebase_investigator.toml"
+
+[agents.reviewer]
+config_file = "/absolute/checkout/agents/reviewer.toml"
+
+[agents.import_topology_reviewer]
+config_file = "/absolute/checkout/agents/import_topology_reviewer.toml"
+```
+
+Replace `/absolute/checkout` with the resolved repository directory. This is
+needed by the desktop CLI `0.159.0-alpha.12.1`: discovery finds the installed
+role symlinks, but applying a role from a symlink fails with `Symbolic link loop`.
+The native `config_file` declarations refer directly to the regular source
+files, preserving the installer's managed symlinks without relaxing filesystem
+security. Recheck these three paths if the checkout is moved. Keep role
+instructions in their source files instead of copying them into personal config.
+
+The ordinary agents inherit the parent's service tier. In the approved personal
+setup the principal already uses `service_tier = "priority"`, which requests
+Fast. Leave its model, effort and tier unchanged. Codex has no documented
+`agents.default_subagent_service_tier`; do not invent that key. If the parent's
+tier is changed later, revisit this inherited choice explicitly.
+
+Use `reviewer` for general diff review and `import_topology_reviewer` for its
+existing specialist lens. Both explicitly select `gpt-6-astra`, `medium`, and
+`service_tier = "fast"`. These are the only model exceptions. Native standalone
+agent files have no documented shared review-profile inheritance, so changing
+the review selection requires updating those two files together. All three
+custom agents enforce `sandbox_mode = "read-only"` and
+`approval_policy = "never"`; blocked checks are reported rather than escalating
+or applying fixes. Native workers retain their parent's permissions.
+
+Install or upgrade the role files through the existing path:
+
+```bash
+./install.sh --feature custom-agents --dry-run
+./install.sh --feature custom-agents
+```
+
+The feature neither activates notifications nor changes principal settings.
+Start a new session after changing defaults. Existing threads retain their
+session selections. This policy governs named subagents, not `/review` or
+`codex review`; it does not set `review_model` or change the separate approval
+reviewer configured by `approvals_reviewer`.
+
+The installed desktop CLI `0.159.0-alpha.12.1` recognizes these native settings. Confirm
+the selected models are available to the signed-in account before adopting the
+policy elsewhere; do not silently substitute an unavailable model. Fast is a
+requested tier (`fast` normalizes to `priority`), not proof of the tier served
+by the backend or a latency guarantee. See the official
+[subagent configuration](https://learn.chatgpt.com/docs/agent-configuration/subagents),
+[configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference)
+and [profile limitations](https://learn.chatgpt.com/docs/config-file/config-advanced#profiles).
 
 ## GitHub tracker setup
 

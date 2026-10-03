@@ -232,13 +232,31 @@ def test_surviving_agent_configs_parse_and_are_read_only() -> None:
     assert {path.name for path in agent_paths} == {
         "codebase_investigator.toml",
         "import_topology_reviewer.toml",
+        "reviewer.toml",
     }
     for path in agent_paths:
         data = tomllib.loads(path.read_text(encoding="utf-8"))
         instructions = data["developer_instructions"]
         assert data["name"] == path.stem
+        assert data["sandbox_mode"] == "read-only"
+        assert data["approval_policy"] == "never"
         assert "read-only" in instructions.lower()
         assert "Never spawn, delegate to, or wait" in instructions
+
+
+def test_custom_agents_use_native_defaults_and_explicit_review_exceptions() -> None:
+    investigator = tomllib.loads(
+        (REPO_ROOT / "agents/codebase_investigator.toml").read_text(encoding="utf-8")
+    )
+    assert "model" not in investigator
+    assert "model_reasoning_effort" not in investigator
+    for name in ("reviewer", "import_topology_reviewer"):
+        reviewer = tomllib.loads(
+            (REPO_ROOT / "agents" / f"{name}.toml").read_text(encoding="utf-8")
+        )
+        assert reviewer["model"] == "gpt-6-astra"
+        assert reviewer["model_reasoning_effort"] == "medium"
+        assert reviewer["service_tier"] == "fast"
 
 
 def test_manifest_json_is_stable() -> None:
