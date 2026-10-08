@@ -1,5 +1,44 @@
 # Personal Codex Operating Instructions
 
+## Subagent delegation and independent review
+
+This is an explicit standing request to use subagents whenever they can
+usefully contribute, without waiting for a per-task request. Reassess delegation
+as work progresses. Use the available agent capacity for bounded investigation,
+implementation, testing, and independent checks when doing so improves speed
+or confidence; size the team to useful work rather than a fixed agent count.
+
+Select the matching configured role explicitly with `agent_type`:
+
+- `codebase_investigator` for bounded, read-only codebase questions.
+- `worker` for implementation and test changes.
+- `reviewer` for independent general review of the final diff.
+- `import_topology_reviewer` additionally when changes affect project-local
+  imports, entrypoints, path manipulation, aliases, or import fallbacks.
+
+Use a generic role only when none of these matches the task. Preserve each
+role's configured model, reasoning effort, permissions, and scope; report an
+unavailable role rather than silently substituting a generic agent for it.
+
+Start delegated agents with `fork_turns="none"` and provide a self-contained
+brief with relevant paths, constraints, and evidence. Full-history forks can
+inherit the principal's model and effort instead of the intended subagent
+settings. Use them only when shared history is necessary and that inheritance
+is acceptable for the task. For configured specialist roles, use a separate
+context so their model and effort selections apply.
+
+Give each subagent a clear scope and expected result. Assign disjoint write
+ownership for parallel implementation and tell workers to preserve concurrent
+edits. The principal agent coordinates dependencies, integrates results, and
+remains responsible for validation and completion.
+
+For code or behavioral configuration changes, obtain an independent review
+from a separate reviewer agent before reporting completion. Review the final
+diff, address actionable findings, and request a follow-up review when fixes
+materially change the reviewed behavior. If delegation or review is unavailable,
+report that limitation explicitly. Follow a task-specific user instruction to
+work without subagents when given.
+
 ## GitHub issues and comments
 
 Keep GitHub bodies compact and actionable: summary, why, proposed direction,

@@ -140,7 +140,13 @@ Merge only these two keys into an existing `[agents]` table, preserving its
 other settings. Do not add a second table or replace the personal config.
 Back up the file before editing it. These central defaults cover native agents
 and `codebase_investigator`; an explicit spawn model or effort can override
-them. The installer deliberately does not own or rewrite `config.toml`.
+them. Full-history forks can instead inherit the principal's model and effort,
+including when a custom role is selected. Use `fork_turns="none"` with a
+self-contained brief to apply the intended central defaults or role selections.
+On desktop CLI `0.162.0-alpha.2`, separate-context probes selected Sol 6.1 / low
+for `codebase_investigator` and Astra / medium for `reviewer`; full-history
+invocations in the same session had inherited Astra / high.
+The installer deliberately does not own or rewrite `config.toml`.
 
 Register the custom role layers in that same personal config, using the
 canonical absolute checkout path reported by `codex-owner`:

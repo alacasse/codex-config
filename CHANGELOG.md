@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-10-07 - Standing delegation and independent review
+
+### Problem
+
+Desktop sessions can require an explicit request before spawning subagents.
+The personal instructions did not supply that request, so agents could carry
+out implementation and validation alone despite the user's preference.
+
+### Decision
+
+- Explicitly request useful subagent delegation in global personal instructions.
+- Use available capacity for bounded work with clear ownership and integration.
+- Require a separate reviewer for code and behavioral configuration changes.
+- Select configured investigation, worker, general review, and import-topology
+  review roles explicitly rather than leaving their use to generic delegation.
+- Default to separate subagent contexts so full-history inheritance does not
+  replace central defaults or specialist model and effort selections.
+- Publish `global-instructions` version 3.4.0 through the existing source link.
+
+### Expected effect
+
+Agents reading the global instructions can delegate without a repeated user
+prompt and must obtain independent review before declaring changes complete.
+Existing sessions may need a fresh instruction load; the app's vendor-owned
+mode and concurrency limits remain unchanged.
+
 ## 2026-10-02 - Native subagent model routing
 
 ### Problem
