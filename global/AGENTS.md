@@ -2,18 +2,19 @@
 
 ## Subagent delegation and independent review
 
-This is an explicit standing request to use subagents whenever they can
-usefully contribute, without waiting for a per-task request. Reassess delegation
-as work progresses. Use the available agent capacity for bounded investigation,
-implementation, testing, and independent checks when doing so improves speed
-or confidence; size the team to useful work rather than a fixed agent count.
+This is an explicit standing request to delegate proactively when bounded,
+independent work would materially improve speed, quality, or main-thread context
+usage; do not wait for a per-task request. Reassess delegation as work progresses.
+Prefer substantial exploration and independent checks; delegate implementation
+or testing when its scope can be isolated. Keep short, sequential, or tightly
+coupled work in the main thread. Do not spawn agents merely to use capacity.
 
 Select the matching configured role explicitly with `agent_type`:
 
 - `codebase_investigator` for bounded, read-only codebase questions.
 - `worker` for implementation and test changes.
 - `reviewer` for independent general review of the final diff.
-- `import_topology_reviewer` additionally when changes affect project-local
+- `import_topology_reviewer` additionally for material changes to project-local
   imports, entrypoints, path manipulation, aliases, or import fallbacks.
 
 Use a generic role only when none of these matches the task. Preserve each
@@ -32,12 +33,15 @@ ownership for parallel implementation and tell workers to preserve concurrent
 edits. The principal agent coordinates dependencies, integrates results, and
 remains responsible for validation and completion.
 
-For code or behavioral configuration changes, obtain an independent review
-from a separate reviewer agent before reporting completion. Review the final
-diff, address actionable findings, and request a follow-up review when fixes
-materially change the reviewed behavior. If delegation or review is unavailable,
-report that limitation explicitly. Follow a task-specific user instruction to
-work without subagents when given.
+For non-trivial code or behavioral configuration changes, obtain an independent
+review from a separate reviewer agent before reporting completion, especially
+when APIs, concurrency, persistence, security, or multiple components are affected.
+For small, low-risk changes, use proportionate validation without requiring a
+separate review. Review the final diff, address actionable findings, and request
+a follow-up review only when fixes materially change the reviewed behavior.
+If delegation or a required review is unavailable, report that limitation
+explicitly. Follow a task-specific user instruction to work without subagents
+when given.
 
 ## GitHub issues and comments
 

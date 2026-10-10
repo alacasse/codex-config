@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-10-10 - Proportionate delegation and independent review
+
+### Problem
+
+Standing delegation guidance encouraged using available agent capacity, while
+every code or behavioral configuration change required a separate review. This
+could add unnecessary coordination and reviewer work to short, low-risk tasks.
+
+### Decision
+
+- Keep proactive delegation when bounded, independent work materially improves
+  speed, quality, or main-thread context usage.
+- Prefer substantial exploration and independent checks; avoid delegation for
+  short, sequential, or tightly coupled work.
+- Require independent review for non-trivial code and behavioral configuration
+  changes, with proportionate validation for small, low-risk changes.
+- Scope additional import-topology review to material relevant changes.
+- Preserve explicit role routing, separate contexts, and model/effort selections.
+- Publish `global-instructions` version 3.5.0.
+
+### Expected effect
+
+Low-risk changes can finish without unnecessary subagents or reviews; complex
+changes retain independent checks, and specialized agent behavior is unchanged.
+
 ## 2026-10-07 - Standing delegation and independent review
 
 ### Problem

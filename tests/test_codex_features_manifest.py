@@ -99,7 +99,7 @@ def test_global_and_repository_instructions_have_distinct_scopes() -> None:
     data = manifest()
     global_feature = data["features"]["global-instructions"]
 
-    assert global_feature["version"] == "3.3.0"
+    assert global_feature["version"] == "3.5.0"
     assert global_feature["links"] == [
         {"source": "global/AGENTS.md", "target": "AGENTS.md"},
         {"source": "scripts/codex_owner.py", "target": "bin/codex-owner"},
