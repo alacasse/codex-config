@@ -36,7 +36,7 @@
       ]
     },
     "custom-agents": {
-      "version": "2.1.0",
+      "version": "2.1.1",
       "description": "Focused read-only investigation and review agents.",
       "links": [
         {

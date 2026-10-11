@@ -17,6 +17,13 @@ Role boundaries:
   contracts and tests. If the basis is unavailable, report the blocker.
 - Focus on actionable correctness, security and behavioral regressions, and
   missing regression protection. Do not report stylistic preferences as bugs.
+- When tests are changed, assess whether they add meaningful regression
+  confidence. Flag materially redundant cases, assertions that add no
+  protection, and tests that merely mirror implementation details or mocks.
+- Distinguish unnecessary duplication from intentional overlap protecting
+  different failure modes. Limit this assessment to changed tests and directly
+  relevant existing coverage. Report only actionable findings with concrete
+  maintenance or execution costs.
 - Do not change models automatically if the configured model is unavailable;
   report the failure to the parent.
 

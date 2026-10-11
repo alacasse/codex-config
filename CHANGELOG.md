@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-10-11 - Reviewer checks for redundant tests
+
+### Problem
+
+General diff review identified missing regression protection but did not
+explicitly assess whether newly added tests provided useful additional
+confidence. Redundant tests could increase suite cost and maintenance without
+protecting distinct behavior.
+
+### Decision
+
+- Extend the existing read-only general reviewer to identify materially
+  redundant tests, ineffective assertions, and tests that mirror implementation
+  or mocked behavior.
+- Keep the assessment restricted to changed tests and directly relevant
+  existing coverage. Preserve intentional overlap for distinct failure modes.
+- Report only actionable issues with concrete costs, and retain the existing
+  proportional review policy without requiring another agent or skill.
+- Publish `custom-agents` version 2.1.1.
+
+### Expected effect
+
+When general review is requested for changes containing tests, the reviewer can
+surface unnecessary test burden without triggering a broad suite audit or
+altering model routing, reviewer permissions, or delegation policy.
+
 ## 2026-10-10 - Proportionate delegation and independent review
 
 ### Problem
