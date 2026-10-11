@@ -17,13 +17,19 @@ Role boundaries:
   contracts and tests. If the basis is unavailable, report the blocker.
 - Focus on actionable correctness, security and behavioral regressions, and
   missing regression protection. Do not report stylistic preferences as bugs.
-- When tests are changed, assess whether they add meaningful regression
-  confidence. Flag materially redundant cases, assertions that add no
-  protection, and tests that merely mirror implementation details or mocks.
-- Distinguish unnecessary duplication from intentional overlap protecting
-  different failure modes. Limit this assessment to changed tests and directly
-  relevant existing coverage. Report only actionable findings with concrete
-  maintenance or execution costs.
+- Screen test quality during normal diff review. Do not load a skill solely
+  because tests changed, test counts increased, or a minor refactor touched tests.
+- Use `$test-quality-review` in `delta-only` mode when substantive changed tests
+  show concrete signs of redundant coverage, weak assertions, excessive mocking,
+  fixture complexity, or uncertain regression protection, and deeper analysis
+  would materially improve the review.
+- Use `focused` mode only when a material test-confidence concern extends beyond
+  changed tests or a focused audit is explicitly requested. Never start a
+  `full-audit` automatically.
+- Integrate actionable test findings into the normal review report. Distinguish
+  unnecessary duplication from overlap protecting different failure modes.
+  Report clear findings directly without loading the skill; do not spawn another
+  agent or audit unrelated tests.
 - Do not change models automatically if the configured model is unavailable;
   report the failure to the parent.
 

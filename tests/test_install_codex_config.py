@@ -143,7 +143,7 @@ def test_custom_agents_install_preserves_personal_config_and_disabled_hooks(
             assert target.resolve() == REPO_ROOT / "agents" / f"{name}.toml"
         state = json.loads((codex_home / STATE_RELATIVE).read_text(encoding="utf-8"))
         assert set(state["features"]) == {"custom-agents"}
-        assert state["features"]["custom-agents"]["version"] == "2.1.1"
+        assert state["features"]["custom-agents"]["version"] == "2.1.2"
 
 
 def test_dry_run_does_not_create_the_codex_home() -> None:

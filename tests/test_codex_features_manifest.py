@@ -163,7 +163,7 @@ def test_surviving_skill_versions_publish_the_cleanup() -> None:
     features = manifest()["features"]
 
     assert features["dead-surface-audit"]["version"] == "2.0.1"
-    assert features["test-quality-review"]["version"] == "1.1.1"
+    assert features["test-quality-review"]["version"] == "1.1.2"
     assert features["port-by-contract"]["version"] == "2.0.2"
 
 

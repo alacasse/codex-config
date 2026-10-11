@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-10-11 - Conditional test-quality skill use in reviews
+
+### Problem
+
+The general reviewer could identify low-value tests but did not know when to
+use the dedicated test-quality skill. Its broad description also made routine
+test changes appear sufficient to activate an in-depth audit.
+
+### Decision
+
+- Let the existing reviewer screen tests during normal diff review and invoke
+  `$test-quality-review` only when concrete quality or regression-confidence
+  concerns warrant deeper analysis.
+- Use `delta-only` for substantive changed-test risks and `focused` only for
+  material concerns beyond the diff or explicit focused requests.
+- Never trigger `full-audit` automatically; keep findings in the normal review,
+  without another agent or unrelated test-suite work.
+- Narrow skill discovery metadata to explicit audits and evidenced concerns.
+- Publish `custom-agents` 2.1.2 and `test-quality-review` 1.1.2.
+
+### Expected effect
+
+The general reviewer can consult specialized guidance when it adds value
+without systematically loading the skill for ordinary test changes.
+
 ## 2026-10-11 - Reviewer checks for redundant tests
 
 ### Problem

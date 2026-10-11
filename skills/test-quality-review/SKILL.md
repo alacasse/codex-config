@@ -1,6 +1,6 @@
 ---
 name: test-quality-review
-description: Review the quality of project tests for behavioral confidence, regression protection, assertion strength, mocking and fixture friction, maintainability, and production design signals revealed by tests. Use when asked to review changed tests, audit a test file/module/feature/bug fix, evaluate whether tests meaningfully protect behavior, or identify test friction that may indicate design issues; do not optimize for coverage percentages.
+description: In-depth test-quality assessment for redundant tests, weak assertions, mocking and fixture friction, inadequate regression protection, and test-driven design signals. Use for explicit test-quality audits or when a reviewer identifies concrete test risks needing deeper investigation. Do not activate merely because tests changed, test counts increased, or a minor refactor touched tests; avoid coverage-percentage targets.
 ---
 
 # Test Quality Review
@@ -25,6 +25,11 @@ Infer the mode from the request unless the user names it.
 - `full-audit`: review a larger test-suite area. Prioritize recurring smells,
   high-impact behavioral gaps, architectural friction, and remediation tracks.
   Do not attempt exhaustive reporting.
+
+When supporting a general diff reviewer, default to `delta-only` for substantive
+changed-test risks. Use `focused` only when a material concern extends beyond
+the changed tests or is explicitly requested; never start `full-audit`
+automatically from an ordinary diff review.
 
 If scope is unclear, choose the narrowest useful mode and state the assumption.
 
