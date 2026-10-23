@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-10-23 - Concrete human-facing communication
+
+### Problem
+
+Global instructions defined how Codex should work but left communication
+preferences implicit. Abstract process labels could obscure actual proposed
+changes or make an unidentified next step sound like a complete plan.
+
+### Decision
+
+- Add human-facing communication guidance to the global instructions.
+- Use natural Quebec French with established English engineering terminology
+  when speaking to the user; leave documentation language to each repository's
+  instructions and conventions.
+- Lead with concrete answers, actions, and expected results, distinguish facts
+  from recommendations and uncertainty, and explain the scope of requested
+  approvals without imposing a fixed response format.
+- Bump `global-instructions` to 3.6.0 and align existing version assertions.
+
+### Expected effect
+
+Development conversations should be clearer and easier to act on, with detail
+proportionate to the decision and no global documentation-language requirement.
+
 ## 2026-10-11 - Conditional test-quality skill use in reviews
 
 ### Problem
