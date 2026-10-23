@@ -116,7 +116,6 @@ class AgentDoneNotifyTests(unittest.TestCase):
         feature = manifest["features"]["agent-notifications"]
 
         self.assertIs(feature["default_enabled"], False)
-        self.assertEqual(feature["version"], "1.0.1")
         self.assertIn(
             {"source": "hooks/agent_done_hooks.json", "target": "hooks.json"},
             feature["links"],

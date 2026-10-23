@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import tomllib
 from argparse import Namespace
 from pathlib import Path
@@ -95,76 +94,14 @@ def test_default_and_all_feature_selection() -> None:
     assert set(all_features) == set(data["features"])
 
 
-def test_global_and_repository_instructions_have_distinct_scopes() -> None:
+def test_global_feature_installs_personal_instructions_and_owner_command() -> None:
     data = manifest()
     global_feature = data["features"]["global-instructions"]
 
-    assert global_feature["version"] == "3.6.0"
     assert global_feature["links"] == [
         {"source": "global/AGENTS.md", "target": "AGENTS.md"},
         {"source": "scripts/codex_owner.py", "target": "bin/codex-owner"},
     ]
-
-    global_text = (REPO_ROOT / "global" / "AGENTS.md").read_text(encoding="utf-8")
-    repository_text = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
-
-    assert "Git commit attribution" in global_text
-    assert "bin/codex-owner" in global_text
-    assert "This repository owns" not in global_text
-    assert "docs/agents/" not in global_text
-    assert "/home/alacasse/" not in global_text
-    assert "Repository-owned configuration" in repository_text
-    assert "docs/agents/issue-tracker.md" in repository_text
-    assert "Git commit attribution" not in repository_text
-
-
-def test_global_instructions_resolve_one_project_documentation_root() -> None:
-    global_text = (REPO_ROOT / "global" / "AGENTS.md").read_text(encoding="utf-8")
-    normalized_global = " ".join(global_text.split())
-
-    assert "single documentation root" in normalized_global
-    assert "git config --local --get codex.docs-root" in normalized_global
-    assert "otherwise use `docs`" in normalized_global
-    assert "normal Codex instruction chain" in normalized_global
-    assert "my-docs" not in global_text
-    assert "/home/alacasse/" not in global_text
-
-
-def test_global_instructions_fail_closed_on_instruction_file_ownership() -> None:
-    global_text = (REPO_ROOT / "global" / "AGENTS.md").read_text(encoding="utf-8")
-    normalized_global = " ".join(global_text.split())
-
-    assert "Before editing an `AGENTS.md` or `CLAUDE.md`" in normalized_global
-    assert "global configuration, public repository guidance, or a local overlay" in (
-        normalized_global
-    )
-    assert "exact target, owner, and governing instruction" in normalized_global
-    assert "explicit authorization naming that file" in normalized_global
-
-
-def test_global_instructions_distinguish_documentation_and_target_repositories() -> None:
-    global_text = (REPO_ROOT / "global" / "AGENTS.md").read_text(encoding="utf-8")
-    normalized_global = " ".join(global_text.split())
-
-    assert "documentation repository owns the documentation files" in (
-        normalized_global
-    )
-    assert "not automatically the target of workflows" in normalized_global
-    assert "only to the repository they name" in normalized_global
-    assert "do not mirror a target repository's branch structure" in (
-        normalized_global
-    )
-    assert "keep global configuration project-neutral" in normalized_global
-    assert "my-docs" not in global_text
-    assert "Graphify" not in global_text
-
-
-def test_surviving_skill_versions_publish_the_cleanup() -> None:
-    features = manifest()["features"]
-
-    assert features["dead-surface-audit"]["version"] == "2.0.1"
-    assert features["test-quality-review"]["version"] == "1.1.2"
-    assert features["port-by-contract"]["version"] == "2.0.2"
 
 
 def test_port_by_contract_requires_explicit_invocation() -> None:
@@ -208,25 +145,6 @@ def test_surviving_skill_metadata_matches_directory_names() -> None:
         assert f"\nname: {skill_dir.name}\n" in text
 
 
-def test_surviving_skills_keep_independent_behavioral_lenses() -> None:
-    port = (REPO_ROOT / "skills" / "port-by-contract" / "SKILL.md").read_text(
-        encoding="utf-8"
-    )
-    quality = (REPO_ROOT / "skills" / "test-quality-review" / "SKILL.md").read_text(
-        encoding="utf-8"
-    )
-    dead = (REPO_ROOT / "skills" / "dead-surface-audit" / "SKILL.md").read_text(
-        encoding="utf-8"
-    )
-
-    assert "implementation-neutral behavior contracts" in port
-    assert "Design from contract responsibilities" in port
-    assert "behavioral confidence" in quality
-    assert "Do not optimize for coverage percentages" in quality
-    assert "`behavioral`" in dead
-    assert "`topology-assertion`" in dead
-
-
 def test_surviving_agent_configs_parse_and_are_read_only() -> None:
     agent_paths = sorted((REPO_ROOT / "agents").glob("*.toml"))
     assert {path.name for path in agent_paths} == {
@@ -236,12 +154,9 @@ def test_surviving_agent_configs_parse_and_are_read_only() -> None:
     }
     for path in agent_paths:
         data = tomllib.loads(path.read_text(encoding="utf-8"))
-        instructions = data["developer_instructions"]
         assert data["name"] == path.stem
         assert data["sandbox_mode"] == "read-only"
         assert data["approval_policy"] == "never"
-        assert "read-only" in instructions.lower()
-        assert "Never spawn, delegate to, or wait" in instructions
 
 
 def test_custom_agents_use_native_defaults_and_explicit_review_exceptions() -> None:
@@ -257,9 +172,3 @@ def test_custom_agents_use_native_defaults_and_explicit_review_exceptions() -> N
         assert reviewer["model"] == "gpt-6-astra"
         assert reviewer["model_reasoning_effort"] == "medium"
         assert reviewer["service_tier"] == "fast"
-
-
-def test_manifest_json_is_stable() -> None:
-    data = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    assert data["schema_version"] == 1
-    assert json.loads(json.dumps(data, sort_keys=True)) == data

@@ -105,7 +105,8 @@ def test_installed_owner_command_recognizes_the_global_instructions() -> None:
         assert installed.returncode == 0, installed.stderr
         assert inspected.returncode == 0, inspected.stderr
         assert "owner: codex-config" in inspected.stdout
-        assert "feature: global-instructions 3.6.0" in inspected.stdout
+        version = MANIFEST["features"]["global-instructions"]["version"]
+        assert f"feature: global-instructions {version}" in inspected.stdout
 
 
 def test_custom_agents_install_preserves_personal_config_and_disabled_hooks(
@@ -143,7 +144,9 @@ def test_custom_agents_install_preserves_personal_config_and_disabled_hooks(
             assert target.resolve() == REPO_ROOT / "agents" / f"{name}.toml"
         state = json.loads((codex_home / STATE_RELATIVE).read_text(encoding="utf-8"))
         assert set(state["features"]) == {"custom-agents"}
-        assert state["features"]["custom-agents"]["version"] == "2.1.2"
+        assert state["features"]["custom-agents"]["version"] == (
+            MANIFEST["features"]["custom-agents"]["version"]
+        )
 
 
 def test_dry_run_does_not_create_the_codex_home() -> None:
@@ -328,7 +331,8 @@ def test_install_retargets_an_exact_previously_managed_source() -> None:
         )
 
         assert completed.returncode == 0, completed.stderr
-        assert "global-instructions 2.0.1 -> 3.6.0" in completed.stdout
+        version = MANIFEST["features"]["global-instructions"]["version"]
+        assert f"global-instructions 2.0.1 -> {version}" in completed.stdout
         assert "retarget" in completed.stdout
         assert target.resolve() == (REPO_ROOT / "global" / "AGENTS.md").resolve()
         assert (codex_home / "bin" / "codex-owner").is_symlink()

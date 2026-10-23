@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-10-23 - Remove low-value wording and version tests
+
+### Problem
+
+Tests froze phrases and line breaks in agent instructions and skills without
+demonstrating the behaviors their names claimed. A harmless wording change
+already broke one test. Hardcoded release versions also required repeated
+test edits, and a JSON round-trip assertion only exercised the standard library.
+
+### Decision
+
+- Remove prose and vocabulary presence checks, including three dedicated test
+  files; retain structured agent configuration and installation checks.
+- Remove release-number snapshots and compare installed or reported versions
+  with the manifest instead. Keep explicit versions in upgrade fixtures.
+- Remove the redundant JSON round-trip test; retain manifest validation.
+- Add no replacement agent evaluation framework or wording assertions.
+
+### Expected effect
+
+Instruction edits and version bumps no longer require unrelated test updates.
+Tests continue to protect configuration, ownership, and installation behavior
+without implying that phrase presence proves agent compliance.
+
 ## 2026-10-23 - Concrete human-facing communication
 
 ### Problem
