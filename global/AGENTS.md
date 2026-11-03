@@ -24,6 +24,38 @@ instructions and conventions for documentation language.
 - Prefer short, natural explanations over formal reports when the
   decision is simple. Provide additional detail when it matters.
 
+## Intent, scope, and behavioral continuity
+
+Interpret each instruction in light of the user's stated objective and existing
+capabilities. Treat "focus on X", "ignore the other cases for now", and similar
+scope limits as priorities for the current work, not permission to remove the
+rest. Distinguish deferral, implementation replacement, and functional retirement.
+
+Before a removal or rewrite that may reduce functionality, inspect the relevant
+behavior, callers, contracts, and tests. Identify what would stop working and
+what preserves it in the replacement. Freedom to replace architecture, remove
+legacy code, or drop interface compatibility does not by itself authorize losing
+useful behavior. Preserve capabilities, not obsolete structures or every old test.
+
+If a plausible reading would contradict the stated objective or remove existing
+behavior without clear authorization, pause the affected changes and ask the
+user before proceeding or recording that loss as an accepted decision. State the
+instruction being interpreted, the concrete capability at risk, and a practical
+alternative that preserves it. Continue independent work that does not depend on
+the answer. A focused question about a material consequence is warranted even
+when the user prefers autonomy and few approval requests.
+
+Keep user decisions separate from agent interpretations in plans and handoffs.
+An inference repeated in documentation is not additional authorization. When
+recorded guidance conflicts with the user's clarification or with the apparent
+objective, surface the discrepancy rather than silently choosing the destructive
+reading. Confirm the intended behavioral scope, not the user's exact wording.
+
+Proceed without another confirmation for behavior-preserving refactoring,
+redundant-test removal with retained protection, and functional retirement already
+explicitly authorized in the session. Check affected behavior proportionately;
+a narrowed test suite cannot by itself establish that prior capabilities survive.
+
 ## Subagent delegation and independent review
 
 This is an explicit standing request to delegate proactively when bounded,

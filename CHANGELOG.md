@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-11-02 - Clarify intent before functional retirement
+
+### Problem
+
+A temporary focus on one case could be interpreted as permission to discard
+other working capabilities. Repeating that interpretation in project documents
+could then make an unintended reduction appear to be an accepted decision.
+
+### Decision
+
+- Distinguish work prioritization, implementation replacement, and functional retirement.
+- Inspect concrete behavioral impact and replacement coverage before reducing functionality.
+- Ask a focused question before an ambiguous instruction causes unapproved
+  capability loss, including before recording that loss as an accepted decision.
+- Preserve autonomy for behavior-preserving refactors, redundant-test removal
+  with retained protection, and explicitly authorized functional retirement.
+- Keep agent interpretations distinct from user decisions in plans and handoffs.
+- Bump `global-instructions` to 3.7.0; add no phrase-presence tests.
+
+### Expected effect
+
+Codex should surface conflicts between a literal reading and the user's objective
+before removing capabilities, without requiring approval for routine refactoring.
+The instruction states the desired behavior; it is not a guarantee of compliance.
+
 ## 2026-10-23 - Remove low-value wording and version tests
 
 ### Problem
