@@ -35,7 +35,9 @@ Before a removal or rewrite that may reduce functionality, inspect the relevant
 behavior, callers, contracts, and tests. Identify what would stop working and
 what preserves it in the replacement. Freedom to replace architecture, remove
 legacy code, or drop interface compatibility does not by itself authorize losing
-useful behavior. Preserve capabilities, not obsolete structures or every old test.
+observable capabilities. Explicit authorization for functional retirement must
+cover the specific capability being dropped, not just its implementation.
+Preserve capabilities, not obsolete structures or every old test.
 
 If a plausible reading would contradict the stated objective or remove existing
 behavior without clear authorization, pause the affected changes and ask the
@@ -52,9 +54,10 @@ objective, surface the discrepancy rather than silently choosing the destructive
 reading. Confirm the intended behavioral scope, not the user's exact wording.
 
 Proceed without another confirmation for behavior-preserving refactoring,
-redundant-test removal with retained protection, and functional retirement already
-explicitly authorized in the session. Check affected behavior proportionately;
-a narrowed test suite cannot by itself establish that prior capabilities survive.
+deletion of obsolete code that preserves capabilities, redundant-test removal
+with retained behavioral protection, and functional retirement already explicitly
+authorized in the session. Check affected behavior proportionately; a narrowed
+test suite cannot by itself establish that prior capabilities survive.
 
 ## Subagent delegation and independent review
 

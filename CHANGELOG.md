@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-11-02 - Tie retirement authorization to the capability
+
+### Problem
+
+Permission to remove an implementation could still be mistaken for permission
+to retire its observable capabilities.
+
+### Decision
+
+- Require retirement authorization to cover the specific capability being dropped.
+- Explicitly retain autonomy for obsolete-code deletion that preserves capabilities.
+- Bump `global-instructions` to 3.7.1.
+
+### Expected effect
+
+Clarify the authorization boundary without adding approval requests for
+behavior-preserving cleanup or capability retirement already authorized.
+
 ## 2026-11-02 - Clarify intent before functional retirement
 
 ### Problem
