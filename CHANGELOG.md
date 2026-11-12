@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-11-12 - Keep workstream documentation continuous
+
+### Problem
+
+After a rollback or change of direction, agents could resume an obsolete plan or
+duplicate current status across documents. A later session then had to reconstruct
+which decisions, validations, and next actions were still applicable.
+
+### Decision
+
+- Resolve project documentation for ongoing workstreams, not just status questions.
+- Resume from the designated current source and verify relevant repository state.
+- Keep changeable status in one authoritative location and link rather than
+  restating it across documents.
+- Update the existing status when a change of direction or material progress
+  changes the point of resumption, preserving dated evidence and superseded plans.
+- Avoid new tracking files, unnecessary documentation edits, and unsupported
+  assumptions about user decisions.
+- Publish `global-instructions` 3.9.0.
+
+### Expected effect
+
+Agents should be able to resume multi-session work from a current, verifiable
+starting point without propagating stale plans or parallel versions of status.
+This is project-neutral guidance, not an automated consistency guarantee.
+
 ## 2026-11-11 - Make review conclusions actionable
 
 ### Problem

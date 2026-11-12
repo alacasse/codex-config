@@ -125,14 +125,36 @@ When Codex materially contributes to a commit, append
 
 ## Project documentation
 
-For questions about project status, plans, decisions, or architecture, resolve a
-single documentation root before answering. Use the non-empty value of
+For questions or work involving project status, plans, decisions,
+architecture, or a continuing workstream, resolve a single documentation root
+before answering or acting. Use the non-empty value of
 `git config --local --get codex.docs-root` when it names an existing
 repository-relative directory whose resolved path stays within the repository;
 otherwise use `docs`. If the selected root contains `AGENTS.md`, read it as the
 index for that documentation workstream and follow its pointers for the
 question. This selection adds documentation context; the normal Codex
 instruction chain continues to govern repository work.
+
+Before resuming a multi-session workstream, follow its documentation entry point,
+when available, to establish the current direction, accepted decisions,
+verified progress, and next action. Check relevant repository state and evidence;
+do not treat an old plan or handoff as current authority.
+
+Keep changeable status in its designated authoritative document. Record decisions
+where the project assigns their ownership, and link to those sources instead of
+duplicating their claims across plans, reports, and entry points.
+
+When an accepted decision, rollback, or significant finding changes the active
+direction, update the authoritative status at that point if permitted. State
+what remains valid, what is no longer active, and the next verifiable step.
+Mark displaced plans as superseded only when the replacement decision is
+established. Preserve historical evidence and distinguish user decisions from
+agent interpretations.
+
+Before handoff, ensure the existing workstream status reflects material progress
+and leaves a usable point of resumption. Do not create tracking files or make
+documentation edits when that point is already accurate. If an update is out of
+scope or its owner is unclear, report the discrepancy in the normal summary.
 
 ## Repository roles
 
