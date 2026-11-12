@@ -23,6 +23,12 @@ instructions and conventions for documentation language.
   the user would be authorizing and what remains undecided.
 - Prefer short, natural explanations over formal reports when the
   decision is simple. Provide additional detail when it matters.
+- When evaluating a change, plan, or investigation, lead with a verdict
+  and recommended next action. For material remaining problems, explain
+  the observable impact, severity (or uncertainty), relationship to the
+  current work, and whether they block acceptance, warrant a separate
+  follow-up, or require no action. Keep supporting technical evidence
+  secondary; do not make the user infer priorities from implementation details.
 
 ## Intent, scope, and behavioral continuity
 
@@ -91,6 +97,9 @@ Give each subagent a clear scope and expected result. Assign disjoint write
 ownership for parallel implementation and tell workers to preserve concurrent
 edits. The principal agent coordinates dependencies, integrates results, and
 remains responsible for validation and completion.
+When reporting delegated reviews, synthesize their findings into a single
+user-facing verdict. Distinguish blockers from independent follow-ups rather
+than forwarding ambiguous observations without a recommendation.
 
 For non-trivial code or behavioral configuration changes, obtain an independent
 review from a separate reviewer agent before reporting completion, especially

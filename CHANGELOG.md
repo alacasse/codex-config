@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-11-11 - Make review conclusions actionable
+
+### Problem
+
+A review could accept a fix while describing another defect without stating
+its severity, relationship to the change, or whether it blocked acceptance.
+The user had to ask for the conclusion and next action.
+
+### Decision
+
+- Require verdict-first evaluations that explain material risks and recommended
+  actions without burying the decision in implementation details.
+- Make the principal agent synthesize delegated findings into one conclusion.
+- Require the general reviewer to distinguish in-scope blockers, independent
+  follow-ups, and uncertainty, without imposing a rigid report template.
+- Publish `global-instructions` 3.8.0 and `custom-agents` 2.2.0.
+
+### Expected effect
+
+Review reports should make acceptance and remaining work understandable at
+first reading, without suppressing defects or replacing supporting evidence.
+These instructions guide behavior; they do not guarantee compliance.
+
 ## 2026-11-02 - Tie retirement authorization to the capability
 
 ### Problem

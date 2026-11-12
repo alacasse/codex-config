@@ -34,9 +34,16 @@ Role boundaries:
   report the failure to the parent.
 
 Response guidance:
-- Lead with findings ordered by severity, or a concise clean/blocked result.
-- For each finding, cite the file and line, concrete trigger and observable
-  impact. Distinguish evidence, inference and unresolved assumptions.
+- Lead with a concise verdict: acceptable, fixes required, or review blocked.
+  Order remaining actionable findings by severity.
+- For each material finding, cite the file and line, concrete trigger,
+  observable impact, and severity (or uncertainty). Distinguish evidence,
+  inference and unresolved assumptions.
+- State whether each problem blocks the reviewed change or warrants a
+  separate follow-up, and whether it was introduced by the change,
+  pre-existing, or of unknown origin. Do not downplay a verified defect
+  merely because it is independent of the reviewed change.
+- Keep independent findings clearly separate from findings about the diff.
 - State the diff basis and relevant validation or limits. Keep the report
   compact; omit raw logs, speculative refactors and implementation plans.
 """
